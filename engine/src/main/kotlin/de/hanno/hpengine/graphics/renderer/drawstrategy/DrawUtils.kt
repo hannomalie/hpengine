@@ -4,17 +4,13 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.pipelines.Pipeline
 import de.hanno.hpengine.graphics.shader.ComputeProgram
-import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util
 import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.renderer.pipelines.DrawElementsIndirectCommand
-import de.hanno.hpengine.graphics.vertexbuffer.IndexBuffer
-import de.hanno.hpengine.graphics.vertexbuffer.drawInstancedBaseVertex
-import de.hanno.hpengine.graphics.vertexbuffer.drawLinesInstancedBaseVertex
-import de.hanno.hpengine.graphics.vertexbuffer.drawPatchesInstancedBaseVertex
+import de.hanno.hpengine.graphics.vertexbuffer.*
 import org.jetbrains.kotlin.util.profile
 import org.lwjgl.opengl.GL40.GL_PATCHES
 import org.lwjgl.opengl.GL42.GL_LINES
@@ -32,32 +28,20 @@ enum class PrimitiveType(val type: Int) {
     Patches(GL_PATCHES)
 }
 
-fun VertexIndexBuffer.draw(renderBatch: RenderBatch, program: Program<*>, bindIndexBuffer: Boolean = true, primitiveType: PrimitiveType = PrimitiveType.Triangles, mode: RenderingMode = RenderingMode.Faces): Int {
-    return indexBuffer.draw(renderBatch, program, bindIndexBuffer, primitiveType, mode)
-}
-
-fun IndexBuffer.draw(renderBatch: RenderBatch, program: Program<*>, bindIndexBuffer: Boolean = true, primitiveType: PrimitiveType = PrimitiveType.Triangles, mode: RenderingMode = RenderingMode.Faces): Int {
-    return actuallyDraw(renderBatch, program, bindIndexBuffer, primitiveType, mode)
-}
-
-fun IndexBuffer.actuallyDraw(entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand,
-                             program: Program<*>, bindIndexBuffer: Boolean = true, primitiveType: PrimitiveType, mode: RenderingMode
+fun VertexIndexBuffer.draw(
+    renderBatch: RenderBatch,
+    bindIndexBuffer: Boolean,
+    primitiveType: PrimitiveType = PrimitiveType.Triangles,
+    mode: RenderingMode = RenderingMode.Faces
 ): Int {
-
-    program.setUniform("entityBaseIndex", 0)
-    program.setUniform("entityIndex", entityBufferIndex)
-    program.setUniform("indirect", false)
-
-    return when(primitiveType) {
-        PrimitiveType.Lines -> drawLinesInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
-        PrimitiveType.Triangles -> drawInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
-        PrimitiveType.Patches -> drawPatchesInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
-    }
+    return indexBuffer.draw(renderBatch.drawElementsIndirectCommand, bindIndexBuffer, primitiveType, mode)
 }
 
-fun IndexBuffer.actuallyDraw(renderBatch: RenderBatch, program: Program<*>, bindIndexBuffer: Boolean, primitiveType: PrimitiveType, mode: RenderingMode): Int {
-    return actuallyDraw(renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, bindIndexBuffer, primitiveType, mode)
-}
+fun IndexBuffer.draw(
+    drawElementsIndirectCommand: DrawElementsIndirectCommand,
+    bindIndexBuffer: Boolean,
+    primitiveType: PrimitiveType, mode: RenderingMode
+): TriangleCount = drawLinesInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
 
 fun renderHighZMap(gpuContext: GpuContext<*>, baseDepthTexture: Int, baseWidth: Int, baseHeight: Int, highZTexture: Int, highZProgram: ComputeProgram) {
     profile("HighZ map calculation") {

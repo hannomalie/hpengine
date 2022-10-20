@@ -31,6 +31,8 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
+import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
@@ -207,8 +209,7 @@ class ProbeRenderer(
                     for (batch in renderState.renderBatchesStatic) {
                         pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
                         renderState.vertexIndexBufferStatic.indexBuffer.draw(
-                            batch,
-                            pointCubeShadowPassProgram
+                            batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
                         )
                     }
                 }

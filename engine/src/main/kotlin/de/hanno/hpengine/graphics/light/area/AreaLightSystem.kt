@@ -21,6 +21,8 @@ import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
+import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
@@ -156,7 +158,12 @@ class AreaLightSystem(
                 }
 
                 for (e in renderState.renderBatchesStatic) {
-                    renderState.vertexIndexBufferStatic.indexBuffer.draw(e, areaShadowPassProgram)
+                    renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                        e.drawElementsIndirectCommand,
+                        true,
+                        PrimitiveType.Triangles,
+                        RenderingMode.Faces
+                    )
                 }
             }
         }

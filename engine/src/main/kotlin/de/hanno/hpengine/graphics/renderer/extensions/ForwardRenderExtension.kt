@@ -7,13 +7,12 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.graphics.renderer.constants.GlDepthFunc
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.shader.ProgramManager
+import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.shader.safePut
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
@@ -38,7 +37,12 @@ class ForwardRenderExtension(
     val firstpassDefaultVertexshaderSource = FileBasedCodeSource(config.engineDir.resolve("shaders/" + "first_pass_vertex.glsl"))
     val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(config.engineDir.resolve("shaders/" + "forward_fragment.glsl"))
 
-    val programStatic = programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, StaticFirstPassUniforms(gpuContext))
+    val programStatic = programManager.getProgram(
+        firstpassDefaultVertexshaderSource,
+        firstpassDefaultFragmentshaderSource,
+        StaticFirstPassUniforms(gpuContext),
+        Defines()
+    )
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         deferredRenderingBuffer.forwardBuffer.use(gpuContext, false)
@@ -67,7 +71,10 @@ class ForwardRenderExtension(
         renderState.vertexIndexBufferStatic.indexBuffer.bind()
         for (batch in renderState.renderBatchesStatic.filter { it.material.transparencyType.needsForwardRendering }) {
             programStatic.setTextureUniforms(batch.material.maps)
-            val currentVerticesCount = renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, programStatic, bindIndexBuffer = false)
+            renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                batch.drawElementsIndirectCommand, bindIndexBuffer = false,
+                primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Faces
+            )
         }
         gpuContext.disable(GlCap.BLEND)
         deferredRenderingBuffer.forwardBuffer.unUse()

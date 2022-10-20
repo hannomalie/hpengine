@@ -165,7 +165,7 @@ void main(void) {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
 									1, V, positionView, normalView,
 									roughness, 0, diffuseColor, specularColor);
-		finalColor += diffuseColor * lightDiffuse * clamp(dot(-normalView, lightDirectionView), 0, 1);
+//		finalColor += diffuseColor * lightDiffuse * clamp(dot(-normalView, lightDirectionView), 0, 1);
 	    finalColor *= visibility;
 	} else if(materialType == UNLIT) {
 	    finalColor = color;
@@ -181,6 +181,7 @@ void main(void) {
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	out_DiffuseSpecular.a = 1;
 
+//	out_DiffuseSpecular.rgb = vec3(1-visibility);
 //	out_DiffuseSpecular = vec4(100*textureLod(directionalLightShadowMap, st, 0).rgb, 1);
 
 //	out_DiffuseSpecular = vec4(st, 0f,1f);

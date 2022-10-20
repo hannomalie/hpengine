@@ -88,10 +88,11 @@ class CameraSystem: BaseSystem(), WorldPopulator {
 fun World.addPrimaryCamera() {
     edit(create()).apply {
         create(TransformComponent::class.java)
-        getSystem(TagManager::class.java).register(primaryCamera, entityId)
         create(NameComponent::class.java).apply {
             name = "PrimaryCamera"
         }
         create(CameraComponent::class.java)
+
+        getSystem(TagManager::class.java).register(primaryCamera, entityId)
     }
 }

@@ -7,7 +7,6 @@ import de.hanno.hpengine.artemis.GiVolumeComponent
 import de.hanno.hpengine.backend.Backend
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.profiled
@@ -227,7 +226,12 @@ class VoxelConeTracingExtension(
                     renderState.vertexIndexBufferStatic.indexBuffer.bind()
                     for (entity in batches) {
                         voxelizerStatic.setTextureUniforms(entity.material.maps)
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(entity, voxelizerStatic, bindIndexBuffer = false)
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                            entity.drawElementsIndirectCommand,
+                            bindIndexBuffer = false,
+                            primitiveType = PrimitiveType.Triangles,
+                            mode = RenderingMode.Faces
+                        )
                     }
                 }
 

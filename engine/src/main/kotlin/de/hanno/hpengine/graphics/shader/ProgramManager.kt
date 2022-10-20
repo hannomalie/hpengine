@@ -42,11 +42,14 @@ interface ProgramManager<BACKEND: BackendType> {
                                  defines: Defines,
                                  uniforms: T): Program<T>
 
-    fun <T: Uniforms> getProgram(vertexShaderSource: CodeSource,
-                                 fragmentShaderSource: CodeSource?,
-                                 uniforms: T): Program<T> {
+    fun <T: Uniforms> getProgram(
+        vertexShaderSource: CodeSource,
+        fragmentShaderSource: CodeSource?,
+        uniforms: T,
+        defines: Defines
+    ): Program<T> {
 
-        return getProgram(vertexShaderSource, fragmentShaderSource, null, Defines(), uniforms)
+        return getProgram(vertexShaderSource, fragmentShaderSource, null, defines, uniforms)
     }
 
     fun getProgram(vertexShaderSource: CodeSource,

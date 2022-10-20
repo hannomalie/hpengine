@@ -11,6 +11,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
+import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.TextureManager
@@ -27,7 +28,8 @@ class CombinePassRenderExtension(private val config: Config,
     private val combineProgram = programManager.getProgram(
         config.EngineAsset("shaders/combine_pass_vertex.glsl").toCodeSource(),
         config.EngineAsset("shaders/combine_pass_fragment.glsl").toCodeSource(),
-        Uniforms.Empty
+        Uniforms.Empty,
+ Defines()
     )
 
     fun renderCombinePass(state: RenderState, renderTarget: RenderTarget<Texture2D> = deferredRenderingBuffer.finalBuffer) {

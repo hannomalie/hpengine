@@ -48,7 +48,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
     private val textureManager: TextureManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val useBackFaceCulling: Boolean = true,
-): Pipeline {
+) : Pipeline {
     // TODO: Fill these if possible
     private var verticesCount = 0
     private var entitiesCount = 0
@@ -114,20 +114,22 @@ open class GPUCulledPipeline @JvmOverloads constructor(
             baseDepthTexture.dimension.width, baseDepthTexture.dimension.height, 1
         )
     }
+
     override fun prepare(renderState: RenderState) {
-        if(config.debug.freezeCulling) return
+        if (config.debug.freezeCulling) return
         verticesCount = 0
         entitiesCount = 0
 
         fun CommandOrganizationGpuCulled.prepare(batches: List<RenderBatch>) {
             // TODO: This should be abstracted into "state change needed"
-            filteredRenderBatches = batches.filterNot {
-                if(config.debug.isUseCpuFrustumCulling) {
-                    it.isCulledOrForwardRendered(renderState.camera)
-                } else {
-                    it.isForwardRendered()
+            filteredRenderBatches = batches
+                .filterNot {
+                    if (config.debug.isUseCpuFrustumCulling) {
+                        it.isCulled(renderState.camera)
+                    } else false
                 }
-            }.filterNot { it.hasOwnProgram }.filter { it.material.writesDepth }.filter { it.material.renderPriority == null }
+                .filterNot { it.isForwardRendered }.filterNot { it.hasOwnProgram }
+                .filter { it.material.writesDepth }.filter { it.material.renderPriority == null }
 
             commandCount = filteredRenderBatches.size
             addCommands(filteredRenderBatches, commands, offsetsForCommand)
@@ -181,11 +183,19 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         }
     }
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program<StaticFirstPassUniforms>, renderCam: Camera) {
+    override fun beforeDrawStatic(
+        renderState: RenderState,
+        program: Program<StaticFirstPassUniforms>,
+        renderCam: Camera
+    ) {
         beforeDraw(renderState, program, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program<AnimatedFirstPassUniforms>, renderCam: Camera) {
+    override fun beforeDrawAnimated(
+        renderState: RenderState,
+        program: Program<AnimatedFirstPassUniforms>,
+        renderCam: Camera
+    ) {
         beforeDraw(renderState, program, renderCam)
     }
 
@@ -202,16 +212,31 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         drawDescriptionStatic: IndirectCulledDrawDescription<StaticFirstPassUniforms>,
         drawDescriptionAnimated: IndirectCulledDrawDescription<AnimatedFirstPassUniforms>
     ) {
-        ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
-        val cullAndRenderHelper = { profilerString: String, phase: CoarseCullingPhase -> profiled(profilerString) {
+        ARBClearTexture.glClearTexImage(
+            highZBuffer.renderedTexture,
+            0,
+            GL11.GL_RGBA,
+            GL11.GL_UNSIGNED_BYTE,
+            ZERO_BUFFER
+        )
+        val cullAndRenderHelper = { profilerString: String, phase: CoarseCullingPhase ->
+            profiled(profilerString) {
                 cullAndRender(drawDescriptionStatic, phase.staticPhase) {
-                    beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program, drawDescriptionStatic.drawCam)
+                    beforeDrawStatic(
+                        drawDescriptionStatic.renderState,
+                        drawDescriptionStatic.program,
+                        drawDescriptionStatic.drawCam
+                    )
                 }
                 debugPrintPhase1(drawDescriptionStatic, CullingPhase.STATIC_ONE)
 
-            cullAndRender(drawDescriptionAnimated, phase.animatedPhase) {
-                beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program, drawDescriptionAnimated.drawCam)
-            }
+                cullAndRender(drawDescriptionAnimated, phase.animatedPhase) {
+                    beforeDrawAnimated(
+                        drawDescriptionAnimated.renderState,
+                        drawDescriptionAnimated.program,
+                        drawDescriptionAnimated.drawCam
+                    )
+                }
                 debugPrintPhase1(drawDescriptionAnimated, CullingPhase.ANIMATED_ONE)
 
                 renderHighZMap()
@@ -227,7 +252,14 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         )
     }
 
-    private fun renderHighZMap() = renderHighZMap(gpuContext, baseDepthTexture.id, config.width, config.height, highZBuffer.renderedTexture, highZProgram)
+    private fun renderHighZMap() = renderHighZMap(
+        gpuContext,
+        baseDepthTexture.id,
+        config.width,
+        config.height,
+        highZBuffer.renderedTexture,
+        highZProgram
+    )
 
     private fun cullPhase(
         renderState: RenderState,
@@ -246,7 +278,8 @@ open class GPUCulledPipeline @JvmOverloads constructor(
     ) = profiled("Visibility detection") {
         ARBClearTexture.glClearTexImage(debugMinMaxTexture.id, 0, GL11.GL_RGBA, GL11.GL_FLOAT, ZERO_BUFFER)
 
-        val occlusionCullingPhase = if (phase.coarsePhase == CoarseCullingPhase.ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
+        val occlusionCullingPhase =
+            if (phase.coarsePhase == CoarseCullingPhase.ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
         with(occlusionCullingPhase) {
             val invocationsPerCommand = 4096
             use()
@@ -269,10 +302,27 @@ open class GPUCulledPipeline @JvmOverloads constructor(
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             setUniform("useFrustumCulling", config.debug.isUseGpuFrustumCulling)
             setUniform("useOcclusionCulling", config.debug.isUseGpuOcclusionCulling)
-            gpuContext.bindTexture(0, de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
+            gpuContext.bindTexture(
+                0,
+                de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D,
+                highZBuffer.renderedTexture
+            )
 //            gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT)
-            gpuContext.bindImageTexture(1, debugMinMaxTexture.id, 0, false, 0, GL15.GL_WRITE_ONLY, debugMinMaxTexture.internalFormat)
-            GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, ((commandOrganization.commandCount + 2) / 3) * 3, invocationsPerCommand)
+            gpuContext.bindImageTexture(
+                1,
+                debugMinMaxTexture.id,
+                0,
+                false,
+                0,
+                GL15.GL_WRITE_ONLY,
+                debugMinMaxTexture.internalFormat
+            )
+            GL31.glDrawArraysInstanced(
+                GL11.GL_TRIANGLES,
+                0,
+                ((commandOrganization.commandCount + 2) / 3) * 3,
+                invocationsPerCommand
+            )
             GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT)
             GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
         }
@@ -310,12 +360,25 @@ open class GPUCulledPipeline @JvmOverloads constructor(
                     bindShaderStorageBuffer(12, commandOffsets)
                     bindShaderStorageBuffer(13, currentCompactedPointers)
                     setUniform("maxDrawCommands", commandCount)
-                    gpuContext.bindImageTexture(1, debugMinMaxTexture.id, 0, false, 0, GL_WRITE_ONLY, debugMinMaxTexture.internalFormat)
+                    gpuContext.bindImageTexture(
+                        1,
+                        debugMinMaxTexture.id,
+                        0,
+                        false,
+                        0,
+                        GL_WRITE_ONLY,
+                        debugMinMaxTexture.internalFormat
+                    )
                     if (config.debug.isUseComputeShaderDrawCommandAppend) {
                         appendDrawCommandsComputeProgram.dispatchCompute(commandCount, 1, 1)
                     } else {
                         val invocationsPerCommand = 4096
-                        GL31.glDrawArraysInstanced( GL11.GL_TRIANGLES, 0, ((invocationsPerCommand + 2) / 3) * 3, commandCount)
+                        GL31.glDrawArraysInstanced(
+                            GL11.GL_TRIANGLES,
+                            0,
+                            ((invocationsPerCommand + 2) / 3) * 3,
+                            commandCount
+                        )
                     }
                     GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT or GL42.GL_TEXTURE_FETCH_BARRIER_BIT or GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT or GL42.GL_COMMAND_BARRIER_BIT)
                     GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
@@ -357,22 +420,31 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         program.bindShaderStorageBuffer(3, commandOrganization.entitiesCompacted)
         program.bindShaderStorageBuffer(4, commandOrganization.offsetsCompacted)
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-        vertexIndexBuffer.multiDrawElementsIndirectCount(commandOrganization.commandsCompacted, commandOrganization.drawCountsCompacted, 0, commandOrganization.filteredRenderBatches.size, mode)
+        vertexIndexBuffer.multiDrawElementsIndirectCount(
+            commandOrganization.commandsCompacted,
+            commandOrganization.drawCountsCompacted,
+            0,
+            commandOrganization.filteredRenderBatches.size,
+            mode
+        )
     }
 
-    private fun debugPrintPhase1(drawDescription: IndirectCulledDrawDescription<out FirstPassUniforms>, phase: CullingPhase) {
+    private fun debugPrintPhase1(
+        drawDescription: IndirectCulledDrawDescription<out FirstPassUniforms>,
+        phase: CullingPhase
+    ) {
         if (config.debug.isPrintPipelineDebugOutput) {
             GL11.glFinish()
 
             fun printPhase1(commandOrganization: CommandOrganizationGpuCulled) {
                 with(commandOrganization) {
                     val commandCount = drawCountsCompacted.buffer.getInt(0)
-                    if(commandCount == 0) return
+                    if (commandCount == 0) return
 
                     val instanceCount = entitiesCompactedCounter.buffer.getInt(0)
                     println("########### $phase ")
                     println("Visibilities")
-                    val visibilityCount = if(commandCount == 0) {
+                    val visibilityCount = if (commandCount == 0) {
                         0
                     } else {
                         var result = 0
@@ -406,7 +478,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
     }
 }
 
-fun <T: FirstPassUniforms> IndirectCulledDrawDescription<T>.draw() {
+fun <T : FirstPassUniforms> IndirectCulledDrawDescription<T>.draw() {
     beforeDraw(renderState, program, drawCam)
     with(commandOrganization) {
         profiled("Actually render") {
@@ -415,7 +487,7 @@ fun <T: FirstPassUniforms> IndirectCulledDrawDescription<T>.draw() {
                 uniforms.entityBaseIndex = 0
                 uniforms.entities = renderState.entitiesState.entitiesBuffer
                 uniforms.entityOffsets = offsetsForCommand
-                when(uniforms) {
+                when (uniforms) {
                     is StaticFirstPassUniforms -> Unit
                     is AnimatedFirstPassUniforms -> uniforms.joints = renderState.entitiesState.jointsBuffer
                     else -> throw IllegalStateException("This can never happen")
@@ -440,9 +512,9 @@ enum class CullingPhase(val coarsePhase: CoarseCullingPhase) {
 }
 
 val CoarseCullingPhase.staticPhase: CullingPhase
-    get() = if(this == CoarseCullingPhase.ONE) CullingPhase.STATIC_ONE else CullingPhase.STATIC_TWO
+    get() = if (this == CoarseCullingPhase.ONE) CullingPhase.STATIC_ONE else CullingPhase.STATIC_TWO
 val CoarseCullingPhase.animatedPhase: CullingPhase
-    get() = if(this == CoarseCullingPhase.ONE) CullingPhase.ANIMATED_ONE else CullingPhase.ANIMATED_TWO
+    get() = if (this == CoarseCullingPhase.ONE) CullingPhase.ANIMATED_ONE else CullingPhase.ANIMATED_TWO
 
 class CommandOrganizationGpuCulled(gpuContext: GpuContext<*>) {
     var commandCount = 0

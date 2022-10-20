@@ -44,34 +44,37 @@ fun VertexBuffer.drawDebug(indexBuffer: IndexBuffer, lineWidth: Float = 1f): Int
     return verticesCount
 }
 
+typealias TriangleCount = Int
 fun IndexBuffer.drawLinesInstancedBaseVertex(
     command: DrawElementsIndirectCommand,
     bindIndexBuffer: Boolean,
     mode: RenderingMode,
     primitiveType: PrimitiveType
-): Int {
-    return drawLinesInstancedBaseVertex(
-        command.count,
-        command.instanceCount,
-        command.firstIndex,
-        command.baseVertex,
-        bindIndexBuffer,
-        mode,
-        primitiveType
-    )
-}
+): TriangleCount = drawLinesInstancedBaseVertex(
+    command.count,
+    command.instanceCount,
+    command.firstIndex,
+    command.baseVertex,
+    bindIndexBuffer,
+    mode,
+    primitiveType
+)
 
 fun IndexBuffer.drawLinesInstancedBaseVertex(
     indexCount: Int, instanceCount: Int, indexOffset: Int,
-    baseVertexIndex: Int, bindIndexBuffer: Boolean = true,
+    baseVertexIndex: Int, bindIndexBuffer: Boolean,
     mode: RenderingMode, primitiveType: PrimitiveType
-): Int {
+): TriangleCount {
     if (bindIndexBuffer) bind()
 
-    if (mode == RenderingMode.Lines) {
-        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
-        GL11.glLineWidth(1f)
+    when (mode) {
+        RenderingMode.Lines -> {
+            GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
+            GL11.glLineWidth(1f)
+        }
+        RenderingMode.Faces -> GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
     }
+
     GL42.glDrawElementsInstancedBaseVertexBaseInstance(
         primitiveType.type,
         indexCount,
@@ -81,7 +84,6 @@ fun IndexBuffer.drawLinesInstancedBaseVertex(
         baseVertexIndex,
         0
     )
-    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
 
     return indexCount / 3
 }

@@ -11,6 +11,7 @@ import de.hanno.hpengine.model.Model
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
+import org.jetbrains.kotlin.library.impl.KLIB_DEFAULT_COMPONENT_NAME
 import de.hanno.hpengine.artemis.ModelComponent as ModelComponentArtemis
 
 sealed class Selection {
@@ -20,31 +21,31 @@ sealed class Selection {
 data class MaterialSelection(val material: Material): Selection() {
     override fun toString() = material.name
 }
-sealed class EntitySelection(val entity: Int): Selection() {
+sealed class EntitySelection(val entity: Int, val components: List<Component>): Selection() {
     override fun toString(): String = entity.toString()
 }
-data class SimpleEntitySelection(val _entity: Int, val components: List<Component>): EntitySelection(_entity){
+data class SimpleEntitySelection(val _entity: Int, val _components: List<Component>): EntitySelection(_entity, _components){
     override fun toString(): String = entity.toString()
 }
-data class NameSelection(private val _entity: Int, val name: String): EntitySelection(_entity) {
+data class NameSelection(private val _entity: Int, val name: String, val _components: List<Component>): EntitySelection(_entity, _components) {
     override fun toString(): String = name
 }
-data class TransformSelection(private val _entity: Int, val transform: TransformComponent): EntitySelection(_entity) {
+data class TransformSelection(private val _entity: Int, val transform: TransformComponent, val _components: List<Component>): EntitySelection(_entity, _components) {
     override fun toString(): String = entity.toString()
 }
-data class MeshSelection(private val _entity: Int, val mesh: Mesh<*>, val modelComponent: ModelComponentArtemis): EntitySelection(_entity) {
+data class MeshSelection(private val _entity: Int, val mesh: Mesh<*>, val modelComponent: ModelComponentArtemis, val _components: List<Component>): EntitySelection(_entity, _components) {
     override fun toString(): String = mesh.name
 }
-data class ModelSelection(private val _entity: Int, val modelComponent: ModelComponentArtemis, val model: Model<*>): EntitySelection(_entity) {
+data class ModelSelection(private val _entity: Int, val modelComponent: ModelComponentArtemis, val model: Model<*>, val _components: List<Component>): EntitySelection(_entity, _components) {
     override fun toString(): String = model.file.name
 }
-data class ModelComponentSelection(private val _entity: Int, val modelComponent: ModelComponentArtemis): EntitySelection(_entity) {
+data class ModelComponentSelection(private val _entity: Int, val modelComponent: ModelComponentArtemis, val _components: List<Component>): EntitySelection(_entity, _components) {
     override fun toString(): String = when(val description = modelComponent.modelComponentDescription) {
         is AnimatedModelComponentDescription -> "[" + description.directory.name + "]" + description.file
         is StaticModelComponentDescription -> "[" + description.directory.name + "]" + description.file
     }
 }
-data class CameraSelection(private val _entity: Int, val cameraComponent: CameraComponent): EntitySelection(_entity)
+data class CameraSelection(private val _entity: Int, val cameraComponent: CameraComponent, val _components: List<Component>): EntitySelection(_entity, _components)
 
 data class GiVolumeSelection(val giVolumeComponent: GiVolumeComponent): Selection()
 data class OceanWaterSelection(val oceanWater: OceanWaterComponent): Selection()

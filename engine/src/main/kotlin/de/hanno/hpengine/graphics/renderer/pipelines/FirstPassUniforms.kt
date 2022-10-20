@@ -44,8 +44,6 @@ sealed class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
     var projectionMatrix by Mat4(createTransformBuffer())
     var viewProjectionMatrix by Mat4(createTransformBuffer())
 
-    private fun createTransformBuffer() = createFloatBuffer(16).apply { Transform().get(this) }
-
     var eyePosition by Vec3(Vector3f())
     var near by FloatType()
     var far by FloatType()
@@ -57,6 +55,8 @@ sealed class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
     var entityBaseIndex by IntType(0)
     var indirect by BooleanType(true)
 }
+fun createTransformBuffer() = createFloatBuffer(16).apply { Transform().get(this) }
+
 open class StaticFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
     var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1, gpuContext).typed(VertexStruktPacked.type))
 }
@@ -68,7 +68,7 @@ open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUnifor
 
 fun Program<out FirstPassUniforms>.setUniforms(
     renderState: RenderState,
-    camera: Camera = renderState.camera,
+    camera: Camera,
     config: Config,
     indirect: Boolean
 ) {

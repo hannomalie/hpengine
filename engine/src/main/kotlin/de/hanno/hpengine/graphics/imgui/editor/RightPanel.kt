@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.imgui.editor
 
+import com.artemis.managers.TagManager
 import de.hanno.hpengine.artemis.InvisibleComponentSystem
 import de.hanno.hpengine.artemis.ModelSystem
 import de.hanno.hpengine.artemis.NameComponent
@@ -131,6 +132,11 @@ fun ImGuiEditor.rightPanel(
                         } else Unit
                     }
                     is CameraSelection -> tab("Entity") {
+                        val tagManager = artemisWorld.getSystem(TagManager::class.java)
+                        val isPrimaryCamera = tagManager.getEntityId(primaryCamera) == selection.entity
+                        checkBox("Active", isPrimaryCamera) {
+                            tagManager.register(primaryCamera, selection.entity)
+                        }
                         floatInput(
                             "Near plane",
                             selection.cameraComponent.near,

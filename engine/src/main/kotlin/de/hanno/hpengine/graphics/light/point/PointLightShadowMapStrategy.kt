@@ -153,7 +153,8 @@ class DualParaboloidShadowMapStrategy(
     private var pointShadowPassProgram = programManager.getProgram(
         FileBasedCodeSource(File("shaders/" + "pointlight_shadow_vertex.glsl")),
         FileBasedCodeSource(File("shaders/" + "pointlight_shadow_fragment.glsl")),
-        Uniforms.Empty
+        Uniforms.Empty,
+ Defines()
     )
 
     var pointLightDepthMapsArrayFront: Int = 0

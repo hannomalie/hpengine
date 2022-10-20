@@ -55,8 +55,8 @@ void main()
 	float moment1 = (depth);
 	float moment2 = moment1 * moment1;
 	
-	float dx = dFdx(depth);
-	float dy = dFdy(depth);
+//	float dx = dFdx(depth);
+//	float dy = dFdy(depth);
 	//moment2 += 0.25*(dx*dx+dy*dy);
     //out_Color = vec4(moment1,moment2,packColor(normal_world),1);
     

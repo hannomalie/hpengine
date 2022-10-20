@@ -41,19 +41,19 @@ fun ImGuiEditor.leftPanel(
                             text(component.javaClass.simpleName) {
                                 when (component) {
                                     is ModelComponent -> {
-                                        selectOrUnselect(ModelComponentSelection(entityId, component))
+                                        selectOrUnselect(ModelComponentSelection(entityId, component, components.toList()))
                                     }
                                     is MaterialComponent -> {
                                         selectOrUnselect(MaterialSelection(component.material))
                                     }
                                     is NameComponent -> selectOrUnselect(
-                                        NameSelection(entityId, component.name)
+                                        NameSelection(entityId, component.name, components.toList())
                                     )
                                     is TransformComponent -> selectOrUnselect(
-                                        TransformSelection(entityId, component)
+                                        TransformSelection(entityId, component, components.toList())
                                     )
                                     is OceanWaterComponent -> selectOrUnselect(OceanWaterSelection(component))
-                                    is CameraComponent -> selectOrUnselect(CameraSelection(entityId, component))
+                                    is CameraComponent -> selectOrUnselect(CameraSelection(entityId, component, components.toList()))
                                 }
                             }
                         }

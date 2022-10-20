@@ -15,10 +15,7 @@ import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUB
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
@@ -167,7 +164,12 @@ class ProbeRenderStrategy(
 
                 profiled("Probe entity rendering") {
                     for (e in renderState.renderBatchesStatic) {
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(e, probeProgram)
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                            e.drawElementsIndirectCommand,
+                            true,
+                            PrimitiveType.Triangles,
+                            RenderingMode.Faces
+                        )
                     }
                 }
                 textureManager.generateMipMaps(
@@ -252,7 +254,8 @@ class EvaluateProbeRenderExtension(
     val evaluateProbeProgram = programManager.getProgram(
         config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/evaluate_probe_fragment.glsl").toCodeSource(),
-        Uniforms.Empty
+        Uniforms.Empty,
+ Defines()
     )
 
     override fun renderFirstPass(

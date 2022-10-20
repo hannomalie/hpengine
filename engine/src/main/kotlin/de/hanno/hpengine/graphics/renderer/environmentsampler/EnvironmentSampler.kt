@@ -7,6 +7,8 @@ import de.hanno.hpengine.artemis.EnvironmentProbeComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.GpuContext.Companion.exitOnGLError
+import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
+import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
@@ -96,7 +98,12 @@ class EnvironmentSampler(val transform: Transform,
             if (!isInFrustum(camera, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
 //				continue;
             }
-            renderState.vertexIndexBufferStatic.indexBuffer.draw(e, program)
+            renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                e.drawElementsIndirectCommand,
+                true,
+                PrimitiveType.Triangles,
+                RenderingMode.Faces
+            )
         }
     }
 

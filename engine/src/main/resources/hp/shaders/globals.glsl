@@ -825,7 +825,6 @@ bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
     return distance(positionSphere, positionToTest) < radius;
 }
 
-
 vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
     vec3 nrdir = normalize(texCoords3d);
 

@@ -186,7 +186,7 @@ fun Module.addPointLightModule() {
 }
 
 fun Module.addDirectionalLightModule() {
-    renderExtension { DirectionalLightShadowMapExtension(get(), get(), get(), get()) }
+    renderExtension { DirectionalLightShadowMapExtension(get(), get(), get(), get(), get()) }
     renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get()) }
 }
 

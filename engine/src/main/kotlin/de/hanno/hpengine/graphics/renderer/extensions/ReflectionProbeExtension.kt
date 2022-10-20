@@ -106,7 +106,8 @@ class ReflectionProbeRenderExtension(
     val evaluateProbeProgram = programManager.getProgram(
         config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/evaluate_reflection_probe_fragment.glsl").toCodeSource(),
-        Uniforms.Empty
+        Uniforms.Empty,
+ Defines()
     )
 
     private var renderCounter = 0
@@ -269,8 +270,8 @@ class ReflectionProbeRenderExtension(
                     for (batch in renderState.renderBatchesStatic) {
                         pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
                         renderState.vertexIndexBufferStatic.indexBuffer.draw(
-                            batch,
-                            pointCubeShadowPassProgram
+                            batch
+                                .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
                         )
                     }
                 }

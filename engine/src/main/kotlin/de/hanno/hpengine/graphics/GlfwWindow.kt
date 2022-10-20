@@ -13,6 +13,7 @@ import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
+import org.lwjgl.opengl.GLUtil
 import kotlin.system.exitProcess
 
 
@@ -103,6 +104,7 @@ class GlfwWindow @JvmOverloads constructor(
         executor.launch {
             makeContextCurrent()
             GL.createCapabilities()
+//            GLUtil.setupDebugMessageCallback()
         }
 
         frontBuffer = createFrontBufferRenderTarget()

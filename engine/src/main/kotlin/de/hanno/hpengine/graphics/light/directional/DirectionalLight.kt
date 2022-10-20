@@ -5,10 +5,7 @@ import com.artemis.annotations.All
 import com.artemis.annotations.Wire
 import com.artemis.utils.Bag
 import de.hanno.hpengine.WorldPopulator
-import de.hanno.hpengine.artemis.DirectionalLightComponent
-import de.hanno.hpengine.artemis.NameComponent
-import de.hanno.hpengine.artemis.TransformComponent
-import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.entity.CycleSystem
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
@@ -24,12 +21,13 @@ import org.lwjgl.glfw.GLFW
 
 
 @All(DirectionalLightComponent::class, TransformComponent::class)
-class DirectionalLightSystem: BaseEntitySystem(), Extractor, WorldPopulator {
+class DirectionalLightSystem : BaseEntitySystem(), Extractor, WorldPopulator {
     @Wire
     lateinit var input: Input
     lateinit var cycleSystem: CycleSystem
     lateinit var directionalLightComponentMapper: ComponentMapper<DirectionalLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
+    lateinit var cameraComponentMapper: ComponentMapper<CameraComponent>
 
     override fun processSystem() {
         val moveAmount = 100 * world.delta
@@ -68,11 +66,12 @@ class DirectionalLightSystem: BaseEntitySystem(), Extractor, WorldPopulator {
 
     override fun extract(currentWriteState: RenderState) {
         currentWriteState.directionalLightHasMovedInCycle = currentWriteState.cycle
-        val entries: Map<Int, Bag<Component>> = currentWriteState.componentsForEntities.filterValues { it.firstIsInstanceOrNull<DirectionalLightComponent>() != null }
-        if(entries.isEmpty()) return
 
-        val light = entries.entries.first().value.firstIsInstance<DirectionalLightComponent>()
-        val transform = entries.entries.first().value.firstIsInstance<TransformComponent>().transform
+        if(!subscription.entities.isIndexWithinBounds(0)) return
+
+        val light = directionalLightComponentMapper.get(subscription.entities[0])
+        val transform = transformComponentMapper.get(subscription.entities[0]).transform
+        val camera = cameraComponentMapper.get(subscription.entities[0])
 
         currentWriteState.directionalLightState.typedBuffer.forIndex(0) { directionalLightState ->
             directionalLightState.color.set(light.color)
@@ -80,8 +79,8 @@ class DirectionalLightSystem: BaseEntitySystem(), Extractor, WorldPopulator {
             directionalLightState.scatterFactor = light.scatterFactor
             val viewMatrix = Matrix4f(transform).invert()
             directionalLightState.viewMatrix.set(viewMatrix)
-            directionalLightState.projectionMatrix.set(light.camera.projectionMatrix)
-            directionalLightState.viewProjectionMatrix.set(Matrix4f(light.camera.projectionMatrix).mul(viewMatrix))
+            directionalLightState.projectionMatrix.set(camera.projectionMatrix)
+            directionalLightState.viewProjectionMatrix.set(Matrix4f(camera.projectionMatrix).mul(viewMatrix))
         }
     }
 
@@ -103,6 +102,14 @@ fun World.addDirectionalLight() {
                 translate(Vector3f(12f, 300f, 2f))
                 rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), 1f, 0f, 0f)), 0f, 0f, 0f)
             }
+        }
+        create(
+            CameraComponent()::class.java
+        ).apply {
+            width = 1500f
+            height = 1500f
+            far = (-5000).toFloat()
+            perspective = false
         }
     }
 }

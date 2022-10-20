@@ -79,7 +79,10 @@ class DirectionalLightSecondPassExtension(
 
             secondPassDirectionalProgram.use()
             val camTranslation = Vector3f()
-            secondPassDirectionalProgram.setUniform("eyePosition", renderState.camera.getTranslation(camTranslation))
+            secondPassDirectionalProgram.setUniform(
+                "eyePosition",
+                renderState.camera.getTranslation(camTranslation)
+            )
             secondPassDirectionalProgram.setUniform(
                 "ambientOcclusionRadius",
                 config.effects.ambientocclusionRadius

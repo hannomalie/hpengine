@@ -46,7 +46,7 @@ open class IndirectPipeline @JvmOverloads constructor(
         fun CommandOrganization.prepare(batches: List<RenderBatch>) {
             // TODO: This should be abstracted into "state change needed"
             filteredRenderBatches =
-                batches.filterNot { it.isCulledOrForwardRendered(camera) }
+                batches.filterNot { it.isCulled(camera) }
                     .filterNot { it.hasOwnProgram }
                     .filter { it.material.writesDepth }
             commandCount = filteredRenderBatches.size
@@ -73,7 +73,9 @@ open class IndirectPipeline @JvmOverloads constructor(
             renderState.vertexIndexBufferStatic,
             this::beforeDrawStatic,
             mode,
-            renderState.camera
+            renderState.camera,
+            renderState.camera,
+            false,
         ).draw()
         IndirectDrawDescription(
             renderState,
@@ -82,7 +84,9 @@ open class IndirectPipeline @JvmOverloads constructor(
             renderState.vertexIndexBufferAnimated,
             this::beforeDrawAnimated,
             mode,
-            renderState.camera
+            renderState.camera,
+            renderState.camera,
+            false,
         ).draw()
 
         firstPassResult.verticesDrawn += verticesCount

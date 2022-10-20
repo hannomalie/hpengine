@@ -60,7 +60,7 @@ class Program<T : Uniforms> constructor(
 
     private fun attach(shader: Shader) {
         glAttachShader(id, shader.id)
-        gpuContext.backend.gpuContext.exceptionOnError(shader.name)
+        gpuContext.getExceptionOnError("Couldn't attach, maybe is already attached: shader.name")
 
     }
 

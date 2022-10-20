@@ -166,10 +166,10 @@ void main(void) {
 
 //	This is for reusability, remove this somewhen with a better
 //	mechanism for color output channel options
-	#ifdef COLOR_OUTPUT_0
+#ifdef COLOR_OUTPUT_0
 	out_positionRoughness.rgb = vec3(1.0f,0.1f,0.1f);
 	out_positionRoughness.a = 1;
-	#endif
+#endif
 
 	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));

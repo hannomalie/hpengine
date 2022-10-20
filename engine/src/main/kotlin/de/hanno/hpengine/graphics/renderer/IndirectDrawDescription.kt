@@ -17,7 +17,8 @@ class DirectDrawDescription<T : FirstPassUniforms>(
     val beforeDraw: (RenderState, Program<T>, Camera) -> Unit,
     val mode: RenderingMode,
     val drawCam: Camera,
-    val cullCam: Camera = drawCam
+    val cullCam: Camera = drawCam,
+    val ignoreCustomPrograms: Boolean,
 )
 
 class IndirectDrawDescription<T : FirstPassUniforms>(
@@ -28,7 +29,8 @@ class IndirectDrawDescription<T : FirstPassUniforms>(
     val beforeDraw: (RenderState, Program<T>, Camera) -> Unit,
     val mode: RenderingMode,
     val drawCam: Camera,
-    val cullCam: Camera = drawCam
+    val cullCam: Camera = drawCam,
+    val ignoreCustomPrograms: Boolean,
 )
 
 class IndirectCulledDrawDescription<T : FirstPassUniforms>(
