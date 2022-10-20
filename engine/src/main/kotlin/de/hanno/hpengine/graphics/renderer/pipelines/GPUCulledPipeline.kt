@@ -117,19 +117,20 @@ open class GPUCulledPipeline @JvmOverloads constructor(
 
     override fun prepare(renderState: RenderState) {
         if (config.debug.freezeCulling) return
+
         verticesCount = 0
         entitiesCount = 0
 
         fun CommandOrganizationGpuCulled.prepare(batches: List<RenderBatch>) {
             // TODO: This should be abstracted into "state change needed"
             filteredRenderBatches = batches
-                .filterNot {
-                    if (config.debug.isUseCpuFrustumCulling) {
+                .filter {
+                    val culled = if (config.debug.isUseCpuFrustumCulling) {
                         it.isCulled(renderState.camera)
                     } else false
+
+                    it.canBeRenderedInIndirectBatch && !culled
                 }
-                .filterNot { it.isForwardRendered }.filterNot { it.hasOwnProgram }
-                .filter { it.material.writesDepth }.filter { it.material.renderPriority == null }
 
             commandCount = filteredRenderBatches.size
             addCommands(filteredRenderBatches, commands, offsetsForCommand)
@@ -138,7 +139,6 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         commandOrganizationStatic.prepare(renderState.renderBatchesStatic)
         commandOrganizationAnimated.prepare(renderState.renderBatchesAnimated)
     }
-
 
     override fun draw(
         renderState: RenderState,
@@ -477,6 +477,8 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         }
     }
 }
+val RenderBatch.canBeRenderedInIndirectBatch
+    get() = !isForwardRendered && !hasOwnProgram && material.writesDepth && material.renderPriority == null
 
 fun <T : FirstPassUniforms> IndirectCulledDrawDescription<T>.draw() {
     beforeDraw(renderState, program, drawCam)

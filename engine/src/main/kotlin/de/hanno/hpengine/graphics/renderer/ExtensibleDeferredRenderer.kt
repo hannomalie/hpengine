@@ -67,13 +67,6 @@ class ExtensibleDeferredRenderer(
 
     private val useIndirectRendering
         get() = config.performance.isIndirectRendering && gpuContext.isSupported(BindlessTextures)
-    private val shouldBeSkippedForDirectRendering: RenderBatch.(Camera) -> Boolean = {
-        if (useIndirectRendering) {
-            !hasOwnProgram || material.writesDepth
-        } else {
-            false
-        }
-    }
 
     val indirectPipeline: StateRef<GPUCulledPipeline> = renderStateManager.renderState.registerState {
         object : GPUCulledPipeline(config, gpuContext, programManager, textureManager, deferredRenderingBuffer) {
@@ -106,11 +99,18 @@ class ExtensibleDeferredRenderer(
         }
     }
     private val staticDirectPipeline = renderStateManager.renderState.registerState {
-        object: DirectFirstPassPipeline(config, gpuContext, simpleColorProgramStatic) { }
+        object: DirectFirstPassPipeline(config, gpuContext, simpleColorProgramStatic) {
+            override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
+                renderBatchesStatic.filterNot { it.canBeRenderedInIndirectBatch }
+            } else renderBatchesStatic
+        }
     }
     private val animatedDirectPipeline = renderStateManager.renderState.registerState {
         object: DirectFirstPassPipeline(config, gpuContext, simpleColorProgramAnimated) {
-            override fun RenderState.extractRenderBatches() = renderBatchesAnimated
+            override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
+                renderBatchesAnimated.filterNot { it.canBeRenderedInIndirectBatch }
+            } else renderBatchesAnimated
+
             override fun RenderState.selectVertexIndexBuffer() = vertexIndexBufferAnimated
         }
     }
@@ -178,6 +178,9 @@ class ExtensibleDeferredRenderer(
                 renderState[animatedDirectPipeline].draw(renderState)
             }
 
+            if (useIndirectRendering) {
+                renderState[indirectPipeline].draw(renderState, simpleColorProgramStatic, simpleColorProgramAnimated, renderState.latestDrawResult.firstPassResult)
+            }
             for (extension in extensions) {
                 profiled(extension.javaClass.simpleName) {
                     extension.renderFirstPass(backend, gpuContext, result.firstPassResult, renderState)
@@ -233,22 +236,4 @@ class DeferredRenderExtensionConfig(val renderExtensions: List<DeferredRenderExt
         set(value) {
             renderSystemsEnabled[this] = value
         }
-}
-
-class DeferredRenderExtensionsConfigPanel(val renderSystemsConfig: DeferredRenderExtensionConfig) : ConfigExtension {
-    override val panel: JPanel = with(renderSystemsConfig) {
-        JPanel().apply {
-            border = BorderFactory.createTitledBorder("RenderSystems")
-            layout = MigLayout("wrap 1")
-
-            renderSystemsConfig.renderExtensions.forEach { renderExtension ->
-                add(JCheckBox(renderExtension::class.simpleName).apply {
-                    isSelected = renderExtension.enabled
-                    addActionListener {
-                        renderExtension.enabled = !renderExtension.enabled
-                    }
-                })
-            }
-        }
-    }
 }
