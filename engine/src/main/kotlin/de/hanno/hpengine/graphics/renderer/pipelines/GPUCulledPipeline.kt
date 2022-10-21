@@ -1,7 +1,9 @@
 package de.hanno.hpengine.graphics.renderer.pipelines
 
+import DrawElementsIndirectCommandStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.type
+import IntStruktImpl.Companion.sizeInBytes
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
@@ -11,35 +13,31 @@ import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.IndirectCulledDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
+import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.ZERO_BUFFER
-import de.hanno.hpengine.graphics.renderer.drawstrategy.renderHighZMap
-import de.hanno.hpengine.graphics.renderer.pipelines.Pipeline.Companion.HIGHZ_FORMAT
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.model.texture.TextureManager
-import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.util.Util
+import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL15.GL_WRITE_ONLY
-import kotlin.math.min
 
 open class GPUCulledPipeline @JvmOverloads constructor(
     private val config: Config,
@@ -48,7 +46,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
     private val textureManager: TextureManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val useBackFaceCulling: Boolean = true,
-) : Pipeline {
+) {
     // TODO: Fill these if possible
     private var verticesCount = 0
     private var entitiesCount = 0
@@ -115,7 +113,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         )
     }
 
-    override fun prepare(renderState: RenderState) {
+    fun prepare(renderState: RenderState) {
         if (config.debug.freezeCulling) return
 
         verticesCount = 0
@@ -140,12 +138,12 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         commandOrganizationAnimated.prepare(renderState.renderBatchesAnimated)
     }
 
-    override fun draw(
+    fun draw(
         renderState: RenderState,
         programStatic: Program<StaticFirstPassUniforms>,
-        programAnimated: Program<AnimatedFirstPassUniforms>,
-        firstPassResult: FirstPassResult
+        programAnimated: Program<AnimatedFirstPassUniforms>
     ) {
+        val firstPassResult = renderState.latestDrawResult.firstPassResult
         profiled("Actual draw entities") {
             val mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Faces
 
@@ -157,9 +155,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
                 mode,
                 renderState.camera,
                 renderState.camera
-            ) { renderState, program, renderCam ->
-                beforeDrawStatic(renderState, program, renderCam)
-            }
+            )
             val drawDescriptionAnimated = IndirectCulledDrawDescription(
                 renderState,
                 programAnimated,
@@ -168,9 +164,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
                 mode,
                 renderState.camera,
                 renderState.camera
-            ) { renderState, program, renderCam ->
-                beforeDrawAnimated(renderState, program, renderCam)
-            }
+            )
 
             cullAndRender(drawDescriptionStatic, drawDescriptionAnimated)
 
@@ -181,31 +175,6 @@ open class GPUCulledPipeline @JvmOverloads constructor(
             firstPassResult.verticesDrawn += verticesCount
             firstPassResult.entitiesDrawn += entitiesCount
         }
-    }
-
-    override fun beforeDrawStatic(
-        renderState: RenderState,
-        program: Program<StaticFirstPassUniforms>,
-        renderCam: Camera
-    ) {
-        beforeDraw(renderState, program, renderCam)
-    }
-
-    override fun beforeDrawAnimated(
-        renderState: RenderState,
-        program: Program<AnimatedFirstPassUniforms>,
-        renderCam: Camera
-    ) {
-        beforeDraw(renderState, program, renderCam)
-    }
-
-    fun beforeDraw(
-        renderState: RenderState, program: Program<out FirstPassUniforms>,
-        renderCam: Camera
-    ) {
-        gpuContext.cullFace = useBackFaceCulling
-        program.use()
-        program.setUniforms(renderState, renderCam, config, true)
     }
 
     private fun cullAndRender(
@@ -219,30 +188,11 @@ open class GPUCulledPipeline @JvmOverloads constructor(
             GL11.GL_UNSIGNED_BYTE,
             ZERO_BUFFER
         )
-        val cullAndRenderHelper = { profilerString: String, phase: CoarseCullingPhase ->
-            profiled(profilerString) {
-                cullAndRender(drawDescriptionStatic, phase.staticPhase) {
-                    beforeDrawStatic(
-                        drawDescriptionStatic.renderState,
-                        drawDescriptionStatic.program,
-                        drawDescriptionStatic.drawCam
-                    )
-                }
-                debugPrintPhase1(drawDescriptionStatic, CullingPhase.STATIC_ONE)
-
-                cullAndRender(drawDescriptionAnimated, phase.animatedPhase) {
-                    beforeDrawAnimated(
-                        drawDescriptionAnimated.renderState,
-                        drawDescriptionAnimated.program,
-                        drawDescriptionAnimated.drawCam
-                    )
-                }
-                debugPrintPhase1(drawDescriptionAnimated, CullingPhase.ANIMATED_ONE)
-
-                renderHighZMap()
-            }
+        profiled("Cull&Render Phase1") {
+            drawDescriptionStatic.cullAndRender(CoarseCullingPhase.ONE.staticPhase)
+            drawDescriptionAnimated.cullAndRender(CoarseCullingPhase.ONE.animatedPhase)
+            renderHighZMap()
         }
-        cullAndRenderHelper("Cull&Render Phase1", CoarseCullingPhase.ONE)
     }
 
     private val highZProgram = config.run {
@@ -252,23 +202,44 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         )
     }
 
-    private fun renderHighZMap() = renderHighZMap(
-        gpuContext,
-        baseDepthTexture.id,
-        config.width,
-        config.height,
-        highZBuffer.renderedTexture,
-        highZProgram
-    )
-
-    private fun cullPhase(
-        renderState: RenderState,
-        commandOrganization: CommandOrganizationGpuCulled,
-        phase: CullingPhase,
-        cullCam: Camera
-    ) = profiled("Culling Phase") {
-        determineVisibilities(renderState, commandOrganization, phase, cullCam)
-        appendDrawCalls(commandOrganization, renderState)
+    private fun renderHighZMap() = profile("HighZ map calculation") {
+        highZProgram.use()
+        var lastWidth = config.width
+        var lastHeight = config.height
+        var currentWidth = lastWidth / 2
+        var currentHeight = lastHeight / 2
+        val mipMapCount = Util.calculateMipMapCount(currentWidth, currentHeight)
+        for (mipmapTarget in 0 until mipMapCount) {
+            highZProgram.setUniform("width", currentWidth)
+            highZProgram.setUniform("height", currentHeight)
+            highZProgram.setUniform("lastWidth", lastWidth)
+            highZProgram.setUniform("lastHeight", lastHeight)
+            highZProgram.setUniform("mipmapTarget", mipmapTarget)
+            if (mipmapTarget == 0) {
+                gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, baseDepthTexture.id)
+            } else {
+                gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
+            }
+            gpuContext.bindImageTexture(
+                1,
+                highZBuffer.renderedTexture,
+                mipmapTarget,
+                false,
+                0,
+                GL15.GL_READ_WRITE,
+                HIGHZ_FORMAT
+            )
+            gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, baseDepthTexture.id)
+            val num_groups_x = Math.max(1, (currentWidth + 7) / 8)
+            val num_groups_y = Math.max(1, (currentHeight + 7) / 8)
+            highZProgram.dispatchCompute(num_groups_x, num_groups_y, 1)
+            lastWidth = currentWidth
+            lastHeight = currentHeight
+            currentWidth /= 2
+            currentHeight /= 2
+            GL42.glMemoryBarrier(GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
+            //            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        }
     }
 
     private fun determineVisibilities(
@@ -302,11 +273,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             setUniform("useFrustumCulling", config.debug.isUseGpuFrustumCulling)
             setUniform("useOcclusionCulling", config.debug.isUseGpuOcclusionCulling)
-            gpuContext.bindTexture(
-                0,
-                de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D,
-                highZBuffer.renderedTexture
-            )
+            gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
 //            gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT)
             gpuContext.bindImageTexture(
                 1,
@@ -314,7 +281,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
                 0,
                 false,
                 0,
-                GL15.GL_WRITE_ONLY,
+                GL_WRITE_ONLY,
                 debugMinMaxTexture.internalFormat
             )
             GL31.glDrawArraysInstanced(
@@ -334,15 +301,16 @@ open class GPUCulledPipeline @JvmOverloads constructor(
     ) {
         val drawCountBuffer = commandOrganization.drawCountsCompacted
         drawCountBuffer.put(0, 0)
-        val appendProgram =
-            if (config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandsComputeProgram else appendDrawCommandsProgram
+        val appendProgram = if (config.debug.isUseComputeShaderDrawCommandAppend) {
+            appendDrawCommandsComputeProgram
+        } else appendDrawCommandsProgram
 
         profiled("Buffer compaction") {
 
             with(commandOrganization) {
-                val instanceCount =
-                    commandOrganization.filteredRenderBatches.sumByLong { it.drawElementsIndirectCommand.instanceCount.toLong() }
-                        .toInt()
+                val instanceCount = commandOrganization.filteredRenderBatches.sumByLong {
+                        it.drawElementsIndirectCommand.instanceCount.toLong()
+                    }.toInt()
                 visibilities.resize(instanceCount)
                 commandOrganization.entitiesCompacted.ensureCapacityInBytes(instanceCount * EntityStrukt.sizeInBytes)
                 val entitiesCountersToUse = instanceCountForCommand
@@ -387,119 +355,101 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         }
     }
 
-    private fun cullAndRender(
-        drawDescription: IndirectCulledDrawDescription<out FirstPassUniforms>,
-        phase: CullingPhase,
-        beforeRender: () -> Unit
-    ) = with(drawDescription.commandOrganization) {
-        drawCountsCompacted.put(0, 0)
-        entitiesCompactedCounter.put(0, 0)
-        if (drawDescription.commandOrganization.commandCount != 0) {
-            with(drawDescription) {
-                cullPhase(renderState, commandOrganization, phase, cullCam)
-//                render(renderState, program, commandOrganization, vertexIndexBuffer, drawDescription.mode, beforeRender)
-                drawDescription.draw()
+    private fun IndirectCulledDrawDescription<out FirstPassUniforms>.cullAndRender(phase: CullingPhase) {
+        commandOrganization.drawCountsCompacted.put(0, 0)
+        commandOrganization.entitiesCompactedCounter.put(0, 0)
+
+        if (commandOrganization.commandCount != 0) {
+            profiled("Culling Phase") {
+                determineVisibilities(renderState, commandOrganization, phase, cullCam)
+                appendDrawCalls(commandOrganization, renderState)
             }
-        }
-    }
+            profiled("Actually render") {
 
-    private fun render(
-        renderState: RenderState,
-        program: Program<out FirstPassUniforms>,
-        commandOrganization: CommandOrganizationGpuCulled,
-        vertexIndexBuffer: VertexIndexBuffer,
-        mode: RenderingMode,
-        beforeRender: () -> Unit
-    ) = profiled("Actually render") {
-        program.use()
-        program.setUniforms(renderState, renderState.camera, config, true)
-        beforeRender()
-        program.setUniform("entityIndex", 0)
-        program.setUniform("entityBaseIndex", 0)
-        program.setUniform("indirect", true)
-        program.bindShaderStorageBuffer(3, commandOrganization.entitiesCompacted)
-        program.bindShaderStorageBuffer(4, commandOrganization.offsetsCompacted)
-        program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-        vertexIndexBuffer.multiDrawElementsIndirectCount(
-            commandOrganization.commandsCompacted,
-            commandOrganization.drawCountsCompacted,
-            0,
-            commandOrganization.filteredRenderBatches.size,
-            mode
-        )
-    }
+                gpuContext.cullFace = useBackFaceCulling
 
-    private fun debugPrintPhase1(
-        drawDescription: IndirectCulledDrawDescription<out FirstPassUniforms>,
-        phase: CullingPhase
-    ) {
-        if (config.debug.isPrintPipelineDebugOutput) {
-            GL11.glFinish()
-
-            fun printPhase1(commandOrganization: CommandOrganizationGpuCulled) {
-                with(commandOrganization) {
-                    val commandCount = drawCountsCompacted.buffer.getInt(0)
-                    if (commandCount == 0) return
-
-                    val instanceCount = entitiesCompactedCounter.buffer.getInt(0)
-                    println("########### $phase ")
-                    println("Visibilities")
-                    val visibilityCount = if (commandCount == 0) {
-                        0
-                    } else {
-                        var result = 0
-                        commandsCompacted.typedBuffer.forEach(commandCount) { result += it.instanceCount }
-                        result
+                program.use()
+                program.uniforms.apply {
+                    materials = renderState.materialBuffer
+                    entities = renderState.entitiesBuffer
+                    indirect = true
+                    when (this) {
+                        is StaticFirstPassUniforms -> vertices = renderState.vertexIndexBufferStatic.vertexStructArray
+                        is AnimatedFirstPassUniforms -> {
+                            joints = renderState.entitiesState.jointsBuffer
+                            vertices = renderState.vertexIndexBufferAnimated.animatedVertexStructArray
+                        }
                     }
-                    Util.printIntBuffer(visibilities.buffer.asIntBuffer(), visibilityCount, 1)
-                    println("Instance counts per command")
-                    Util.printIntBuffer(instanceCountForCommand.buffer.asIntBuffer(), commandCount, 1)
-                    println("DrawCounts compacted")
-                    println(drawCountsCompacted.buffer.getInt(0))
-                    println("Number of visible instances")
-                    println(instanceCount)
-                    println("Current compacted Pointers")
-                    Util.printIntBuffer(currentCompactedPointers.buffer.asIntBuffer(), commandCount, 1)
-                    println("Command offsets")
-                    Util.printIntBuffer(commandOffsets.buffer.asIntBuffer(), commandCount, 1)
-                    println("Command offsets culled")
-                    Util.printIntBuffer(offsetsCompacted.buffer.asIntBuffer(), commandCount, 1)
-                    println("Commands input")
-                    Util.printIntBuffer(commands.buffer.asIntBuffer(), 5, commandCount)
-                    println("Commands compacted")
-                    Util.printIntBuffer(commandsCompacted.buffer.asIntBuffer(), 5, commandCount)
-                    println("Entities compacted")
-                    entitiesCompacted.typedBuffer.forEach(min(instanceCount, 10)) { println(it.print()) }
-                }
-            }
+                    useRainEffect = config.effects.rainEffect != 0.0f
+                    rainEffect = config.effects.rainEffect
+                    viewMatrix = camera.viewMatrixAsBuffer
+                    lastViewMatrix = camera.viewMatrixAsBuffer
+                    projectionMatrix = camera.projectionMatrixAsBuffer
+                    viewProjectionMatrix = camera.viewProjectionMatrixAsBuffer
 
-            printPhase1(drawDescription.commandOrganization)
+                    eyePosition = camera.getPosition()
+                    near = camera.near
+                    far = camera.far
+                    time = renderState.time.toInt()
+                    useParallax = config.quality.isUseParallax
+                    useSteepParallax = config.quality.isUseSteepParallax
+
+                    entityIndex = 0
+                    entityBaseIndex = 0
+                    entities = renderState.entitiesState.entitiesBuffer
+                    entityOffsets = commandOrganization.offsetsForCommand
+                    when (this) {
+                        is StaticFirstPassUniforms -> Unit
+                        is AnimatedFirstPassUniforms -> joints = renderState.entitiesState.jointsBuffer
+                    }
+                }
+
+                program.bind()
+                vertexIndexBuffer.multiDrawElementsIndirectCount(
+                    commandOrganization.commands,
+                    commandOrganization.drawCountsCompacted,
+                    0,
+                    commandOrganization.commandCount,
+                    mode
+                )
+            }
         }
     }
 }
+
 val RenderBatch.canBeRenderedInIndirectBatch
     get() = !isForwardRendered && !hasOwnProgram && material.writesDepth && material.renderPriority == null
 
-fun <T : FirstPassUniforms> IndirectCulledDrawDescription<T>.draw() {
-    beforeDraw(renderState, program, drawCam)
-    with(commandOrganization) {
-        profiled("Actually render") {
-            program.useAndBind { uniforms ->
-                uniforms.entityIndex = 0
-                uniforms.entityBaseIndex = 0
-                uniforms.entities = renderState.entitiesState.entitiesBuffer
-                uniforms.entityOffsets = offsetsForCommand
-                when (uniforms) {
-                    is StaticFirstPassUniforms -> Unit
-                    is AnimatedFirstPassUniforms -> uniforms.joints = renderState.entitiesState.jointsBuffer
-                    else -> throw IllegalStateException("This can never happen")
-                }
 
-                vertexIndexBuffer.multiDrawElementsIndirectCount(commands, drawCountsCompacted, 0, commandCount, mode)
+fun addCommands(
+    renderBatches: List<RenderBatch>,
+    commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
+    entityOffsetBuffer: PersistentTypedBuffer<IntStrukt>
+) {
+    val resultingCommandCount = renderBatches.size
+    entityOffsetBuffer.resize(resultingCommandCount * IntStrukt.sizeInBytes)
+    entityOffsetBuffer.buffer.rewind()
+    commandBuffer.persistentMappedBuffer.enlarge(resultingCommandCount * DrawElementsIndirectCommandStrukt.sizeInBytes)
+    commandBuffer.persistentMappedBuffer.buffer.rewind()
+
+    commandBuffer.typedBuffer.byteBuffer.run {
+        for ((index, batch) in renderBatches.withIndex()) {
+            val command = batch.drawElementsIndirectCommand
+            commandBuffer.typedBuffer[index].run {
+                count = command.count
+                instanceCount = command.instanceCount
+                firstIndex = command.firstIndex
+                baseVertex = command.baseVertex
+                baseInstance = command.baseInstance
             }
+            entityOffsetBuffer.typedBuffer.forIndex(index) { it.value = batch.entityBufferIndex }
         }
     }
+    entityOffsetBuffer.buffer.rewind()
+    commandBuffer.typedBuffer.byteBuffer.rewind()
 }
+
+private const val HIGHZ_FORMAT = GL30.GL_R32F
 
 enum class CoarseCullingPhase {
     ONE,
@@ -535,3 +485,4 @@ class CommandOrganizationGpuCulled(gpuContext: GpuContext<*>) {
     val entitiesCompactedCounter = AtomicCounterBuffer(gpuContext, 1)
     val instanceCountForCommand = IndexBuffer(gpuContext)
 }
+

@@ -3,16 +3,13 @@ package de.hanno.hpengine.graphics.renderer
 import com.artemis.World
 import de.hanno.hpengine.backend.Backend
 import de.hanno.hpengine.backend.OpenGl
-import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.renderer.constants.CullMode
 import de.hanno.hpengine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.PostProcessingExtension
-import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -25,10 +22,6 @@ import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.pipelines.*
-import net.miginfocom.swing.MigLayout
-import javax.swing.BorderFactory
-import javax.swing.JCheckBox
-import javax.swing.JPanel
 
 class ExtensibleDeferredRenderer(
     val window: Window<OpenGl>,
@@ -69,43 +62,16 @@ class ExtensibleDeferredRenderer(
         get() = config.performance.isIndirectRendering && gpuContext.isSupported(BindlessTextures)
 
     val indirectPipeline: StateRef<GPUCulledPipeline> = renderStateManager.renderState.registerState {
-        object : GPUCulledPipeline(config, gpuContext, programManager, textureManager, deferredRenderingBuffer) {
-            override fun beforeDrawAnimated(
-                renderState: RenderState,
-                program: Program<AnimatedFirstPassUniforms>,
-                renderCam: Camera
-            ) {
-                super.beforeDrawAnimated(renderState, program, renderCam)
-                customBeforeDraw()
-            }
-
-            override fun beforeDrawStatic(
-                renderState: RenderState,
-                program: Program<StaticFirstPassUniforms>,
-                renderCam: Camera
-            ) {
-                super.beforeDrawStatic(renderState, program, renderCam)
-                customBeforeDraw()
-            }
-
-            private fun customBeforeDraw() {
-                deferredRenderingBuffer.use(gpuContext, false)
-                gpuContext.cullFace = true
-                gpuContext.depthMask = true
-                gpuContext.depthTest = true
-                gpuContext.depthFunc = GlDepthFunc.LESS
-                gpuContext.blend = false
-            }
-        }
+        GPUCulledPipeline(config, gpuContext, programManager, textureManager, deferredRenderingBuffer, true)
     }
-    private val staticDirectPipeline = renderStateManager.renderState.registerState {
+    private val staticDirectPipeline: StateRef<DirectFirstPassPipeline> = renderStateManager.renderState.registerState {
         object: DirectFirstPassPipeline(config, gpuContext, simpleColorProgramStatic) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 renderBatchesStatic.filterNot { it.canBeRenderedInIndirectBatch }
             } else renderBatchesStatic
         }
     }
-    private val animatedDirectPipeline = renderStateManager.renderState.registerState {
+    private val animatedDirectPipeline: StateRef<DirectFirstPassPipeline> = renderStateManager.renderState.registerState {
         object: DirectFirstPassPipeline(config, gpuContext, simpleColorProgramAnimated) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 renderBatchesAnimated.filterNot { it.canBeRenderedInIndirectBatch }
@@ -115,18 +81,12 @@ class ExtensibleDeferredRenderer(
         }
     }
 
-    override val eventBus
-        get() = backend.eventBus
-    override val gpuContext: GpuContext<OpenGl>
-        get() = backend.gpuContext
-    override val programManager: ProgramManager<OpenGl>
-        get() = backend.programManager
-    override val textureManager: TextureManager
-        get() = backend.textureManager
-    override val input: Input
-        get() = backend.input
-    override val addResourceContext: AddResourceContext
-        get() = backend.addResourceContext
+    override val eventBus get() = backend.eventBus
+    override val gpuContext: GpuContext<OpenGl> get() = backend.gpuContext
+    override val programManager: ProgramManager<OpenGl> get() = backend.programManager
+    override val textureManager: TextureManager get() = backend.textureManager
+    override val input: Input get() = backend.input
+    override val addResourceContext: AddResourceContext get() = backend.addResourceContext
 
     override fun update(deltaSeconds: Float) {
         val currentWriteState = renderStateManager.renderState.currentWriteState
@@ -179,7 +139,11 @@ class ExtensibleDeferredRenderer(
             }
 
             if (useIndirectRendering) {
-                renderState[indirectPipeline].draw(renderState, simpleColorProgramStatic, simpleColorProgramAnimated, renderState.latestDrawResult.firstPassResult)
+                renderState[indirectPipeline].draw(
+                    renderState,
+                    simpleColorProgramStatic,
+                    simpleColorProgramAnimated
+                )
             }
             for (extension in extensions) {
                 profiled(extension.javaClass.simpleName) {

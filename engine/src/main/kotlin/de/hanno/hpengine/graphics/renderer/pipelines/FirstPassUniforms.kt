@@ -66,46 +66,6 @@ open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUnifor
         AnimatedVertexStruktPacked.type))
 }
 
-fun Program<out FirstPassUniforms>.setUniforms(
-    renderState: RenderState,
-    camera: Camera,
-    config: Config,
-    indirect: Boolean
-) {
-
-    val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
-    val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
-    val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
-
-    useAndBind { uniforms ->
-        uniforms.apply {
-            materials = renderState.materialBuffer
-            entities = renderState.entitiesBuffer
-            this.indirect = indirect
-            when(this) {
-                is StaticFirstPassUniforms -> vertices = renderState.vertexIndexBufferStatic.vertexStructArray
-                is AnimatedFirstPassUniforms -> {
-                    joints = renderState.entitiesState.jointsBuffer
-                    vertices = renderState.vertexIndexBufferAnimated.animatedVertexStructArray
-                }
-            }
-            useRainEffect = config.effects.rainEffect != 0.0f
-            rainEffect = config.effects.rainEffect
-            viewMatrix = viewMatrixAsBuffer
-            lastViewMatrix = viewMatrixAsBuffer
-            projectionMatrix = projectionMatrixAsBuffer
-            viewProjectionMatrix = viewProjectionMatrixAsBuffer
-
-            eyePosition = camera.getPosition()
-            near = camera.near
-            far = camera.far
-            time = renderState.time.toInt()
-            useParallax = config.quality.isUseParallax
-            useSteepParallax = config.quality.isUseSteepParallax
-        }
-    }
-}
-
 fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>) {
     for (mapEnumEntry in Material.MAP.values()) {
 

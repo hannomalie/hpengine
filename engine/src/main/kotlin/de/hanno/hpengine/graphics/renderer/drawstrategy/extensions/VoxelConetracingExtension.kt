@@ -15,6 +15,7 @@ import de.hanno.hpengine.graphics.renderer.constants.GlCap.*
 import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
+import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension.Companion
 import de.hanno.hpengine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.shader.*
@@ -34,7 +35,7 @@ import org.lwjgl.opengl.GL30.GL_RED_INTEGER
 import kotlin.math.max
 
 fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExtension.GIVolumeGrids {
-    return de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension.GIVolumeGrids(
+    return VoxelConeTracingExtension.GIVolumeGrids(
         getTexture3D(
             gridSize,
             VoxelConeTracingExtension.gridTextureFormatSized,
@@ -44,7 +45,7 @@ fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExt
         ),
         getTexture3D(
             gridSize,
-            de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension.indexGridTextureFormatSized,
+            VoxelConeTracingExtension.indexGridTextureFormatSized,
             de.hanno.hpengine.graphics.renderer.constants.MinFilter.NEAREST,
             de.hanno.hpengine.graphics.renderer.constants.MagFilter.NEAREST,
             GL12.GL_CLAMP_TO_EDGE
@@ -89,35 +90,29 @@ class VoxelConeTracingExtension(
 
     }
 
-    private val voxelizerStatic = run {
-        programManager.getProgram(
-                config.EngineAsset("shaders/voxelize_vertex.glsl").toCodeSource(),
-                config.EngineAsset("shaders/voxelize_fragment.glsl").toCodeSource(),
-                config.EngineAsset("shaders/voxelize_geometry.glsl").toCodeSource(),
-                Defines(),
-                VoxelizerUniformsStatic(gpuContext)
-        )
-    }
+    private val voxelizerStatic = programManager.getProgram(
+        config.EngineAsset("shaders/voxelize_vertex.glsl").toCodeSource(),
+        config.EngineAsset("shaders/voxelize_fragment.glsl").toCodeSource(),
+        config.EngineAsset("shaders/voxelize_geometry.glsl").toCodeSource(),
+        Defines(),
+        VoxelizerUniformsStatic(gpuContext)
+    )
 
-    private val voxelizerAnimated = run {
-        programManager.getProgram(
-                config.EngineAsset("shaders/voxelize_vertex.glsl").toCodeSource(),
-                config.EngineAsset("shaders/voxelize_fragment.glsl").toCodeSource(),
-                config.EngineAsset("shaders/voxelize_geometry.glsl").toCodeSource(),
-                Defines(),
-                VoxelizerUniformsStatic(gpuContext)
-        )
-    }
+    private val voxelizerAnimated = programManager.getProgram(
+        config.EngineAsset("shaders/voxelize_vertex.glsl").toCodeSource(),
+        config.EngineAsset("shaders/voxelize_fragment.glsl").toCodeSource(),
+        config.EngineAsset("shaders/voxelize_geometry.glsl").toCodeSource(),
+        Defines(),
+        VoxelizerUniformsStatic(gpuContext)
+    )
 
-    private val voxelConeTraceProgram: Program<Uniforms> = run {
-        programManager.getProgram(
-                config.EngineAsset("shaders/passthrough_vertex.glsl").toCodeSource(),
-                config.EngineAsset("shaders/voxel_cone_trace_fragment.glsl").toCodeSource(),
-                null,
-                Defines(),
-                Uniforms.Empty
-        )
-    }
+    private val voxelConeTraceProgram: Program<Uniforms> = programManager.getProgram(
+        config.EngineAsset("shaders/passthrough_vertex.glsl").toCodeSource(),
+        config.EngineAsset("shaders/voxel_cone_trace_fragment.glsl").toCodeSource(),
+        null,
+        Defines(),
+        Uniforms.Empty
+    )
 
     private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = run { programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_mipmap_alphablend_compute.glsl")) }
     private val texture3DMipMapComputeProgram: ComputeProgram = run { programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_mipmap_compute.glsl")) }
@@ -127,7 +122,8 @@ class VoxelConeTracingExtension(
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val pipeline = DirectPipeline(config, gpuContext)
+    private val staticPipeline = DirectFirstPassPipeline(config, gpuContext, voxelizerStatic)
+    private val animatedPipeline = DirectFirstPassPipeline(config, gpuContext, voxelizerAnimated)
     private val firstPassResult = FirstPassResult()
     private val useIndirectDrawing = false
 
@@ -219,20 +215,15 @@ class VoxelConeTracingExtension(
                 gpuContext.disable(CULL_FACE)
                 GL11.glColorMask(false, false, false, false)
 
-                if (useIndirectDrawing && config.performance.isIndirectRendering) {
-                    firstPassResult.reset()
-                    pipeline.draw(renderState, voxelizerStatic as Program<StaticFirstPassUniforms>, voxelizerAnimated as Program<AnimatedFirstPassUniforms>, firstPassResult)
-                } else {
-                    renderState.vertexIndexBufferStatic.indexBuffer.bind()
-                    for (entity in batches) {
-                        voxelizerStatic.setTextureUniforms(entity.material.maps)
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(
-                            entity.drawElementsIndirectCommand,
-                            bindIndexBuffer = false,
-                            primitiveType = PrimitiveType.Triangles,
-                            mode = RenderingMode.Faces
-                        )
-                    }
+                renderState.vertexIndexBufferStatic.indexBuffer.bind()
+                for (entity in batches) {
+                    voxelizerStatic.setTextureUniforms(entity.material.maps)
+                    renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                        entity.drawElementsIndirectCommand,
+                        bindIndexBuffer = false,
+                        primitiveType = PrimitiveType.Triangles,
+                        mode = RenderingMode.Faces
+                    )
                 }
 
                 if(config.debug.isDebugVoxels) {
@@ -306,7 +297,7 @@ class VoxelConeTracingExtension(
         GL11.glColorMask(true, true, true, true)
     }
 
-    override fun update(deltaSeconds: Float) = pipeline.prepare(renderStateManager.renderState.currentWriteState)
+    override fun update(deltaSeconds: Float) = staticPipeline.prepare(renderStateManager.renderState.currentWriteState)
 
     private fun mipmapGrid(textureId: Int, renderState: RenderState) = profiled("grid mipmap") {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
