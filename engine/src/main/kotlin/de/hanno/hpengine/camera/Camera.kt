@@ -1,7 +1,7 @@
 package de.hanno.hpengine.camera
 
 import de.hanno.hpengine.graphics.shader.safePut
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.util.Util
 import org.joml.*
 import org.lwjgl.BufferUtils

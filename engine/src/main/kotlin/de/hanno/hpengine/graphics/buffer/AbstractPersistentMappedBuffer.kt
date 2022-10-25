@@ -1,25 +1,24 @@
 package de.hanno.hpengine.graphics.buffer
 
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL44
-
-import java.nio.ByteBuffer
-
 import org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT
 import org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT
 import org.lwjgl.opengl.GL15.*
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT
+import org.lwjgl.opengl.GL44
 import org.lwjgl.opengl.GL45.glCopyNamedBufferSubData
+import java.nio.ByteBuffer
 
 val flags = GL_MAP_WRITE_BIT or GL_MAP_PERSISTENT_BIT or GL_MAP_COHERENT_BIT
 
 abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(
     private val gpuContext: GpuContext<*>,
-    protected var target: Int,
+    override var target: Int,
     capacityInBytes: Int = 1024
-) : GPUBuffer {
+) : GpuBuffer {
     private var bufferDefinition: BufferDefinition = createBuffer(capacityInBytes)
         set(value) {
             val oldBufferDefinition = bufferDefinition
@@ -28,16 +27,8 @@ abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(
             oldBufferDefinition.deleteBuffer()
         }
 
-    override val id: Int
-        get() = bufferDefinition.id
-    override val buffer: ByteBuffer
-        get() = bufferDefinition.buffer
-
-    override var sizeInBytes: Int
-        get() = buffer.capacity()
-        set(value) {
-            ensureCapacityInBytes(value)
-        }
+    override val id: Int get() = bufferDefinition.id
+    override val buffer: ByteBuffer get() = bufferDefinition.buffer
 
     private val bindBufferRunnable = {
         glBindBuffer(target, id)
@@ -94,6 +85,6 @@ abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(
     }
 
     override fun unbind() {
-        gpuContext.window.invoke() { glBindBuffer(target, 0) }
+        gpuContext.window.invoke { glBindBuffer(target, 0) }
     }
 }

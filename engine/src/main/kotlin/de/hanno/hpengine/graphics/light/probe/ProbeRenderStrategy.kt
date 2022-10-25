@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.light.probe
 
+import AmbientCubeImpl.Companion.sizeInBytes
 import de.hanno.hpengine.backend.Backend
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.config.Config
@@ -97,7 +98,7 @@ class ProbeRenderStrategy(
     private val visibilityValueBuffers: Array<out FloatBuffer> =
         (0..5).map { BufferUtils.createFloatBuffer(resolution * resolution * 4 * 6) }.toTypedArray()
 
-    private val ambientCubeCache = HashMap<Vector3i, AmbientCube>()
+    private val ambientCubeCache = HashMap<Vector3i, AmbientCubeData>()
 
 
     val probeGrid = PersistentMappedBuffer(
@@ -187,7 +188,7 @@ class ProbeRenderStrategy(
                         GL11.GL_RGBA8
                     )
                     val distanceCubeMap = CubeMap(gpuContext, dimension, filterConfig, GL_RG16F)
-                    AmbientCube(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
+                    AmbientCubeData(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
                 }
 
                 glFinish()
@@ -219,8 +220,6 @@ class ProbeRenderStrategy(
 //        probeGrid.put(0, getAmbientCubes())
         }
     }
-
-    fun getAmbientCubes() = ambientCubeCache.values.toList().sorted()
 
     private fun getCubeMapIndex(x: Int, y: Int, z: Int): Int {
         return (z) * dimension * dimension + (y) * dimension + (x)

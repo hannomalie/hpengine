@@ -3,7 +3,7 @@ package de.hanno.hpengine.artemis
 import com.artemis.Component
 import de.hanno.hpengine.graphics.renderer.environmentsampler.EnvironmentSampler
 import de.hanno.hpengine.transform.AABB
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.transform.TransformSpatial
 import org.joml.Vector3f
 import org.joml.Vector3fc

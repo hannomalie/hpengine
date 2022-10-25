@@ -7,7 +7,7 @@ import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import org.lwjgl.BufferUtils
-import struktgen.TypedBuffer
+import struktgen.api.TypedBuffer
 import java.io.File
 
 class StaticModel(

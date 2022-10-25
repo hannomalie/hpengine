@@ -34,6 +34,7 @@ import org.lwjgl.assimp.Assimp.aiTextureType_HEIGHT
 import org.lwjgl.assimp.Assimp.aiTextureType_NONE
 import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
 import org.lwjgl.assimp.Assimp.aiTextureType_SPECULAR
+import java.io.File
 import java.nio.IntBuffer
 import java.nio.file.Path
 import java.util.ArrayList
@@ -44,7 +45,9 @@ const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_J
 
 class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
     fun load(file: String, textureManager: TextureManager, resourcesDir: AbstractDirectory): StaticModel {
-        val absolutePath = resourcesDir.resolve(file).absolutePath
+        val absolutePath = resourcesDir.resolve(file).absolutePath.apply {
+            check(File(this).exists()) { "File $this does not exist, can't load static model" }
+        }
         val aiScene = Assimp.aiImportFile(absolutePath, flags) ?: throw IllegalStateException("Cannot load model $absolutePath")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()

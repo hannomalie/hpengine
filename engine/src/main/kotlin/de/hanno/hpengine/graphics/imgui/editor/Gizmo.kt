@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.imgui.editor
 
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import imgui.ImGui
 import imgui.extension.imguizmo.ImGuizmo
 import imgui.extension.imguizmo.flag.Mode

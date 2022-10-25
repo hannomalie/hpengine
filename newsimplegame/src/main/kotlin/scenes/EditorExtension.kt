@@ -1,19 +1,14 @@
 package scenes
 
 import de.hanno.hpengine.Engine
-import de.hanno.hpengine.addStaticModelEntity
-import de.hanno.hpengine.artemis.InstanceComponent
 import de.hanno.hpengine.artemis.KotlinComponent
 import de.hanno.hpengine.artemis.NameComponent
-import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.config.ConfigImpl
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.loadScene
 import de.hanno.hpengine.ressources.FileBasedCodeSource
-import de.hanno.hpengine.ressources.StringBasedCodeSource
-import org.joml.Vector3f
 import java.io.File
 
 fun main() {

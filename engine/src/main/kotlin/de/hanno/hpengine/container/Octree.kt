@@ -4,7 +4,7 @@ import com.artemis.Entity
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.lifecycle.Updatable
 import de.hanno.hpengine.transform.AABB
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.transform.isInFrustum
 import de.hanno.hpengine.stopwatch.StopWatch
 import org.joml.Matrix4f

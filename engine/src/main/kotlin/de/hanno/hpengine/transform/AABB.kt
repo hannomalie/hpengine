@@ -1,43 +1,12 @@
 package de.hanno.hpengine.transform
 
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.artemis.SpatialComponent
 import de.hanno.hpengine.model.Instance
 import de.hanno.hpengine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.util.isEqualTo
 import org.joml.*
-
-inline val Vector3fc.x
-    get() = x()
-inline val Vector3fc.y
-    get() = y()
-inline val Vector3fc.z
-    get() = z()
-
-inline var Vector3f.x
-    get() = x()
-    set(value) {
-        x = value
-    }
-inline var Vector3f.y
-    get() = y()
-    set(value) {
-        y = value
-    }
-inline var Vector3f.z
-    get() = z()
-    set(value) {
-        z = value
-    }
-
-inline val Vector4fc.x
-    get() = x()
-inline val Vector4fc.y
-    get() = y()
-inline val Vector4fc.z
-    get() = z()
-inline val Vector4fc.w
-    get() = w()
 
 sealed class BoundingVolume
 

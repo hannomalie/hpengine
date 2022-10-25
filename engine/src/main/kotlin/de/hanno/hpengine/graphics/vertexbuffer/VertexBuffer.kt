@@ -17,10 +17,6 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
                         values: FloatArray) : PersistentMappedBuffer(gpuContext, values.size * java.lang.Float.BYTES, GL15.GL_ARRAY_BUFFER) {
 
 
-    constructor(gpuContext: GpuContext<*>,
-                buffer: FloatBuffer,
-                channels: EnumSet<DataChannels>) : this(gpuContext, channels, FloatArray(buffer.capacity()).apply { buffer.get(this) })
-
     var verticesCount: Int = calculateVerticesCount(buffer, channels)
         private set
     var triangleCount: Int = verticesCount / 3
@@ -32,7 +28,7 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
 
     init {
         ensureCapacityInBytes(values.size * java.lang.Float.BYTES)
-        putValues(*values)
+        buffer.asFloatBuffer().put(values)
     }
 
     private val uploaded = true
@@ -104,7 +100,7 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
         vertexArrayObject.bind()
     }
 
-    override fun putValues(floatOffset: Int, vararg values: Float) {
+    fun putValues(floatOffset: Int, vararg values: Float) {
         ensureCapacityInBytes((floatOffset + values.size) * java.lang.Float.BYTES)
         val floatBuffer = buffer.asFloatBuffer()
         floatBuffer.position(floatOffset)

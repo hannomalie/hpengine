@@ -13,20 +13,10 @@ import org.lwjgl.opengl.GL40
 import org.lwjgl.opengl.GL40.GL_DRAW_INDIRECT_BUFFER
 import org.lwjgl.opengl.GL43
 import org.lwjgl.opengl.GL44
-import struktgen.TypedBuffer
 import struktgen.api.Strukt
 import struktgen.api.StruktType
+import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
-
-interface Buffer {
-    val buffer: ByteBuffer
-}
-
-interface GpuBuffer : Buffer {
-    val target: Int
-    val id: Int
-    override val buffer: ByteBuffer
-}
 
 interface TypedGpuBuffer<T> : GpuBuffer {
     val typedBuffer: TypedBuffer<T>
@@ -54,6 +44,12 @@ class PersistentMappedBufferAllocator(
             override val target = this@PersistentMappedBufferAllocator.target
             override val id = id
             override val buffer = newBuffer
+            override fun ensureCapacityInBytes(requestedCapacity: Int) {
+                ensureCapacityInBytes(null, capacityInBytes)
+            }
+
+            override fun bind() = GL15.glBindBuffer(target, id)
+            override fun unbind() = GL15.glBindBuffer(target, 0)
         }
     }
 
@@ -125,13 +121,14 @@ fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000) =
 data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMappedBuffer, val type: StruktType<T>) :
     GpuBuffer by persistentMappedBuffer,
     TypedGpuBuffer<T> {
+
     override val typedBuffer = object : TypedBuffer<T>(type) {
         override val byteBuffer: ByteBuffer get() = persistentMappedBuffer.buffer
     }
     override val buffer: ByteBuffer get() = persistentMappedBuffer.buffer
 
     @Synchronized
-    fun ensureCapacityInBytes(requestedCapacity: Int) = persistentMappedBuffer.ensureCapacityInBytes(requestedCapacity)
+    override fun ensureCapacityInBytes(requestedCapacity: Int) = persistentMappedBuffer.ensureCapacityInBytes(requestedCapacity)
 
     @Synchronized
     fun resize(requestedCapacity: Int) = persistentMappedBuffer.resize(requestedCapacity)
@@ -163,21 +160,18 @@ class PersistentMappedBuffer(
     override val target: Int
         get() = gpuBuffer.target
 
-    val sizeInBytes: Int
-        get() = buffer.capacity()
-
     @Synchronized
-    fun ensureCapacityInBytes(requestedCapacity: Int) {
+    override fun ensureCapacityInBytes(requestedCapacity: Int) {
         gpuBuffer = allocator.ensureCapacityInBytes(gpuBuffer, requestedCapacity)
     }
 
-    fun bind() {
+    override fun bind() {
         gpuContext.invoke {
             GL15.glBindBuffer(target, id)
         }
     }
 
-    fun unbind() {
+    override fun unbind() {
         gpuContext.invoke { GL15.glBindBuffer(target, 0) }
     }
 

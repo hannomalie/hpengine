@@ -1,6 +1,5 @@
-package de.hanno.hpengine.transform
+package de.hanno.hpengine
 
-import de.hanno.hpengine.Parentable
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f

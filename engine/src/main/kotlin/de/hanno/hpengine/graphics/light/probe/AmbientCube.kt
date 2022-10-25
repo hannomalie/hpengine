@@ -1,47 +1,18 @@
 package de.hanno.hpengine.graphics.light.probe
 
-import de.hanno.hpengine.graphics.buffer.Bufferable
+import de.hanno.hpengine.math.Vector3fStrukt
 import de.hanno.hpengine.model.texture.CubeMap
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL13
+import struktgen.api.Strukt
 import java.nio.ByteBuffer
-
-class AmbientCube(val position: Vector3f, val cubeMap: CubeMap, val distanceMap: CubeMap, val index: Int): Bufferable, Comparable<AmbientCube> {
-    override fun compareTo(other: AmbientCube) = index.compareTo(other.index)
-
-    override fun putToBuffer(buffer: ByteBuffer) {
-        buffer.putFloat(position.x)
-        buffer.putFloat(position.y)
-        buffer.putFloat(position.z)
-        buffer.putFloat(-1f)
-        buffer.putDouble(java.lang.Double.longBitsToDouble(cubeMap.handle))
-        buffer.putDouble(java.lang.Double.longBitsToDouble(distanceMap.handle))
-    }
-
-    override val bytesPerObject get() = sizeInBytes
-
-    override fun debugPrintFromBuffer(buffer: ByteBuffer): String {
-        return staticDebugPrintFromBuffer(buffer)
-    }
-
-    companion object {
-        const val sizeInBytes = java.lang.Float.BYTES * 4 + java.lang.Double.BYTES * 2
-
-        fun staticDebugPrintFromBuffer(buffer: ByteBuffer): String {
-            val builder = StringBuilder()
-
-            builder.appendln("position.x = ${buffer.float}")
-            builder.appendln("position.y = ${buffer.float}")
-            builder.appendln("position.z = ${buffer.float}")
-            builder.appendln("filler = ${buffer.float}")
-            builder.appendln("handle = ${buffer.double}")
-            builder.appendln("filler = ${buffer.double}")
-
-            val resultString = builder.toString()
-            println(resultString)
-            return resultString
-        }
-    }
+data class AmbientCubeData(val position: Vector3f, val cubeMap: CubeMap, val distanceMap: CubeMap, val index: Int)
+interface AmbientCube: Strukt {
+    context(ByteBuffer) val position: Vector3fStrukt
+    context(ByteBuffer) val dummy: Float
+    context(ByteBuffer) val cubeMapHandle: Double
+    context(ByteBuffer) val distanceMapHandle: Double
+    companion object
 }
 
 sealed class CubemapSide(val value: Int) {

@@ -26,7 +26,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.enlarge
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f

@@ -5,7 +5,7 @@ import de.hanno.hpengine.model.animation.AnimationController
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.Spatial
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.Parentable
 

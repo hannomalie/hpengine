@@ -15,7 +15,7 @@ import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
-import struktgen.TypedBuffer
+import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
 import de.hanno.hpengine.artemis.ModelComponent
 

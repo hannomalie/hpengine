@@ -11,7 +11,7 @@ import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.material.ProgramDescription
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.ressources.CodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource

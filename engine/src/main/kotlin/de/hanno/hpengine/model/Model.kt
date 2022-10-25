@@ -8,7 +8,7 @@ import de.hanno.hpengine.transform.boundingSphereRadius
 import de.hanno.hpengine.buffers.copyTo
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
-import struktgen.TypedBuffer
+import struktgen.api.TypedBuffer
 import struktgen.api.Strukt
 import java.io.File
 

@@ -31,17 +31,16 @@ class GlfwWindow @JvmOverloads constructor(
     override var width: Int,
     override var height: Int,
     title: String,
-    private var _vSync: Boolean = true,
+    _vSync: Boolean = true,
     errorCallback: GLFWErrorCallbackI = printErrorCallback,
     closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
     val executor: OpenGlExecutor = OpenGlExecutorImpl()
 ) : Window<OpenGl>, OpenGlExecutor by executor {
 
-    override var vSync: Boolean
-        get() { return _vSync }
+    override var vSync: Boolean = _vSync
         set(value) {
             glfwSwapInterval(if (value) 1 else 0)
-            _vSync = value
+            field = value
         }
     override var title = title
         set(value) {

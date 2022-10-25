@@ -51,6 +51,8 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
 
+    api(project(":api"))
+
     api("javax.inject:javax.inject:1")
 
     api("com.github.s1monw1:KtsRunner:v0.0.7")
@@ -87,7 +89,6 @@ dependencies {
     api("set.sf.sociaal:jbullet:3.0.0.20130526")
     api("com.google.guava:guava:10.0.1")
     api("net.engio:mbassador:1.2.4")
-    api("commons-io:commons-io:2.4")
     api("de.ruedigermoeller:fst:2.33")
     api("com.carrotsearch:hppc:0.7.2")
 //    api("de.hanno.compiler:java-compiler:1.4")
@@ -103,7 +104,6 @@ dependencies {
     api("com.dreizak:miniball:1.0.3")
     api("org.apache.logging.log4j:log4j-api:2.13.0")
     api("org.apache.logging.log4j:log4j-core:2.13.0")
-    api("io.github.classgraph:classgraph:4.8.89")
 
     api("de.hanno.struktgen:api:1.0.0-SNAPSHOT")
     ksp("de.hanno.struktgen:processor:1.0.0-SNAPSHOT")

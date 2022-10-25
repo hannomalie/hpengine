@@ -12,13 +12,13 @@ import java.util.logging.Logger
 import java.util.regex.Pattern
 
 sealed class Shader(private val programManager: ProgramManager<*>,
-                    var source: CodeSource,
+                    override var source: CodeSource,
                     val defines: Defines = Defines(),
                     val shaderType: ShaderType
-) : Reloadable {
+) : Reloadable, de.hanno.hpengine.graphics.shader.api.Shader {
     private val gpuContext = programManager.gpuContext
 
-    val id = programManager.gpuContext { GL20.glCreateShader(shaderType.glShaderType) } // TODO: Abstract createShader in gpuContext
+    override val id = programManager.gpuContext { GL20.glCreateShader(shaderType.glShaderType) } // TODO: Abstract createShader in gpuContext
 
     override fun load() {
         source.load()

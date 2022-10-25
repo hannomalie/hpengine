@@ -8,8 +8,6 @@ import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
-import de.hanno.hpengine.camera.Camera
-import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.shader.BooleanType
@@ -20,15 +18,13 @@ import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.SSBO
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.Vec3
-import de.hanno.hpengine.graphics.shader.useAndBind
-import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.texture.Texture
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils.createFloatBuffer
 

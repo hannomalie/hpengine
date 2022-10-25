@@ -45,7 +45,7 @@ import de.hanno.hpengine.model.texture.CubeMap
 import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
@@ -53,7 +53,7 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
-import struktgen.TypedBuffer
+import struktgen.api.TypedBuffer
 import java.nio.FloatBuffer
 import java.util.ArrayList
 

@@ -7,7 +7,7 @@ import java.lang.StringBuilder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import de.hanno.hpengine.camera.Camera
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import org.joml.*
 import java.io.File
 import java.io.InputStream

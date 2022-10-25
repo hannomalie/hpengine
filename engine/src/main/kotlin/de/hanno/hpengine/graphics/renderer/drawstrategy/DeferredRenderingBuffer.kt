@@ -87,7 +87,14 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
 
     val fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(width, height))
     val exposureBuffer = PersistentMappedBuffer(gpuContext, 4 * 8).apply {
-        putValues(1f, -1f, 0f, 1f)
+        buffer.rewind()
+        buffer.asDoubleBuffer().apply {
+            put(1.0)
+            put(-1.0)
+            put(0.0)
+            put(1.0)
+
+        }
     }
     val lightAccumulationMapOneId: Int = laBuffer.getRenderedTexture(0)
 

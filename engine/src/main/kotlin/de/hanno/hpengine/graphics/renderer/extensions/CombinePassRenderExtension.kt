@@ -34,7 +34,7 @@ class CombinePassRenderExtension(private val config: Config,
 
     fun renderCombinePass(state: RenderState, renderTarget: RenderTarget<Texture2D> = deferredRenderingBuffer.finalBuffer) {
         if(!config.effects.isAutoExposureEnabled) {
-            deferredRenderingBuffer.exposureBuffer.putValues(0, state.camera.exposure)
+            deferredRenderingBuffer.exposureBuffer.buffer.putFloat(0, state.camera.exposure)
         }
         profiled("Combine pass") {
             renderTarget.use(gpuContext, false)

@@ -67,12 +67,12 @@ open class DirectFirstPassPipeline(
                         materials = renderState.materialBuffer
                         entities = renderState.entitiesBuffer
                         program.uniforms.indirect = false
-                        when (program.uniforms) {
-                            is StaticFirstPassUniforms -> program.uniforms.vertices =
+                        when (val uniforms = program.uniforms) {
+                            is StaticFirstPassUniforms -> uniforms.vertices =
                                 renderState.vertexIndexBufferStatic.vertexStructArray
                             is AnimatedFirstPassUniforms -> {
-                                program.uniforms.joints = renderState.entitiesState.jointsBuffer
-                                program.uniforms.vertices = renderState.vertexIndexBufferAnimated.animatedVertexStructArray
+                                uniforms.joints = renderState.entitiesState.jointsBuffer
+                                uniforms.vertices = renderState.vertexIndexBufferAnimated.animatedVertexStructArray
                             }
                         }
                         useRainEffect = config.effects.rainEffect != 0.0f
@@ -115,11 +115,11 @@ open class DirectFirstPassPipeline(
                 materials = renderState.materialBuffer
                 entities = renderState.entitiesBuffer
                 program.uniforms.indirect = false
-                when (program.uniforms) {
-                    is StaticFirstPassUniforms -> program.uniforms.vertices = renderState.vertexIndexBufferStatic.vertexStructArray
+                when (val uniforms = program.uniforms) {
+                    is StaticFirstPassUniforms -> uniforms.vertices = renderState.vertexIndexBufferStatic.vertexStructArray
                     is AnimatedFirstPassUniforms -> {
-                        program.uniforms.joints = renderState.entitiesState.jointsBuffer
-                        program.uniforms.vertices = renderState.vertexIndexBufferAnimated.animatedVertexStructArray
+                        uniforms.joints = renderState.entitiesState.jointsBuffer
+                        uniforms.vertices = renderState.vertexIndexBufferAnimated.animatedVertexStructArray
                     }
                 }
                 useRainEffect = config.effects.rainEffect != 0.0f

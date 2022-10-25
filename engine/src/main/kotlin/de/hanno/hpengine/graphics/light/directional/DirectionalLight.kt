@@ -3,16 +3,13 @@ package de.hanno.hpengine.graphics.light.directional
 import com.artemis.*
 import com.artemis.annotations.All
 import com.artemis.annotations.Wire
-import com.artemis.utils.Bag
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.entity.CycleSystem
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor
-import de.hanno.hpengine.transform.Transform
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
+import de.hanno.hpengine.Transform
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf

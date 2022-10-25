@@ -11,7 +11,6 @@ import com.artemis.annotations.One
 import com.artemis.hackedOutComponents
 import com.artemis.link.LinkListener
 import com.artemis.utils.IntBag
-import de.hanno.hpengine.BufferableMatrix4f
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
@@ -44,9 +43,10 @@ import de.hanno.hpengine.transform.StaticTransformSpatial
 import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.buffers.copyTo
 import org.joml.FrustumIntersection
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
-import struktgen.typed
+import struktgen.api.typed
 import java.util.concurrent.CopyOnWriteArrayList
 
 
@@ -93,7 +93,7 @@ class ModelSystem(
     val vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
     val vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10)
 
-    val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
+    val joints: MutableList<Matrix4f> = CopyOnWriteArrayList()
 
     val allocations: MutableMap<ModelComponentDescription, Allocation> = mutableMapOf()
 

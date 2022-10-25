@@ -20,7 +20,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.model.enlarge
 import de.hanno.hpengine.system.Extractor
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.buffers.copyTo
 

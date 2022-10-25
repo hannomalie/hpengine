@@ -4,8 +4,8 @@ import EntityStruktImpl.Companion.type
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.buffers.copyTo
 import org.lwjgl.BufferUtils
-import struktgen.TypedBuffer
-import struktgen.typed
+import struktgen.api.TypedBuffer
+import struktgen.api.typed
 
 class EntityBuffer(val underlying: TypedBuffer<EntityStrukt> = BufferUtils.createByteBuffer(EntityStrukt.type.sizeInBytes).typed(
     EntityStrukt.type))

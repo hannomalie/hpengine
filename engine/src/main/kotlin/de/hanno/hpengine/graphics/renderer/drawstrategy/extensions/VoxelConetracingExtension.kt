@@ -15,7 +15,6 @@ import de.hanno.hpengine.graphics.renderer.constants.GlCap.*
 import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension.Companion
 import de.hanno.hpengine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.shader.*
@@ -27,7 +26,7 @@ import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.model.texture.Texture3D
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.transform.Transform
+import de.hanno.hpengine.Transform
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*

@@ -17,7 +17,7 @@ import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
-import struktgen.TypedBuffer
+import struktgen.api.TypedBuffer
 import java.io.File
 import java.nio.ByteBuffer
 
