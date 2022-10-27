@@ -31,11 +31,15 @@ class ExtensibleDeferredRenderer(
     val renderStateManager: RenderStateManager,
     val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
     extensions: List<DeferredRenderExtension<OpenGl>>
-) : RenderSystem, Backend<OpenGl> {
+) : RenderSystem {
     override lateinit var artemisWorld: World
     private val allExtensions: List<DeferredRenderExtension<OpenGl>> = extensions.distinct()
     private val extensions: List<DeferredRenderExtension<OpenGl>>
         get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }
+
+    private val gpuContext: GpuContext<OpenGl> = backend.gpuContext
+    private val programManager: ProgramManager<OpenGl> = backend.programManager
+    private val textureManager: TextureManager = backend.textureManager
 
     override val sharedRenderTarget = deferredRenderingBuffer.gBuffer
 
@@ -80,13 +84,6 @@ class ExtensibleDeferredRenderer(
             override fun RenderState.selectVertexIndexBuffer() = vertexIndexBufferAnimated
         }
     }
-
-    override val eventBus get() = backend.eventBus
-    override val gpuContext: GpuContext<OpenGl> get() = backend.gpuContext
-    override val programManager: ProgramManager<OpenGl> get() = backend.programManager
-    override val textureManager: TextureManager get() = backend.textureManager
-    override val input: Input get() = backend.input
-    override val addResourceContext: AddResourceContext get() = backend.addResourceContext
 
     override fun update(deltaSeconds: Float) {
         val currentWriteState = renderStateManager.renderState.currentWriteState
