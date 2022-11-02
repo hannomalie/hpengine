@@ -4,7 +4,7 @@ import com.artemis.World
 import de.hanno.hpengine.backend.Backend
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.renderer.constants.GlDepthFunc
+import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -16,9 +16,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.state.StateRef
-import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.texture.TextureManager
-import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.pipelines.*
@@ -39,7 +37,7 @@ class ExtensibleDeferredRenderer(
 
     private val gpuContext: GpuContext<OpenGl> = backend.gpuContext
     private val programManager: ProgramManager<OpenGl> = backend.programManager
-    private val textureManager: TextureManager = backend.textureManager
+    private val textureManager = backend.textureManager
 
     override val sharedRenderTarget = deferredRenderingBuffer.gBuffer
 
@@ -124,7 +122,7 @@ class ExtensibleDeferredRenderer(
         gpuContext.cullFace = true
         gpuContext.depthMask = true
         gpuContext.depthTest = true
-        gpuContext.depthFunc = GlDepthFunc.LESS
+        gpuContext.depthFunc = DepthFunc.LESS
         gpuContext.blend = false
         deferredRenderingBuffer.use(gpuContext, true)
 

@@ -11,7 +11,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.OpenGLContext.Companion.RED_BUFFER
 import de.hanno.hpengine.graphics.RenderStateManager
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
@@ -297,7 +297,7 @@ class OceanWaterRenderSystem(
         val (textureId, internalFormat, handle) = de.hanno.hpengine.model.texture.allocateTexture(
             gpuContext,
             Texture2D.TextureUploadInfo.Texture2DUploadInfo(textureDimension2D),
-            GlTextureTarget.TEXTURE_2D,
+            TextureTarget.TEXTURE_2D,
             internalFormat = internalFormat,
             filterConfig = textureFilterConfig,
             wrapMode = wrapMode
@@ -306,7 +306,7 @@ class OceanWaterRenderSystem(
         return Texture2D(
             textureDimension2D,
             textureId,
-            GlTextureTarget.TEXTURE_2D,
+            TextureTarget.TEXTURE_2D,
             internalFormat,
             handle,
             textureFilterConfig,

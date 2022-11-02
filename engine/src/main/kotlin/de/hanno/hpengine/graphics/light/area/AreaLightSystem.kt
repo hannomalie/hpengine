@@ -15,8 +15,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.Capability
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
@@ -25,12 +25,6 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
-import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.graphics.renderer.rendertarget.CubeMapRenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.graphics.shader.Mat4
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.SSBO
@@ -46,6 +40,8 @@ import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
@@ -71,7 +67,7 @@ class AreaLightSystem(
     lateinit var areaLightComponentComponentMapper: ComponentMapper<AreaLightComponent>
 
     private val mapRenderTarget = CubeMapRenderTarget(
-        gpuContext, RenderTarget(
+        gpuContext, RenderTargetImpl(
             gpuContext,
             FrameBuffer(
                 gpuContext,
@@ -108,7 +104,7 @@ class AreaLightSystem(
         gpuContext.invoke {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
                 val renderedTextureTemp = gpuContext.genTextures()
-                gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp)
+                gpuContext.bindTexture(TextureTarget.TEXTURE_2D, renderedTextureTemp)
                 GL11.glTexImage2D(
                     GL11.GL_TEXTURE_2D,
                     0,
@@ -135,8 +131,8 @@ class AreaLightSystem(
 
         profiled("Arealight shadowmaps") {
             gpuContext.depthMask = true
-            gpuContext.enable(GlCap.DEPTH_TEST)
-            gpuContext.disable(GlCap.CULL_FACE)
+            gpuContext.enable(Capability.DEPTH_TEST)
+            gpuContext.disable(Capability.CULL_FACE)
             mapRenderTarget.use(gpuContext, true)
 
             for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {

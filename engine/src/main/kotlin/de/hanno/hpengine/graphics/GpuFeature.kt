@@ -1,9 +1,5 @@
 package de.hanno.hpengine.graphics
 
-interface GpuFeature {
-    val defineString: String
-}
-
 abstract class AbstractGpuFeature(override val defineString: String): GpuFeature {
     override fun toString() = this::class.java.simpleName
 }

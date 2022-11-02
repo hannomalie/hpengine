@@ -13,7 +13,6 @@ import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
-import org.lwjgl.opengl.GLUtil
 import kotlin.system.exitProcess
 
 
@@ -27,15 +26,15 @@ private val exitOnCloseCallback = GLFWWindowCloseCallbackI { _: Long ->
     exitProcess(0)
 }
 
-class GlfwWindow @JvmOverloads constructor(
+class GlfwWindow(
     override var width: Int,
     override var height: Int,
     title: String,
     _vSync: Boolean = true,
     errorCallback: GLFWErrorCallbackI = printErrorCallback,
     closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
-    val executor: OpenGlExecutor = OpenGlExecutorImpl()
-) : Window<OpenGl>, OpenGlExecutor by executor {
+    val executor: GpuExecutor = OpenGlExecutorImpl()
+) : Window<OpenGl>, GpuExecutor by executor {
 
     override var vSync: Boolean = _vSync
         set(value) {
@@ -135,7 +134,7 @@ class GlfwWindow @JvmOverloads constructor(
 
 fun Window<*>.createFrontBufferRenderTarget(): FrontBufferTarget {
     return object : FrontBufferTarget {
-        override val frameBuffer = FrameBuffer.FrontBuffer
+        val frameBuffer = FrameBuffer.FrontBuffer
         override val name = "FrontBuffer"
         override val clear = Vector4f()
 
@@ -151,7 +150,7 @@ fun Window<*>.createFrontBufferRenderTarget(): FrontBufferTarget {
                 this@createFrontBufferRenderTarget.height = value
             }
 
-        override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
+        override fun use(gpuContext: GpuContext<*>, clear: Boolean) {
             gpuContext.bindFrameBuffer(frameBuffer)
             gpuContext.viewPort(0, 0, width, height)
             if (clear) {

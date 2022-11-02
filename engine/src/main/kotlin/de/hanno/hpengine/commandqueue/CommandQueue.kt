@@ -9,11 +9,15 @@ import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 
-open class CommandQueue @JvmOverloads constructor(val dispatcher: CoroutineDispatcher,
-                                                  private val executeDirectly: () -> Boolean = { false }) {
+open class CommandQueue(
+    val dispatcher: CoroutineDispatcher,
+    private val executeDirectly: () -> Boolean = { false }
+) {
 
-    @JvmOverloads constructor(executorService: ExecutorService = Executors.newSingleThreadExecutor(),
-                executeDirectly: () -> Boolean = { false }): this(executorService.asCoroutineDispatcher(), executeDirectly)
+    constructor(
+        executorService: ExecutorService = Executors.newSingleThreadExecutor(),
+        executeDirectly: () -> Boolean = { false }
+    ) : this(executorService.asCoroutineDispatcher(), executeDirectly)
 
     protected val channel = Channel<Callable<*>>(Channel.UNLIMITED)
 
@@ -22,7 +26,7 @@ open class CommandQueue @JvmOverloads constructor(val dispatcher: CoroutineDispa
             launch(dispatcher) {
                 try {
                     var callable: Callable<*>? = channel.poll()
-                    while(callable != null) {
+                    while (callable != null) {
                         callable.call()
                         callable = channel.poll()
                     }
@@ -37,7 +41,7 @@ open class CommandQueue @JvmOverloads constructor(val dispatcher: CoroutineDispa
 
     fun addCommand(runnable: Runnable): CompletableFuture<Void> {
         val result = CompletableFuture<Void>()
-        if(executeDirectly()) {
+        if (executeDirectly()) {
             return result.apply { runnable.run(); complete(null) }
         }
 
@@ -66,7 +70,7 @@ open class CommandQueue @JvmOverloads constructor(val dispatcher: CoroutineDispa
     }
 
     fun <RESULT_TYPE> calculate(callable: Callable<RESULT_TYPE>): RESULT_TYPE {
-        if(executeDirectly()) {
+        if (executeDirectly()) {
             return callable.call()
         }
         return runBlocking {
@@ -83,6 +87,7 @@ open class CommandQueue @JvmOverloads constructor(val dispatcher: CoroutineDispa
     open fun execute(runnable: Runnable, andBlock: Boolean) {
         return execute(runnable, andBlock, false)
     }
+
     open fun execute(runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {
         if (!forceAsync && executeDirectly()) {
             runnable.run()
@@ -96,7 +101,7 @@ open class CommandQueue @JvmOverloads constructor(val dispatcher: CoroutineDispa
 //                future.complete(null)
 //            })
 //        }
-        if(andBlock) {
+        if (andBlock) {
 //            future.join()
             val future = runBlocking {
                 val future = CompletableFuture<Void>()

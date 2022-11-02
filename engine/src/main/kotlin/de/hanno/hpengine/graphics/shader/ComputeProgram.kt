@@ -18,13 +18,12 @@ import org.lwjgl.opengl.GL43
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.LongBuffer
-import java.util.logging.Logger
 
-class ComputeProgram @JvmOverloads constructor(
+class ComputeProgram(
     programManager: OpenGlProgramManager,
     val computeShader: ComputeShader,
     defines: Defines = Defines()
-) : AbstractProgram<Uniforms>(programManager.gpuContext.createProgramId(), defines, Uniforms.Empty) {
+) : AbstractProgram<Uniforms>(programManager.gpuContext.createProgramId(), defines, Uniforms.Empty), IComputeProgram<Uniforms> {
 
     constructor(programManager: OpenGlProgramManager,
                 computeShaderSource: FileBasedCodeSource,
@@ -194,7 +193,7 @@ class ComputeProgram @JvmOverloads constructor(
         GL20.glDetachShader(id, shader.id)
     }
 
-    fun dispatchCompute(num_groups_x: Int, num_groups_y: Int, num_groups_z: Int) {
+    override fun dispatchCompute(num_groups_x: Int, num_groups_y: Int, num_groups_z: Int) {
         GL43.glDispatchCompute(num_groups_x, num_groups_y, num_groups_z)
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
     }

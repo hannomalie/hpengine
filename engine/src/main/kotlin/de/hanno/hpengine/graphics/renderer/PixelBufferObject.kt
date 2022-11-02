@@ -1,7 +1,8 @@
 package de.hanno.hpengine.graphics.renderer
 
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.glTarget
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import java.nio.ByteBuffer
@@ -25,7 +26,7 @@ class PixelBufferObject(private val gpuContext: GpuContext<*>, private val width
         GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, id)
     }
 
-    fun readPixelsFromTexture(textureId: Int, mipmapLevel: Int, target: GlTextureTarget, format: Int, type: Int) {
+    fun readPixelsFromTexture(textureId: Int, mipmapLevel: Int, target: TextureTarget, format: Int, type: Int) {
         bind()
         gpuContext.bindTexture(target, textureId)
         GL11.glGetTexImage(target.glTarget, mipmapLevel, format, type, buffer)
@@ -35,7 +36,7 @@ class PixelBufferObject(private val gpuContext: GpuContext<*>, private val width
     fun glTexSubImage2D(
         textureId: Int,
         mipmapLevel: Int,
-        target: GlTextureTarget,
+        target: TextureTarget,
         format: Int,
         type: Int,
         width: Int,
@@ -48,7 +49,7 @@ class PixelBufferObject(private val gpuContext: GpuContext<*>, private val width
     fun glTexSubImage2D(
         textureId: Int,
         mipmapLevel: Int,
-        target: GlTextureTarget,
+        target: TextureTarget,
         format: Int,
         type: Int,
         offsetX: Int,
@@ -78,7 +79,7 @@ class PixelBufferObject(private val gpuContext: GpuContext<*>, private val width
 
     fun glCompressedTexImage2D(
         textureId: Int,
-        target: GlTextureTarget,
+        target: TextureTarget,
         level: Int,
         internalformat: Int,
         width: Int,

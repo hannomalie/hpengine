@@ -24,6 +24,8 @@ class OpenGlCommandSync internal constructor(val onSignaled: (() -> Unit)? = nul
         return signaled && !signaledBefore
     }
 
+    override val isSignaled: Boolean get() = signaled
+
     override fun delete() {
         if (gpuCommandSync > 0) {
             glDeleteSync(gpuCommandSync)

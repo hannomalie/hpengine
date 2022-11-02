@@ -1,19 +1,9 @@
 package de.hanno.hpengine.model.material
 
-import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.model.material.Material.*
-import de.hanno.hpengine.ressources.CodeSource
+import de.hanno.hpengine.model.material.Material.MaterialType
+import de.hanno.hpengine.model.material.Material.TransparencyType
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
-
-data class ProgramDescription(
-    val fragmentShaderSource: CodeSource,
-    val vertexShaderSource: CodeSource,
-    val tesselationControlShaderSource : CodeSource? = null,
-    val tesselationEvaluationShaderSource : CodeSource? = null,
-    val geometryShaderSource: CodeSource? = null,
-    val defines: Defines? = null,
-)
 
 interface Vector2fStrukt : Strukt {
     context(ByteBuffer) var x: Float

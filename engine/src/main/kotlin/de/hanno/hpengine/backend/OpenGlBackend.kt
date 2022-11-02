@@ -30,7 +30,7 @@ class OpenGlBackend(override val eventBus: EventBus,
             val gpuContext = OpenGLContext.invoke(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
             val textureManager = TextureManager(config, programManager, gpuContext)
-            val input = Input(eventBus, gpuContext)
+            val input = Input(gpuContext)
 
             return OpenGlBackend(eventBus, gpuContext, programManager, textureManager, input, singleThreadContext)
         }

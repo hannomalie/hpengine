@@ -4,7 +4,7 @@ import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -12,11 +12,12 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.draw
+import de.hanno.hpengine.model.texture.ITextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 
 class PostProcessingExtension(private val config: Config,
                               private val programManager: ProgramManager<OpenGl>,
-                              private val textureManager: TextureManager,
+                              private val textureManager: ITextureManager,
                               private val gpuContext: GpuContext<OpenGl>,
                               private val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension<OpenGl> {
@@ -30,7 +31,7 @@ class PostProcessingExtension(private val config: Config,
 
         profiled("Post processing") {
             postProcessProgram.use()
-            gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.finalBuffer.getRenderedTexture(0))
+            gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.finalBuffer.getRenderedTexture(0))
             postProcessProgram.setUniform("screenWidth", config.width.toFloat())
             postProcessProgram.setUniform("screenHeight", config.height.toFloat())
             postProcessProgram.setUniform("worldExposure", renderState.camera.exposure)
@@ -47,10 +48,10 @@ class PostProcessingExtension(private val config: Config,
             postProcessProgram.setUniform("seconds", renderState.deltaSeconds)
             postProcessProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
             //        postProcessProgram.bindShaderStorageBuffer(1, managerContext.getRenderer().getMaterialManager().getMaterialBuffer());
-            gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
-            gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
-            gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
-            gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_2D, textureManager.lensFlareTexture.id)
+            gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
+            gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
+            gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
+            gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, textureManager.lensFlareTexture.id)
             gpuContext.fullscreenBuffer.draw()
         }
     }

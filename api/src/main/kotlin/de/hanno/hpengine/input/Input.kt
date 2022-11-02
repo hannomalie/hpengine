@@ -6,8 +6,8 @@ import de.hanno.hpengine.graphics.GpuContext
 
 import org.lwjgl.glfw.GLFW.*
 
-class Input(private val eventBus: EventBus,
-            private val gpuContext: GpuContext<*>
+class Input(
+    private val gpuContext: GpuContext<*>
 ) {
 
     val keysPressed = IntArrayList()

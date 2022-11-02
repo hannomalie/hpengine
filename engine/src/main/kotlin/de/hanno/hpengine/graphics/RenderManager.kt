@@ -15,6 +15,9 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.graphics.fps.FPSCounter
+import de.hanno.hpengine.graphics.shader.Program
+import de.hanno.hpengine.graphics.shader.Uniforms
+import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import net.miginfocom.swing.MigLayout
 import org.lwjgl.opengl.GL11
@@ -69,6 +72,10 @@ class RenderManager(
     _renderSystems: List<RenderSystem>,
 ) : BaseSystem() {
 
+    private val drawToQuadProgram = programManager.getProgram(
+        FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
+        FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
+    )
     var renderMode: RenderMode = RenderMode.Normal
     // TODO: Make this read only again
     var renderSystems: MutableList<RenderSystem> = _renderSystems.distinct().toMutableList()
@@ -150,6 +157,7 @@ class RenderManager(
                                 textureRenderer.drawToQuad(
                                     debugOutputTexture,
                                     buffer = gpuContext.debugBuffer,
+                                    program = drawToQuadProgram,
                                     mipMapLevel = debugOutput.mipmapLevel
                                 )
                             }

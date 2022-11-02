@@ -6,7 +6,7 @@ import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -51,28 +51,28 @@ class DirectionalLightSecondPassExtension(
             gpuContext.clearColorBuffer()
 
             profiled("Activate DeferredRenderingBuffer textures") {
-                gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
-                gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
-                gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-                gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
-                gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
-                gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
-                gpuContext.bindTexture(7, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
+                gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
+                gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
+                gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+                gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
+                gpuContext.bindTexture(4, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
+                gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+                gpuContext.bindTexture(7, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
                 if (!gpuContext.isSupported(BindlessTextures)) {
                     gpuContext.bindTexture(
                         8,
-                        GlTextureTarget.TEXTURE_2D,
+                        TextureTarget.TEXTURE_2D,
                         renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
                 gpuContext.bindTexture(
                     9,
-                    GlTextureTarget.TEXTURE_2D,
+                    TextureTarget.TEXTURE_2D,
                     deferredRenderingBuffer.halfScreenBuffer.getRenderedTexture(2)
                 )
                 gpuContext.bindTexture(
                     10,
-                    GlTextureTarget.TEXTURE_2D,
+                    TextureTarget.TEXTURE_2D,
                     deferredRenderingBuffer.gBuffer.getRenderedTexture(4)
                 )
             }

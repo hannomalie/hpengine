@@ -9,17 +9,16 @@ import de.hanno.hpengine.Transform
 import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.Parentable
 
-class Instance
-    @JvmOverloads constructor(val transform: Transform = Transform(),
-                              var materials: List<Material> = listOf(),
-                              val animationController: AnimationController? = null,
-                              val _boundingVolume: AABB = AABB(),
-                              val spatial: TransformSpatial = TransformSpatial(
-                                  transform,
-                                  _boundingVolume
-                              )
+class Instance(
+    val transform: Transform = Transform(),
+    var materials: List<Material> = listOf(),
+    val animationController: AnimationController? = null,
+    val _boundingVolume: AABB = AABB(),
+    val spatial: TransformSpatial = TransformSpatial(
+        transform,
+        _boundingVolume
     )
-    : Parentable<Instance>, Updatable, Spatial by spatial {
+) : Parentable<Instance>, Updatable, Spatial by spatial {
 
     override val children = ArrayList<Instance>()
     override var parent: Instance? = null
@@ -30,7 +29,7 @@ class Instance
 
     override fun addChild(child: Instance) {
         transform.addChild(child.transform)
-        if(!hasChildInHierarchy(child)) {
+        if (!hasChildInHierarchy(child)) {
             children.add(child)
         }
     }

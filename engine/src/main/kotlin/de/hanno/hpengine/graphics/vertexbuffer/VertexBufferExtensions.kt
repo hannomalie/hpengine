@@ -15,7 +15,6 @@ import org.lwjgl.opengl.GL42
 
 import org.lwjgl.opengl.GL43.glMultiDrawElementsIndirect
 
-@JvmOverloads
 fun VertexBuffer.drawLines(lineWidth: Float = 2f): Int {
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
     GL11.glLineWidth(lineWidth)
@@ -34,7 +33,6 @@ fun drawLines(lineWidth: Float = 2f, verticesCount: Int): Int {
     return verticesCount
 }
 
-@JvmOverloads
 fun VertexBuffer.drawDebug(indexBuffer: IndexBuffer, lineWidth: Float = 1f): Int {
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
     GL11.glLineWidth(lineWidth)
@@ -131,8 +129,7 @@ fun IndexBuffer.drawPatchesInstancedBaseVertex(
     )
 }
 
-@JvmOverloads
-fun VertexBuffer.draw(indexBuffer: IndexBuffer? = null): Int {
+fun IVertexBuffer.draw(indexBuffer: IndexBuffer? = null): Int {
     bind()
     return drawActually(indexBuffer)
 }
@@ -141,7 +138,7 @@ fun VertexBuffer.draw(indexBuffer: IndexBuffer? = null): Int {
  *
  * @return triangleCount that twas drawn
  */
-fun VertexBuffer.drawActually(indexBuffer: IndexBuffer?): Int {
+fun IVertexBuffer.drawActually(indexBuffer: IndexBuffer?): Int {
     if (indexBuffer != null) {
         indexBuffer.bind()
         val indices = indexBuffer.buffer.asIntBuffer()

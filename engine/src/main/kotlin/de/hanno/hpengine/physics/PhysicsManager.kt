@@ -37,7 +37,10 @@ import de.hanno.hpengine.commandqueue.CommandQueue
 import de.hanno.hpengine.commandqueue.FutureCallable
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
+import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
+import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.math.Vector4fStrukt
+import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3fc
 import java.util.concurrent.CompletableFuture
 import java.util.function.Supplier
@@ -56,6 +59,41 @@ class PhysicsManager(
 ) : BaseEntitySystem(), RenderSystem {
     override lateinit var artemisWorld: World
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+    val linesProgram = programManager.run {
+        val uniforms = LinesProgramUniforms(gpuContext)
+        getProgram(
+            StringBasedCodeSource("mvp_vertex_vec4", """
+                //include(globals_structs.glsl)
+                
+                ${uniforms.shaderDeclarations}
+
+                in vec4 in_Position;
+
+                out vec4 pass_Position;
+                out vec4 pass_WorldPosition;
+
+                void main()
+                {
+                	vec4 vertex = vertices[gl_VertexID];
+                	vertex.w = 1;
+
+                	pass_WorldPosition = ${uniforms::modelMatrix.name} * vertex;
+                	pass_Position = ${uniforms::projectionMatrix.name} * ${uniforms::viewMatrix.name} * pass_WorldPosition;
+                    gl_Position = pass_Position;
+                }
+            """.trimIndent()),
+            StringBasedCodeSource("simple_color_vec3", """
+            ${uniforms.shaderDeclarations}
+
+            layout(location=0)out vec4 out_color;
+
+            void main()
+            {
+                out_color = vec4(${uniforms::color.name},1);
+            }
+        """.trimIndent()), null, Defines(), uniforms
+        )
+    }
 
     val linePoints = mutableListOf<Vector3fc>()
 
@@ -151,7 +189,7 @@ class PhysicsManager(
     override fun render(result: DrawResult, renderState: RenderState) {
         if (config.debug.isDrawLines) {
             debugDrawWorld()
-            drawLines(renderStateManager, programManager, lineVertices, linePoints, color = org.joml.Vector3f(1f, 1f, 0f))
+            drawLines(renderStateManager, programManager, linesProgram, lineVertices, linePoints, color = org.joml.Vector3f(1f, 1f, 0f))
         }
     }
 

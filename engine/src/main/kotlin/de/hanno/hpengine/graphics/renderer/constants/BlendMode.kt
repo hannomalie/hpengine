@@ -3,10 +3,13 @@ package de.hanno.hpengine.graphics.renderer.constants
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL14
 
-enum class BlendMode(val mode: Int) {
-    FUNC_ADD(GL14.GL_FUNC_ADD);
+val BlendMode.mode: Int get() = when(this) {
+    BlendMode.FUNC_ADD -> GL14.GL_FUNC_ADD
+}
 
-    enum class Factor(val glFactor: Int) {
-        ZERO(GL11.GL_ZERO), ONE(GL11.GL_ONE), SRC_ALPHA(GL11.GL_SRC_ALPHA), ONE_MINUS_SRC_ALPHA(GL11.GL_ONE_MINUS_SRC_ALPHA);
-    }
+val BlendMode.Factor.glFactor: Int get() = when(this) {
+    BlendMode.Factor.ZERO -> GL11.GL_ZERO
+    BlendMode.Factor.ONE -> GL11.GL_ONE
+    BlendMode.Factor.SRC_ALPHA -> GL11.GL_SRC_ALPHA
+    BlendMode.Factor.ONE_MINUS_SRC_ALPHA -> GL11.GL_ONE_MINUS_SRC_ALPHA
 }

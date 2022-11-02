@@ -11,7 +11,6 @@ object FileMonitor {
         start()
     }
 
-    @JvmOverloads
     fun addOnFileChangeListener(file: File, overwriteShouldReload: (File) -> Boolean = { false }, action: (File) -> Unit): OnFileChangeListener {
         val fileObserver = directoryObservers.getOrPut(file.parentFile) {
             FileAlterationObserver(file.parent).apply {

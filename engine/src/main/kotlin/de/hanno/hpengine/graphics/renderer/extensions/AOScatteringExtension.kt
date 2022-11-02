@@ -5,8 +5,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.Capability
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -37,17 +37,17 @@ class AOScatteringExtension(
                 return
             }
 
-            gpuContext.disable(GlCap.DEPTH_TEST)
+            gpuContext.disable(Capability.DEPTH_TEST)
             aoScatteringProgram.use()
 
-            gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, gBuffer.positionMap)
-            gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.normalMap)
-            gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
-            gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, gBuffer.motionMap)
-            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+            gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, gBuffer.positionMap)
+            gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
+            gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
+            gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
+            gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
             renderState.lightState.pointLightShadowMapStrategy.bindTextures()
             if(renderState.environmentProbesState.environmapsArray3Id > 0) {
-                gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, renderState.environmentProbesState.environmapsArray3Id)
+                gpuContext.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, renderState.environmentProbesState.environmapsArray3Id)
             }
 
             aoScatteringProgram.setUniform("eyePosition", renderState.camera.getPosition())
@@ -71,8 +71,8 @@ class AOScatteringExtension(
 
             gpuContext.fullscreenBuffer.draw()
             profiled("generate mipmaps") {
-                gpuContext.enable(GlCap.DEPTH_TEST)
-                textureManager.generateMipMaps(GlTextureTarget.TEXTURE_2D, gBuffer.halfScreenBuffer.renderedTexture)
+                gpuContext.enable(Capability.DEPTH_TEST)
+                textureManager.generateMipMaps(TextureTarget.TEXTURE_2D, gBuffer.halfScreenBuffer.renderedTexture)
                 textureManager.blur2DTextureRGBA16F(gBuffer.halfScreenBuffer.renderedTexture, config.width / 2, config.height / 2, 0, 0)
             }
         }

@@ -7,9 +7,10 @@ import org.joml.*
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 
-open class Camera @JvmOverloads constructor(
+open class Camera(
     val transform: Transform,
-    ratio: Float = 1280f/720f) {
+    ratio: Float = 1280f/720f
+) {
 
     var exposure = 5f
     var focalDepth = Defaults.focalDepth

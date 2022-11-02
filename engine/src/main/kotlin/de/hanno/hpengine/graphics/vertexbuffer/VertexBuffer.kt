@@ -6,19 +6,19 @@ import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import org.lwjgl.opengl.GL15
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import java.util.ArrayList
-import java.util.EnumSet
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 import javax.vecmath.Vector2f
 
 open class VertexBuffer(gpuContext: GpuContext<*>,
                         val channels: EnumSet<DataChannels>,
-                        values: FloatArray) : PersistentMappedBuffer(gpuContext, values.size * java.lang.Float.BYTES, GL15.GL_ARRAY_BUFFER) {
+                        values: FloatArray) : PersistentMappedBuffer(gpuContext, values.size * java.lang.Float.BYTES, GL15.GL_ARRAY_BUFFER),
+    IVertexBuffer {
 
 
-    var verticesCount: Int = calculateVerticesCount(buffer, channels)
-        private set
+    override var verticesCount: Int = calculateVerticesCount(buffer, channels)
+        protected set
     var triangleCount: Int = verticesCount / 3
         private set
 

@@ -11,9 +11,9 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.constants.GlCap.*
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
+import de.hanno.hpengine.graphics.renderer.constants.Capability.*
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_3D
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.*
@@ -105,7 +105,7 @@ class VoxelConeTracingExtension(
         VoxelizerUniformsStatic(gpuContext)
     )
 
-    private val voxelConeTraceProgram: Program<Uniforms> = programManager.getProgram(
+    private val voxelConeTraceProgram = programManager.getProgram(
         config.EngineAsset("shaders/passthrough_vertex.glsl").toCodeSource(),
         config.EngineAsset("shaders/voxel_cone_trace_fragment.glsl").toCodeSource(),
         null,
@@ -113,11 +113,11 @@ class VoxelConeTracingExtension(
         Uniforms.Empty
     )
 
-    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = run { programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_mipmap_alphablend_compute.glsl")) }
-    private val texture3DMipMapComputeProgram: ComputeProgram = run { programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_mipmap_compute.glsl")) }
-    private val clearDynamicVoxelsComputeProgram: ComputeProgram = run { programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_clear_dynamic_voxels_compute.glsl")) }
-    private val injectLightComputeProgram: ComputeProgram = run { programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_inject_light_compute.glsl")) }
-    private val injectMultipleBounceLightComputeProgram: ComputeProgram = run { programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_inject_bounce_light_compute.glsl")) }
+    private val texture3DMipMapAlphaBlendComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_mipmap_alphablend_compute.glsl"))
+    private val texture3DMipMapComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_mipmap_compute.glsl"))
+    private val clearDynamicVoxelsComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_clear_dynamic_voxels_compute.glsl"))
+    private val injectLightComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_inject_light_compute.glsl"))
+    private val injectMultipleBounceLightComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/texture3D_inject_bounce_light_compute.glsl"))
 
     private var lightInjectedFramesAgo: Int = 0
 
@@ -216,7 +216,7 @@ class VoxelConeTracingExtension(
 
                 renderState.vertexIndexBufferStatic.indexBuffer.bind()
                 for (entity in batches) {
-                    voxelizerStatic.setTextureUniforms(entity.material.maps)
+                    voxelizerStatic.setTextureUniforms(gpuContext, entity.material.maps)
                     renderState.vertexIndexBufferStatic.indexBuffer.draw(
                         entity.drawElementsIndirectCommand,
                         bindIndexBuffer = false,
@@ -304,7 +304,7 @@ class VoxelConeTracingExtension(
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
     }
 
-    private fun mipmapGrid(texture3D: Int, shader: ComputeProgram, renderState: RenderState) {
+    private fun mipmapGrid(texture3D: Int, shader: IComputeProgram<out Uniforms>, renderState: RenderState) {
         shader.use()
         val voxelGrids = renderState[this.voxelGrids]
         val globalGrid = voxelGrids.typedBuffer[0]

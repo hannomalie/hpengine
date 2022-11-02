@@ -5,8 +5,7 @@ import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.model.texture.Texture2D.TextureUploadInfo.*
 import de.hanno.hpengine.model.texture.TextureManager.Companion.convertCubeMapData
 import de.hanno.hpengine.model.texture.TextureManager.Companion.glAlphaColorModel
@@ -34,10 +33,9 @@ import java.nio.ByteOrder
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
 
-
 data class Texture3D(override val dimension: TextureDimension3D,
                      override val id: Int,
-                     override val target: GlTextureTarget,
+                     override val target: TextureTarget,
                      override val internalFormat: Int,
                      override var handle: Long,
                      override val textureFilterConfig: TextureFilterConfig,
@@ -46,15 +44,15 @@ data class Texture3D(override val dimension: TextureDimension3D,
 ) : Texture {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): Texture3D {
-            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), GlTextureTarget.TEXTURE_3D, filterConfig, internalFormat, wrapMode)
-            return Texture3D(dimension, textureId, GlTextureTarget.TEXTURE_3D, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
+            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), TextureTarget.TEXTURE_3D, filterConfig, internalFormat, wrapMode)
+            return Texture3D(dimension, textureId, TextureTarget.TEXTURE_3D, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
     }
 }
 
 data class CubeMap(override val dimension: TextureDimension2D,
                    override val id: Int,
-                   override val target: GlTextureTarget,
+                   override val target: TextureTarget,
                    override val internalFormat: Int,
                    override var handle: Long,
                    override val textureFilterConfig: TextureFilterConfig,
@@ -63,8 +61,8 @@ data class CubeMap(override val dimension: TextureDimension2D,
 ) : ICubeMap {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension2D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): CubeMap {
-            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture2DUploadInfo(dimension), GlTextureTarget.TEXTURE_CUBE_MAP, filterConfig, internalFormat, wrapMode)
-            return CubeMap(dimension, textureId, GlTextureTarget.TEXTURE_CUBE_MAP, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
+            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture2DUploadInfo(dimension), TextureTarget.TEXTURE_CUBE_MAP, filterConfig, internalFormat, wrapMode)
+            return CubeMap(dimension, textureId, TextureTarget.TEXTURE_CUBE_MAP, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
     }
 }
@@ -131,7 +129,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val 
         upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, info.buffers[5])
 
         gpuContext.invoke {
-            GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_CUBE_MAP.glTarget)
+            GL30.glGenerateMipmap(TextureTarget.TEXTURE_CUBE_MAP.glTarget)
         }
     }
 
@@ -193,7 +191,7 @@ private fun BufferedImage.getCubeMapUploadInfo(): CubeMapUploadInfo {
     })
 }
 
-fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploadInfo, textureTarget: GlTextureTarget, filterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int, wrapMode: Int = GL12.GL_REPEAT): Triple<Int, Int, Long> {
+fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploadInfo, textureTarget: TextureTarget, filterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int, wrapMode: Int = GL12.GL_REPEAT): Triple<Int, Int, Long> {
     info.validate()
     return gpuContext.invoke {
         val textureId = glGenTextures()
@@ -205,21 +203,21 @@ fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploa
         glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, filterConfig.magFilter.glValue)
 //        TODO: Remove casts
         when(textureTarget) {
-            GlTextureTarget.TEXTURE_2D -> {
+            TextureTarget.TEXTURE_2D -> {
                 val info = info as Texture2DUploadInfo
                 GL42.glTexStorage2D(glTarget, info.dimension.getMipMapCount(), internalFormat, info.dimension.width, info.dimension.height)
             }
-            GlTextureTarget.TEXTURE_2D_ARRAY, GlTextureTarget.TEXTURE_3D -> {
+            TextureTarget.TEXTURE_2D_ARRAY, TextureTarget.TEXTURE_3D -> {
                 val info = info as Texture3DUploadInfo
                 GL42.glTexStorage3D(glTarget, info.dimension.getMipMapCount(), internalFormat, info.dimension.width, info.dimension.height, info.dimension.depth)
                 glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, wrapMode)
             }
-            GlTextureTarget.TEXTURE_CUBE_MAP -> {
+            TextureTarget.TEXTURE_CUBE_MAP -> {
                 val info = info as Texture2DUploadInfo
                 GL42.glTexStorage2D(GL40.GL_TEXTURE_CUBE_MAP, info.dimension.getMipMapCount(), internalFormat, info.dimension.width, info.dimension.height)
                 glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, wrapMode)
             }
-            GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY -> {
+            TextureTarget.TEXTURE_CUBE_MAP_ARRAY -> {
                 val info = info as Texture3DUploadInfo
                 GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, TextureDimension2D(info.dimension.width, info.dimension.height).getMipMapCount(), internalFormat, info.dimension.width, info.dimension.height, info.dimension.depth * 6)
                 glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, wrapMode)
@@ -236,7 +234,7 @@ fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploa
 
 data class CubeMapArray(override val dimension: TextureDimension3D,
                         override val id: Int,
-                        override val target: GlTextureTarget = GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY,
+                        override val target: TextureTarget = TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
                         override val internalFormat: Int,
                         override var handle: Long,
                         override val textureFilterConfig: TextureFilterConfig,
@@ -248,8 +246,8 @@ data class CubeMapArray(override val dimension: TextureDimension3D,
         get() = dimension.depth
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): CubeMapArray {
-            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, filterConfig, internalFormat, wrapMode)
-            return CubeMapArray(dimension, textureId, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
+            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), TextureTarget.TEXTURE_CUBE_MAP_ARRAY, filterConfig, internalFormat, wrapMode)
+            return CubeMapArray(dimension, textureId, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
     }
 }
@@ -278,7 +276,7 @@ fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int): CubeMap
     return CubeMap(
             TextureDimension(dimension.width, dimension.height),
             cubeMapView,
-            GlTextureTarget.TEXTURE_CUBE_MAP,
+            TextureTarget.TEXTURE_CUBE_MAP,
             internalFormat,
             cubeMapHandle,
             textureFilterConfig,
@@ -305,7 +303,7 @@ fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int, faceInde
     return Texture2D(
             TextureDimension(dimension.width, dimension.height),
             cubeMapFaceView,
-            GlTextureTarget.TEXTURE_2D,
+            TextureTarget.TEXTURE_2D,
             internalFormat,
             cubeMapFaceHandle,
             textureFilterConfig,
@@ -331,7 +329,7 @@ fun CubeMap.createView(gpuContext: GpuContext<OpenGl>, faceIndex: Int): Texture2
     return Texture2D(
             TextureDimension(dimension.width, dimension.height),
             cubeMapFaceView,
-            GlTextureTarget.TEXTURE_2D,
+            TextureTarget.TEXTURE_2D,
             internalFormat,
             cubeMapFaceHandle,
             textureFilterConfig,
@@ -342,7 +340,7 @@ fun CubeMap.createView(gpuContext: GpuContext<OpenGl>, faceIndex: Int): Texture2
 
 data class Texture2D(override val dimension: TextureDimension2D,
                      override val id: Int,
-                     override val target: GlTextureTarget,
+                     override val target: TextureTarget,
                      override val internalFormat: Int,
                      override var handle: Long,
                      override val textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
@@ -406,11 +404,11 @@ data class Texture2D(override val dimension: TextureDimension2D,
             wrapMode: Int = GL12.GL_REPEAT
         ): Texture2D {
             return gpuContext.invoke {
-                val (textureId, internalFormat, handle) = allocateTexture(gpuContext, info, GlTextureTarget.TEXTURE_2D, textureFilterConfig, internalFormat, wrapMode)
+                val (textureId, internalFormat, handle) = allocateTexture(gpuContext, info, TextureTarget.TEXTURE_2D, textureFilterConfig, internalFormat, wrapMode)
                 if(gpuContext.isSupported(BindlessTextures)) ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
                 Texture2D(dimension = info.dimension,
                     id = textureId,
-                    target = GlTextureTarget.TEXTURE_2D,
+                    target = TextureTarget.TEXTURE_2D,
                     textureFilterConfig = textureFilterConfig,
                     internalFormat = internalFormat,
                     handle = handle,

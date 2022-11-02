@@ -335,7 +335,6 @@ object Util {
         printFloatBuffer(values, 4, 1000)
     }
 
-    @JvmOverloads
     fun printFloatBuffer(buffer: FloatBuffer, columns: Int, rows: Int = 1000): String {
         buffer.rewind()
         val builder = StringBuilder()
@@ -356,7 +355,6 @@ object Util {
         return result
     }
 
-    @JvmOverloads
     fun printIntBuffer(buffer: IntBuffer, columns: Int, rows: Int = 1000): String {
         val asString = toString(buffer, columns, rows)
         println(asString)

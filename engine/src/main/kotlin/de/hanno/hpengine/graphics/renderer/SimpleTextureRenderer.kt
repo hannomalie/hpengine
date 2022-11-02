@@ -4,20 +4,20 @@ import com.artemis.World
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.Capability
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
-import de.hanno.hpengine.graphics.shader.Program
+import de.hanno.hpengine.graphics.shader.IProgram
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.model.texture.CubeMap
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.createView
-import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.GL11
@@ -31,14 +31,14 @@ open class SimpleTextureRenderer(
 ) : RenderSystem {
     override lateinit var artemisWorld: World
 
-    private val renderToQuadProgram: Program<Uniforms> = programManager.getProgram(
-            FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
-            FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
+    private val renderToQuadProgram = programManager.getProgram(
+        FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
+        FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
     )
 
     val debugFrameProgram = programManager.getProgram(
-            FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
-            FileBasedCodeSource(config.engineDir.resolve("shaders/debugframe_fragment.glsl"))
+        FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
+        FileBasedCodeSource(config.engineDir.resolve("shaders/debugframe_fragment.glsl"))
     )
 
     open var finalImage = texture.id
@@ -49,8 +49,8 @@ open class SimpleTextureRenderer(
 
     fun drawToQuad(
         texture: Int = finalImage,
-        buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-        program: Program<Uniforms> = renderToQuadProgram,
+        buffer: IVertexBuffer = gpuContext.fullscreenBuffer,
+        program: IProgram<Uniforms> = renderToQuadProgram,
         factorForDebugRendering: Float = 1f,
         mipMapLevel: Int = 0,
     ) {
@@ -59,17 +59,19 @@ open class SimpleTextureRenderer(
 
     fun drawToQuad(
         texture: Texture2D,
-        buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-        program: Program<Uniforms> = renderToQuadProgram,
+        buffer: IVertexBuffer = gpuContext.fullscreenBuffer,
+        program: IProgram<Uniforms> = renderToQuadProgram,
         factorForDebugRendering: Float = 1f,
         mipMapLevel: Int = 0,
     ) {
         drawToQuad(texture.id, buffer, program, factorForDebugRendering, mipMapLevel)
     }
 
-    fun renderCubeMapDebug(renderTarget: FrontBufferTarget = frontBuffer,
-                           cubeMapArrayRenderTarget: CubeMapArrayRenderTarget?, cubeMapIndex: Int) {
-        if(cubeMapArrayRenderTarget == null) return
+    fun renderCubeMapDebug(
+        renderTarget: FrontBufferTarget = frontBuffer,
+        cubeMapArrayRenderTarget: CubeMapArrayRenderTarget?, cubeMapIndex: Int
+    ) {
+        if (cubeMapArrayRenderTarget == null) return
         renderTarget.use(gpuContext, true)
 
         (0..5).map { faceIndex ->
@@ -81,8 +83,10 @@ open class SimpleTextureRenderer(
             )
         }
     }
-    fun renderCubeMapDebug(renderTarget: FrontBufferTarget = frontBuffer,
-                           cubeMap: CubeMap
+
+    fun renderCubeMapDebug(
+        renderTarget: FrontBufferTarget = frontBuffer,
+        cubeMap: CubeMap
     ) {
         renderTarget.use(gpuContext, true)
         (0..5).map { faceIndex ->
@@ -95,23 +99,24 @@ open class SimpleTextureRenderer(
             GL11.glDeleteTextures(textureView.id)
         }
     }
+
     private fun draw(
         texture: Int,
-        buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-        program: Program<Uniforms>,
+        buffer: IVertexBuffer = gpuContext.fullscreenBuffer,
+        program: IProgram<Uniforms>,
         factorForDebugRendering: Float = 1f,
         mipMapLevel: Int = 0,
     ) {
 
-        gpuContext.disable(GlCap.BLEND)
+        gpuContext.disable(Capability.BLEND)
 
         program.use()
         program.setUniform("factorForDebugRendering", factorForDebugRendering)
         program.setUniform("mipMapLevel", mipMapLevel)
 
-        gpuContext.disable(GlCap.DEPTH_TEST)
+        gpuContext.disable(Capability.DEPTH_TEST)
 
-        gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, texture)
+        gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, texture)
 
         buffer.draw()
     }

@@ -280,7 +280,6 @@ class EnvironmentProbeComponent: Component() {
 //        weights.rewind()
 //    }
 //
-//    @JvmOverloads
 //    fun draw(urgent: Boolean = false) {
 //        if (!config.quality.isDrawProbes) {
 //            return
@@ -358,7 +357,6 @@ class EnvironmentProbeComponent: Component() {
 //        bindEnvironmentProbePositions(program, state.activeProbeCount, state.environmentMapMin, state.environmentMapMax, state.environmentMapWeights)
 //    }
 //
-//    @JvmOverloads
 //    fun bindEnvironmentProbePositions(program: AbstractProgram<*>, activeProbeCount: Int = probes.size, minPositions: FloatBuffer = this.minPositions, maxPositions: FloatBuffer = this.maxPositions, weights: FloatBuffer = this.weights) {
 //        program.setUniform("activeProbeCount", activeProbeCount)
 //        program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", minPositions)

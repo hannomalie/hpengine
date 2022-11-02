@@ -7,8 +7,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.Capability
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
@@ -146,8 +146,8 @@ class ProbeRenderer(
         profiled("Probes") {
 
             gpuContext.depthMask = true
-            gpuContext.disable(GlCap.DEPTH_TEST)
-            gpuContext.disable(GlCap.CULL_FACE)
+            gpuContext.disable(Capability.DEPTH_TEST)
+            gpuContext.disable(Capability.CULL_FACE)
             cubeMapRenderTarget.use(gpuContext, true)
 //            gpuContext.clearDepthAndColorBuffer()
             gpuContext.viewPort(0, 0, probeResolution, probeResolution)
@@ -178,7 +178,7 @@ class ProbeRenderer(
                 if (!gpuContext.isSupported(BindlessTextures)) {
                     gpuContext.bindTexture(
                         8,
-                        GlTextureTarget.TEXTURE_2D,
+                        TextureTarget.TEXTURE_2D,
                         renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
@@ -207,14 +207,14 @@ class ProbeRenderer(
 
                 profiled("Probe entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
-                        pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(gpuContext, batch.material.maps)
                         renderState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
                         )
                     }
                 }
                 val cubeMap = cubeMapRenderTarget.textures.first() as CubeMap
-                textureManager.generateMipMaps(GlTextureTarget.TEXTURE_CUBE_MAP, cubeMap.id)
+                textureManager.generateMipMaps(TextureTarget.TEXTURE_CUBE_MAP, cubeMap.id)
                 val floatArrayOf = (0 until 6 * 4).map { 0f }.toFloatArray()
                 GL45.glGetTextureSubImage(
                     cubeMap.id, cubeMap.mipmapCount - 1,

@@ -47,8 +47,6 @@ dependencies {
     api(kotlin("reflect"))
     api(kotlin("compiler-embeddable"))
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
 
     api(project(":api"))
@@ -90,7 +88,6 @@ dependencies {
     api("com.google.guava:guava:10.0.1")
     api("net.engio:mbassador:1.2.4")
     api("de.ruedigermoeller:fst:2.33")
-    api("com.carrotsearch:hppc:0.7.2")
 //    api("de.hanno.compiler:java-compiler:1.4")
     api("commons-beanutils:commons-beanutils:1.9.3")
     api("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")

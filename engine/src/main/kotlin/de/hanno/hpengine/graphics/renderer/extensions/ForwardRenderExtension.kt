@@ -5,8 +5,8 @@ import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
-import de.hanno.hpengine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.graphics.renderer.constants.GlDepthFunc
+import de.hanno.hpengine.graphics.renderer.constants.Capability
+import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
@@ -52,7 +52,7 @@ class ForwardRenderExtension(
 //        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
         GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, deferredRenderingBuffer.depthBufferTexture, 0)
         gpuContext.depthMask = false
-        gpuContext.depthFunc = GlDepthFunc.LEQUAL
+        gpuContext.depthFunc = DepthFunc.LEQUAL
         gpuContext.blend = true
         gpuContext.blendEquation = BlendMode.FUNC_ADD
         glBlendFunci(0, GL_ONE, GL_ONE)
@@ -70,13 +70,13 @@ class ForwardRenderExtension(
 
         renderState.vertexIndexBufferStatic.indexBuffer.bind()
         for (batch in renderState.renderBatchesStatic.filter { it.material.transparencyType.needsForwardRendering }) {
-            programStatic.setTextureUniforms(batch.material.maps)
+            programStatic.setTextureUniforms(gpuContext, batch.material.maps)
             renderState.vertexIndexBufferStatic.indexBuffer.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
                 primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Faces
             )
         }
-        gpuContext.disable(GlCap.BLEND)
+        gpuContext.disable(Capability.BLEND)
         deferredRenderingBuffer.forwardBuffer.unUse()
     }
 

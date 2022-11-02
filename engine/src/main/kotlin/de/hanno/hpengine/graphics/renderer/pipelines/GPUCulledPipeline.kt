@@ -13,7 +13,7 @@ import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.IndirectCulledDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
@@ -22,6 +22,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.ZERO_BUFFER
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.shader.IProgram
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
@@ -32,6 +33,7 @@ import de.hanno.hpengine.model.texture.Texture2D.TextureUploadInfo.Texture2DUplo
 import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
+import de.hanno.hpengine.model.texture.ITextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.Util
 import org.jetbrains.kotlin.util.profile
@@ -39,11 +41,11 @@ import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL15.GL_WRITE_ONLY
 
-open class GPUCulledPipeline @JvmOverloads constructor(
+open class GPUCulledPipeline(
     private val config: Config,
     private val gpuContext: GpuContext<OpenGl>,
     private val programManager: ProgramManager<OpenGl>,
-    private val textureManager: TextureManager,
+    private val textureManager: ITextureManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val useBackFaceCulling: Boolean = true,
 ) {
@@ -53,10 +55,10 @@ open class GPUCulledPipeline @JvmOverloads constructor(
     internal var commandOrganizationStatic = CommandOrganizationGpuCulled(gpuContext)
     internal var commandOrganizationAnimated = CommandOrganizationGpuCulled(gpuContext)
 
-    private var occlusionCullingPhase1Vertex: Program<Uniforms> = config.run {
+    private var occlusionCullingPhase1Vertex = config.run {
         programManager.getProgram(EngineAsset("shaders/occlusion_culling1_vertex.glsl").toCodeSource(), null)
     }
-    private var occlusionCullingPhase2Vertex: Program<Uniforms> = config.run {
+    private var occlusionCullingPhase2Vertex = config.run {
         programManager.getProgram(EngineAsset("shaders/occlusion_culling2_vertex.glsl").toCodeSource(), null)
     }
 
@@ -140,8 +142,8 @@ open class GPUCulledPipeline @JvmOverloads constructor(
 
     fun draw(
         renderState: RenderState,
-        programStatic: Program<StaticFirstPassUniforms>,
-        programAnimated: Program<AnimatedFirstPassUniforms>
+        programStatic: IProgram<StaticFirstPassUniforms>,
+        programAnimated: IProgram<AnimatedFirstPassUniforms>
     ) {
         val firstPassResult = renderState.latestDrawResult.firstPassResult
         profiled("Actual draw entities") {
@@ -216,9 +218,9 @@ open class GPUCulledPipeline @JvmOverloads constructor(
             highZProgram.setUniform("lastHeight", lastHeight)
             highZProgram.setUniform("mipmapTarget", mipmapTarget)
             if (mipmapTarget == 0) {
-                gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, baseDepthTexture.id)
+                gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, baseDepthTexture.id)
             } else {
-                gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
+                gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
             }
             gpuContext.bindImageTexture(
                 1,
@@ -229,7 +231,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
                 GL15.GL_READ_WRITE,
                 HIGHZ_FORMAT
             )
-            gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, baseDepthTexture.id)
+            gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, baseDepthTexture.id)
             val num_groups_x = Math.max(1, (currentWidth + 7) / 8)
             val num_groups_y = Math.max(1, (currentHeight + 7) / 8)
             highZProgram.dispatchCompute(num_groups_x, num_groups_y, 1)
@@ -273,7 +275,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             setUniform("useFrustumCulling", config.debug.isUseGpuFrustumCulling)
             setUniform("useOcclusionCulling", config.debug.isUseGpuOcclusionCulling)
-            gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
+            gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
 //            gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT)
             gpuContext.bindImageTexture(
                 1,

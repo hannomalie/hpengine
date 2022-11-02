@@ -8,9 +8,8 @@ import net.engio.mbassy.bus.config.Feature
 import java.lang.IllegalStateException
 import java.util.logging.Logger
 
-class MBassadorEventBus @JvmOverloads constructor(defaultAsync: Boolean = true) : EventBus {
+class MBassadorEventBus(private val defaultAsync: Boolean = true) : EventBus {
     private val eventBus: MBassador<Any>
-    private val defaultAsync: Boolean
     override fun <EVENT_TYPE : Any> post(event: EVENT_TYPE) {
         if (defaultAsync) {
             eventBus.post(event).asynchronously()
@@ -45,6 +44,5 @@ class MBassadorEventBus @JvmOverloads constructor(defaultAsync: Boolean = true) 
                 throw IllegalStateException("Eventbus error")
             }
         eventBus = MBassador<Any>(config)
-        this.defaultAsync = defaultAsync
     }
 }

@@ -23,6 +23,8 @@ import de.hanno.hpengine.graphics.DebugOutput
 import de.hanno.hpengine.graphics.FinalOutput
 import de.hanno.hpengine.graphics.GlfwWindow
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget2D
+import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import imgui.ImGui
 import imgui.flag.*
 import imgui.flag.ImGuiWindowFlags.*
@@ -34,6 +36,7 @@ import org.lwjgl.glfw.GLFW
 interface ImGuiEditorExtension {
     fun render(imGuiEditor: ImGuiEditor)
 }
+
 class ImGuiEditor(
     internal val window: GlfwWindow,
     internal val gpuContext: GpuContext<OpenGl>,
@@ -49,13 +52,15 @@ class ImGuiEditor(
     internal val editorExtensions: List<ImGuiEditorExtension>,
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
-    private val renderTarget = RenderTarget(
-        gpuContext,
-        FrameBuffer(gpuContext, sharedDepthBuffer.depthBuffer),
-        name = "Final Image",
-        width = finalOutput.texture2D.dimension.width,
-        height = finalOutput.texture2D.dimension.height,
-        textures = listOf(finalOutput.texture2D)
+    private val renderTarget = RenderTarget2D(
+        gpuContext, RenderTargetImpl(
+            gpuContext,
+            FrameBuffer(gpuContext, sharedDepthBuffer.depthBuffer),
+            name = "Final Image",
+            width = finalOutput.texture2D.dimension.width,
+            height = finalOutput.texture2D.dimension.height,
+            textures = listOf(finalOutput.texture2D)
+        )
     )
     var selection: Selection? = null
     fun selectOrUnselect(newSelection: Selection) {
@@ -159,7 +164,7 @@ class ImGuiEditor(
             menu(screenWidth, screenHeight)
 
 
-            if(::artemisWorld.isInitialized) {
+            if (::artemisWorld.isInitialized) {
                 leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
             }
 

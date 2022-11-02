@@ -10,19 +10,16 @@ import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dime
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimensionHalf
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.extent
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
+import de.hanno.hpengine.graphics.renderer.constants.Capability
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_CUBE_MAP
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
+import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -55,7 +52,7 @@ class ProbeRenderStrategy(
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
-    private val cubeMapRenderTarget = RenderTarget(
+    private val cubeMapRenderTarget = RenderTargetImpl(
         gpuContext = gpuContext,
         frameBuffer = FrameBuffer(
             gpuContext = gpuContext,
@@ -116,18 +113,18 @@ class ProbeRenderStrategy(
         profiled("PointLight shadowmaps") {
 
             gpuContext.depthMask = true
-            gpuContext.enable(GlCap.DEPTH_TEST)
-            gpuContext.enable(GlCap.CULL_FACE)
+            gpuContext.enable(Capability.DEPTH_TEST)
+            gpuContext.enable(Capability.CULL_FACE)
 
             var counter = 0
             while (counter < 1) {
 
                 val cubeMapIndex = getCubeMapIndex(x, y, z)
 
-                gpuContext.enable(GlCap.DEPTH_TEST)
+                gpuContext.enable(Capability.DEPTH_TEST)
 //            gpuContext.cullFace(CullMode.BACK)
 //            gpuContext.enable(GlCap.CULL_FACE)
-                gpuContext.disable(GlCap.CULL_FACE)
+                gpuContext.disable(Capability.CULL_FACE)
                 gpuContext.depthMask = true
                 gpuContext.clearColor(0f, 0f, 0f, 0f)
                 cubeMapRenderTarget.use(gpuContext, true)

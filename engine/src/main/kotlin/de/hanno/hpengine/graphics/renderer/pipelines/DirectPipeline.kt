@@ -11,16 +11,16 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Faces
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Lines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.graphics.shader.Program
-import de.hanno.hpengine.graphics.shader.useAndBind
+import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
 open class DirectFirstPassPipeline(
     private val config: Config,
     private val gpuContext: GpuContext<OpenGl>,
-    private val program: Program<out FirstPassUniforms>,
+    private val program: IProgram<out FirstPassUniforms>,
     private val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
     }
@@ -92,7 +92,7 @@ open class DirectFirstPassPipeline(
                 }
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.uniforms.entityBaseIndex = 0
-                program.setTextureUniforms(batch.material.maps)
+                program.setTextureUniforms(gpuContext, batch.material.maps)
 
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -110,12 +110,12 @@ open class DirectFirstPassPipeline(
         val viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer
         val projectionMatrixAsBuffer = renderState.camera.projectionMatrixAsBuffer
         val viewProjectionMatrixAsBuffer = renderState.camera.viewProjectionMatrixAsBuffer
-        program.useAndBind { uniforms ->
+        program.useAndBind { uniforms: FirstPassUniforms ->
             uniforms.apply {
                 materials = renderState.materialBuffer
                 entities = renderState.entitiesBuffer
-                program.uniforms.indirect = false
-                when (val uniforms = program.uniforms) {
+                uniforms.indirect = false
+                when (val uniforms = uniforms) {
                     is StaticFirstPassUniforms -> uniforms.vertices = renderState.vertexIndexBufferStatic.vertexStructArray
                     is AnimatedFirstPassUniforms -> {
                         uniforms.joints = renderState.entitiesState.jointsBuffer
@@ -146,7 +146,7 @@ open class DirectFirstPassPipeline(
             gpuContext.depthMask = batch.material.writesDepth
             gpuContext.cullFace = batch.material.cullBackFaces
             gpuContext.depthTest = batch.material.depthTest
-            program.setTextureUniforms(batch.material.maps)
+            program.setTextureUniforms(gpuContext, batch.material.maps)
             program.uniforms.entityIndex = batch.entityBufferIndex
             program.bind()
             vertexIndexBuffer.indexBuffer.draw(
@@ -166,6 +166,9 @@ open class DirectFirstPassPipeline(
     }
 }
 
+private val <T: Uniforms> IProgram<T>.tesselationControlShader: TesselationControlShader?
+    get() = shaders.firstIsInstanceOrNull<TesselationControlShader>()
+
 val Program<*>.primitiveType
     get() = if (tesselationControlShader != null) {
         PrimitiveType.Patches
@@ -173,7 +176,7 @@ val Program<*>.primitiveType
         PrimitiveType.Triangles
     }
 
-fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<OpenGl>) {
+fun DirectDrawDescription<FirstPassUniforms>.draw(gpuContext: GpuContext<OpenGl>) {
     beforeDraw(renderState, program, drawCam)
     if(ignoreCustomPrograms) {
         program.use()
@@ -182,10 +185,10 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
     val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
-        var program: Program<T> // TODO: Assign this program in the loop below and use() only on change
+        var program: IProgram<FirstPassUniforms> // TODO: Assign this program in the loop below and use() only on change
         for(batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
             if (!ignoreCustomPrograms) {
-                program = (batch.program ?: this.program) as Program<T>
+                program = (batch.program ?: this.program)
                 program.use()
             } else {
                 program = this.program
@@ -195,7 +198,7 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
             gpuContext.cullFace = batch.material.cullBackFaces
             gpuContext.depthTest = batch.material.depthTest
             gpuContext.depthMask = batch.material.writesDepth
-            program.setTextureUniforms(batch.material.maps)
+            program.setTextureUniforms(gpuContext, batch.material.maps)
             val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
 
             program.bind()
@@ -214,7 +217,7 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
         gpuContext.depthMask = batch.material.writesDepth
         gpuContext.cullFace = batch.material.cullBackFaces
         gpuContext.depthTest = batch.material.depthTest
-        program.setTextureUniforms(batch.material.maps)
+        program.setTextureUniforms(gpuContext, batch.material.maps)
         program.uniforms.entityIndex = batch.entityBufferIndex
         program.bind()
         vertexIndexBuffer.indexBuffer.draw(

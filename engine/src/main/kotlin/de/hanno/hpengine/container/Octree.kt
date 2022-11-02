@@ -18,7 +18,7 @@ import java.util.concurrent.*
 import java.util.logging.Logger
 import java.util.stream.Collectors
 
-class Octree @JvmOverloads constructor(
+class Octree constructor(
     center: Vector3f = Vector3f(),
     size: Float = DEFAULT_SIZE,
     maxDeepness: Int = DEFAULT_MAX_DEEPNESS
@@ -135,7 +135,7 @@ class Octree @JvmOverloads constructor(
      *
      *
      */
-    class Node @JvmOverloads constructor(
+    class Node constructor(
         var octree: Octree,
         var center: Vector3f,
         var size: Float,

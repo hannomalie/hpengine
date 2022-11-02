@@ -14,8 +14,8 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
-import de.hanno.hpengine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.Capability
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawLines
@@ -36,7 +36,9 @@ import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.math.Vector4fStrukt
+import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
@@ -81,6 +83,41 @@ class ReflectionProbeRenderExtension(
 
     val reflectionProbeRenderState = renderStateManager.renderState.registerState {
         ReflectionProbeRenderState(gpuContext, renderStateManager)
+    }
+    private val linesProgram = programManager.run {
+        val uniforms = LinesProgramUniforms(gpuContext)
+        getProgram(
+            StringBasedCodeSource("mvp_vertex_vec4", """
+                //include(globals_structs.glsl)
+                
+                ${uniforms.shaderDeclarations}
+
+                in vec4 in_Position;
+
+                out vec4 pass_Position;
+                out vec4 pass_WorldPosition;
+
+                void main()
+                {
+                	vec4 vertex = vertices[gl_VertexID];
+                	vertex.w = 1;
+
+                	pass_WorldPosition = ${uniforms::modelMatrix.name} * vertex;
+                	pass_Position = ${uniforms::projectionMatrix.name} * ${uniforms::viewMatrix.name} * pass_WorldPosition;
+                    gl_Position = pass_Position;
+                }
+            """.trimIndent()),
+            StringBasedCodeSource("simple_color_vec3", """
+            ${uniforms.shaderDeclarations}
+
+            layout(location=0)out vec4 out_color;
+
+            void main()
+            {
+                out_color = vec4(${uniforms::color.name},1);
+            }
+        """.trimIndent()), null, Defines(), uniforms
+        )
     }
 
     val probeResolution = 256
@@ -144,7 +181,8 @@ class ReflectionProbeRenderExtension(
 
             deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
             gpuContext.blend = false
-            drawLines(renderStateManager, programManager, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
+
+            drawLines(renderStateManager, programManager, linesProgram, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
         }
 
     }
@@ -175,16 +213,16 @@ class ReflectionProbeRenderExtension(
 
         val gBuffer = deferredRenderingBuffer
         val gpuContext = gpuContext
-        gpuContext.disable(GlCap.DEPTH_TEST)
+        gpuContext.disable(Capability.DEPTH_TEST)
         evaluateProbeProgram.use()
         gBuffer.reflectionBuffer.use(gpuContext, false)
 
-        gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, gBuffer.positionMap)
-        gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.normalMap)
-        gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
-        gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, gBuffer.motionMap)
-        gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
-        gpuContext.bindTexture(7, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
+        gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, gBuffer.positionMap)
+        gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
+        gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
+        gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
+        gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+        gpuContext.bindTexture(7, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
         renderState.lightState.pointLightShadowMapStrategy.bindTextures()
 
         evaluateProbeProgram.setUniform("eyePosition", renderState.camera.getPosition())
@@ -210,8 +248,8 @@ class ReflectionProbeRenderExtension(
         profiled("ReflectionProbes") {
 
             gpuContext.depthMask = true
-            gpuContext.enable(GlCap.DEPTH_TEST)
-            gpuContext.enable(GlCap.CULL_FACE)
+            gpuContext.enable(Capability.DEPTH_TEST)
+            gpuContext.enable(Capability.CULL_FACE)
             cubeMapRenderTarget.use(gpuContext, true)
             gpuContext.viewPort(0, 0, cubeMap.dimension.width, cubeMap.dimension.height)
 
@@ -238,7 +276,7 @@ class ReflectionProbeRenderExtension(
                 if (!gpuContext.isSupported(BindlessTextures)) {
                     gpuContext.bindTexture(
                         8,
-                        GlTextureTarget.TEXTURE_2D,
+                        TextureTarget.TEXTURE_2D,
                         renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
@@ -268,7 +306,7 @@ class ReflectionProbeRenderExtension(
 
                 profiled("ReflectionProbe entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
-                        pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(gpuContext, batch.material.maps)
                         renderState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch
                                 .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
@@ -276,7 +314,7 @@ class ReflectionProbeRenderExtension(
                     }
                 }
                 val cubeMapArray = cubeMapRenderTarget.textures.first()
-                textureManager.generateMipMaps(GlTextureTarget.TEXTURE_CUBE_MAP, cubeMapArray.id)
+                textureManager.generateMipMaps(TextureTarget.TEXTURE_CUBE_MAP, cubeMapArray.id)
             }
         }
     }

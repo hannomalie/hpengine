@@ -1,16 +1,14 @@
 package de.hanno.hpengine.model.texture
 
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import java.lang.Math.floor
-import java.lang.Math.max
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import kotlin.math.log2
 import kotlin.math.nextUp
 
 interface Texture {
     val dimension: TextureDimension
     val id: Int
-    val target: GlTextureTarget
+    val target: TextureTarget
     val internalFormat: Int
     var handle: Long
     val textureFilterConfig: TextureFilterConfig
@@ -22,21 +20,11 @@ interface Texture {
 
     companion object {
         fun getMipMapCountForDimension(w: Int, h: Int, d: Int): Int {
-            return 1 + floor(log2(max(w, max(h, d)).toDouble())).nextUp().toInt()
+            return 1 + kotlin.math.floor(log2(kotlin.math.max(w, kotlin.math.max(h, d)).toDouble())).nextUp().toInt()
         }
     }
 }
 interface ICubeMap: Texture
-
-
-////TODO: Remove this and all usages, convert to property above
-//val Int.isMipMapped: Boolean
-//    get() {
-//        return this == GL11.GL_LINEAR_MIPMAP_LINEAR ||
-//                this == GL11.GL_LINEAR_MIPMAP_NEAREST ||
-//                this == GL11.GL_NEAREST_MIPMAP_LINEAR ||
-//                this == GL11.GL_NEAREST_MIPMAP_NEAREST
-//    }
 
 
 val Texture.mipmapCount: Int

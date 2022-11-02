@@ -5,15 +5,13 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
 import de.hanno.hpengine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D_ARRAY
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D_ARRAY
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_CUBE_MAP_ARRAY
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -160,7 +158,7 @@ class DualParaboloidShadowMapStrategy(
     var pointLightDepthMapsArrayFront: Int = 0
     var pointLightDepthMapsArrayBack: Int = 0
 
-    private val renderTarget = RenderTarget(
+    private val renderTarget = RenderTargetImpl(
         gpuContext,
         frameBuffer = FrameBuffer(
             gpuContext,

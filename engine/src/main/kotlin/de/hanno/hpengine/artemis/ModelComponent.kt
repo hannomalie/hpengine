@@ -42,6 +42,7 @@ import de.hanno.hpengine.transform.SimpleSpatial
 import de.hanno.hpengine.transform.StaticTransformSpatial
 import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -188,7 +189,7 @@ class ModelSystem(
                     materialManager.registerMaterial(meshMaterial)
                     meshMaterial.programDescription?.let { programDescription ->
                         programCache[programDescription] =
-                            programManager.getFirstPassProgram(programDescription) as Program<FirstPassUniforms>
+                            programManager.getFirstPassProgram(programDescription, StaticFirstPassUniforms(gpuContext)) as Program<FirstPassUniforms>
                     }
                 }
             }

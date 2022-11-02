@@ -16,8 +16,8 @@ import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.GlDepthFunc
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
+import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
@@ -89,7 +89,7 @@ class DirectionalLightShadowMapExtension(
         DirectionalShadowMapPipeline(animatedDirectionalShadowPassProgram)
     }
 
-    inner class DirectionalShadowMapPipeline(val directionalShadowPassProgram: Program<out DirectionalShadowUniforms>) {
+    inner class DirectionalShadowMapPipeline(val directionalShadowPassProgram: IProgram<out DirectionalShadowUniforms>) {
         private var verticesCount = 0
         private var entitiesCount = 0
 
@@ -169,7 +169,7 @@ class DirectionalLightShadowMapExtension(
         gpuContext.blend = false
         gpuContext.depthMask = true
         gpuContext.depthTest = true
-        gpuContext.depthFunc = GlDepthFunc.LESS
+        gpuContext.depthFunc = DepthFunc.LESS
         gpuContext.cullFace = false
         renderTarget.use(gpuContext, true)
 

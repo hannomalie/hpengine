@@ -21,9 +21,10 @@ import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.graphics.OpenGlCommandSync
 import org.joml.Vector3f
 
-class RenderState(private val gpuContext: GpuContext<*>) {
+class RenderState(private val gpuContext: GpuContext<*>) : IRenderState {
     var entityIds: List<Int> = emptyList()
     var componentExtracts: MutableMap<Class<out Component>, List<Component>> = mutableMapOf()
     var componentsForEntities: MutableMap<Int, Bag<Component>> = mutableMapOf()
@@ -50,7 +51,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     var sceneMax = Vector3f()
 
     var cycle: Long = 0
-    var gpuCommandSync: GpuCommandSync = object : GpuCommandSync {}
+    override var gpuCommandSync: GpuCommandSync = OpenGlCommandSync()
 
     val renderBatchesStatic: List<RenderBatch>
         get() = entitiesState.renderBatchesStatic

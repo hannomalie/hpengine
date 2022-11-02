@@ -11,7 +11,7 @@ import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.graphics.renderer.addLine
-import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
@@ -27,6 +27,9 @@ import de.hanno.hpengine.model.enlarge
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
+import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
@@ -133,6 +136,42 @@ class BvHPointLightSecondPassExtension(
 
     private val secondPassPointBvhComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 
+    private val linesProgram = programManager.run {
+        val uniforms = LinesProgramUniforms(gpuContext)
+        getProgram(
+            StringBasedCodeSource("mvp_vertex_vec4", """
+                //include(globals_structs.glsl)
+                
+                ${uniforms.shaderDeclarations}
+
+                in vec4 in_Position;
+
+                out vec4 pass_Position;
+                out vec4 pass_WorldPosition;
+
+                void main()
+                {
+                	vec4 vertex = vertices[gl_VertexID];
+                	vertex.w = 1;
+
+                	pass_WorldPosition = ${uniforms::modelMatrix.name} * vertex;
+                	pass_Position = ${uniforms::projectionMatrix.name} * ${uniforms::viewMatrix.name} * pass_WorldPosition;
+                    gl_Position = pass_Position;
+                }
+            """.trimIndent()),
+            StringBasedCodeSource("simple_color_vec3", """
+            ${uniforms.shaderDeclarations}
+
+            layout(location=0)out vec4 out_color;
+
+            void main()
+            {
+                out_color = vec4(${uniforms::color.name},1);
+            }
+        """.trimIndent()), null, Defines(), uniforms
+        )
+    }
+
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
@@ -199,12 +238,12 @@ class BvHPointLightSecondPassExtension(
             val viewMatrix = renderState.camera.viewMatrixAsBuffer
             val projectionMatrix = renderState.camera.projectionMatrixAsBuffer
 
-            gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
-            gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
-            gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-            gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
-            gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
-            gpuContext.bindTexture(5, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
+            gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
+            gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
+            gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+            gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
+            gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
+            gpuContext.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             renderState.lightState.pointLightShadowMapStrategy.bindTextures()
             // TODO: Add glbindimagetexture to openglcontext class
             GL42.glBindImageTexture(4, deferredRenderingBuffer.lightAccumulationMapOneId, 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
@@ -243,7 +282,7 @@ class BvHPointLightSecondPassExtension(
             }
             deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
             gpuContext.blend = false
-            drawLines(renderStateManager, programManager, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
+            drawLines(renderStateManager, programManager, linesProgram, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
         }
 
     }

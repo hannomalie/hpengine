@@ -2,20 +2,14 @@ package de.hanno.hpengine.graphics.shader
 
 import com.artemis.BaseSystem
 import de.hanno.hpengine.backend.OpenGl
-import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.bus.EventBus
+import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.OpenGLContext
-import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.shader.api.Shader
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.ProgramDescription
-import de.hanno.hpengine.ressources.CodeSource
-import de.hanno.hpengine.ressources.FileBasedCodeSource
-import de.hanno.hpengine.ressources.StringBasedCodeSource
-import de.hanno.hpengine.ressources.WrappedCodeSource
-import de.hanno.hpengine.ressources.hasChanged
-import java.util.WeakHashMap
+import de.hanno.hpengine.ressources.*
+import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
 class OpenGlProgramManager(override val gpuContext: OpenGLContext,
@@ -40,44 +34,8 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     override val Uniforms.shaderDeclarations
         get() = registeredUniforms.toUniformDeclaration()
 
-    var programsCache: MutableList<AbstractProgram<*>> = CopyOnWriteArrayList()
+    var programsCache: MutableList<IProgram<*>> = CopyOnWriteArrayList()
 
-    override val linesProgram = run {
-        val uniforms = LinesProgramUniforms(gpuContext)
-        getProgram(
-                StringBasedCodeSource("mvp_vertex_vec4", """
-                //include(globals_structs.glsl)
-                
-                ${uniforms.shaderDeclarations}
-
-                in vec4 in_Position;
-
-                out vec4 pass_Position;
-                out vec4 pass_WorldPosition;
-
-                void main()
-                {
-                	vec4 vertex = vertices[gl_VertexID];
-                	vertex.w = 1;
-
-                	pass_WorldPosition = ${uniforms::modelMatrix.name} * vertex;
-                	pass_Position = ${uniforms::projectionMatrix.name} * ${uniforms::viewMatrix.name} * pass_WorldPosition;
-                    gl_Position = pass_Position;
-                }
-            """.trimIndent()),
-                StringBasedCodeSource("simple_color_vec3", """
-            ${uniforms.shaderDeclarations}
-
-            layout(location=0)out vec4 out_color;
-
-            void main()
-            {
-                out_color = vec4(${uniforms::color.name},1);
-            }
-        """.trimIndent()), null, Defines(), uniforms
-        )
-    }
-    override val heightMappingFirstPassProgram = getFirstPassHeightMappingProgram()
     override val heightMappingFirstPassProgramDescription = getFirstPassHeightMappingProgramDescription()
 
     override fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines, uniforms: Uniforms?): ComputeProgram {
@@ -133,9 +91,12 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                     if (shader.source is StringBasedCodeSource || shader.source is FileBasedCodeSource || shader.source is WrappedCodeSource) {
                         programsSourceCache.putIfAbsent(shader, shader.source.source.hashCode())
                         if (shader.source.hasChanged(programsSourceCache[shader]!!)) {
-                            program.reload()
-                            println("Reloaded ${program.name}")
-                            programsSourceCache[shader] = shader.source.source.hashCode()
+                            // TODO: Find a better way fot this check
+                            if(program is Reloadable) {
+                                program.reload()
+                                println("Reloaded ${program.name}")
+                                programsSourceCache[shader] = shader.source.source.hashCode()
+                            }
                         }
                     }
                 }
@@ -155,16 +116,6 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         update(world.delta)
     }
 }
-
-private fun ProgramManager<*>.getFirstPassHeightMappingProgram(): Program<FirstPassUniforms> = getProgram(
-    vertexShaderSource = vertexShaderSource,
-    tesselationControlShaderSource = tesselationControlShaderSource,
-    tesselationEvaluationShaderSource = tesselationEvaluationShaderSource,
-    geometryShaderSource = geometryShaderSource,
-    fragmentShaderSource = fragmentShaderSource,
-    defines = Defines(),
-    uniforms = StaticFirstPassUniforms(gpuContext)
-)
 
 private fun ProgramManager<*>.getFirstPassHeightMappingProgramDescription() = ProgramDescription(
     vertexShaderSource = vertexShaderSource,

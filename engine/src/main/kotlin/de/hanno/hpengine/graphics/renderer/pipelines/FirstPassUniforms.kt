@@ -10,14 +10,6 @@ import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.shader.BooleanType
-import de.hanno.hpengine.graphics.shader.FloatType
-import de.hanno.hpengine.graphics.shader.IntType
-import de.hanno.hpengine.graphics.shader.Mat4
-import de.hanno.hpengine.graphics.shader.Program
-import de.hanno.hpengine.graphics.shader.SSBO
-import de.hanno.hpengine.graphics.shader.Uniforms
-import de.hanno.hpengine.graphics.shader.Vec3
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.model.material.Material
@@ -25,6 +17,7 @@ import de.hanno.hpengine.model.texture.Texture
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.shader.*
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils.createFloatBuffer
 
@@ -62,7 +55,7 @@ open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUnifor
         AnimatedVertexStruktPacked.type))
 }
 
-fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>) {
+fun IProgram<*>.setTextureUniforms(gpuContext: GpuContext<*>, maps: Map<Material.MAP, Texture>) {
     for (mapEnumEntry in Material.MAP.values()) {
 
         if (maps.contains(mapEnumEntry)) {

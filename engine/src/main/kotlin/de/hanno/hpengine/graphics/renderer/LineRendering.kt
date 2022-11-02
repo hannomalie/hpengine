@@ -3,9 +3,7 @@ package de.hanno.hpengine.graphics.renderer
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
-import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.graphics.shader.safePut
-import de.hanno.hpengine.graphics.shader.useAndBind
+import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.math.identityMatrix4fBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.drawLines
 import de.hanno.hpengine.math.Vector4fStrukt
@@ -16,6 +14,7 @@ import kotlin.math.min
 fun drawLines(
     renderStateManager: RenderStateManager,
     programManager: ProgramManager<OpenGl>,
+    linesProgram: IProgram<LinesProgramUniforms>,
     vertices: PersistentTypedBuffer<Vector4fStrukt>,
     linePoints: List<Vector3fc>,
     lineWidth: Float = 5f,
@@ -32,6 +31,7 @@ fun drawLines(
     drawLines(
         renderStateManager,
         programManager,
+        linesProgram,
         vertices,
         lineWidth,
         linePoints.size,
@@ -53,6 +53,7 @@ fun PersistentTypedBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector
 fun drawLines(
     renderStateManager: RenderStateManager,
     programManager: ProgramManager<OpenGl>,
+    linesProgram: IProgram<LinesProgramUniforms>,
     vertices: PersistentTypedBuffer<Vector4fStrukt>,
     lineWidth: Float = 5f,
     verticesCount: Int,
@@ -64,7 +65,7 @@ fun drawLines(
 
     if (verticesCount <= 0) return
 
-    programManager.linesProgram.useAndBind { uniforms ->
+    linesProgram.useAndBind { uniforms ->
         uniforms.modelMatrix.safePut(modelMatrix)
         uniforms.projectionMatrix.safePut(projectionMatrix)
         uniforms.viewMatrix.safePut(viewMatrix)

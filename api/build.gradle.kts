@@ -20,6 +20,8 @@ dependencies {
     api(kotlin("stdlib"))
     api(kotlin("stdlib-jdk8"))
     api(kotlin("reflect"))
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5")
 
     api("de.hanno.struktgen:api:1.0.0-SNAPSHOT")
 
@@ -37,4 +39,6 @@ dependencies {
     api("commons-io:commons-io:2.4")
 
     api("io.github.classgraph:classgraph:4.8.89")
+
+    api("com.carrotsearch:hppc:0.7.2")
 }

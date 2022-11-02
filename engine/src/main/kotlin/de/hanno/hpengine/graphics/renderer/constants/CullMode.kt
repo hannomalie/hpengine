@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.renderer.constants
 
 import org.lwjgl.opengl.GL11
 
-enum class CullMode(val glMode: Int) {
-    FRONT(GL11.GL_FRONT), BACK(GL11.GL_BACK);
+val CullMode.glMode: Int get() = when(this) {
+    CullMode.FRONT -> GL11.GL_FRONT
+    CullMode.BACK -> GL11.GL_BACK
 }

@@ -6,7 +6,6 @@ import de.hanno.hpengine.artemis.CameraComponent
 import de.hanno.hpengine.artemis.EnvironmentProbeComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.GpuContext.Companion.exitOnGLError
 import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
@@ -15,7 +14,6 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer.Companion.invoke
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer.Companion.invoke
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget.Companion.invoke
 import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.graphics.shader.Program
@@ -26,6 +24,7 @@ import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.exitOnGLError
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.util.Util
@@ -39,20 +38,42 @@ import org.lwjgl.opengl.GL43
 import java.nio.FloatBuffer
 import java.util.HashSet
 
-class EnvironmentSampler(val transform: Transform,
-                         probe: EnvironmentProbeComponent,
-                         width: Int, height: Int, probeIndex: Int,
-                         programManager: ProgramManager<OpenGl>,
-                         config: Config,
-                         textureManager: TextureManager,
-                         cubeMapArrayRenderTarget: CubeMapArrayRenderTarget
+class EnvironmentSampler(
+    val transform: Transform,
+    probe: EnvironmentProbeComponent,
+    width: Int, height: Int, probeIndex: Int,
+    programManager: ProgramManager<OpenGl>,
+    config: Config,
+    textureManager: TextureManager,
+    cubeMapArrayRenderTarget: CubeMapArrayRenderTarget
 ) {
-    val cubeMapProgram: Program<Uniforms>
-    private val cubeMapLightingProgram: Program<Uniforms>
-    private val depthPrePassProgram: Program<Uniforms>
-    val tiledProbeLightingProgram: ComputeProgram
-    val cubemapRadianceProgram: ComputeProgram
-    val cubemapRadianceFragmentProgram: Program<Uniforms>
+    val cubeMapProgram = config.run {
+        programManager.getProgram(
+            EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/cubemap_fragment.glsl").toCodeSource()
+        )
+    }
+    private val cubeMapLightingProgram = config.run {
+        programManager.getProgram(
+            EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/cubemap_lighting_fragment.glsl").toCodeSource()
+        )
+    }
+    private val depthPrePassProgram = config.run {
+        programManager.getProgram(
+            EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/cubemap_fragment.glsl").toCodeSource()
+        )
+    }
+    val tiledProbeLightingProgram =
+        programManager.getComputeProgram(config.EngineAsset("shaders/tiled_probe_lighting_probe_rendering_compute.glsl"))
+    val cubemapRadianceProgram = programManager.getComputeProgram(config.EngineAsset("shaders/cubemap_radiance_compute.glsl"))
+    val cubemapRadianceFragmentProgram = config.run {
+        programManager.getProgram(
+            config.EngineAsset("shaders/passthrough_vertex.glsl").toCodeSource(),
+            config.EngineAsset("shaders/cubemap_radiance_fragment.glsl").toCodeSource()
+        )
+    }
     private val entityBuffer = BufferUtils.createFloatBuffer(16)
 
     var drawnOnce = false
@@ -65,11 +86,36 @@ class EnvironmentSampler(val transform: Transform,
     val cubeMapView1: Int
     val cubeMapView2: Int
     val cubeMapFaceViews = Array(4) { IntArray(6) }
-    private val secondPassPointProgram: Program<Uniforms>
-    private val secondPassTubeProgram: Program<Uniforms>
-    private val secondPassAreaProgram: Program<Uniforms>
-    val secondPassDirectionalProgram: Program<Uniforms>
-    val firstPassDefaultProgram: Program<Uniforms>
+    private val secondPassPointProgram = config.run {
+        programManager.getProgram(
+            EngineAsset("shaders/second_pass_point_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/scond_pass_point_fragment.glsl").toCodeSource()
+        )
+    }
+    private val secondPassTubeProgram = config.run {
+        programManager.getProgram(
+            EngineAsset("shaders/second_pass_point_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/scond_pass_tube_fragment.glsl").toCodeSource()
+        )
+    }
+    private val secondPassAreaProgram = config.run {
+        programManager.getProgram(
+            EngineAsset("shaders/second_pass_area_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/scond_pass_area_fragment.glsl").toCodeSource()
+        )
+    }
+    val secondPassDirectionalProgram = config.run {
+        programManager.getProgram(
+            EngineAsset("shaders/second_pass_directional_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/scond_pass_directional_fragment.glsl").toCodeSource()
+        )
+    }
+    val firstPassDefaultProgram = config.run {
+        programManager.getProgram(
+            EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/frst_pass_fragment.glsl").toCodeSource()
+        )
+    }
     val renderTarget: RenderTarget<Texture2D>
     val camera: Camera
 
@@ -89,11 +135,19 @@ class EnvironmentSampler(val transform: Transform,
         drawnOnce = false
     }
 
-    fun drawEntities(renderState: RenderState, program: Program<Uniforms>,
-                     viewMatrixAsBuffer: FloatBuffer, projectionMatrixAsBuffer: FloatBuffer,
-                     viewProjectionMatrixAsBuffer: FloatBuffer) {
+    fun drawEntities(
+        renderState: RenderState, program: Program<Uniforms>,
+        viewMatrixAsBuffer: FloatBuffer, projectionMatrixAsBuffer: FloatBuffer,
+        viewProjectionMatrixAsBuffer: FloatBuffer
+    ) {
         program.use()
-        bindShaderSpecificsPerCubeMapSide(renderState, viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, program)
+        bindShaderSpecificsPerCubeMapSide(
+            renderState,
+            viewMatrixAsBuffer,
+            projectionMatrixAsBuffer,
+            viewProjectionMatrixAsBuffer,
+            program
+        )
         for (e in renderState.renderBatchesStatic) {
             if (!isInFrustum(camera, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
 //				continue;
@@ -107,11 +161,12 @@ class EnvironmentSampler(val transform: Transform,
         }
     }
 
-    private fun bindShaderSpecificsPerCubeMapSide(renderState: RenderState,
-                                                  viewMatrixAsBuffer: FloatBuffer,
-                                                  projectionMatrixAsBuffer: FloatBuffer,
-                                                  viewProjectionMatrixAsBuffer: FloatBuffer,
-                                                  program: Program<Uniforms>
+    private fun bindShaderSpecificsPerCubeMapSide(
+        renderState: RenderState,
+        viewMatrixAsBuffer: FloatBuffer,
+        projectionMatrixAsBuffer: FloatBuffer,
+        viewProjectionMatrixAsBuffer: FloatBuffer,
+        program: Program<Uniforms>
     ) {
         val light = renderState.directionalLightState
 //        TODO: Reimplement
@@ -193,58 +248,6 @@ class EnvironmentSampler(val transform: Transform,
         val cubeMapCamInitialOrientation = Quaternionf().identity()
         transform.rotate(cubeMapCamInitialOrientation)
 
-        cubeMapProgram = config.run { programManager.getProgram(
-            EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
-            EngineAsset("shaders/cubemap_fragment.glsl").toCodeSource())
-        }
-
-        depthPrePassProgram = config.run { programManager.getProgram(
-            EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
-            EngineAsset("shaders/cubemap_fragment.glsl").toCodeSource())
-        }
-
-        cubeMapLightingProgram = config.run { programManager.getProgram(
-            EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
-            EngineAsset("shaders/cubemap_lighting_fragment.glsl").toCodeSource())
-        }
-
-        tiledProbeLightingProgram = programManager.getComputeProgram(config.EngineAsset("shaders/tiled_probe_lighting_probe_rendering_compute.glsl"))
-        cubemapRadianceProgram = programManager.getComputeProgram(config.EngineAsset("shaders/cubemap_radiance_compute.glsl"))
-
-        cubemapRadianceFragmentProgram = config.run { programManager.getProgram(
-                config.EngineAsset("shaders/passthrough_vertex.glsl").toCodeSource(),
-                config.EngineAsset("shaders/cubemap_radiance_fragment.glsl").toCodeSource()) }
-
-        secondPassPointProgram = config.run {
-            programManager.getProgram(
-                EngineAsset("shaders/second_pass_point_vertex.glsl").toCodeSource(),
-                EngineAsset("shaders/scond_pass_point_fragment.glsl").toCodeSource()
-            )
-        }
-        secondPassTubeProgram = config.run {
-            programManager.getProgram(
-                EngineAsset("shaders/second_pass_point_vertex.glsl").toCodeSource(),
-                EngineAsset("shaders/scond_pass_tube_fragment.glsl").toCodeSource()
-            )
-        }
-        secondPassAreaProgram = config.run {
-            programManager.getProgram(
-                EngineAsset("shaders/second_pass_area_vertex.glsl").toCodeSource(),
-                EngineAsset("shaders/scond_pass_area_fragment.glsl").toCodeSource()
-            )
-        }
-        secondPassDirectionalProgram = config.run {
-            programManager.getProgram(
-                EngineAsset("shaders/second_pass_directional_vertex.glsl").toCodeSource(),
-                EngineAsset("shaders/scond_pass_directional_fragment.glsl").toCodeSource()
-            )
-        }
-        firstPassDefaultProgram = config.run {
-            programManager.getProgram(
-                EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
-                EngineAsset("shaders/frst_pass_fragment.glsl").toCodeSource()
-            )
-        }
         val cubeMapArrayRenderTarget = cubeMapArrayRenderTarget
         cubeMapView = GL11.glGenTextures()
         cubeMapView1 = GL11.glGenTextures()
@@ -257,20 +260,87 @@ class EnvironmentSampler(val transform: Transform,
             cubeMapFaceViews[2][z] = GL11.glGenTextures()
             cubeMapFaceViews[3][z] = GL11.glGenTextures()
             //GL43.glTextureView(cubeMapFaceViews[i][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(i).getTextureId(), cubeMapArrayRenderTarget.getCubeMapArray(i).getInternalFormat(), 0, 1, 6 * probe.getIndex() + z, 1);
-            GL43.glTextureView(cubeMapFaceViews[0][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).id, cubeMapArrayRenderTarget.getCubeMapArray(0).internalFormat, 0, 1, 6 * probeIndex + z, 1)
-            GL43.glTextureView(cubeMapFaceViews[1][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).id, cubeMapArrayRenderTarget.getCubeMapArray(1).internalFormat, 0, 1, 6 * probeIndex + z, 1)
-            GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).id, cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat, 0, 1, 6 * probeIndex + z, 1)
-            GL43.glTextureView(cubeMapFaceViews[3][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(3).id, diffuseInternalFormat, 0, 1, 6 * probeIndex + z, 1)
+            GL43.glTextureView(
+                cubeMapFaceViews[0][z],
+                GL11.GL_TEXTURE_2D,
+                cubeMapArrayRenderTarget.getCubeMapArray(0).id,
+                cubeMapArrayRenderTarget.getCubeMapArray(0).internalFormat,
+                0,
+                1,
+                6 * probeIndex + z,
+                1
+            )
+            GL43.glTextureView(
+                cubeMapFaceViews[1][z],
+                GL11.GL_TEXTURE_2D,
+                cubeMapArrayRenderTarget.getCubeMapArray(1).id,
+                cubeMapArrayRenderTarget.getCubeMapArray(1).internalFormat,
+                0,
+                1,
+                6 * probeIndex + z,
+                1
+            )
+            GL43.glTextureView(
+                cubeMapFaceViews[2][z],
+                GL11.GL_TEXTURE_2D,
+                cubeMapArrayRenderTarget.getCubeMapArray(2).id,
+                cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat,
+                0,
+                1,
+                6 * probeIndex + z,
+                1
+            )
+            GL43.glTextureView(
+                cubeMapFaceViews[3][z],
+                GL11.GL_TEXTURE_2D,
+                cubeMapArrayRenderTarget.getCubeMapArray(3).id,
+                diffuseInternalFormat,
+                0,
+                1,
+                6 * probeIndex + z,
+                1
+            )
         }
-        GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).id, cubeMapArrayRenderTarget.getCubeMapArray(0).internalFormat, 0, CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
-        GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).id, cubeMapArrayRenderTarget.getCubeMapArray(1).internalFormat, 0, CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
-        GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).id, cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat, 0, CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
-        renderTarget = invoke(
+        GL43.glTextureView(
+            cubeMapView,
+            GL13.GL_TEXTURE_CUBE_MAP,
+            cubeMapArrayRenderTarget.getCubeMapArray(0).id,
+            cubeMapArrayRenderTarget.getCubeMapArray(0).internalFormat,
+            0,
+            CUBEMAP_MIPMAP_COUNT,
+            6 * probeIndex,
+            6
+        )
+        GL43.glTextureView(
+            cubeMapView1,
+            GL13.GL_TEXTURE_CUBE_MAP,
+            cubeMapArrayRenderTarget.getCubeMapArray(1).id,
+            cubeMapArrayRenderTarget.getCubeMapArray(1).internalFormat,
+            0,
+            CUBEMAP_MIPMAP_COUNT,
+            6 * probeIndex,
+            6
+        )
+        GL43.glTextureView(
+            cubeMapView2,
+            GL13.GL_TEXTURE_CUBE_MAP,
+            cubeMapArrayRenderTarget.getCubeMapArray(2).id,
+            cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat,
+            0,
+            CUBEMAP_MIPMAP_COUNT,
+            6 * probeIndex,
+            6
+        )
+        renderTarget = RenderTarget(
+            gpuContext,
+            invoke(gpuContext, invoke(gpuContext, RESOLUTION, RESOLUTION)),
+            RESOLUTION, RESOLUTION,
+            listOf(ColorAttachmentDefinition("Environment Diffuse", diffuseInternalFormat)).toTextures(
                 gpuContext,
-                invoke(gpuContext, invoke(gpuContext, RESOLUTION, RESOLUTION)),
-                RESOLUTION, RESOLUTION,
-                listOf(ColorAttachmentDefinition("Environment Diffuse", diffuseInternalFormat)).toTextures(gpuContext, RESOLUTION, RESOLUTION),
-                "Environment Sampler"
+                RESOLUTION,
+                RESOLUTION
+            ),
+            "Environment Sampler"
         )
         fullscreenBuffer = QuadVertexBuffer(gpuContext, true)
         fullscreenBuffer.upload()

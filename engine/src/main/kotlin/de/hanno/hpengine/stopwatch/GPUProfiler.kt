@@ -11,7 +11,7 @@ import org.lwjgl.opengl.GL33.glQueryCounter
 import kotlin.math.max
 
 object GPUProfiler {
-    var dumpAveragesRequested = false
+
     var profiling = false
     var printing = false
 
@@ -44,7 +44,6 @@ object GPUProfiler {
         newTask
     } else null
 
-    @JvmOverloads
     fun dumpAverages(sampleCount: Int = Integer.MAX_VALUE): String {
 
         val averages = calculateAverages(sampleCount)

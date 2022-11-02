@@ -14,7 +14,7 @@ import java.nio.ByteBuffer
 
 val flags = GL_MAP_WRITE_BIT or GL_MAP_PERSISTENT_BIT or GL_MAP_COHERENT_BIT
 
-abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(
+abstract class AbstractPersistentMappedBuffer(
     private val gpuContext: GpuContext<*>,
     override var target: Int,
     capacityInBytes: Int = 1024

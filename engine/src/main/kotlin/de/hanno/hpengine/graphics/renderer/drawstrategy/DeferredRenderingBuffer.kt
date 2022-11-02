@@ -6,13 +6,8 @@ import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinitions
-import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.toList
-import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
+import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
@@ -23,7 +18,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
                               val depthBuffer: DepthBuffer<*>
 ) {
 
-    val gBuffer = RenderTarget(
+    internal val gBuffer = RenderTargetImpl(
             gpuContext,
             FrameBuffer(gpuContext, depthBuffer),
             name = "GBuffer",
@@ -36,7 +31,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
             ).toList() + ColorAttachmentDefinition("Depth/Indices", GL30.GL_RGBA32F)).toTextures(gpuContext, width, height)
         )
 
-    val reflectionBuffer = RenderTarget(
+    internal val reflectionBuffer = RenderTarget(
             gpuContext,
             FrameBuffer(gpuContext, depthBuffer),
             name = "Reflection",
@@ -45,7 +40,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
             textures = ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), GL30.GL_RGBA16F).toList().toTextures(gpuContext, width, height)
         )
 
-    val forwardBuffer = RenderTarget(
+    internal val forwardBuffer = RenderTarget(
             gpuContext,
             FrameBuffer(gpuContext, depthBuffer),
             name = "Forward",
@@ -54,7 +49,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
             textures = (ColorAttachmentDefinitions(arrayOf("DiffuseSpecular", "Revealage"), GL30.GL_RGBA16F).toList()).toTextures(gpuContext, width, height)
         )
 
-    val laBuffer = RenderTarget(
+    internal val laBuffer = RenderTarget(
             gpuContext,
             FrameBuffer(gpuContext, depthBuffer),
             name = "LightAccum",
@@ -63,7 +58,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
             textures = (ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), GL30.GL_RGBA16F).toList()).toTextures(gpuContext, width, height)
         )
 
-    val finalBuffer = RenderTarget(
+    internal val finalBuffer = RenderTarget(
             gpuContext,
             FrameBuffer(gpuContext, depthBuffer),
             name = "Final Image",
@@ -72,7 +67,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
             textures = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGBA8)).toTextures(gpuContext, width, height)
         )
 
-    val halfScreenBuffer = RenderTarget(
+    internal val halfScreenBuffer = RenderTarget(
             gpuContext,
             FrameBuffer(gpuContext, depthBuffer),
             name = "Half Screen",

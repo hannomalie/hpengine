@@ -47,7 +47,6 @@ import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget.Companion.invoke
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
@@ -213,7 +212,7 @@ fun Module.addBackendModule() {
     single { MBassadorEventBus() } bind EventBus::class
 
     single { OpenGLContext.invoke(get()) } bind GpuContext::class
-    single { Input(get(), get()) }
+    single { Input(get()) }
     single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
     single { RenderSystemsConfig(getAll()) }
     single {
