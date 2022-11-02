@@ -162,6 +162,11 @@ class RenderManager(
                                 )
                             }
 
+                            profiled("checkCommandSyncs") {
+                                gpuContext.checkCommandSyncs()
+                            }
+
+                            val oldFenceSync = currentReadState.gpuCommandSync
                             profiled("finishFrame") {
                                 gpuContext.finishFrame(currentReadState)
                                 renderSystems.forEach {
@@ -169,12 +174,11 @@ class RenderManager(
                                 }
                             }
 
-                            profiled("checkCommandSyncs") {
-                                gpuContext.checkCommandSyncs()
-                            }
-
                             window.swapBuffers()
                             GL11.glFinish()
+                            require(oldFenceSync.isSignaled) {
+                                "GPU has not finished all actions using resources of read state, can't swap"
+                            }
                         }
                         GPUProfiler.dump()
 

@@ -51,7 +51,7 @@ class RenderState(private val gpuContext: GpuContext<*>) : IRenderState {
     var sceneMax = Vector3f()
 
     var cycle: Long = 0
-    override var gpuCommandSync: GpuCommandSync = OpenGlCommandSync()
+    override var gpuCommandSync: GpuCommandSync = gpuContext.createCommandSync()
 
     val renderBatchesStatic: List<RenderBatch>
         get() = entitiesState.renderBatchesStatic
@@ -101,8 +101,8 @@ class RenderState(private val gpuContext: GpuContext<*>) : IRenderState {
         componentsForEntities = HashMap(source.componentsForEntities)
         entityIds = ArrayList(source.entityIds)
     }
-    val gpuHasFinishedUsingIt
-        get() = gpuCommandSync.isSignaled
+    val gpuHasFinishedUsingIt get() = gpuCommandSync.isSignaled
+
     fun addStatic(batch: RenderBatch) {
         entitiesState.renderBatchesStatic.add(batch)
     }

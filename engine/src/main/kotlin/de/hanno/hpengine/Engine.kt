@@ -147,9 +147,6 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
         launchEndlessLoop { deltaSeconds ->
             try {
                 updating.getAndSet(true)
-                require(renderManager.renderState.currentWriteState.gpuHasFinishedUsingIt) {
-                    "GPU hasn't finished reading renderstate"
-                }
                 executeCommands()
                 withContext(updateScopeDispatcher) {
                     update(deltaSeconds)
@@ -194,7 +191,7 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
         return updateCycle.getAndIncrement()
     }
 
-    suspend fun update(deltaSeconds: Float) = try {
+    fun update(deltaSeconds: Float) = try {
         window.invoke { input.update() }
     } catch (e: Exception) {
         e.printStackTrace()

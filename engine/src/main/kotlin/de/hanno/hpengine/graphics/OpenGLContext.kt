@@ -3,11 +3,9 @@ package de.hanno.hpengine.graphics
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.renderer.constants.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.IFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.state.IRenderState
-import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
@@ -44,18 +42,17 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.*
 import java.util.concurrent.Executors
-import java.util.logging.Logger
 import javax.vecmath.Vector2f
-import javax.vecmath.Vector4f
 
-class OpenGLContext private constructor(override val window: Window<OpenGl>, val debug: Boolean = false) : GpuContext<OpenGl>, GpuExecutor by window {
+class OpenGLContext private constructor(override val window: Window<OpenGl>, val debug: Boolean = false) :
+    GpuContext<OpenGl>, GpuExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
     private val debugProc = window.invoke { if (debug) GLUtil.setupDebugMessageCallback() else null }
     private lateinit var dummyVertexIndexBuffer: VertexIndexBuffer
 
     init {
-        val dummyVertexBuffer = VertexBuffer(this, DEFAULTCHANNELS, floatArrayOf(0f,0f,0f,0f))
+        val dummyVertexBuffer = VertexBuffer(this, DEFAULTCHANNELS, floatArrayOf(0f, 0f, 0f, 0f))
         window.invoke {
             enable(Capability.DEPTH_TEST)
             enable(Capability.CULL_FACE)
@@ -75,7 +72,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
     override val maxLineWidth = window.invoke { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
 
-    override val backend = object: OpenGl {
+    override val backend = object : OpenGl {
         override val gpuContext = this@OpenGLContext
     }
 
@@ -90,7 +87,8 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         val width = 2f
         val widthDiv = width / 6f
         (0..5).map {
-            val quadVertexBuffer = QuadVertexBuffer(this, Vector2f(-1f + it * widthDiv, -1f), Vector2f(-1 + (it + 1) * widthDiv, height))
+            val quadVertexBuffer =
+                QuadVertexBuffer(this, Vector2f(-1f + it * widthDiv, -1f), Vector2f(-1 + (it + 1) * widthDiv, height))
             quadVertexBuffer.upload()
             quadVertexBuffer
         }
@@ -104,10 +102,10 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         get() = window.invoke { GL11.glGetError() != GL11.GL_NO_ERROR }
 
     override val features = run {
-        val bindlessTextures = if(capabilities.GL_ARB_bindless_texture) BindlessTextures else null
-        val drawParameters = if(capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
-        val nvShader5 = if(capabilities.GL_NV_gpu_shader5) NvShader5 else null
-        val arbShader5 = if(capabilities.GL_ARB_gpu_shader5) ArbShader5 else null
+        val bindlessTextures = if (capabilities.GL_ARB_bindless_texture) BindlessTextures else null
+        val drawParameters = if (capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
+        val nvShader5 = if (capabilities.GL_NV_gpu_shader5) NvShader5 else null
+        val arbShader5 = if (capabilities.GL_ARB_gpu_shader5) ArbShader5 else null
 
         listOfNotNull(bindlessTextures, drawParameters, arbShader5, nvShader5)
     }
@@ -117,31 +115,27 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     }
 
     override fun createCommandSync(onSignaled: (() -> Unit)): OpenGlCommandSync = createCommandSync(onSignaled)
-    override fun createCommandSync(): OpenGlCommandSync = createCommandSyncImpl()
-
-    private fun createCommandSyncImpl(onSignaled: (() -> Unit)? = null): OpenGlCommandSync = window.invoke {
-        OpenGlCommandSync(onSignaled).also {
+    override fun createCommandSync(): OpenGlCommandSync = window.invoke {
+        OpenGlCommandSync().also {
             commandSyncs.add(it)
         }
     }
 
-    private fun getMaxCombinedTextureImageUnits() = window.invoke { GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
+    private fun getMaxCombinedTextureImageUnits() =
+        window.invoke { GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
 
     private fun getSupportedExtensions(): List<String> = window.invoke {
         (0 until GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)).mapNotNull { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
     }
 
-    override fun checkCommandSyncs() {
-        val signaledJustNow = commandSyncs.check()
-
-        window.invoke {
-            commandSyncs.filter { it.signaled }.forEach { it.delete() }
-        }
-        commandSyncs = commandSyncs.filter { !it.signaled }.toMutableList()
-
-        signaledJustNow.forEach {
+    override fun checkCommandSyncs() = window.invoke {
+        commandSyncs.check()
+        val (signaled, nonSignaled) = commandSyncs.partition { it.signaled }
+        signaled.forEach {
             it.onSignaled?.invoke()
+            it.delete()
         }
+        commandSyncs = nonSignaled.toMutableList()
     }
 
     override fun enable(cap: Capability) = window.invoke { cap.enable() }
@@ -149,7 +143,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
     override var cullFace: Boolean
         get() = Capability.CULL_FACE.isEnabled
-        set(value) = window.invoke { Capability.CULL_FACE.run { if(value) enable() else disable() } }
+        set(value) = window.invoke { Capability.CULL_FACE.run { if (value) enable() else disable() } }
 
     override var cullMode: CullMode
         get() = CullMode.values().first { it.glMode == GL11.glGetInteger(GL_CULL_FACE_MODE) }
@@ -157,14 +151,16 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
     override var depthTest: Boolean
         get() = Capability.DEPTH_TEST.isEnabled
-        set(value) = window.invoke { Capability.DEPTH_TEST.run { if(value) enable() else disable() } }
+        set(value) = window.invoke { Capability.DEPTH_TEST.run { if (value) enable() else disable() } }
 
     override var blend: Boolean
         get() = Capability.BLEND.isEnabled
-        set(value) = window.invoke { Capability.BLEND.run { if(value) enable() else disable() } }
+        set(value) = window.invoke { Capability.BLEND.run { if (value) enable() else disable() } }
 
     override fun activeTexture(textureUnitIndex: Int) {
-        if(textureUnitIndex < 0) { throw IllegalArgumentException("Passed textureUnitIndex of < 0") }
+        if (textureUnitIndex < 0) {
+            throw IllegalArgumentException("Passed textureUnitIndex of < 0")
+        }
         val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
         window.invoke { GL13.glActiveTexture(textureIndexGLInt) }
     }
@@ -176,22 +172,27 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     private fun getOpenGLTextureUnitValue(textureUnitIndex: Int): Int {
         return GL13.GL_TEXTURE0 + textureUnitIndex
     }
+
     override fun bindTexture(target: TextureTarget, textureId: Int) {
-        if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
+        if (textureId < 0) {
+            throw IllegalArgumentException("Passed textureId of < 0")
+        }
         window.invoke {
             GL11.glBindTexture(target.glTarget, textureId)
-            getExceptionOnError("")?.let{ throw it }
+            getExceptionOnError("")?.let { throw it }
         }
     }
 
     override fun bindTexture(textureUnitIndex: Int, target: TextureTarget, textureId: Int) {
-        if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
+        if (textureId < 0) {
+            throw IllegalArgumentException("Passed textureId of < 0")
+        }
         window.invoke {
-            getExceptionOnError("beforeBindTexture")?.let{ throw it }
+            getExceptionOnError("beforeBindTexture")?.let { throw it }
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
             GL13.glActiveTexture(textureIndexGLInt)
             GL11.glBindTexture(target.glTarget, textureId)
-            getExceptionOnError("bindTexture")?.let{ throw it }
+            getExceptionOnError("bindTexture")?.let { throw it }
         }
     }
 
@@ -232,7 +233,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
     override var depthMask: Boolean
         get() = GlFlag.DEPTH_MASK.enabled
-        set(value) = window.invoke { GlFlag.DEPTH_MASK.run { if(value) enable() else disable() } }
+        set(value) = window.invoke { GlFlag.DEPTH_MASK.run { if (value) enable() else disable() } }
 
     override var depthFunc: DepthFunc
         get() = DepthFunc.values().first { it.glFunc == GL11.glGetInteger(GL_DEPTH_FUNC) }
@@ -253,7 +254,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         GL11.glBlendFunc(sfactor.glFactor, dfactor.glFactor)
     }
 
-    private val clearColorArray = floatArrayOf(0f,0f,0f,0f)
+    private val clearColorArray = floatArrayOf(0f, 0f, 0f, 0f)
     private val clearColorVector = org.joml.Vector4f()
     override var clearColor: org.joml.Vector4f
         get() = window.invoke {
@@ -277,7 +278,15 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         }
     }
 
-    override fun bindImageTexture(unit: Int, textureId: Int, level: Int, layered: Boolean, layer: Int, access: Int, internalFormat: Int) {
+    override fun bindImageTexture(
+        unit: Int,
+        textureId: Int,
+        level: Int,
+        layered: Boolean,
+        layer: Int,
+        access: Int,
+        internalFormat: Int
+    ) {
         // TODO: create access enum
         GL42.glBindImageTexture(unit, textureId, level, layered, layer, access, internalFormat)
     }
@@ -299,7 +308,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) }
 
     override val evictionCount: Int
-        get() = window.invoke{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
+        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
 
     inline fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
         if (CHECK_ERRORS) {
@@ -324,12 +333,30 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         glClearTexImage(textureId, 0, textureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
     }
 
-    override fun clearCubeMapInCubeMapArray(textureID: Int, internalFormat: Int, width: Int, height: Int, cubeMapIndex: Int) = window.invoke {
-        glClearTexSubImage(textureID, 0, 0, 0, 6 * cubeMapIndex, width, height, 6, internalFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
+    override fun clearCubeMapInCubeMapArray(
+        textureID: Int,
+        internalFormat: Int,
+        width: Int,
+        height: Int,
+        cubeMapIndex: Int
+    ) = window.invoke {
+        glClearTexSubImage(
+            textureID,
+            0,
+            0,
+            0,
+            6 * cubeMapIndex,
+            width,
+            height,
+            6,
+            internalFormat,
+            GL11.GL_UNSIGNED_BYTE,
+            ZERO_BUFFER
+        )
     }
 
     override fun register(target: RenderTarget<*>) {
-        if(registeredRenderTargets.any { it.name == target.name } || registeredRenderTargets.contains(target)) return
+        if (registeredRenderTargets.any { it.name == target.name } || registeredRenderTargets.contains(target)) return
         registeredRenderTargets.add(target)
     }
 
@@ -352,10 +379,10 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
             return "${this}$featureStringOrEmpty$defineString"
         }
         return "".appendIfSupported(NvShader5, "#extension GL_NV_gpu_shader5 : enable")
-                .appendIfSupported(ArbShader5, "#extension GL_ARB_gpu_shader5 : enable")
-                .appendIfSupported(ArbShaderInt64, "#extension GL_ARB_gpu_shader_int64 : enable")
-                .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable")
-                .appendIfSupported(DrawParameters, "#extension GL_ARB_shader_draw_parameters : enable")
+            .appendIfSupported(ArbShader5, "#extension GL_ARB_gpu_shader5 : enable")
+            .appendIfSupported(ArbShaderInt64, "#extension GL_ARB_gpu_shader_int64 : enable")
+            .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable")
+            .appendIfSupported(DrawParameters, "#extension GL_ARB_shader_draw_parameters : enable")
     }
 
 
@@ -392,8 +419,10 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
         private var openGLContextSingleton: OpenGLContext? = null
 
-        @JvmStatic @JvmName("create") operator fun invoke(window: Window<OpenGl>): OpenGLContext {
-            return if(openGLContextSingleton != null) {
+        @JvmStatic
+        @JvmName("create")
+        operator fun invoke(window: Window<OpenGl>): OpenGLContext {
+            return if (openGLContextSingleton != null) {
                 throw IllegalStateException("Can only instantiate one OpenGLContext!")
             } else {
                 OpenGLContext(window).apply {
@@ -406,7 +435,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     fun onError(block: (errorString: String) -> Unit) {
         val error = getError()
         val isError = error != GL11.GL_NO_ERROR
-        if(isError) {
+        if (isError) {
             block(getErrorString(error))
         }
     }
@@ -414,10 +443,11 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     fun exceptionOnError(msg: String = "") {
         val error = getError()
         val isError = error != GL11.GL_NO_ERROR
-        if(isError) {
+        if (isError) {
             throw IllegalStateException(getErrorString(error) + "\n$msg")
         }
     }
+
     fun getError(): Int = window.invoke { GL11.glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
     fun Texture.delete() = invoke { GL11.glDeleteTextures(id) }
