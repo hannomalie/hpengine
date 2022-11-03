@@ -12,17 +12,13 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 
-interface OpenGl: BackendType {
-    val gpuContext: OpenGLContext
-}
-
 class OpenGlBackend(override val eventBus: EventBus,
                     override val gpuContext: GpuContext,
-                    override val programManager: ProgramManager<OpenGl>,
+                    override val programManager: ProgramManager,
                     override val textureManager: TextureManager,
                     override val input: Input,
                     override val addResourceContext: AddResourceContext
-) : Backend<OpenGl> {
+) : Backend {
 
     companion object {
         operator fun invoke(window: Window, config: Config, singleThreadContext: AddResourceContext): OpenGlBackend {

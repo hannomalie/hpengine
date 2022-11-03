@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
 import de.hanno.hpengine.backend.Backend
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
@@ -30,9 +30,9 @@ import org.lwjgl.opengl.GL40.glBlendFunci
 class ForwardRenderExtension(
     val config: Config,
     val gpuContext: GpuContext,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val deferredRenderingBuffer: DeferredRenderingBuffer
-): DeferredRenderExtension<OpenGl> {
+): DeferredRenderExtension {
 
     val firstpassDefaultVertexshaderSource = FileBasedCodeSource(config.engineDir.resolve("shaders/" + "first_pass_vertex.glsl"))
     val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(config.engineDir.resolve("shaders/" + "forward_fragment.glsl"))
@@ -44,7 +44,7 @@ class ForwardRenderExtension(
         Defines()
     )
 
-    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
         deferredRenderingBuffer.forwardBuffer.use(gpuContext, false)
 
         GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f, 0f, 0f, 0f))

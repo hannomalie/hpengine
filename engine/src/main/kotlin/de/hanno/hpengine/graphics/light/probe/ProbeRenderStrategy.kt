@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.light.probe
 
 import AmbientCubeImpl.Companion.sizeInBytes
 import de.hanno.hpengine.backend.Backend
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
@@ -46,7 +46,7 @@ import java.nio.FloatBuffer
 class ProbeRenderStrategy(
     val config: Config,
     val gpuContext: GpuContext,
-    programManager: ProgramManager<OpenGl>,
+    programManager: ProgramManager,
     val textureManager: TextureManager
 ) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
@@ -234,11 +234,11 @@ class ProbeRenderStrategy(
 
 class EvaluateProbeRenderExtension(
     val gpuContext: GpuContext,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     textureManager: TextureManager,
     val config: Config,
     val deferredRenderingBuffer: DeferredRenderingBuffer
-): DeferredRenderExtension<OpenGl> {
+): DeferredRenderExtension {
 
     private val probeRenderStrategy = ProbeRenderStrategy(
         config,
@@ -255,7 +255,7 @@ class EvaluateProbeRenderExtension(
     )
 
     override fun renderFirstPass(
-        backend: Backend<OpenGl>,
+        backend: Backend,
         gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState

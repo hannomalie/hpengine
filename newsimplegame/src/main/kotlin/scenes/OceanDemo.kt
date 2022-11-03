@@ -40,21 +40,21 @@ fun main() {
                     name = "Ocean"
                 }
             }
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f())
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f(-2f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f(-2f, 0f, 2f))
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f(-2f, 0f, 0f))
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f(2f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f(2f, 0f, 2f))
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f(2f, 0f, 0f))
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f(0f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager<*>>(), Vector3f(0f, 0f, 2f))
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f())
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, -2f))
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, 2f))
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, 0f))
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, -2f))
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, 2f))
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, 0f))
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(0f, 0f, -2f))
+            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(0f, 0f, 2f))
         }
     }
 }
 
 private var oceanSurfaceCounter = 0
-private fun World.addOceanSurface(programManager: ProgramManager<*>, translation: Vector3fc) {
+private fun World.addOceanSurface(programManager: ProgramManager, translation: Vector3fc) {
     edit(create()).apply {
         create(TransformComponent::class.java).apply {
             transform.scaling(10f)

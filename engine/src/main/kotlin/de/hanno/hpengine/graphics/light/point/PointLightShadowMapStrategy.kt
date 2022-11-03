@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.light.point
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
@@ -38,7 +38,7 @@ interface PointLightShadowMapStrategy {
 class CubeShadowMapStrategy(
     config: Config,
     val gpuContext: GpuContext,
-    programManager: ProgramManager<OpenGl>
+    programManager: ProgramManager
 ): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram = programManager.getProgram(
@@ -144,7 +144,7 @@ class CubeShadowMapStrategy(
 
 class DualParaboloidShadowMapStrategy(
     private val pointLightSystem: PointLightSystem,
-    programManager: ProgramManager<OpenGl>,
+    programManager: ProgramManager,
     val gpuContext: GpuContext,
     val config: Config
 ): PointLightShadowMapStrategy {

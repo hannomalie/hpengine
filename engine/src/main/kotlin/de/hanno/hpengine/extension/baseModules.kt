@@ -10,7 +10,6 @@ import com.artemis.managers.TagManager
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.backend.Backend
-import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.backend.OpenGlBackend
 import de.hanno.hpengine.camera.CameraRenderExtension
 import de.hanno.hpengine.config.Config
@@ -59,7 +58,7 @@ data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
 data class SharedDepthBuffer(val depthBuffer: DepthBuffer<*>)
 
 val deferredRendererModule = module {
-    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll<DeferredRenderExtension<OpenGl>>().distinct()) }
+    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll<DeferredRenderExtension>().distinct()) }
     single {
         val config: Config = get()
         SharedDepthBuffer(DepthBuffer(get(), config.width, config.height))
@@ -84,14 +83,14 @@ val deferredRendererModule = module {
         FinalOutput(deferredRenderingBuffer.finalMap)
     }
     single { DebugOutput(null, 0) }
-    single { DeferredRenderExtensionConfig(getAll<DeferredRenderExtension<*>>().distinct()) }
+    single { DeferredRenderExtensionConfig(getAll<DeferredRenderExtension>().distinct()) }
 }
 
 val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll<DeferredRenderExtension<OpenGl>>().distinct(), get(), get(), getAll<ImGuiEditorExtension>().distinct())
+        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll<DeferredRenderExtension>().distinct(), get(), get(), getAll<ImGuiEditorExtension>().distinct())
     }
 }
 val textureRendererModule = module {

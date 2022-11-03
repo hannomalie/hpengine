@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.environmentsampler
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.artemis.CameraComponent
 import de.hanno.hpengine.artemis.EnvironmentProbeComponent
@@ -42,7 +42,7 @@ class EnvironmentSampler(
     val transform: Transform,
     probe: EnvironmentProbeComponent,
     width: Int, height: Int, probeIndex: Int,
-    programManager: ProgramManager<OpenGl>,
+    programManager: ProgramManager,
     config: Config,
     textureManager: TextureManager,
     cubeMapArrayRenderTarget: CubeMapArrayRenderTarget

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
@@ -19,8 +19,8 @@ class PointLightSecondPassExtension(
     val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val config: Config,
-    programManager: ProgramManager<OpenGl>
-) : DeferredRenderExtension<OpenGl> {
+    programManager: ProgramManager
+) : DeferredRenderExtension {
 
     private val secondPassPointComputeProgram =
         programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_compute.glsl"))

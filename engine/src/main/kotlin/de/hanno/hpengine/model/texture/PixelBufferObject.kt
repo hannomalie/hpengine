@@ -1,6 +1,6 @@
 package de.hanno.hpengine.model.texture
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.graphics.GpuContext
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15

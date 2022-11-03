@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics
 
 import com.artemis.BaseSystem
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
@@ -34,7 +34,7 @@ class RenderManager(
     val input: Input,
     val gpuContext: GpuContext,
     val window: Window,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val renderStateManager: RenderStateManager,
     val finalOutput: FinalOutput,
     val debugOutput: DebugOutput,

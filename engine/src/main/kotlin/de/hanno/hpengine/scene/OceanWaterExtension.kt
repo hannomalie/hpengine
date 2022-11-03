@@ -3,7 +3,7 @@ package de.hanno.hpengine.scene
 import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
 import com.artemis.World
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.artemis.MaterialComponent
 import de.hanno.hpengine.artemis.OceanSurfaceComponent
 import de.hanno.hpengine.artemis.OceanWaterComponent
@@ -40,7 +40,7 @@ class OceanWaterRenderSystem(
     val config: Config,
     val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val textureManager: TextureManager,
 ) : RenderSystem {
     override lateinit var artemisWorld: World

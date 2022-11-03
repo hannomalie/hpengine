@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
@@ -16,11 +16,11 @@ import de.hanno.hpengine.model.texture.ITextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 
 class PostProcessingExtension(private val config: Config,
-                              private val programManager: ProgramManager<OpenGl>,
+                              private val programManager: ProgramManager,
                               private val textureManager: ITextureManager,
                               private val gpuContext: GpuContext,
                               private val deferredRenderingBuffer: DeferredRenderingBuffer
-): DeferredRenderExtension<OpenGl> {
+): DeferredRenderExtension {
 
     private val postProcessProgram = programManager.getProgram(
             FileBasedCodeSource(config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),

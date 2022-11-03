@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.shader
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.pipelines.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer

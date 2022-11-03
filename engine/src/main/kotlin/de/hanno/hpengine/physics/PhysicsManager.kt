@@ -21,7 +21,7 @@ import com.bulletphysics.linearmath.DebugDrawModes
 import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.artemis.PhysicsComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -53,7 +53,7 @@ import javax.vecmath.Vector3f
 class PhysicsManager(
     private val config: Config,
     val renderStateManager: RenderStateManager,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val gpuContext: GpuContext,
     gravity: Vector3f = Vector3f(0f, -20f, 0f)
 ) : BaseEntitySystem(), RenderSystem {

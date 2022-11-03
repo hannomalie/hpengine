@@ -5,7 +5,7 @@ import VoxelGridImpl.Companion.type
 import com.artemis.World
 import de.hanno.hpengine.artemis.GiVolumeComponent
 import de.hanno.hpengine.backend.Backend
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateManager
@@ -70,10 +70,10 @@ class VoxelConeTracingExtension(
     val config: Config,
     val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val pointLightExtension: BvHPointLightSecondPassExtension,
     val deferredRenderingBuffer: DeferredRenderingBuffer
-) : DeferredRenderExtension<OpenGl> {
+) : DeferredRenderExtension {
 
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
     val voxelGrids = renderStateManager.renderState.registerState {
@@ -132,9 +132,9 @@ class VoxelConeTracingExtension(
     private var sceneInitiallyDrawn = false
     private var voxelizeDynamicEntites = false
 
-    private var gridCache = mutableMapOf<Integer, GIVolumeGrids>()
+    private var gridCache = mutableMapOf<Int, GIVolumeGrids>()
 
-    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
+    override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
         val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
         val bounces = 1

@@ -11,7 +11,6 @@ import com.artemis.annotations.One
 import com.artemis.hackedOutComponents
 import com.artemis.link.LinkListener
 import com.artemis.utils.IntBag
-import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -78,7 +77,7 @@ class ModelSystem(
     val gpuContext: GpuContext,
     val textureManager: TextureManager,
     val materialManager: MaterialManager,
-    val programManager: ProgramManager<*>,
+    val programManager: ProgramManager,
     val entityBuffer: EntityBuffer,
 ) : BaseEntitySystem(), Extractor, LinkListener {
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>

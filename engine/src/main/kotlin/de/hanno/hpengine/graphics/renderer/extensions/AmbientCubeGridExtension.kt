@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
@@ -46,7 +46,7 @@ import java.nio.FloatBuffer
 class ProbeRenderer(
     val gpuContext: GpuContext,
     config: Config,
-    programManager: ProgramManager<OpenGl>,
+    programManager: ProgramManager,
     val textureManager: TextureManager
 ) {
     val sceneMin = Vector3f(-100f, -100f, -100f)

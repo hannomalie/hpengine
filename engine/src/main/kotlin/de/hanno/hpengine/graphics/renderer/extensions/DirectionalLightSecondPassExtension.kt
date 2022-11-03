@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
@@ -19,11 +19,11 @@ import org.joml.Vector3f
 
 class DirectionalLightSecondPassExtension(
     private val config: Config,
-    private val programManager: ProgramManager<OpenGl>,
+    private val programManager: ProgramManager,
     private val textureManager: TextureManager,
     private val gpuContext: GpuContext,
     private val deferredRenderingBuffer: DeferredRenderingBuffer
-) : DeferredRenderExtension<OpenGl> {
+) : DeferredRenderExtension {
     private val secondPassDirectionalProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_fragment.glsl"))

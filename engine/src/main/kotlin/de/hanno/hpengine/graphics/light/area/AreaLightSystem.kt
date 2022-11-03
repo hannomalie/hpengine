@@ -7,7 +7,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import com.artemis.World
 import com.artemis.annotations.All
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.artemis.AreaLightComponent
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
@@ -57,7 +57,7 @@ import java.util.ArrayList
 @All(AreaLightComponent::class, TransformComponent::class)
 class AreaLightSystem(
     val gpuContext: GpuContext,
-    programManager: ProgramManager<OpenGl>,
+    programManager: ProgramManager,
     config: Config
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World

@@ -10,7 +10,7 @@ import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
 import com.artemis.World
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
@@ -43,11 +43,11 @@ import org.lwjgl.opengl.GL30
 
 class DirectionalLightShadowMapExtension(
     val config: Config,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val textureManager: TextureManager,
     val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
-) : DeferredRenderExtension<OpenGl> {
+) : DeferredRenderExtension {
 
     private var forceRerender = true
 

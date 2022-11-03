@@ -1,6 +1,5 @@
 package de.hanno.hpengine.graphics.shader
 
-import de.hanno.hpengine.backend.BackendType
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Asset
 import de.hanno.hpengine.graphics.GpuContext
@@ -10,7 +9,7 @@ import de.hanno.hpengine.ressources.CodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
-interface ProgramManager<BACKEND: BackendType> {
+interface ProgramManager {
     val config: Config
     val gpuContext: GpuContext
 

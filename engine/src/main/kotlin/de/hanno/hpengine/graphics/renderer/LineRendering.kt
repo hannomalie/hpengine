@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.graphics.shader.*
@@ -13,7 +13,7 @@ import kotlin.math.min
 
 fun drawLines(
     renderStateManager: RenderStateManager,
-    programManager: ProgramManager<OpenGl>,
+    programManager: ProgramManager,
     linesProgram: IProgram<LinesProgramUniforms>,
     vertices: PersistentTypedBuffer<Vector4fStrukt>,
     linePoints: List<Vector3fc>,
@@ -52,7 +52,7 @@ fun PersistentTypedBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector
 
 fun drawLines(
     renderStateManager: RenderStateManager,
-    programManager: ProgramManager<OpenGl>,
+    programManager: ProgramManager,
     linesProgram: IProgram<LinesProgramUniforms>,
     vertices: PersistentTypedBuffer<Vector4fStrukt>,
     lineWidth: Float = 5f,

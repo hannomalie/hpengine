@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.backend.Backend
-import de.hanno.hpengine.backend.OpenGl
+
 import java.nio.FloatBuffer
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
@@ -12,11 +12,11 @@ import org.lwjgl.opengl.GL11
 import java.lang.Exception
 import java.util.logging.Logger
 
-class PixelPerfectPickingExtension : DeferredRenderExtension<OpenGl> {
+class PixelPerfectPickingExtension : DeferredRenderExtension {
     private val floatBuffer: FloatBuffer = BufferUtils.createFloatBuffer(4)
 
     override fun renderFirstPass(
-        backend: Backend<OpenGl>,
+        backend: Backend,
         gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState

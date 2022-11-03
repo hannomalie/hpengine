@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter

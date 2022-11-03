@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer
 
 import com.artemis.World
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.Capability
@@ -26,7 +26,7 @@ open class SimpleTextureRenderer(
     config: Config,
     private val gpuContext: GpuContext,
     var texture: Texture2D,
-    private val programManager: ProgramManager<OpenGl>,
+    private val programManager: ProgramManager,
     private val frontBuffer: FrontBufferTarget
 ) : RenderSystem {
     override lateinit var artemisWorld: World

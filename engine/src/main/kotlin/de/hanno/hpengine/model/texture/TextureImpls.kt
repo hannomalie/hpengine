@@ -1,7 +1,7 @@
 package de.hanno.hpengine.model.texture
 
 import ddsutil.DDSUtil
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext

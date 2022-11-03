@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter

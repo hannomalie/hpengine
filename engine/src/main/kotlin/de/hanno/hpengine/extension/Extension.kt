@@ -9,7 +9,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.binds
 
 
-inline fun <reified T: DeferredRenderExtension<*>> Module.renderExtension(
+inline fun <reified T: DeferredRenderExtension> Module.renderExtension(
     noinline definition: Definition<T>
 ): Pair<Module, InstanceFactory<*>> = single(
     definition = definition

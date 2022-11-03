@@ -1,7 +1,7 @@
 package de.hanno.hpengine.extension
 
 import com.artemis.World
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateManager
@@ -20,10 +20,10 @@ class SkyboxRenderExtension(
     val config: Config,
     val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val textureManager: TextureManager,
     val renderStateManager: RenderStateManager
-) : DeferredRenderExtension<OpenGl> {
+) : DeferredRenderExtension {
 
     init {
         gpuContext.bindTexture(

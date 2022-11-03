@@ -4,7 +4,7 @@ import DrawElementsIndirectCommandStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
@@ -44,7 +44,7 @@ import org.lwjgl.opengl.GL15.GL_WRITE_ONLY
 open class GPUCulledPipeline(
     private val config: Config,
     private val gpuContext: GpuContext,
-    private val programManager: ProgramManager<OpenGl>,
+    private val programManager: ProgramManager,
     private val textureManager: ITextureManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val useBackFaceCulling: Boolean = true,

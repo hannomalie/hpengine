@@ -28,7 +28,7 @@ class EnvironmentProbeComponent: Component() {
 
 // TODO: Reimplement
 //class EnvironmentProbeSystem(
-//    val programManager: ProgramManager<OpenGl>,
+//    val programManager: ProgramManager,
 //    val config: Config,
 //    val textureManager: TextureManager,
 //    renderStateManager: RenderStateManager,

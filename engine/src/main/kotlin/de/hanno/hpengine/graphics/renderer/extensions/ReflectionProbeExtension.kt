@@ -6,7 +6,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.World
 import com.artemis.annotations.All
 import de.hanno.hpengine.backend.Backend
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
@@ -78,8 +78,8 @@ class ReflectionProbeRenderExtension(
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val textureManager: TextureManager,
     val renderStateManager: RenderStateManager,
-    val programManager: ProgramManager<OpenGl>
-) : DeferredRenderExtension<OpenGl> {
+    val programManager: ProgramManager
+) : DeferredRenderExtension {
 
     val reflectionProbeRenderState = renderStateManager.renderState.registerState {
         ReflectionProbeRenderState(gpuContext, renderStateManager)
@@ -188,7 +188,7 @@ class ReflectionProbeRenderExtension(
     }
 
     override fun renderFirstPass(
-        backend: Backend<OpenGl>,
+        backend: Backend,
         gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
@@ -323,7 +323,7 @@ class ReflectionProbeRenderExtension(
 class ReflectionProbeRenderer(
     val config: Config,
     val gpuContext: GpuContext,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val cubeMap: CubeMap,
     val indexInCubeMapArray: Int
 ) {

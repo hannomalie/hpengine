@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.graphics.GpuContext
 import org.lwjgl.opengl.GL30.*
 import org.lwjgl.opengl.GL32

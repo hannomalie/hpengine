@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
@@ -22,9 +22,9 @@ class AOScatteringExtension(
     val config: Config,
     val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val textureManager: TextureManager
-): DeferredRenderExtension<OpenGl> {
+): DeferredRenderExtension {
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(
         config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),

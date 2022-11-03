@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.renderer
 
 import com.artemis.World
 import de.hanno.hpengine.backend.Backend
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
@@ -23,20 +23,20 @@ import de.hanno.hpengine.graphics.renderer.pipelines.*
 
 class ExtensibleDeferredRenderer(
     val window: Window,
-    val backend: Backend<OpenGl>,
+    val backend: Backend,
     val config: Config,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val renderStateManager: RenderStateManager,
     val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
-    extensions: List<DeferredRenderExtension<OpenGl>>
+    extensions: List<DeferredRenderExtension>
 ) : RenderSystem {
     override lateinit var artemisWorld: World
-    private val allExtensions: List<DeferredRenderExtension<OpenGl>> = extensions.distinct()
-    private val extensions: List<DeferredRenderExtension<OpenGl>>
+    private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
+    private val extensions: List<DeferredRenderExtension>
         get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }
 
     private val gpuContext: GpuContext = backend.gpuContext
-    private val programManager: ProgramManager<OpenGl> = backend.programManager
+    private val programManager: ProgramManager = backend.programManager
     private val textureManager = backend.textureManager
 
     override val sharedRenderTarget = deferredRenderingBuffer.gBuffer
@@ -188,9 +188,9 @@ class ExtensibleDeferredRenderer(
 
 }
 
-class DeferredRenderExtensionConfig(val renderExtensions: List<DeferredRenderExtension<*>>) {
+class DeferredRenderExtensionConfig(val renderExtensions: List<DeferredRenderExtension>) {
     private val renderSystemsEnabled = renderExtensions.distinct().associateWith { true }.toMutableMap()
-    var DeferredRenderExtension<*>.enabled: Boolean
+    var DeferredRenderExtension.enabled: Boolean
         get() = renderSystemsEnabled[this]!!
         set(value) {
             renderSystemsEnabled[this] = value

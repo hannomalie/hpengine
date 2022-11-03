@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.pipelines
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext

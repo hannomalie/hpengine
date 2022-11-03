@@ -5,7 +5,7 @@ import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.artemis.TransformComponent
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.ConfigImpl
 import de.hanno.hpengine.extension.SharedDepthBuffer
 import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
@@ -46,7 +46,7 @@ class ImGuiEditor(
     internal val config: ConfigImpl,
     internal val sharedDepthBuffer: SharedDepthBuffer,
     internal val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
-    internal val renderExtensions: List<DeferredRenderExtension<OpenGl>>,
+    internal val renderExtensions: List<DeferredRenderExtension>,
     internal val addResourceContext: AddResourceContext,
     internal val fpsCounter: FPSCounter,
     internal val editorExtensions: List<ImGuiEditorExtension>,

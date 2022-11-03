@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.shader
 
 import com.artemis.BaseSystem
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.bus.EventBus
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.OpenGLContext
@@ -15,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                            private val eventBus: EventBus,
                            override val config: Config
-) : BaseSystem(), ProgramManager<OpenGl> {
+) : BaseSystem(), ProgramManager {
 
     override fun List<UniformDelegate<*>>.toUniformDeclaration() = joinToString("\n") {
         when (it) {
@@ -117,7 +117,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     }
 }
 
-private fun ProgramManager<*>.getFirstPassHeightMappingProgramDescription() = ProgramDescription(
+private fun ProgramManager.getFirstPassHeightMappingProgramDescription() = ProgramDescription(
     vertexShaderSource = vertexShaderSource,
     tesselationControlShaderSource = tesselationControlShaderSource,
     tesselationEvaluationShaderSource = tesselationEvaluationShaderSource,
@@ -127,13 +127,13 @@ private fun ProgramManager<*>.getFirstPassHeightMappingProgramDescription() = Pr
 )
 
 
-val ProgramManager<*>.vertexShaderSource
+val ProgramManager.vertexShaderSource
     get() = FileBasedCodeSource(config.engineDir.resolve("shaders/heightmapping_vertex.glsl"))
-val ProgramManager<*>.fragmentShaderSource
+val ProgramManager.fragmentShaderSource
     get() = FileBasedCodeSource(config.engineDir.resolve("shaders/heightmapping_fragment.glsl"))
-val ProgramManager<*>.tesselationControlShaderSource
+val ProgramManager.tesselationControlShaderSource
     get() = FileBasedCodeSource(config.engineDir.resolve("shaders/heightmapping_tesselation_control.glsl"))
-val ProgramManager<*>.tesselationEvaluationShaderSource
+val ProgramManager.tesselationEvaluationShaderSource
     get() = FileBasedCodeSource(config.engineDir.resolve("shaders/heightmapping_tesselation_evaluation.glsl"))
-val ProgramManager<*>.geometryShaderSource
+val ProgramManager.geometryShaderSource
     get() = FileBasedCodeSource(config.engineDir.resolve("shaders/heightmapping_geometry.glsl"))

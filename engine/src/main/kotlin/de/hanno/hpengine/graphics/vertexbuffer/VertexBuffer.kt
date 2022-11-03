@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.vertexbuffer
 
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import org.lwjgl.opengl.GL15

@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 import BvhNodeGpuImpl.Companion.type
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateManager
@@ -129,9 +129,9 @@ class BvHPointLightSecondPassExtension(
     val config: Config,
     val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
-    val programManager: ProgramManager<OpenGl>,
+    val programManager: ProgramManager,
     val deferredRenderingBuffer: DeferredRenderingBuffer
-): DeferredRenderExtension<OpenGl> {
+): DeferredRenderExtension {
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
 
     private val secondPassPointBvhComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))

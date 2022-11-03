@@ -11,7 +11,7 @@ import java.io.IOException
 import java.util.logging.Logger
 import java.util.regex.Pattern
 
-sealed class Shader(private val programManager: ProgramManager<*>,
+sealed class Shader(private val programManager: ProgramManager,
                     override var source: CodeSource,
                     val defines: Defines = Defines(),
                     val shaderType: ShaderType

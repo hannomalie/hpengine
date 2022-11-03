@@ -5,7 +5,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import com.artemis.World
 import com.artemis.annotations.All
-import de.hanno.hpengine.backend.OpenGl
+
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.artemis.PointLightComponent
 import de.hanno.hpengine.artemis.TransformComponent
@@ -27,7 +27,7 @@ import de.hanno.hpengine.buffers.copyTo
 // TODO: Autoadd Transform
 @All(PointLightComponent::class, TransformComponent::class)
 class PointLightSystem(
-    config: Config, programManager: ProgramManager<OpenGl>,
+    config: Config, programManager: ProgramManager,
     gpuContext: GpuContext
 ): BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World

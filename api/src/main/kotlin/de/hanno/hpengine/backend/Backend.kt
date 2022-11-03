@@ -7,15 +7,13 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.texture.ITextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 
-interface Backend<Type: BackendType> {
+interface Backend {
     val eventBus: EventBus
     val gpuContext: GpuContext
-    val programManager: ProgramManager<Type>
+    val programManager: ProgramManager
     val textureManager: ITextureManager
     val input: Input
     val addResourceContext: AddResourceContext
 
     companion object
 }
-
-interface BackendType
