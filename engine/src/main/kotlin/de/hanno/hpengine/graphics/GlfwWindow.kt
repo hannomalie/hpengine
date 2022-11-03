@@ -70,7 +70,7 @@ class GlfwWindow(
         }
     }
 
-    override val handle: Long
+    val handle: Long
 
     init {
         check(glfwInit()) { "Unable to initialize GLFW" }

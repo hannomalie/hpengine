@@ -5,8 +5,6 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
 
 
 interface Window<T : BackendType>: GpuExecutor {
-    val handle: Long // TODO: Remove this, because it is OpenGl/GLFW specific
-
     var title: String
 
     var width: Int

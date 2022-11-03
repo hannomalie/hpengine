@@ -456,20 +456,18 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 }
 
 
-class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher())
+class OpenGlExecutorImpl(dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher())
     : CoroutineScope, GpuExecutor {
-    override var gpuThreadId: Long = runBlocking(dispatcher) {
+    var gpuThreadId: Long = runBlocking(dispatcher) {
         Thread.currentThread().name = OpenGLContext.OPENGL_THREAD_NAME
         Thread.currentThread().id
     }
 
     override val coroutineContext = dispatcher + Job()
 
-    inline val isOpenGLThread: Boolean
-        get() = Thread.currentThread().isOpenGLThread
+    inline val isOpenGLThread: Boolean get() = Thread.currentThread().isOpenGLThread
 
-    inline val Thread.isOpenGLThread: Boolean
-        get() = id == gpuThreadId
+    inline val Thread.isOpenGLThread: Boolean get() = id == gpuThreadId
 
     override suspend fun <T> execute(block: () -> T): T {
         if(isOpenGLThread) return block()

@@ -29,35 +29,6 @@ import javax.swing.JPanel
 data class FinalOutput(var texture2D: Texture2D, var mipmapLevel: Int = 0)
 data class DebugOutput(var texture2D: Texture2D? = null, var mipmapLevel: Int = 0)
 
-interface ConfigExtension {
-    val panel: JPanel
-}
-class RenderSystemsConfig(val renderSystems: List<RenderSystem>) {
-    private val renderSystemsEnabled = renderSystems.distinct().associateWith { true }.toMutableMap()
-    var RenderSystem.enabled: Boolean
-       get() = renderSystemsEnabled[this] ?: true
-        set(value) {
-            renderSystemsEnabled[this] = value
-        }
-}
-class RenderSystemsConfigPanel(val renderSystemsConfig: RenderSystemsConfig): ConfigExtension {
-    override val panel: JPanel = with(renderSystemsConfig) {
-        JPanel().apply {
-            border = BorderFactory.createTitledBorder("RenderSystems")
-            layout = MigLayout("wrap 1")
-
-            renderSystemsConfig.renderSystems.distinct().forEach { renderSystem ->
-                add(JCheckBox(renderSystem::class.simpleName).apply {
-                    isSelected = renderSystem.enabled
-                    addActionListener {
-                        renderSystem.enabled = !renderSystem.enabled
-                    }
-                })
-            }
-        }
-    }
-}
-
 class RenderManager(
     val config: Config,
     val input: Input,
@@ -103,7 +74,6 @@ class RenderManager(
         launchEndlessRenderLoop { deltaSeconds ->
             gpuContext.invoke(block = {
                 rendering.getAndSet(true)
-//                val stateBeforeRendering = renderState.currentStateIndices
                 try {
                     renderState.readLocked { currentReadState ->
 
@@ -181,11 +151,6 @@ class RenderManager(
                             }
                         }
                         GPUProfiler.dump()
-
-//                        val stateAfterRendering = renderState.currentStateIndices
-//                        if(stateBeforeRendering.first != stateAfterRendering.first) {
-//                            println("Read state changed during rendering: $stateBeforeRendering -> $stateAfterRendering")
-//                        }
                     }
 
                 } catch (e: Exception) {
@@ -208,13 +173,18 @@ class RenderManager(
 
 }
 
+class RenderSystemsConfig(renderSystems: List<RenderSystem>) {
+    private val renderSystemsEnabled = renderSystems.distinct().associateWith { true }.toMutableMap()
+    var RenderSystem.enabled: Boolean
+        get() = renderSystemsEnabled[this] ?: true
+        set(value) {
+            renderSystemsEnabled[this] = value
+        }
+}
+
 inline fun <T> profiled(name: String, action: () -> T): T {
     val task = GPUProfiler.start(name)
     val result = action()
     task?.end()
     return result
 }
-
-
-private val OS = System.getProperty("os.name").toLowerCase()
-private val isUnix = OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0
