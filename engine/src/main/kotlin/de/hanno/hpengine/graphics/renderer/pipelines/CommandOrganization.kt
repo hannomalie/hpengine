@@ -4,7 +4,7 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 
-class CommandOrganization(gpuContext: GpuContext<*>) {
+class CommandOrganization(gpuContext: GpuContext) {
     var commandCount = 0
     var filteredRenderBatches: List<RenderBatch> = emptyList()
     val commandBuffer = CommandBuffer(gpuContext, 10000)

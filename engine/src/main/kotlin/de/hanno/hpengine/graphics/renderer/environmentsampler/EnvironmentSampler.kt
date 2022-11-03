@@ -119,7 +119,7 @@ class EnvironmentSampler(
     val renderTarget: RenderTarget<Texture2D>
     val camera: Camera
 
-    var gpuContext: GpuContext<OpenGl>
+    var gpuContext: GpuContext
     val config: Config
     val textureManager: TextureManager
 

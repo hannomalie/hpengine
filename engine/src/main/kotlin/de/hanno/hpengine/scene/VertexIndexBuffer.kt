@@ -8,7 +8,7 @@ import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.vertexbuffer.IndexBuffer
 import org.lwjgl.BufferUtils
 
-class VertexIndexBuffer(gpuContext: GpuContext<*>,
+class VertexIndexBuffer(gpuContext: GpuContext,
                         indexBufferSizeInIntsCount: Int) {
 
     var indexBuffer = IndexBuffer(gpuContext, BufferUtils.createIntBuffer(indexBufferSizeInIntsCount))

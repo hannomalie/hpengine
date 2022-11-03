@@ -9,7 +9,7 @@ import de.hanno.hpengine.scene.AddResourceContext
 
 interface Backend<Type: BackendType> {
     val eventBus: EventBus
-    val gpuContext: GpuContext<Type>
+    val gpuContext: GpuContext
     val programManager: ProgramManager<Type>
     val textureManager: ITextureManager
     val input: Input

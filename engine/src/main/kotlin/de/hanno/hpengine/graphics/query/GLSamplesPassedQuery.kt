@@ -4,10 +4,10 @@ import de.hanno.hpengine.graphics.GpuContext
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL33
 
-class GLSamplesPassedQuery(gpuContext: GpuContext<*>) : GLQuery<Int?> {
+class GLSamplesPassedQuery(gpuContext: GpuContext) : GLQuery<Int?> {
     override val queryToWaitFor: Int
     private val target = GL15.GL_SAMPLES_PASSED
-    private val gpuContext: GpuContext<*>
+    private val gpuContext: GpuContext
 
     @Volatile
     private var finished = false

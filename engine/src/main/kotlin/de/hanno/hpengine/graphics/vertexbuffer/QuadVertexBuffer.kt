@@ -5,14 +5,14 @@ import java.util.*
 import javax.vecmath.Vector2f
 
 class QuadVertexBuffer : VertexBuffer {
-    constructor(gpuContext: GpuContext<*>?, fullscreen: Boolean) : super(
+    constructor(gpuContext: GpuContext?, fullscreen: Boolean) : super(
         gpuContext!!,
         EnumSet.of<DataChannels>(DataChannels.POSITION3, DataChannels.TEXCOORD),
         getPositionsAndTexCoords(fullscreen)
     ) {
     }
 
-    constructor(gpuContext: GpuContext<*>?, leftBottom: Vector2f, rightUpper: Vector2f) : super(
+    constructor(gpuContext: GpuContext?, leftBottom: Vector2f, rightUpper: Vector2f) : super(
         gpuContext!!,
         EnumSet.of<DataChannels>(DataChannels.POSITION3, DataChannels.TEXCOORD),
         getPositionsAndTexCoords(leftBottom, rightUpper)

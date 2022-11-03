@@ -45,7 +45,7 @@ import java.nio.FloatBuffer
 
 class ProbeRenderStrategy(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager
 ) {
@@ -233,7 +233,7 @@ class ProbeRenderStrategy(
 }
 
 class EvaluateProbeRenderExtension(
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val programManager: ProgramManager<OpenGl>,
     textureManager: TextureManager,
     val config: Config,
@@ -256,7 +256,7 @@ class EvaluateProbeRenderExtension(
 
     override fun renderFirstPass(
         backend: Backend<OpenGl>,
-        gpuContext: GpuContext<OpenGl>,
+        gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {

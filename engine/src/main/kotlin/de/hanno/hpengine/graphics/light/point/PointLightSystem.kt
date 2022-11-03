@@ -28,7 +28,7 @@ import de.hanno.hpengine.buffers.copyTo
 @All(PointLightComponent::class, TransformComponent::class)
 class PointLightSystem(
     config: Config, programManager: ProgramManager<OpenGl>,
-    gpuContext: GpuContext<OpenGl>
+    gpuContext: GpuContext
 ): BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
     private var gpuPointLights = PersistentMappedBuffer(20 * PointLightStruct.type.sizeInBytes, gpuContext).typed(PointLightStruct.type)

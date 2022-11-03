@@ -17,7 +17,7 @@ class PixelPerfectPickingExtension : DeferredRenderExtension<OpenGl> {
 
     override fun renderFirstPass(
         backend: Backend<OpenGl>,
-        gpuContext: GpuContext<OpenGl>,
+        gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {

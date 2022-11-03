@@ -66,7 +66,7 @@ val deferredRendererModule = module {
     }
     single {
         val config: Config = get()
-        val gpuContext: GpuContext<OpenGl> = get()
+        val gpuContext: GpuContext = get()
         val sharedDepthBuffer: SharedDepthBuffer = get()
         DeferredRenderingBuffer(
             gpuContext,
@@ -89,7 +89,7 @@ val deferredRendererModule = module {
 
 val imGuiEditorModule = module {
     renderSystem {
-        val gpuContext: GpuContext<OpenGl> = get()
+        val gpuContext: GpuContext = get()
         val finalOutput: FinalOutput = get()
         ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll<DeferredRenderExtension<OpenGl>>().distinct(), get(), get(), getAll<ImGuiEditorExtension>().distinct())
     }
@@ -97,7 +97,7 @@ val imGuiEditorModule = module {
 val textureRendererModule = module {
     single {
         val config: Config = get()
-        val gpuContext: GpuContext<OpenGl> = get()
+        val gpuContext: GpuContext = get()
 
         RenderTarget(
             gpuContext,
@@ -127,7 +127,7 @@ val textureRendererModule = module {
     renderSystem {
         val textureManager: TextureManager = get()
         val renderTarget: RenderTarget2D = get()
-        val gpuContext: GpuContext<OpenGl> = get()
+        val gpuContext: GpuContext = get()
 
         object : SimpleTextureRenderer(get(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
             override val sharedRenderTarget = renderTarget
@@ -216,7 +216,7 @@ fun Module.addBackendModule() {
     single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
     single { RenderSystemsConfig(getAll()) }
     single {
-        val gpuContext: GpuContext<OpenGl> = get()
+        val gpuContext: GpuContext = get()
         RenderStateManager { RenderState(gpuContext) }
     }
 }

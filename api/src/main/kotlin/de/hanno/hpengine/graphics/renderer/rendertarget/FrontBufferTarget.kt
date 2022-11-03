@@ -8,5 +8,5 @@ interface FrontBufferTarget {
     val height: Int
     val name: String get() = "FrontBufferTarget"
     val clear: Vector4f
-    fun use(gpuContext: GpuContext<*>, clear: Boolean)
+    fun use(gpuContext: GpuContext, clear: Boolean)
 }

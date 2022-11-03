@@ -32,8 +32,8 @@ data class DebugOutput(var texture2D: Texture2D? = null, var mipmapLevel: Int = 
 class RenderManager(
     val config: Config,
     val input: Input,
-    val gpuContext: GpuContext<OpenGl>,
-    val window: Window<OpenGl>,
+    val gpuContext: GpuContext,
+    val window: Window,
     val programManager: ProgramManager<OpenGl>,
     val renderStateManager: RenderStateManager,
     val finalOutput: FinalOutput,

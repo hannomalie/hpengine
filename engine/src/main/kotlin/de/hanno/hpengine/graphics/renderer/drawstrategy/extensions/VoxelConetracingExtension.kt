@@ -68,7 +68,7 @@ fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExt
 
 class VoxelConeTracingExtension(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
     val pointLightExtension: BvHPointLightSecondPassExtension,
@@ -134,7 +134,7 @@ class VoxelConeTracingExtension(
 
     private var gridCache = mutableMapOf<Integer, GIVolumeGrids>()
 
-    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
+    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
         val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
         val bounces = 1
@@ -436,13 +436,13 @@ class VoxelConeTracingExtension(
     }
 }
 
-class VoxelizerUniformsStatic(val gpuContext: GpuContext<OpenGl>) : StaticFirstPassUniforms(gpuContext) {
+class VoxelizerUniformsStatic(val gpuContext: GpuContext) : StaticFirstPassUniforms(gpuContext) {
     val voxelGridIndex by IntType()
     val voxelGridCount by IntType()
     val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedBuffer(VoxelGrid.type.sizeInBytes, gpuContext).typed(VoxelGrid.type))
     val writeVoxels by BooleanType(true)
 }
-class VoxelizerUniformsAnimated(val gpuContext: GpuContext<OpenGl>) : AnimatedFirstPassUniforms(gpuContext) {
+class VoxelizerUniformsAnimated(val gpuContext: GpuContext) : AnimatedFirstPassUniforms(gpuContext) {
     val voxelGridIndex by IntType()
     val voxelGridCount by IntType()
     val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedBuffer(VoxelGrid.type.sizeInBytes, gpuContext).typed(VoxelGrid.type))

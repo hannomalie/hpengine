@@ -7,7 +7,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import java.nio.ByteBuffer
 
-class PixelBufferObject(private val gpuContext: GpuContext<*>, private val width: Int, private val height: Int) {
+class PixelBufferObject(private val gpuContext: GpuContext, private val width: Int, private val height: Int) {
     private val id: Int = GL15.glGenBuffers()
     private val buffer: ByteBuffer = BufferUtils.createByteBuffer(4 * 4 * width * height) // 4 is byte size of float
     private val array: FloatArray = FloatArray(4 * width * height)

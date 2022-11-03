@@ -17,7 +17,7 @@ import org.lwjgl.opengl.GL30
 import java.util.ArrayList
 
 class CubeMapArrayRenderTarget(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     renderTarget: RenderTarget<CubeMapArray>
 ) : RenderTarget<CubeMapArray> by renderTarget {
 
@@ -70,7 +70,7 @@ class CubeMapArrayRenderTarget(
     companion object {
 
         operator fun invoke(
-            gpuContext: GpuContext<OpenGl>,
+            gpuContext: GpuContext,
             width: Int, height: Int,
             name: String, clear: Vector4f,
             vararg cubeMapArray: CubeMapArray
@@ -89,7 +89,7 @@ class CubeMapArrayRenderTarget(
         }
 
         fun createDepthBuffer(
-            gpuContext: GpuContext<OpenGl>,
+            gpuContext: GpuContext,
             width: Int,
             height: Int,
             depth: Int

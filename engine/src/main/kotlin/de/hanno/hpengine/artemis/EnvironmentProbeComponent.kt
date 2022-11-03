@@ -32,7 +32,7 @@ class EnvironmentProbeComponent: Component() {
 //    val config: Config,
 //    val textureManager: TextureManager,
 //    renderStateManager: RenderStateManager,
-//    val gpuContext: GpuContext<OpenGl>
+//    val gpuContext: GpuContext
 //) : SimpleComponentSystem<EnvironmentProbe>(EnvironmentProbe::class.java), RenderSystem {
 //    override lateinit var artemisWorld: World
 //    private val renderProbeCommandQueue = RenderProbeCommandQueue()
@@ -66,7 +66,7 @@ class EnvironmentProbeComponent: Component() {
 //    val EnvironmentProbe.index: Int
 //        get() = components.indexOf(this)
 //
-//    fun EnvironmentProbe.getTextureUnitIndex(gpuContext: GpuContext<*>): Int {
+//    fun EnvironmentProbe.getTextureUnitIndex(gpuContext: GpuContext): Int {
 //        val index = index
 //        return gpuContext.maxTextureUnits - index - 1
 //    }

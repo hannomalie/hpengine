@@ -15,7 +15,7 @@ import java.nio.ByteBuffer
 val flags = GL_MAP_WRITE_BIT or GL_MAP_PERSISTENT_BIT or GL_MAP_COHERENT_BIT
 
 abstract class AbstractPersistentMappedBuffer(
-    private val gpuContext: GpuContext<*>,
+    private val gpuContext: GpuContext,
     override var target: Int,
     capacityInBytes: Int = 1024
 ) : GpuBuffer {
@@ -56,7 +56,7 @@ abstract class AbstractPersistentMappedBuffer(
         }
     }
 
-    data class BufferDefinition(val id: Int, val buffer: ByteBuffer, val gpuContext: GpuContext<*>) {
+    data class BufferDefinition(val id: Int, val buffer: ByteBuffer, val gpuContext: GpuContext) {
         init {
             require(id > 0) { "Buffer id is invalid: $id" }
         }

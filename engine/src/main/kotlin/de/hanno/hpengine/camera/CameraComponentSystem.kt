@@ -25,7 +25,7 @@ import org.joml.Vector3fc
 
 class CameraRenderExtension(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>
 ): DeferredRenderExtension<OpenGl> {
@@ -70,7 +70,7 @@ class CameraRenderExtension(
 
     override fun renderFirstPass(
         backend: Backend<OpenGl>,
-        gpuContext: GpuContext<OpenGl>,
+        gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {

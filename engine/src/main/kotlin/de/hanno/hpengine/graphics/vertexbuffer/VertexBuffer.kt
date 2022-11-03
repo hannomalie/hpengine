@@ -11,9 +11,11 @@ import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 import javax.vecmath.Vector2f
 
-open class VertexBuffer(gpuContext: GpuContext<*>,
-                        val channels: EnumSet<DataChannels>,
-                        values: FloatArray) : PersistentMappedBuffer(gpuContext, values.size * java.lang.Float.BYTES, GL15.GL_ARRAY_BUFFER),
+open class VertexBuffer(
+    gpuContext: GpuContext,
+    val channels: EnumSet<DataChannels>,
+    values: FloatArray
+) : PersistentMappedBuffer(gpuContext, values.size * java.lang.Float.BYTES, GL15.GL_ARRAY_BUFFER),
     IVertexBuffer {
 
 
@@ -168,7 +170,7 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
     }
 }
 
-fun GpuContext<OpenGl>.createSixDebugBuffers(): ArrayList<VertexBuffer> {
+fun GpuContext.createSixDebugBuffers(): ArrayList<VertexBuffer> {
     return invoke {
         val sixDebugBuffers = object : ArrayList<VertexBuffer>() {
             init {
@@ -176,7 +178,11 @@ fun GpuContext<OpenGl>.createSixDebugBuffers(): ArrayList<VertexBuffer> {
                 val width = 2f
                 val widthDiv = width / 6f
                 for (i in 0..5) {
-                    val quadVertexBuffer = QuadVertexBuffer(backend.gpuContext, Vector2f(-1f + i * widthDiv, -1f), Vector2f(-1 + (i + 1) * widthDiv, height))
+                    val quadVertexBuffer = QuadVertexBuffer(
+                        this@createSixDebugBuffers,
+                        Vector2f(-1f + i * widthDiv, -1f),
+                        Vector2f(-1 + (i + 1) * widthDiv, height)
+                    )
                     add(quadVertexBuffer)
                     quadVertexBuffer.upload()
                 }

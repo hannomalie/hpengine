@@ -34,7 +34,7 @@ class GlfwWindow(
     errorCallback: GLFWErrorCallbackI = printErrorCallback,
     closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
     val executor: GpuExecutor = OpenGlExecutorImpl()
-) : Window<OpenGl>, GpuExecutor by executor {
+) : Window, GpuExecutor by executor {
 
     override var vSync: Boolean = _vSync
         set(value) {
@@ -132,7 +132,7 @@ class GlfwWindow(
 
 }
 
-fun Window<*>.createFrontBufferRenderTarget(): FrontBufferTarget {
+fun Window.createFrontBufferRenderTarget(): FrontBufferTarget {
     return object : FrontBufferTarget {
         val frameBuffer = FrameBuffer.FrontBuffer
         override val name = "FrontBuffer"
@@ -150,7 +150,7 @@ fun Window<*>.createFrontBufferRenderTarget(): FrontBufferTarget {
                 this@createFrontBufferRenderTarget.height = value
             }
 
-        override fun use(gpuContext: GpuContext<*>, clear: Boolean) {
+        override fun use(gpuContext: GpuContext, clear: Boolean) {
             gpuContext.bindFrameBuffer(frameBuffer)
             gpuContext.viewPort(0, 0, width, height)
             if (clear) {

@@ -47,7 +47,7 @@ class Program<T : Uniforms> constructor(
     uniforms: T
 ) : AbstractProgram<T>(programManager.gpuContext.createProgramId(), defines, uniforms) {
 
-    val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
+    val gpuContext: GpuContext = programManager.gpuContext
 
     override var shaders: List<de.hanno.hpengine.graphics.shader.api.Shader> = listOfNotNull(vertexShader, fragmentShader, geometryShader, tesselationControlShader, tesselationEvaluationShader)
 
@@ -67,7 +67,7 @@ class Program<T : Uniforms> constructor(
         validateProgram()
 
         registerUniforms()
-        gpuContext.backend.gpuContext.exceptionOnError()
+        gpuContext.exceptionOnError()
 
         createFileListeners()
     }
@@ -234,7 +234,7 @@ class Program<T : Uniforms> constructor(
         for (channel in channels) {
             glBindAttribLocation(id, channel.location, channel.binding)
         }
-        gpuContext.backend.gpuContext.exceptionOnError()
+        gpuContext.exceptionOnError()
     }
 
     fun delete() {

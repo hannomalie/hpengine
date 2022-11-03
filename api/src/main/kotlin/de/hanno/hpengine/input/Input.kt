@@ -7,7 +7,7 @@ import de.hanno.hpengine.graphics.GpuContext
 import org.lwjgl.glfw.GLFW.*
 
 class Input(
-    private val gpuContext: GpuContext<*>
+    private val gpuContext: GpuContext
 ) {
 
     val keysPressed = IntArrayList()
@@ -122,11 +122,11 @@ class Input(
     }
 
 
-    private fun isKeyDown(gpuContext: GpuContext<*>, keyCode: Int): Boolean {
+    private fun isKeyDown(gpuContext: GpuContext, keyCode: Int): Boolean {
         val action = gpuContext.window.getKey(keyCode)
         return action == GLFW_PRESS || action == GLFW_REPEAT
     }
-    private fun isKeyUp(gpuContext: GpuContext<*>, keyCode: Int): Boolean {
+    private fun isKeyUp(gpuContext: GpuContext, keyCode: Int): Boolean {
         return gpuContext.window.getKey(keyCode) == GLFW_RELEASE
     }
 

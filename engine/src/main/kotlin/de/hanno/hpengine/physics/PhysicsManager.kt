@@ -54,7 +54,7 @@ class PhysicsManager(
     private val config: Config,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     gravity: Vector3f = Vector3f(0f, -20f, 0f)
 ) : BaseEntitySystem(), RenderSystem {
     override lateinit var artemisWorld: World

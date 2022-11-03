@@ -21,7 +21,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 class CombinePassRenderExtension(private val config: Config,
                                  private val programManager: ProgramManager<OpenGl>,
                                  private val textureManager: ITextureManager,
-                                 private val gpuContext: GpuContext<OpenGl>,
+                                 private val gpuContext: GpuContext,
                                  private val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension<OpenGl> {
 

@@ -1,42 +1,22 @@
 package de.hanno.hpengine.graphics
 
-import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.IFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.state.IRenderState
-import de.hanno.hpengine.model.texture.Texture
-import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import de.hanno.hpengine.model.texture.Texture
+import de.hanno.hpengine.scene.VertexIndexBuffer
+import kotlinx.coroutines.*
 import org.lwjgl.BufferUtils
+import org.lwjgl.opengl.*
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
-import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_COLOR_CLEAR_VALUE
-import org.lwjgl.opengl.GL11.GL_CULL_FACE_MODE
-import org.lwjgl.opengl.GL11.GL_DEPTH_FUNC
-import org.lwjgl.opengl.GL11.glDepthFunc
-import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL30.glGenFramebuffers
-import org.lwjgl.opengl.GL40
-import org.lwjgl.opengl.GL42
-import org.lwjgl.opengl.GL44
-import org.lwjgl.opengl.GLUtil
-import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.lang.Integer.max
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
@@ -44,8 +24,8 @@ import java.util.*
 import java.util.concurrent.Executors
 import javax.vecmath.Vector2f
 
-class OpenGLContext private constructor(override val window: Window<OpenGl>, val debug: Boolean = false) :
-    GpuContext<OpenGl>, GpuExecutor by window {
+class OpenGLContext private constructor(override val window: Window, val debug: Boolean = false) :
+    GpuContext, GpuExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
     private val debugProc = window.invoke { if (debug) GLUtil.setupDebugMessageCallback() else null }
@@ -71,10 +51,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     private fun getCapabilities() = window { GL.getCapabilities() }
 
     override val maxLineWidth = window.invoke { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
-
-    override val backend = object : OpenGl {
-        override val gpuContext = this@OpenGLContext
-    }
 
     override val registeredRenderTargets = ArrayList<RenderTarget<*>>()
 
@@ -114,7 +90,16 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         currentReadState.gpuCommandSync = createCommandSync()
     }
 
-    override fun createCommandSync(onSignaled: (() -> Unit)): OpenGlCommandSync = createCommandSync(onSignaled)
+    override fun createCommandSync(onSignaled: (() -> Unit)): OpenGlCommandSync = window.invoke {
+        OpenGlCommandSync(onSignaled).also {
+            commandSyncs.add(it)
+        }
+    }
+
+    override fun exceptionOnError() {
+        exceptionOnError("")
+    }
+
     override fun createCommandSync(): OpenGlCommandSync = window.invoke {
         OpenGlCommandSync().also {
             commandSyncs.add(it)
@@ -421,7 +406,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
         @JvmStatic
         @JvmName("create")
-        operator fun invoke(window: Window<OpenGl>): OpenGLContext {
+        operator fun invoke(window: Window): OpenGLContext {
             return if (openGLContextSingleton != null) {
                 throw IllegalStateException("Can only instantiate one OpenGLContext!")
             } else {
@@ -440,7 +425,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         }
     }
 
-    fun exceptionOnError(msg: String = "") {
+    fun exceptionOnError(msg: String) {
         val error = getError()
         val isError = error != GL11.GL_NO_ERROR
         if (isError) {
@@ -456,8 +441,9 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 }
 
 
-class OpenGlExecutorImpl(dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher())
-    : CoroutineScope, GpuExecutor {
+class OpenGlExecutorImpl(
+    dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+) : CoroutineScope, GpuExecutor {
     var gpuThreadId: Long = runBlocking(dispatcher) {
         Thread.currentThread().name = OpenGLContext.OPENGL_THREAD_NAME
         Thread.currentThread().id
@@ -470,7 +456,7 @@ class OpenGlExecutorImpl(dispatcher: CoroutineDispatcher = Executors.newSingleTh
     inline val Thread.isOpenGLThread: Boolean get() = id == gpuThreadId
 
     override suspend fun <T> execute(block: () -> T): T {
-        if(isOpenGLThread) return block()
+        if (isOpenGLThread) return block()
 
         return withContext(coroutineContext) {
             block()
@@ -478,7 +464,7 @@ class OpenGlExecutorImpl(dispatcher: CoroutineDispatcher = Executors.newSingleTh
     }
 
     override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE {
-        if(isOpenGLThread) return block()
+        if (isOpenGLThread) return block()
 
         return runBlocking(coroutineContext) {
             block()
@@ -490,18 +476,22 @@ class OpenGlExecutorImpl(dispatcher: CoroutineDispatcher = Executors.newSingleTh
 var DEFAULTCHANNELS = EnumSet.of(
     DataChannels.POSITION3,
     DataChannels.TEXCOORD,
-    DataChannels.NORMAL)
+    DataChannels.NORMAL
+)
 var DEFAULTANIMATEDCHANNELS = EnumSet.of(
     DataChannels.POSITION3,
     DataChannels.TEXCOORD,
     DataChannels.NORMAL,
     DataChannels.WEIGHTS,
-    DataChannels.JOINT_INDICES)
+    DataChannels.JOINT_INDICES
+)
 var DEPTHCHANNELS = EnumSet.of(
     DataChannels.POSITION3,
     DataChannels.NORMAL
 )
 var SHADOWCHANNELS = EnumSet.of(
-    DataChannels.POSITION3)
+    DataChannels.POSITION3
+)
 var POSITIONCHANNEL = EnumSet.of(
-    DataChannels.POSITION3)
+    DataChannels.POSITION3
+)

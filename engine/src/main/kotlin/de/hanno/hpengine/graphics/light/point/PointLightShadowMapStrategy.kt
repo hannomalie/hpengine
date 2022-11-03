@@ -37,7 +37,7 @@ interface PointLightShadowMapStrategy {
 
 class CubeShadowMapStrategy(
     config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     programManager: ProgramManager<OpenGl>
 ): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
@@ -145,7 +145,7 @@ class CubeShadowMapStrategy(
 class DualParaboloidShadowMapStrategy(
     private val pointLightSystem: PointLightSystem,
     programManager: ProgramManager<OpenGl>,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val config: Config
 ): PointLightShadowMapStrategy {
     private var pointShadowPassProgram = programManager.getProgram(

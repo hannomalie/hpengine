@@ -16,7 +16,7 @@ import de.hanno.hpengine.scene.BatchKey
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import java.util.HashMap
 
-class EntitiesState(gpuContext: GpuContext<*>) {
+class EntitiesState(gpuContext: GpuContext) {
     private val ssboAllocator = PersistentMappedBufferAllocator(gpuContext)
 
     val cash: MutableMap<BatchKey, RenderBatch> = HashMap()

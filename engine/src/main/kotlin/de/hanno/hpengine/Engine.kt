@@ -60,7 +60,7 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
     private val koin = application.koin
     val config = koin.get<Config>()
     private val addResourceContext = koin.get<AddResourceContext>()
-    private val window = koin.get<Window<*>>()
+    private val window = koin.get<Window>()
     private val input = koin.get<Input>()
     private val renderManager = koin.get<RenderManager>()
 

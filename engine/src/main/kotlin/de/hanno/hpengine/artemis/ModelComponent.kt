@@ -75,7 +75,7 @@ class InstancesComponent: Component() {
 )
 class ModelSystem(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val textureManager: TextureManager,
     val materialManager: MaterialManager,
     val programManager: ProgramManager<*>,

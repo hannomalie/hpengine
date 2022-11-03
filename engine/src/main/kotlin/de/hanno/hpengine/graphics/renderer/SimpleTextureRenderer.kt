@@ -24,7 +24,7 @@ import org.lwjgl.opengl.GL11
 
 open class SimpleTextureRenderer(
     config: Config,
-    private val gpuContext: GpuContext<OpenGl>,
+    private val gpuContext: GpuContext,
     var texture: Texture2D,
     private val programManager: ProgramManager<OpenGl>,
     private val frontBuffer: FrontBufferTarget

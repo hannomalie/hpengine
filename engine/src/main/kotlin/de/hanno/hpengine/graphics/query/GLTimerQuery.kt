@@ -4,8 +4,8 @@ import de.hanno.hpengine.graphics.GpuContext
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL33
 
-class GLTimerQuery(gpuContext: GpuContext<*>) : GLQuery<Float?> {
-    private val gpuContext: GpuContext<*>
+class GLTimerQuery(gpuContext: GpuContext) : GLQuery<Float?> {
+    private val gpuContext: GpuContext
     override val queryToWaitFor: Int
     private val end: Int
 

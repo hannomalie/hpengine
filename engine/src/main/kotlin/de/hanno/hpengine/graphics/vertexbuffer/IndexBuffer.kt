@@ -7,14 +7,14 @@ import java.nio.IntBuffer
 import org.lwjgl.opengl.GL15
 import java.nio.ByteBuffer
 
-open class IndexBuffer(gpuContext: GpuContext<*>?, target: Int) : AbstractPersistentMappedBuffer(
+open class IndexBuffer(gpuContext: GpuContext?, target: Int) : AbstractPersistentMappedBuffer(
     gpuContext!!, target
 ) {
-    constructor(gpuContext: GpuContext<*>?) : this(gpuContext, GL15.GL_ELEMENT_ARRAY_BUFFER) {
+    constructor(gpuContext: GpuContext?) : this(gpuContext, GL15.GL_ELEMENT_ARRAY_BUFFER) {
         ensureCapacityInBytes(4 * 3 * 50)
     }
 
-    constructor(gpuContext: GpuContext<*>?, intBuffer: IntBuffer) : this(gpuContext) {
+    constructor(gpuContext: GpuContext?, intBuffer: IntBuffer) : this(gpuContext) {
         put(intBuffer)
     }
 

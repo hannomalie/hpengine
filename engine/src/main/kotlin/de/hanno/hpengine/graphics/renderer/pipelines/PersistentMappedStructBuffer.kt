@@ -29,7 +29,7 @@ interface Allocator<T : Buffer> {
 }
 
 class PersistentMappedBufferAllocator(
-    val gpuContext: GpuContext<*>,
+    val gpuContext: GpuContext,
     val target: Int = GL43.GL_SHADER_STORAGE_BUFFER
 ) : Allocator<GpuBuffer> {
 
@@ -99,7 +99,7 @@ class PersistentMappedBufferAllocator(
 
 
 fun CommandBuffer(
-    gpuContext: GpuContext<*>,
+    gpuContext: GpuContext,
     size: Int = 1000
 ) = PersistentMappedBuffer(
     size * DrawElementsIndirectCommandStrukt.type.sizeInBytes,
@@ -115,7 +115,7 @@ interface IntStrukt : Strukt {
     companion object
 }
 
-fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000) =
+fun IndexBuffer(gpuContext: GpuContext, size: Int = 1000) =
     PersistentMappedBuffer(size * IntStrukt.sizeInBytes, gpuContext, GL40.GL_ELEMENT_ARRAY_BUFFER).typed(IntStrukt.type)
 
 data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMappedBuffer, val type: StruktType<T>) :
@@ -145,7 +145,7 @@ fun <T> PersistentMappedBuffer.typed(type: StruktType<T>) = PersistentTypedBuffe
 
 class PersistentMappedBuffer(
     initialSizeInBytes: Int,
-    private val gpuContext: GpuContext<*>,
+    private val gpuContext: GpuContext,
     _target: Int = GL43.GL_SHADER_STORAGE_BUFFER
 ) : GpuBuffer {
 

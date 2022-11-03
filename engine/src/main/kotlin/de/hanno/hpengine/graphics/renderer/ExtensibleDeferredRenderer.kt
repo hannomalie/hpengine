@@ -22,7 +22,7 @@ import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 
 class ExtensibleDeferredRenderer(
-    val window: Window<OpenGl>,
+    val window: Window,
     val backend: Backend<OpenGl>,
     val config: Config,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -35,7 +35,7 @@ class ExtensibleDeferredRenderer(
     private val extensions: List<DeferredRenderExtension<OpenGl>>
         get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }
 
-    private val gpuContext: GpuContext<OpenGl> = backend.gpuContext
+    private val gpuContext: GpuContext = backend.gpuContext
     private val programManager: ProgramManager<OpenGl> = backend.programManager
     private val textureManager = backend.textureManager
 

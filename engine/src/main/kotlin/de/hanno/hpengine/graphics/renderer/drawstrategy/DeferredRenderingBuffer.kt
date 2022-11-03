@@ -14,7 +14,7 @@ import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30
 
-class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height: Int,
+class DeferredRenderingBuffer(gpuContext: GpuContext, width: Int, height: Int,
                               val depthBuffer: DepthBuffer<*>
 ) {
 
@@ -113,7 +113,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
 
     val finalMapId: Int = finalBuffer.getRenderedTexture(0)
 
-    fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
+    fun use(gpuContext: GpuContext, clear: Boolean) {
         gBuffer.use(gpuContext, clear)
     }
 

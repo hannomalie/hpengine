@@ -1,10 +1,9 @@
 package de.hanno.hpengine.graphics
 
-import de.hanno.hpengine.backend.BackendType
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
 
 
-interface Window<T : BackendType>: GpuExecutor {
+interface Window: GpuExecutor {
     var title: String
 
     var width: Int

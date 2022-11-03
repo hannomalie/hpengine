@@ -9,7 +9,7 @@ import de.hanno.hpengine.graphics.light.point.PointLightStruct
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 
-class LightState(gpuContext: GpuContext<*>) {
+class LightState(gpuContext: GpuContext) {
     var pointLights: List<PointLightComponent> = listOf()
     var pointLightBuffer = PersistentMappedBuffer(PointLightStruct.sizeInBytes, gpuContext).typed(PointLightStruct.type)
     var pointLightShadowMapStrategy: PointLightShadowMapStrategy = object: PointLightShadowMapStrategy {

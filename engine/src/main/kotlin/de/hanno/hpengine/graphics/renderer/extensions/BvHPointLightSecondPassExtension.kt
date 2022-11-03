@@ -127,7 +127,7 @@ val Vector4f.xyz: Vector3f
 
 class BvHPointLightSecondPassExtension(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
     val deferredRenderingBuffer: DeferredRenderingBuffer

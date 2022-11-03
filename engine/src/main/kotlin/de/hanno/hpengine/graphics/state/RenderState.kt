@@ -24,7 +24,7 @@ import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.OpenGlCommandSync
 import org.joml.Vector3f
 
-class RenderState(private val gpuContext: GpuContext<*>) : IRenderState {
+class RenderState(private val gpuContext: GpuContext) : IRenderState {
     var entityIds: List<Int> = emptyList()
     var componentExtracts: MutableMap<Class<out Component>, List<Component>> = mutableMapOf()
     var componentsForEntities: MutableMap<Int, Bag<Component>> = mutableMapOf()

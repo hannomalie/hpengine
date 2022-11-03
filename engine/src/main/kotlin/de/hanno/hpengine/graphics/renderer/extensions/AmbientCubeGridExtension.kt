@@ -44,7 +44,7 @@ import org.lwjgl.opengl.GL45
 import java.nio.FloatBuffer
 
 class ProbeRenderer(
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     config: Config,
     programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.graphics
 
-import de.hanno.hpengine.backend.BackendType
 import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.IFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
@@ -10,11 +9,9 @@ import de.hanno.hpengine.model.texture.Texture
 import org.joml.Vector4f
 import java.nio.IntBuffer
 
-interface GpuContext<T: BackendType> {
+interface GpuContext {
 
-    val backend: T
-
-    val window: Window<T>
+    val window: Window
 
     val isError: Boolean
 
@@ -142,6 +139,7 @@ interface GpuContext<T: BackendType> {
     fun createCommandSync(): GpuCommandSync
     fun createCommandSync(onSignaled: () -> Unit): GpuCommandSync
     operator fun <T> invoke(block: () -> T): T
+    fun exceptionOnError()
 
     val maxLineWidth: Float
 }

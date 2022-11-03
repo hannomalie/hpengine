@@ -5,7 +5,7 @@ import org.lwjgl.opengl.*
 
 import java.util.*
 
-class VertexArrayObject private constructor(private val gpuContext: GpuContext<*>, channels: EnumSet<DataChannels>) {
+class VertexArrayObject private constructor(private val gpuContext: GpuContext, channels: EnumSet<DataChannels>) {
 
     private val channels: EnumSet<DataChannels> = channels.clone()
     var id = gpuContext.invoke { GL30.glGenVertexArrays() }
@@ -37,7 +37,7 @@ class VertexArrayObject private constructor(private val gpuContext: GpuContext<*
     companion object {
 
 
-        fun getForChannels(gpuContext: GpuContext<*>, channels: EnumSet<DataChannels>): VertexArrayObject {
+        fun getForChannels(gpuContext: GpuContext, channels: EnumSet<DataChannels>): VertexArrayObject {
             return VertexArrayObject(gpuContext, channels)
         }
 

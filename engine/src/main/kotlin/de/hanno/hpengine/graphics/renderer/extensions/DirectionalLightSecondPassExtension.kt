@@ -21,7 +21,7 @@ class DirectionalLightSecondPassExtension(
     private val config: Config,
     private val programManager: ProgramManager<OpenGl>,
     private val textureManager: TextureManager,
-    private val gpuContext: GpuContext<OpenGl>,
+    private val gpuContext: GpuContext,
     private val deferredRenderingBuffer: DeferredRenderingBuffer
 ) : DeferredRenderExtension<OpenGl> {
     private val secondPassDirectionalProgram = programManager.getProgram(

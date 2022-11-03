@@ -18,7 +18,7 @@ import org.lwjgl.opengl.GL42
 
 class SkyboxRenderExtension(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager,

@@ -6,7 +6,7 @@ import org.lwjgl.opengl.ARBIndirectParameters
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL43
 
-class AtomicCounterBuffer(gpuContext: GpuContext<*>?, size: Int) :
+class AtomicCounterBuffer(gpuContext: GpuContext?, size: Int) :
     IndexBuffer(gpuContext, GL43.GL_SHADER_STORAGE_BUFFER) {
 
     fun bindAsParameterBuffer() {

@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL32
 class FrameBuffer(override val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) : IFrameBuffer {
 
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, depthBuffer: DepthBuffer<*>?): FrameBuffer {
+        operator fun invoke(gpuContext: GpuContext, depthBuffer: DepthBuffer<*>?): FrameBuffer {
             return FrameBuffer(gpuContext.invoke { glGenFramebuffers() }, depthBuffer).apply {
                 if (depthBuffer != null) {
                     gpuContext.invoke {

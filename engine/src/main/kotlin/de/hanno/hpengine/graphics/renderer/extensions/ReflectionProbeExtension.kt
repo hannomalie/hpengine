@@ -63,7 +63,7 @@ class ReflectionProbeManager(val config: Config) : BaseEntitySystem() {
     }
 }
 
-class ReflectionProbeRenderState(val gpuContext: GpuContext<OpenGl>, val renderStateManager: RenderStateManager) {
+class ReflectionProbeRenderState(val gpuContext: GpuContext, val renderStateManager: RenderStateManager) {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
     val probeMinMaxStructBuffer = gpuContext.window.invoke {
@@ -74,7 +74,7 @@ class ReflectionProbeRenderState(val gpuContext: GpuContext<OpenGl>, val renderS
 
 class ReflectionProbeRenderExtension(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val textureManager: TextureManager,
     val renderStateManager: RenderStateManager,
@@ -189,7 +189,7 @@ class ReflectionProbeRenderExtension(
 
     override fun renderFirstPass(
         backend: Backend<OpenGl>,
-        gpuContext: GpuContext<OpenGl>,
+        gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {
@@ -322,7 +322,7 @@ class ReflectionProbeRenderExtension(
 
 class ReflectionProbeRenderer(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val programManager: ProgramManager<OpenGl>,
     val cubeMap: CubeMap,
     val indexInCubeMapArray: Int

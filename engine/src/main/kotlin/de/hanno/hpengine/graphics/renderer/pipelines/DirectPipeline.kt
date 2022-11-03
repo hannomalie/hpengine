@@ -19,7 +19,7 @@ import org.joml.FrustumIntersection
 
 open class DirectFirstPassPipeline(
     private val config: Config,
-    private val gpuContext: GpuContext<OpenGl>,
+    private val gpuContext: GpuContext,
     private val program: IProgram<out FirstPassUniforms>,
     private val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
@@ -176,7 +176,7 @@ val Program<*>.primitiveType
         PrimitiveType.Triangles
     }
 
-fun DirectDrawDescription<FirstPassUniforms>.draw(gpuContext: GpuContext<OpenGl>) {
+fun DirectDrawDescription<FirstPassUniforms>.draw(gpuContext: GpuContext) {
     beforeDraw(renderState, program, drawCam)
     if(ignoreCustomPrograms) {
         program.use()

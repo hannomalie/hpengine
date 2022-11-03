@@ -12,7 +12,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
 interface ProgramManager<BACKEND: BackendType> {
     val config: Config
-    val gpuContext: GpuContext<BACKEND>
+    val gpuContext: GpuContext
 
     fun update(deltaSeconds: Float)
     fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: Uniforms? = null): IComputeProgram<Uniforms>

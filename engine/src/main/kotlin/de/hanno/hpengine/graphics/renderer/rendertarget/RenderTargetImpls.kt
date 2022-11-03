@@ -23,7 +23,7 @@ val borderColorBuffer = BufferUtils.createFloatBuffer(4).apply {
 }
 
 operator fun RenderTarget.Companion.invoke(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     frameBuffer: FrameBuffer,
     width: Int = 1280,
     height: Int = 720,
@@ -36,7 +36,7 @@ operator fun RenderTarget.Companion.invoke(
 }
 
 operator fun RenderTarget.Companion.invoke(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     frameBuffer: FrameBuffer,
     width: Int = 1280,
     height: Int = 720,
@@ -52,7 +52,7 @@ operator fun RenderTarget.Companion.invoke(
 }
 
 operator fun RenderTarget.Companion.invoke(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     frameBuffer: FrameBuffer,
     width: Int = 1280,
     height: Int = 720,
@@ -68,7 +68,7 @@ operator fun RenderTarget.Companion.invoke(
 }
 
 class CubeMapRenderTarget(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     renderTarget: RenderTarget<CubeMap>
 ) : RenderTarget<CubeMap> by renderTarget {
     init {
@@ -77,7 +77,7 @@ class CubeMapRenderTarget(
 }
 
 class RenderTarget2D(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     renderTarget: RenderTarget<Texture2D>
 ) : RenderTarget<Texture2D> by renderTarget {
     init {
@@ -86,7 +86,7 @@ class RenderTarget2D(
 }
 
 internal fun <T : Texture> RenderTarget(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     frameBuffer: FrameBuffer,
     width: Int = 1280,
     height: Int = 720,
@@ -109,7 +109,7 @@ internal fun <T : Texture> RenderTarget(
 )
 
 class RenderTargetImpl<T : Texture>(
-    private val gpuContext: GpuContext<OpenGl>,
+    private val gpuContext: GpuContext,
     override val frameBuffer: FrameBuffer,
     override val width: Int = 1280,
     override val height: Int = 720,
@@ -165,7 +165,7 @@ class RenderTargetImpl<T : Texture>(
         get() = getRenderedTexture(0)
 
 //    TODO: Reimplement if needed?
-//    fun resizeTextures(gpuContext: GpuContext<OpenGl>) {
+//    fun resizeTextures(gpuContext: GpuContext) {
 //        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer)
 //
 //        for (i in colorAttachments.indices) {
@@ -191,13 +191,13 @@ class RenderTargetImpl<T : Texture>(
 //        GL20.glDrawBuffers(drawBuffers)
 //    }
 //
-//    fun resize(gpuContext: GpuContext<OpenGl>, width: Int, height: Int) {
+//    fun resize(gpuContext: GpuContext, width: Int, height: Int) {
 //        this.width = width
 //        this.height = height
 //        resizeTextures(gpuContext)
 //    }
 
-    override fun use(gpuContext: GpuContext<*>, clear: Boolean) = gpuContext.invoke {
+    override fun use(gpuContext: GpuContext, clear: Boolean) = gpuContext.invoke {
         gpuContext.bindFrameBuffer(frameBuffer)
         gpuContext.viewPort(0, 0, width, height)
         if (clear) {
@@ -266,7 +266,7 @@ class RenderTargetImpl<T : Texture>(
             GL11.glTexParameterfv(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer)
         }
 
-        fun generateTextureHandle(gpuContext: GpuContext<OpenGl>, textureId: Int): Long = if (gpuContext.isSupported(
+        fun generateTextureHandle(gpuContext: GpuContext, textureId: Int): Long = if (gpuContext.isSupported(
                 BindlessTextures
             )
         ) {
@@ -276,7 +276,7 @@ class RenderTargetImpl<T : Texture>(
         } else -1
 
         fun createTexture(
-            gpuContext: GpuContext<OpenGl>,
+            gpuContext: GpuContext,
             textureFilter: TextureFilterConfig,
             internalFormat: Int, texture2DUploadInfo:
             Texture2D.TextureUploadInfo.Texture2DUploadInfo
@@ -297,7 +297,7 @@ class RenderTargetImpl<T : Texture>(
         }
     }
 
-    override fun using(gpuContext: GpuContext<*>, clear: Boolean, block: () -> Unit) = try {
+    override fun using(gpuContext: GpuContext, clear: Boolean, block: () -> Unit) = try {
         use(gpuContext, clear)
         block()
     } finally {
@@ -306,7 +306,7 @@ class RenderTargetImpl<T : Texture>(
 }
 
 fun List<ColorAttachmentDefinition>.toTextures(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     width: Int,
     height: Int
 ): List<Texture2D> = map {
@@ -318,7 +318,7 @@ fun List<ColorAttachmentDefinition>.toTextures(
     )
 }
 
-fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): List<CubeMap> =
+fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext, width: Int, height: Int): List<CubeMap> =
     map {
         CubeMap(
             gpuContext = gpuContext,
@@ -330,7 +330,7 @@ fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext<OpenGl>, w
     }
 
 fun List<ColorAttachmentDefinition>.toCubeMapArrays(
-    gpuContext: GpuContext<OpenGl>,
+    gpuContext: GpuContext,
     width: Int,
     height: Int,
     depth: Int
@@ -346,7 +346,7 @@ fun List<ColorAttachmentDefinition>.toCubeMapArrays(
 
 class DepthBuffer<T : Texture>(val texture: T) {
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): DepthBuffer<Texture2D> {
+        operator fun invoke(gpuContext: GpuContext, width: Int, height: Int): DepthBuffer<Texture2D> {
             val dimension = TextureDimension(width, height)
             val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
             val textureTarget = TextureTarget.TEXTURE_2D
@@ -388,12 +388,12 @@ class DepthBuffer<T : Texture>(val texture: T) {
 }
 
 class RenderBuffer private constructor(val renderBuffer: Int, val width: Int, val height: Int) {
-    fun bind(gpuContext: GpuContext<OpenGl>) = gpuContext.invoke {
+    fun bind(gpuContext: GpuContext) = gpuContext.invoke {
         glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)
     }
 
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): RenderBuffer {
+        operator fun invoke(gpuContext: GpuContext, width: Int, height: Int): RenderBuffer {
             val renderBuffer = gpuContext.invoke {
                 val renderBuffer = glGenRenderbuffers()
                 glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)

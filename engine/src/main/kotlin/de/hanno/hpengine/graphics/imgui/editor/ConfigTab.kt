@@ -5,7 +5,7 @@ import de.hanno.hpengine.graphics.imgui.dsl.TabBar
 import de.hanno.hpengine.graphics.Window
 import imgui.ImGui
 
-fun TabBar.configTab(config: ConfigImpl, window: Window<*>) {
+fun TabBar.configTab(config: ConfigImpl, window: Window) {
     tab("Config") {
         if (ImGui.checkbox("Draw lines", config.debug.isDrawLines)) {
             config.debug.isDrawLines = !config.debug.isDrawLines

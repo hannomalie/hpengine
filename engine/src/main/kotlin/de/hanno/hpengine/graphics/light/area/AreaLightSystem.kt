@@ -56,7 +56,7 @@ import java.util.ArrayList
 // TODO: Implement autoadd for transform
 @All(AreaLightComponent::class, TransformComponent::class)
 class AreaLightSystem(
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     programManager: ProgramManager<OpenGl>,
     config: Config
 ) : BaseEntitySystem(), RenderSystem, Extractor {
@@ -214,7 +214,7 @@ class AreaLightSystem(
 
 }
 
-class AreaShadowPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
+class AreaShadowPassUniforms(gpuContext: GpuContext): Uniforms() {
     var entitiesBuffer by SSBO("Entity", 3, PersistentMappedBuffer(1, gpuContext).typed(EntityStrukt.type))
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })

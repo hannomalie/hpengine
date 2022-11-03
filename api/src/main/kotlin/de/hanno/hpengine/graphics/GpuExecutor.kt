@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 interface GpuExecutor {
     suspend fun <T> execute(block: () -> T): T
     operator fun <T> invoke(block: () -> T): T
+
     fun launch(block: () -> Unit) {
         GlobalScope.launch {
             execute(block)

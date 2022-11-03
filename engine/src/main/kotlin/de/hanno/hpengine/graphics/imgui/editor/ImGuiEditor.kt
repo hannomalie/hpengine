@@ -39,7 +39,7 @@ interface ImGuiEditorExtension {
 
 class ImGuiEditor(
     internal val window: GlfwWindow,
-    internal val gpuContext: GpuContext<OpenGl>,
+    internal val gpuContext: GpuContext,
     internal val textureManager: TextureManager,
     internal val finalOutput: FinalOutput,
     internal val debugOutput: DebugOutput,

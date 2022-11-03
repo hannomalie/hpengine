@@ -22,7 +22,7 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils.createFloatBuffer
 
 
-sealed class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
+sealed class FirstPassUniforms(gpuContext: GpuContext): Uniforms() {
     var materials by SSBO("Material", 1, PersistentMappedBuffer(1, gpuContext).typed(MaterialStrukt.type))
     var entities by SSBO("Entity", 3, PersistentMappedBuffer(1, gpuContext).typed(EntityStrukt.type))
     var entityOffsets by SSBO("int", 4, PersistentMappedBuffer(1, gpuContext).typed(IntStrukt.type))
@@ -46,16 +46,16 @@ sealed class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
 }
 fun createTransformBuffer() = createFloatBuffer(16).apply { Transform().get(this) }
 
-open class StaticFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
+open class StaticFirstPassUniforms(gpuContext: GpuContext): FirstPassUniforms(gpuContext) {
     var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1, gpuContext).typed(VertexStruktPacked.type))
 }
-open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
+open class AnimatedFirstPassUniforms(gpuContext: GpuContext): FirstPassUniforms(gpuContext) {
     var joints by SSBO("mat4", 6, PersistentMappedBuffer(Matrix4fStrukt.sizeInBytes, gpuContext).typed(Matrix4fStrukt.type))
     var vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedBuffer(AnimatedVertexStruktPacked.sizeInBytes, gpuContext).typed(
         AnimatedVertexStruktPacked.type))
 }
 
-fun IProgram<*>.setTextureUniforms(gpuContext: GpuContext<*>, maps: Map<Material.MAP, Texture>) {
+fun IProgram<*>.setTextureUniforms(gpuContext: GpuContext, maps: Map<Material.MAP, Texture>) {
     for (mapEnumEntry in Material.MAP.values()) {
 
         if (maps.contains(mapEnumEntry)) {

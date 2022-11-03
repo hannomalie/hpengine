@@ -24,7 +24,7 @@ interface RenderTarget<T : Texture> : FrontBufferTarget {
     fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int)
 
 
-    fun using(gpuContext: GpuContext<*>, clear: Boolean, block: () -> Unit) = try {
+    fun using(gpuContext: GpuContext, clear: Boolean, block: () -> Unit) = try {
         use(gpuContext, clear)
         block()
     } finally {

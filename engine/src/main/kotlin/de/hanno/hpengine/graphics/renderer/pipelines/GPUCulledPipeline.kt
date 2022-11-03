@@ -43,7 +43,7 @@ import org.lwjgl.opengl.GL15.GL_WRITE_ONLY
 
 open class GPUCulledPipeline(
     private val config: Config,
-    private val gpuContext: GpuContext<OpenGl>,
+    private val gpuContext: GpuContext,
     private val programManager: ProgramManager<OpenGl>,
     private val textureManager: ITextureManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -470,7 +470,7 @@ val CoarseCullingPhase.staticPhase: CullingPhase
 val CoarseCullingPhase.animatedPhase: CullingPhase
     get() = if (this == CoarseCullingPhase.ONE) CullingPhase.ANIMATED_ONE else CullingPhase.ANIMATED_TWO
 
-class CommandOrganizationGpuCulled(gpuContext: GpuContext<*>) {
+class CommandOrganizationGpuCulled(gpuContext: GpuContext) {
     var commandCount = 0
     var primitiveCount = 0
     var filteredRenderBatches: List<RenderBatch> = emptyList()

@@ -20,7 +20,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
 class AOScatteringExtension(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager

@@ -45,7 +45,7 @@ class DirectionalLightShadowMapExtension(
     val config: Config,
     val programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
 ) : DeferredRenderExtension<OpenGl> {
 
@@ -187,7 +187,7 @@ class DirectionalLightShadowMapExtension(
     }
 }
 
-sealed class DirectionalShadowUniforms(gpuContext: GpuContext<OpenGl>) : Uniforms() {
+sealed class DirectionalShadowUniforms(gpuContext: GpuContext) : Uniforms() {
     var materials by SSBO("Material", 1, PersistentMappedBuffer(1, gpuContext).typed(MaterialStrukt.type))
     var directionalLightState by SSBO(
         "DirectionalLightState", 2, PersistentMappedBuffer(1, gpuContext).typed(DirectionalLightState.type)
@@ -200,7 +200,7 @@ sealed class DirectionalShadowUniforms(gpuContext: GpuContext<OpenGl>) : Uniform
     var entityBaseIndex by IntType(0)
 }
 
-class AnimatedDirectionalShadowUniforms(gpuContext: GpuContext<OpenGl>) : DirectionalShadowUniforms(gpuContext) {
+class AnimatedDirectionalShadowUniforms(gpuContext: GpuContext) : DirectionalShadowUniforms(gpuContext) {
     var joints by SSBO(
         "mat4",
         6,
@@ -213,6 +213,6 @@ class AnimatedDirectionalShadowUniforms(gpuContext: GpuContext<OpenGl>) : Direct
     )
 }
 
-class StaticDirectionalShadowUniforms(gpuContext: GpuContext<OpenGl>) : DirectionalShadowUniforms(gpuContext) {
+class StaticDirectionalShadowUniforms(gpuContext: GpuContext) : DirectionalShadowUniforms(gpuContext) {
     var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1, gpuContext).typed(VertexStruktPacked.type))
 }

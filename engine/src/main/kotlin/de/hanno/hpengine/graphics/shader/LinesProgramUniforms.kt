@@ -8,7 +8,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
-class LinesProgramUniforms(gpuContext: GpuContext<*>) : Uniforms() {
+class LinesProgramUniforms(gpuContext: GpuContext) : Uniforms() {
     var vertices by SSBO("vec4", 7, PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext))
     val modelMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })

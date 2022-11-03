@@ -16,7 +16,7 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
 class PointLightSecondPassExtension(
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val config: Config,
     programManager: ProgramManager<OpenGl>

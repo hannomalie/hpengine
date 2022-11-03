@@ -29,7 +29,7 @@ import org.lwjgl.opengl.GL40.glBlendFunci
 
 class ForwardRenderExtension(
     val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
+    val gpuContext: GpuContext,
     val programManager: ProgramManager<OpenGl>,
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension<OpenGl> {
@@ -44,7 +44,7 @@ class ForwardRenderExtension(
         Defines()
     )
 
-    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
         deferredRenderingBuffer.forwardBuffer.use(gpuContext, false)
 
         GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f, 0f, 0f, 0f))

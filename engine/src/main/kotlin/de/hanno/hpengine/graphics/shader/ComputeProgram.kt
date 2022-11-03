@@ -47,7 +47,7 @@ class ComputeProgram(
         validateProgram()
 
         registerUniforms()
-        gpuContext.backend.gpuContext.exceptionOnError()
+        gpuContext.exceptionOnError()
 
         createFileListeners()
     }

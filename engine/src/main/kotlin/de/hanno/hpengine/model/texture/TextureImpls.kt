@@ -43,7 +43,7 @@ data class Texture3D(override val dimension: TextureDimension3D,
                      override var uploadState: UploadState
 ) : Texture {
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): Texture3D {
+        operator fun invoke(gpuContext: GpuContext, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): Texture3D {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), TextureTarget.TEXTURE_3D, filterConfig, internalFormat, wrapMode)
             return Texture3D(dimension, textureId, TextureTarget.TEXTURE_3D, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
@@ -60,7 +60,7 @@ data class CubeMap(override val dimension: TextureDimension2D,
                    override var uploadState: UploadState
 ) : ICubeMap {
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension2D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): CubeMap {
+        operator fun invoke(gpuContext: GpuContext, dimension: TextureDimension2D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): CubeMap {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture2DUploadInfo(dimension), TextureTarget.TEXTURE_CUBE_MAP, filterConfig, internalFormat, wrapMode)
             return CubeMap(dimension, textureId, TextureTarget.TEXTURE_CUBE_MAP, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
@@ -90,7 +90,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val 
 
     constructor(path: String, backingTexture: ICubeMap, vararg file: File): this(path, backingTexture, file.toList())
 
-    fun load(gpuContext: GpuContext<*>) = CompletableFuture.supplyAsync {
+    fun load(gpuContext: GpuContext) = CompletableFuture.supplyAsync {
         if(backingFileMode == BackingFileMode.Six) {
             GlobalScope.launch {
                 files.map {
@@ -105,7 +105,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val 
         }
     }
 
-    fun upload(gpuContext: GpuContext<*>, cubeMapFaceTarget: Int, buffer: ByteBuffer) = gpuContext.invoke {
+    fun upload(gpuContext: GpuContext, cubeMapFaceTarget: Int, buffer: ByteBuffer) = gpuContext.invoke {
         GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
         glTexSubImage2D(cubeMapFaceTarget,
                 0,
@@ -118,7 +118,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val 
                 buffer)
     }
 
-    fun upload(gpuContext: GpuContext<*>, info: CubeMapUploadInfo) = gpuContext.invoke {
+    fun upload(gpuContext: GpuContext, info: CubeMapUploadInfo) = gpuContext.invoke {
         gpuContext.bindTexture(this)
 
         upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, info.buffers[0])
@@ -135,7 +135,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val 
 
     companion object {
 
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, files: List<File>, srgba: Boolean = false): FileBasedCubeMap {
+        operator fun invoke(gpuContext: GpuContext, path: String, files: List<File>, srgba: Boolean = false): FileBasedCubeMap {
             val internalFormat: Int = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 
             val bufferedImage: BufferedImage = ImageIO.read(files.first())
@@ -155,7 +155,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val 
         private val BufferedImage.isBgrFormat: Boolean
             get() = type == TYPE_INT_BGR || type == TYPE_3BYTE_BGR || type == TYPE_4BYTE_ABGR || type == TYPE_4BYTE_ABGR_PRE
 
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, file: File, srgba: Boolean = false): FileBasedCubeMap {
+        operator fun invoke(gpuContext: GpuContext, path: String, file: File, srgba: Boolean = false): FileBasedCubeMap {
             val internalFormat: Int = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 
             val bufferedImage: BufferedImage = ImageIO.read(file)
@@ -191,7 +191,7 @@ private fun BufferedImage.getCubeMapUploadInfo(): CubeMapUploadInfo {
     })
 }
 
-fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploadInfo, textureTarget: TextureTarget, filterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int, wrapMode: Int = GL12.GL_REPEAT): Triple<Int, Int, Long> {
+fun allocateTexture(gpuContext: GpuContext, info: Texture2D.TextureUploadInfo, textureTarget: TextureTarget, filterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int, wrapMode: Int = GL12.GL_REPEAT): Triple<Int, Int, Long> {
     info.validate()
     return gpuContext.invoke {
         val textureId = glGenTextures()
@@ -245,19 +245,19 @@ data class CubeMapArray(override val dimension: TextureDimension3D,
     val size: Int
         get() = dimension.depth
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): CubeMapArray {
+        operator fun invoke(gpuContext: GpuContext, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): CubeMapArray {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), TextureTarget.TEXTURE_CUBE_MAP_ARRAY, filterConfig, internalFormat, wrapMode)
             return CubeMapArray(dimension, textureId, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
     }
 }
 
-fun CubeMapArray.createViews(gpuContext: GpuContext<OpenGl>): List<CubeMap> {
+fun CubeMapArray.createViews(gpuContext: GpuContext): List<CubeMap> {
     return (0 until dimension.depth).map { index ->
         createView(gpuContext, index)
     }
 }
-fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int): CubeMap {
+fun CubeMapArray.createView(gpuContext: GpuContext, index: Int): CubeMap {
     val cubeMapView = gpuContext.genTextures()
     require(index < dimension.depth) { "Index out of bounds: $index / ${dimension.depth}" }
 
@@ -284,7 +284,7 @@ fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int): CubeMap
             UploadState.UPLOADED
     )
 }
-fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int, faceIndex: Int): Texture2D {
+fun CubeMapArray.createView(gpuContext: GpuContext, index: Int, faceIndex: Int): Texture2D {
     val cubeMapFaceView = gpuContext.genTextures()
     require(index < dimension.depth) { "Index out of bounds: $index / ${dimension.depth}" }
     require(faceIndex < 6) { "Index out of bounds: $faceIndex / 6" }
@@ -311,7 +311,7 @@ fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int, faceInde
             UploadState.UPLOADED
     )
 }
-fun CubeMap.createView(gpuContext: GpuContext<OpenGl>, faceIndex: Int): Texture2D {
+fun CubeMap.createView(gpuContext: GpuContext, faceIndex: Int): Texture2D {
     val cubeMapFaceView = gpuContext.genTextures()
     require(faceIndex < 6) { "Index out of bounds: $faceIndex / 6" }
     gpuContext.invoke {
@@ -348,7 +348,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
                      override var uploadState: UploadState
 ) : Texture {
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, file: File, path: String, srgba: Boolean = false): Texture2D {
+        operator fun invoke(gpuContext: GpuContext, file: File, path: String, srgba: Boolean = false): Texture2D {
             val fileAsDds = File(path.split(".")[0] + ".dds")
             if(!file.exists() || !file.isFile) {
                 throw IllegalStateException("Cannot load file $file as texture as it doesn't exist")
@@ -367,7 +367,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
             } else Texture2D(gpuContext, ImageIO.read(file).apply { with(DDSConverter) { this@apply.rescaleToNextPowerOfTwo() } }, srgba)
 
         }
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, image: BufferedImage, srgba: Boolean = false): Texture2D {
+        operator fun invoke(gpuContext: GpuContext, image: BufferedImage, srgba: Boolean = false): Texture2D {
             val buffer = image.toByteBuffer()
             val image1 = Texture2DUploadInfo(TextureDimension(image.width, image.height), buffer, srgba = srgba)
             return Texture2D(gpuContext, Texture2DUploadInfo(TextureDimension(image.width, image.height), buffer, srgba = srgba), internalFormat = if (image1.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
@@ -397,7 +397,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
         }
 
         operator fun invoke(
-            gpuContext: GpuContext<OpenGl>,
+            gpuContext: GpuContext,
             info: Texture2DUploadInfo,
             textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
             internalFormat: Int = if (info.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
@@ -422,7 +422,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
             }
         }
 
-        private fun Texture2D.upload(gpuContext: GpuContext<OpenGl>, info: Texture2DUploadInfo, internalFormat: Int) {
+        private fun Texture2D.upload(gpuContext: GpuContext, info: Texture2DUploadInfo, internalFormat: Int) {
             val usePbo = true
             if(usePbo) {
                 uploadWithPixelBuffer(gpuContext, info, internalFormat)
@@ -430,7 +430,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
                 uploadWithoutPixelBuffer(gpuContext, info, internalFormat)
             }
         }
-        private fun Texture2D.uploadWithPixelBuffer(gpuContext: GpuContext<OpenGl>, info: Texture2DUploadInfo, internalFormat: Int) {
+        private fun Texture2D.uploadWithPixelBuffer(gpuContext: GpuContext, info: Texture2DUploadInfo, internalFormat: Int) {
             if(info.buffer == null) return
 
             val pbo = gpuContext.invoke {
@@ -453,7 +453,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
             }
         }
 
-        private fun Texture2D.uploadWithoutPixelBuffer(gpuContext: GpuContext<*>, info: Texture2DUploadInfo, internalFormat: Int) {
+        private fun Texture2D.uploadWithoutPixelBuffer(gpuContext: GpuContext, info: Texture2DUploadInfo, internalFormat: Int) {
             gpuContext.invoke {
                 glBindTexture(GL_TEXTURE_2D, id)
                 if (info.dataCompressed) {
@@ -497,11 +497,11 @@ fun Texture2D.TextureUploadInfo.validate(): Unit = when(this) {
 
 data class FileBasedTexture2D(val path: String, val file: File, val backingTexture: Texture2D): Texture by backingTexture {
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, directory: AbstractDirectory, srgba: Boolean = false): FileBasedTexture2D {
+        operator fun invoke(gpuContext: GpuContext, path: String, directory: AbstractDirectory, srgba: Boolean = false): FileBasedTexture2D {
             return invoke(gpuContext, path, directory.resolve(path), srgba)
         }
 
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, file: File, srgba: Boolean = false) =
+        operator fun invoke(gpuContext: GpuContext, path: String, file: File, srgba: Boolean = false) =
                 FileBasedTexture2D(path, file, Texture2D(gpuContext, file, path, srgba))
     }
 }
