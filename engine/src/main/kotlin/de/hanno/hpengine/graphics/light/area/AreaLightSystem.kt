@@ -35,8 +35,8 @@ import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.model.enlarge
-import de.hanno.hpengine.model.texture.OpenGLCubeMap
-import de.hanno.hpengine.model.texture.TextureDimension
+import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
+import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.Transform

@@ -32,8 +32,8 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.ProgramDescription
-import de.hanno.hpengine.model.texture.OpenGLTexture2D
-import de.hanno.hpengine.model.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.scene.OceanWaterRenderSystem
 import de.hanno.hpengine.scene.dsl.Directory
@@ -46,7 +46,7 @@ import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.graphics.texture.TextureManager
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds

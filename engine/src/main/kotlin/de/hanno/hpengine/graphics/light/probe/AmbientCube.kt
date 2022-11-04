@@ -1,8 +1,8 @@
 package de.hanno.hpengine.graphics.light.probe
 
 import de.hanno.hpengine.math.Vector3fStrukt
-import de.hanno.hpengine.model.texture.CubeMap
-import de.hanno.hpengine.model.texture.OpenGLCubeMap
+import de.hanno.hpengine.graphics.texture.CubeMap
+import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL13
 import struktgen.api.Strukt

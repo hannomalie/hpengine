@@ -8,8 +8,8 @@ import de.hanno.hpengine.model.animation.Animation
 import de.hanno.hpengine.model.Mesh
 import de.hanno.hpengine.model.animation.Node
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.model.texture.Texture
-import de.hanno.hpengine.model.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AnimatedVertex
 import org.joml.Matrix4f
 import org.joml.Quaternionf

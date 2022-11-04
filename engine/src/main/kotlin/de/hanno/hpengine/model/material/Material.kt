@@ -1,7 +1,7 @@
 package de.hanno.hpengine.model.material
 
 import de.hanno.hpengine.directory.Directories
-import de.hanno.hpengine.model.texture.Texture
+import de.hanno.hpengine.graphics.texture.Texture
 import org.joml.Vector2f
 import org.joml.Vector3f
 

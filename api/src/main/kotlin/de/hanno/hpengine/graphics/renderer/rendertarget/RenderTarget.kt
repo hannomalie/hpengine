@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.model.texture.*
+import de.hanno.hpengine.graphics.texture.*
 
 interface RenderTarget<T : Texture> : FrontBufferTarget {
     val textures: List<T>

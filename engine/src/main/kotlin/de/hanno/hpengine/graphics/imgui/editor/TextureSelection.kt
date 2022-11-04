@@ -1,8 +1,8 @@
 package de.hanno.hpengine.graphics.imgui.editor
 
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.model.texture.FileBasedTexture2D
-import de.hanno.hpengine.model.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.FileBasedTexture2D
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import imgui.ImGui
 
 context(ImGuiEditor)

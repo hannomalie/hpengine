@@ -5,7 +5,7 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.IFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
-import de.hanno.hpengine.model.texture.Texture
+import de.hanno.hpengine.graphics.texture.Texture
 import org.joml.Vector4f
 import java.nio.IntBuffer
 

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.model.texture
+package de.hanno.hpengine.graphics.texture
 
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
@@ -11,8 +11,8 @@ import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_CUBE_
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.model.texture.DDSConverter.availableAsDDS
-import de.hanno.hpengine.model.texture.DDSConverter.getFullPathAsDDS
+import de.hanno.hpengine.graphics.texture.DDSConverter.availableAsDDS
+import de.hanno.hpengine.graphics.texture.DDSConverter.getFullPathAsDDS
 import de.hanno.hpengine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.commandqueue.CommandQueue

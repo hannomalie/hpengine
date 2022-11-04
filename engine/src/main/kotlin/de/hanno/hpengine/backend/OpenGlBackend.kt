@@ -9,7 +9,7 @@ import de.hanno.hpengine.graphics.Window
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.input.Input
-import de.hanno.hpengine.model.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 
 class OpenGlBackend(override val eventBus: EventBus,

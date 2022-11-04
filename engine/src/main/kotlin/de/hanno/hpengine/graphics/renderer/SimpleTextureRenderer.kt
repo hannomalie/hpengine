@@ -15,9 +15,9 @@ import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
-import de.hanno.hpengine.model.texture.OpenGLCubeMap
-import de.hanno.hpengine.model.texture.OpenGLTexture2D
-import de.hanno.hpengine.model.texture.createView
+import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.createView
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.GL11

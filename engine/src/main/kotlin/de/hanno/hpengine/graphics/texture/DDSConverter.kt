@@ -1,4 +1,4 @@
-package de.hanno.hpengine.model.texture
+package de.hanno.hpengine.graphics.texture
 
 import ddsutil.DDSUtil
 import ddsutil.ImageRescaler

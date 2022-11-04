@@ -1,4 +1,4 @@
-package de.hanno.hpengine.model.texture
+package de.hanno.hpengine.graphics.texture
 
 import ddsutil.DDSUtil
 
@@ -6,10 +6,10 @@ import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.*
-import de.hanno.hpengine.model.texture.OpenGLTexture2D.TextureUploadInfo.*
-import de.hanno.hpengine.model.texture.OpenGLTextureManager.Companion.convertCubeMapData
-import de.hanno.hpengine.model.texture.OpenGLTextureManager.Companion.glAlphaColorModel
-import de.hanno.hpengine.model.texture.OpenGLTextureManager.Companion.glColorModel
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D.TextureUploadInfo.*
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager.Companion.convertCubeMapData
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager.Companion.glAlphaColorModel
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager.Companion.glColorModel
 import jogl.DDSImage
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async

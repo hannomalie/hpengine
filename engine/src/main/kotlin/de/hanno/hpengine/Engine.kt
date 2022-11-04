@@ -24,7 +24,7 @@ import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialManager
-import de.hanno.hpengine.model.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.physics.PhysicsManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.scene.WorldAABB

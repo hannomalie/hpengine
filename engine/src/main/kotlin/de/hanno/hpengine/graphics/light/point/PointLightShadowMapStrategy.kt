@@ -16,10 +16,10 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.OpenGLCubeMapArray
-import de.hanno.hpengine.model.texture.OpenGLTexture2D
-import de.hanno.hpengine.model.texture.OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
-import de.hanno.hpengine.model.texture.TextureDimension
+import de.hanno.hpengine.graphics.texture.OpenGLCubeMapArray
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
+import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils

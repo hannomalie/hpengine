@@ -7,7 +7,7 @@ import de.hanno.hpengine.artemis.NameComponent
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.engine.graphics.imgui.float2Input
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
-import de.hanno.hpengine.model.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import imgui.ImGui
 import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiInputTextFlags

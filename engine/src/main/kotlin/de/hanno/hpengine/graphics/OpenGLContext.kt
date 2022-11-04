@@ -8,7 +8,7 @@ import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
-import de.hanno.hpengine.model.texture.Texture
+import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import kotlinx.coroutines.*
 import org.lwjgl.BufferUtils

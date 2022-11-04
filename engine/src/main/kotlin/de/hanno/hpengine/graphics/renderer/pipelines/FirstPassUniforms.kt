@@ -13,7 +13,7 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.model.texture.Texture
+import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.Transform

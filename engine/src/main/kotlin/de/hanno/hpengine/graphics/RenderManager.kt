@@ -13,7 +13,7 @@ import de.hanno.hpengine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
-import de.hanno.hpengine.model.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler

@@ -23,8 +23,8 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.Update
-import de.hanno.hpengine.model.texture.OpenGLTexture3D
-import de.hanno.hpengine.model.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.OpenGLTexture3D
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.Transform
 import org.joml.Vector3f

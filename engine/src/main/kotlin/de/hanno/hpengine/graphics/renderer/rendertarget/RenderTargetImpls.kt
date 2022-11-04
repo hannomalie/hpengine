@@ -7,7 +7,7 @@ import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.model.texture.*
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.util.Util
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils

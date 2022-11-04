@@ -8,7 +8,7 @@ import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
-import de.hanno.hpengine.model.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils

@@ -5,8 +5,8 @@ import de.hanno.hpengine.model.IndexedFace
 import de.hanno.hpengine.model.StaticMesh
 import de.hanno.hpengine.model.StaticModel
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.model.texture.Texture
-import de.hanno.hpengine.model.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.Vertex
 import de.hanno.hpengine.transform.AABBData
 import kotlinx.coroutines.GlobalScope

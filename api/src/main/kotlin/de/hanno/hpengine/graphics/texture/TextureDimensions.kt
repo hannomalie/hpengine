@@ -1,6 +1,6 @@
-package de.hanno.hpengine.model.texture
+package de.hanno.hpengine.graphics.texture
 
-import de.hanno.hpengine.model.texture.Texture.Companion.getMipMapCountForDimension
+import de.hanno.hpengine.graphics.texture.Texture.Companion.getMipMapCountForDimension
 
 sealed class TextureDimension {
     abstract fun getMipMapCount(): Int

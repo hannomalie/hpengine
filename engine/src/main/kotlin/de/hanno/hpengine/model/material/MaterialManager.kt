@@ -9,7 +9,7 @@ import de.hanno.hpengine.artemis.MaterialComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material.MAP
-import de.hanno.hpengine.model.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor

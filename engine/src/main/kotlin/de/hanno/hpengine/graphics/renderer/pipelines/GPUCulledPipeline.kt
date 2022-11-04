@@ -26,11 +26,11 @@ import de.hanno.hpengine.graphics.shader.IProgram
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.OpenGLTexture2D
-import de.hanno.hpengine.model.texture.OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
-import de.hanno.hpengine.model.texture.TextureDimension
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
+import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.Util
 import org.jetbrains.kotlin.util.profile
