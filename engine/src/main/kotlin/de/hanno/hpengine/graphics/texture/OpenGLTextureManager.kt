@@ -251,7 +251,7 @@ class OpenGLTextureManager(
     @Throws(IOException::class)
     fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-            ?: FileBasedCubeMap(gpuContext, resourceName, file, srgba)
+            ?: FileBasedOpenGLCubeMap(gpuContext, resourceName, file, srgba)
 
         textures[resourceName + "_cube"] = tex
         return tex
@@ -260,7 +260,7 @@ class OpenGLTextureManager(
     @Throws(IOException::class)
     fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-            ?: FileBasedCubeMap(gpuContext, resourceName, files, srgba)
+            ?: FileBasedOpenGLCubeMap(gpuContext, resourceName, files, srgba)
 
         textures[resourceName + "_cube"] = tex
         return tex
