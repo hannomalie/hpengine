@@ -9,6 +9,9 @@ import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.TextureAllocationData
+import de.hanno.hpengine.graphics.texture.TextureDimension2D
+import de.hanno.hpengine.graphics.texture.UploadInfo
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import kotlinx.coroutines.*
 import org.lwjgl.BufferUtils
@@ -437,6 +440,76 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
     fun Texture.delete() = invoke { GL11.glDeleteTextures(id) }
     fun finish() = GL11.glFinish()
+
+    override fun allocateTexture(
+        info: UploadInfo,
+        textureTarget: TextureTarget,
+        filterConfig: TextureFilterConfig,
+        internalFormat: Int,
+        wrapMode: Int,
+    ): TextureAllocationData = invoke {
+        val textureId = glGenTextures()
+        val glTarget = textureTarget.glTarget
+
+        glBindTexture(glTarget, textureId)
+        glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, wrapMode)
+        glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, wrapMode)
+        glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, filterConfig.minFilter.glValue)
+        glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, filterConfig.magFilter.glValue)
+
+        when (info) {
+            is UploadInfo.CubeMapArrayUploadInfo -> {
+                GL42.glTexStorage3D(
+                    GL40.GL_TEXTURE_CUBE_MAP_ARRAY,
+                    info.dimension.getMipMapCount(),
+                    internalFormat,
+                    info.dimension.width,
+                    info.dimension.height,
+                    info.dimension.depth * 6
+                )
+                glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
+            }
+            is UploadInfo.CubeMapUploadInfo -> {
+                GL42.glTexStorage2D(
+                    GL40.GL_TEXTURE_CUBE_MAP,
+                    info.dimension.getMipMapCount(),
+                    internalFormat,
+                    info.dimension.width,
+                    info.dimension.height
+                )
+                glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
+            }
+            is UploadInfo.Texture2DUploadInfo -> GL42.glTexStorage2D(
+                glTarget,
+                info.dimension.getMipMapCount(),
+                internalFormat,
+                info.dimension.width,
+                info.dimension.height
+            )
+            is UploadInfo.Texture3DUploadInfo -> {
+                GL42.glTexStorage3D(
+                    glTarget,
+                    info.dimension.getMipMapCount(),
+                    internalFormat,
+                    info.dimension.width,
+                    info.dimension.height,
+                    info.dimension.depth
+                )
+                glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
+            }
+        }
+        if (filterConfig.minFilter.isMipMapped) {
+            GL30.glGenerateMipmap(glTarget)
+        }
+
+        val handle = if (isSupported(BindlessTextures)) {
+            ARBBindlessTexture.glGetTextureHandleARB(textureId)
+        } else -1
+
+        TextureAllocationData(textureId, internalFormat, handle, wrapMode).apply {
+            exceptionOnError()
+        }
+    }
 
 }
 

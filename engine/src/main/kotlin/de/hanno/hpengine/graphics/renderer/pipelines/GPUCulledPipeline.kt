@@ -27,7 +27,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
+import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.hpengine.graphics.texture.TextureManager

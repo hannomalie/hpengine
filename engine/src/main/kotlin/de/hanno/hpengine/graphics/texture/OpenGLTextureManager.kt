@@ -630,123 +630,14 @@ class OpenGLTextureManager(
         var TEXTURE_UNLOAD_THRESHOLD_IN_MS: Long = 10000
         private val USE_TEXTURE_STREAMING = false
 
-        fun convertCubeMapData(bufferedImages: List<BufferedImage>): List<ByteArray> {
-            return bufferedImages.map { image ->
-                (image.raster.dataBuffer as DataBufferByte).data
-            }
-        }
-
-        fun convertCubeMapData(
-            bufferedImage: BufferedImage,
-            width: Int,
-            height: Int,
-            glAlphaColorModel: ColorModel,
-            glColorModel: ColorModel
-        ): MutableList<ByteArray> {
-            //        ByteBuffer imageBuffers[] = new ByteBuffer[6];
-            val byteArrays = ArrayList<ByteArray>()
-
-            val tileWidth = width / 4
-            val tileHeight = height / 3
-
-            for (i in 0..5) {
-
-                val topLeftBottomRight = getRectForFaceIndex(i, tileWidth, tileHeight)
-
-                val texImage = if (bufferedImage.colorModel.hasAlpha()) {
-                    val raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 4, null)
-                    BufferedImage(glAlphaColorModel, raster, false, Hashtable<Any, Any>())
-                } else {
-                    val raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 3, null)
-                    BufferedImage(glColorModel, raster, false, Hashtable<Any, Any>())
-                }
-
-                val graphics = texImage.graphics
-                graphics.color = Color(0f, 0f, 0f, 0f)
-                graphics.fillRect(0, 0, tileWidth, tileHeight)
-
-                graphics.drawImage(
-                    bufferedImage, 0, 0, tileWidth, tileHeight,
-                    topLeftBottomRight[0].x, topLeftBottomRight[0].y,
-                    topLeftBottomRight[1].x, topLeftBottomRight[1].y, null
-                )
-
-//            try {
-//                File outputfile = new File(i + ".png");
-//                ImageIO.write(texImage, "png", outputfile);
-//            } catch (IOException e) {
-//            	LOGGER.info("xoxoxoxo");
-//            }
-
-
-                val data = (texImage.raster.dataBuffer as DataBufferByte).data
-                byteArrays.add(data)
-
-//    		ByteBuffer tempBuffer = ByteBuffer.allocateDirect(data.length);
-//    		tempBuffer.order(ByteOrder.nativeOrder());
-//    		tempBuffer.put(data, 0, data.length);
-//    		tempBuffer.flip();
-//          imageBuffers[i] = tempBuffer;
-
-            }
-            return byteArrays
-        }
-
-        // Why do i have to do +1 and -1 here?
-        private fun getRectForFaceIndex(index: Int, tileWidth: Int, tileHeight: Int) =
-            when (GL_TEXTURE_CUBE_MAP_POSITIVE_X + index) {
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X -> arrayOf(Vector2i(0, tileHeight), Vector2i(tileWidth, 2 * tileHeight))
-                GL_TEXTURE_CUBE_MAP_NEGATIVE_X -> arrayOf(
-                    Vector2i(2 * tileWidth, tileHeight),
-                    Vector2i(3 * tileWidth, 2 * tileHeight)
-                )
-                GL_TEXTURE_CUBE_MAP_POSITIVE_Y -> arrayOf(
-                    Vector2i(2 * tileWidth - 1, tileHeight),
-                    Vector2i(tileWidth, 0)
-                )
-                GL_TEXTURE_CUBE_MAP_NEGATIVE_Y -> arrayOf(
-                    Vector2i(2 * tileWidth, 3 * tileHeight),
-                    Vector2i(tileWidth, 2 * tileHeight)
-                )
-                GL_TEXTURE_CUBE_MAP_POSITIVE_Z -> arrayOf(
-                    Vector2i(3 * tileWidth, tileHeight),
-                    Vector2i(4 * tileWidth, 2 * tileHeight)
-                )
-                GL_TEXTURE_CUBE_MAP_NEGATIVE_Z -> arrayOf(
-                    Vector2i(tileWidth, tileHeight),
-                    Vector2i(2 * tileWidth, 2 * tileHeight)
-                )
-                else -> throw IllegalStateException("")
-            }
-
         fun deleteTexture(id: Int) {
             GL11.glDeleteTextures(id)
         }
-
-        /** The colour model including alpha for the GL image  */
-        val glAlphaColorModel = ComponentColorModel(
-            ColorSpace.getInstance(ColorSpace.CS_sRGB),
-            intArrayOf(8, 8, 8, 8),
-            true,
-            false,
-            ComponentColorModel.TRANSLUCENT,
-            DataBuffer.TYPE_BYTE
-        )
-
-        /** The colour model for the GL image  */
-        val glColorModel = ComponentColorModel(
-            ColorSpace.getInstance(ColorSpace.CS_sRGB),
-            intArrayOf(8, 8, 8, 0),
-            false,
-            false,
-            ComponentColorModel.OPAQUE,
-            DataBuffer.TYPE_BYTE
-        )
     }
 
     override fun registerTextureForDebugOutput(name: String, texture: Texture) {
         // TODO: Lift Texture2D to API
-        if(texture.dimension is TextureDimension2D) {
+        if (texture.dimension is TextureDimension2D) {
             texturesForDebugOutput[name] = texture
         }
     }

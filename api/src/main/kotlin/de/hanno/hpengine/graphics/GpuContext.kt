@@ -6,6 +6,8 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.TextureAllocationData
+import de.hanno.hpengine.graphics.texture.UploadInfo
 import org.joml.Vector4f
 import java.nio.IntBuffer
 
@@ -142,4 +144,12 @@ interface GpuContext {
     fun exceptionOnError()
 
     val maxLineWidth: Float
+
+    fun allocateTexture(
+        info: UploadInfo,
+        textureTarget: TextureTarget,
+        filterConfig: TextureFilterConfig = TextureFilterConfig(),
+        internalFormat: Int,
+        wrapMode: Int,
+    ): TextureAllocationData
 }

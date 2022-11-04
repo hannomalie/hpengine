@@ -8,10 +8,13 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import org.joml.Vector2i
 import org.lwjgl.opengl.*
-import java.awt.image.BufferedImage
+import java.awt.Color
+import java.awt.image.*
 import java.io.File
 import java.nio.ByteBuffer
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
 
@@ -72,7 +75,7 @@ data class FileBasedOpenGLCubeMap(
         )
     }
 
-    fun upload(gpuContext: GpuContext, info: OpenGLTexture2D.TextureUploadInfo.CubeMapUploadInfo) = gpuContext.invoke {
+    fun upload(gpuContext: GpuContext, info: UploadInfo.CubeMapUploadInfo) = gpuContext.invoke {
         gpuContext.bindTexture(this)
 
         upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, info.buffers[0])
@@ -147,33 +150,110 @@ data class FileBasedOpenGLCubeMap(
     }
 }
 
-private fun List<BufferedImage>.getCubeMapUploadInfo(): OpenGLTexture2D.TextureUploadInfo.CubeMapUploadInfo {
-    return OpenGLTexture2D.TextureUploadInfo.CubeMapUploadInfo(
-        TextureDimension(first().width, first().height),
-        OpenGLTextureManager.convertCubeMapData(this).map<ByteArray, ByteBuffer> { byteArray ->
-            ByteBuffer.allocateDirect(byteArray.size).apply {
-                buffer(byteArray)
-            }
-        })
+private fun List<BufferedImage>.getCubeMapUploadInfo() = UploadInfo.CubeMapUploadInfo(
+    TextureDimension(first().width, first().height),
+    toByteArrays().map { byteArray ->
+        ByteBuffer.allocateDirect(byteArray.size).apply {
+            buffer(byteArray)
+        }
+    }
+)
+
+fun List<BufferedImage>.toByteArrays() = map { image ->
+    (image.raster.dataBuffer as DataBufferByte).data
 }
 
-private fun BufferedImage.getCubeMapUploadInfo(): OpenGLTexture2D.TextureUploadInfo.CubeMapUploadInfo {
-    val width = width
-    val height = height
+private fun BufferedImage.getCubeMapUploadInfo(): UploadInfo.CubeMapUploadInfo {
     val tileDimension = TextureDimension(width / 4, height / 3)
-    val data = OpenGLTextureManager.convertCubeMapData(
-        this,
-        width,
-        height,
-        OpenGLTextureManager.glAlphaColorModel,
-        OpenGLTextureManager.glColorModel
-    )
 
-    return OpenGLTexture2D.TextureUploadInfo.CubeMapUploadInfo(
-        tileDimension,
-        data.map<ByteArray, ByteBuffer> { byteArray ->
-            ByteBuffer.allocateDirect(byteArray.size).apply {
-                buffer(byteArray)
-            }
-        })
+    val data = convertCubeMapData()
+
+    val buffers = data.map { byteArray ->
+        ByteBuffer.allocateDirect(byteArray.size).apply {
+            buffer(byteArray)
+        }
+    }
+    return UploadInfo.CubeMapUploadInfo(tileDimension, buffers)
 }
+
+fun BufferedImage.convertCubeMapData(): List<ByteArray> {
+    val tileDimension = TextureDimension(width / 4, height / 3)
+    //        ByteBuffer imageBuffers[] = new ByteBuffer[6];
+    val byteArrays = ArrayList<ByteArray>()
+
+    val tileWidth = tileDimension.width
+    val tileHeight = tileDimension.height
+
+    for (i in 0..5) {
+
+        val topLeftBottomRight = getRectForFaceIndex(i, tileWidth, tileHeight)
+
+        val texImage = if (colorModel.hasAlpha()) {
+            val raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 4, null)
+            BufferedImage(glAlphaColorModel, raster, false, Hashtable<Any, Any>())
+        } else {
+            val raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 3, null)
+            BufferedImage(glColorModel, raster, false, Hashtable<Any, Any>())
+        }
+
+        val graphics = texImage.graphics
+        graphics.color = Color(0f, 0f, 0f, 0f)
+        graphics.fillRect(0, 0, tileWidth, tileHeight)
+
+        graphics.drawImage(
+            this, 0, 0, tileWidth, tileHeight,
+            topLeftBottomRight[0].x, topLeftBottomRight[0].y,
+            topLeftBottomRight[1].x, topLeftBottomRight[1].y, null
+        )
+
+//            try {
+//                File outputfile = new File(i + ".png");
+//                ImageIO.write(texImage, "png", outputfile);
+//            } catch (IOException e) {
+//            	LOGGER.info("xoxoxoxo");
+//            }
+
+
+        val data = (texImage.raster.dataBuffer as DataBufferByte).data
+        byteArrays.add(data)
+
+//    		ByteBuffer tempBuffer = ByteBuffer.allocateDirect(data.length);
+//    		tempBuffer.order(ByteOrder.nativeOrder());
+//    		tempBuffer.put(data, 0, data.length);
+//    		tempBuffer.flip();
+//          imageBuffers[i] = tempBuffer;
+
+    }
+    return byteArrays
+}
+
+// Why do i have to do +1 and -1 here?
+private fun getRectForFaceIndex(
+    index: Int,
+    tileWidth: Int,
+    tileHeight: Int
+) = when (GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index) {
+    GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X -> arrayOf(Vector2i(0, tileHeight), Vector2i(tileWidth, 2 * tileHeight))
+    GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X -> arrayOf(
+        Vector2i(2 * tileWidth, tileHeight),
+        Vector2i(3 * tileWidth, 2 * tileHeight)
+    )
+    GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y -> arrayOf(
+        Vector2i(2 * tileWidth - 1, tileHeight),
+        Vector2i(tileWidth, 0)
+    )
+    GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y -> arrayOf(
+        Vector2i(2 * tileWidth, 3 * tileHeight),
+        Vector2i(tileWidth, 2 * tileHeight)
+    )
+    GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z -> arrayOf(
+        Vector2i(3 * tileWidth, tileHeight),
+        Vector2i(4 * tileWidth, 2 * tileHeight)
+    )
+    GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z -> arrayOf(
+        Vector2i(tileWidth, tileHeight),
+        Vector2i(2 * tileWidth, 2 * tileHeight)
+    )
+    else -> throw IllegalStateException("")
+}
+

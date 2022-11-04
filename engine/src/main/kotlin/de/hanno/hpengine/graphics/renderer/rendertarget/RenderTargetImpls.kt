@@ -279,7 +279,7 @@ class RenderTargetImpl<T : Texture>(
             gpuContext: GpuContext,
             textureFilter: TextureFilterConfig,
             internalFormat: Int, texture2DUploadInfo:
-            OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
+            UploadInfo.Texture2DUploadInfo
         ): OpenGLTexture2D {
 
             return OpenGLTexture2D.invoke(
@@ -312,7 +312,7 @@ fun List<ColorAttachmentDefinition>.toTextures(
 ): List<OpenGLTexture2D> = map {
     OpenGLTexture2D(
         gpuContext = gpuContext,
-        info = OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo(dimension = TextureDimension(width, height)),
+        info = UploadInfo.Texture2DUploadInfo(dimension = TextureDimension(width, height)),
         textureFilterConfig = it.textureFilter,
         internalFormat = it.internalFormat
     )
@@ -351,24 +351,12 @@ class DepthBuffer<T : Texture>(val texture: T) {
             val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
             val textureTarget = TextureTarget.TEXTURE_2D
             val internalFormat1 = GL14.GL_DEPTH_COMPONENT24
-            val (textureId, internalFormat, handle) = allocateTexture(
-                gpuContext,
-                OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo(dimension),
+            val (textureId, internalFormat, handle, wrapMode) = gpuContext.allocateTexture(
+                UploadInfo.Texture2DUploadInfo(dimension),
                 textureTarget,
-                filterConfig, internalFormat1
-            )
-
-            DepthBuffer(
-                OpenGLTexture2D(
-                    dimension,
-                    textureId,
-                    textureTarget,
-                    internalFormat,
-                    handle,
-                    filterConfig,
-                    GL_REPEAT,
-                    UploadState.UPLOADED
-                )
+                filterConfig,
+                internalFormat1,
+                GL_REPEAT,
             )
 
             return DepthBuffer(
@@ -379,7 +367,7 @@ class DepthBuffer<T : Texture>(val texture: T) {
                     internalFormat,
                     handle,
                     filterConfig,
-                    GL_REPEAT,
+                    wrapMode,
                     UploadState.UPLOADED
                 )
             )

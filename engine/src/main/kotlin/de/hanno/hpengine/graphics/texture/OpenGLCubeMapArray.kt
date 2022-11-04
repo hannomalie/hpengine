@@ -25,9 +25,8 @@ data class OpenGLCubeMapArray(
             internalFormat: Int,
             wrapMode: Int
         ): OpenGLCubeMapArray {
-            val (textureId, internalFormat, handle) = allocateTexture(
-                gpuContext,
-                OpenGLTexture2D.TextureUploadInfo.Texture3DUploadInfo(dimension),
+            val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
+                UploadInfo.CubeMapArrayUploadInfo(dimension),
                 TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
                 filterConfig,
                 internalFormat,

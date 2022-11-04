@@ -23,9 +23,8 @@ data class OpenGLCubeMap(
             internalFormat: Int,
             wrapMode: Int = GL11.GL_REPEAT
         ): OpenGLCubeMap {
-            val (textureId, internalFormat, handle) = allocateTexture(
-                gpuContext,
-                OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo(dimension),
+            val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
+                UploadInfo.Texture2DUploadInfo(dimension),
                 TextureTarget.TEXTURE_CUBE_MAP,
                 filterConfig,
                 internalFormat,

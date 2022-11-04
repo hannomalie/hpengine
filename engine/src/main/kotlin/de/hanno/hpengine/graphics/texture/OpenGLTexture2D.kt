@@ -5,7 +5,7 @@ import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
+import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import jogl.DDSImage
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -103,8 +103,7 @@ data class OpenGLTexture2D(
             wrapMode: Int = GL12.GL_REPEAT
         ): OpenGLTexture2D {
             return gpuContext.invoke {
-                val (textureId, internalFormat, handle) = allocateTexture(
-                    gpuContext,
+                val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
                     info,
                     TextureTarget.TEXTURE_2D,
                     textureFilterConfig,
@@ -143,12 +142,12 @@ data class OpenGLTexture2D(
             info: Texture2DUploadInfo,
             internalFormat: Int
         ) {
-            if (info.buffer == null) return
+            val data = info.data ?: return
 
             val pbo = gpuContext.invoke {
                 PixelBufferObject()
             }
-            pbo.put(gpuContext, info.buffer)
+            pbo.put(gpuContext, data)
             gpuContext.invoke {
                 pbo.unmap(gpuContext)
                 pbo.bind()
@@ -162,7 +161,7 @@ data class OpenGLTexture2D(
                         info.dimension.width,
                         info.dimension.height,
                         internalFormat,
-                        info.buffer.capacity(),
+                        data.capacity(),
                         0
                     )
                 } else {
@@ -201,7 +200,7 @@ data class OpenGLTexture2D(
                         info.dimension.width,
                         info.dimension.height,
                         internalFormat,
-                        info.buffer
+                        info.data
                     )
                 } else {
                     GL11.glTexSubImage2D(
@@ -213,51 +212,14 @@ data class OpenGLTexture2D(
                         info.dimension.height,
                         GL11.GL_RGBA,
                         GL11.GL_UNSIGNED_BYTE,
-                        info.buffer
+                        info.data
                     )
                 }
                 GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
                 uploadState = UploadState.UPLOADED
             }
         }
+
     }
 
-    sealed class TextureUploadInfo {
-        data class Texture2DUploadInfo(
-            val dimension: TextureDimension2D,
-            val buffer: ByteBuffer? = null,
-            val dataCompressed: Boolean = false,
-            val srgba: Boolean = false
-        ) : TextureUploadInfo() {
-            init {
-                require(dimension.width > 0) { "Illegal width $dimension" }
-                require(dimension.height > 0) { "Illegal height $dimension" }
-            }
-        }
-
-        data class Texture3DUploadInfo(val dimension: TextureDimension3D) : TextureUploadInfo() {
-            init {
-                require(dimension.width > 0) { "Illegal width $dimension" }
-                require(dimension.height > 0) { "Illegal height $dimension" }
-                require(dimension.depth > 0) { "Illegal depth $dimension" }
-            }
-        }
-
-        data class CubeMapUploadInfo(
-            val dimension: TextureDimension2D,
-            val buffers: List<ByteBuffer> = emptyList()
-        ) :TextureUploadInfo() {
-            init {
-                require(dimension.width > 0) { "Illegal width $dimension" }
-                require(dimension.height > 0) { "Illegal height $dimension" }
-            }
-        }
-        data class CubeMapArrayUploadInfo(val dimension: TextureDimension3D) : TextureUploadInfo() {
-            init {
-                require(dimension.width > 0) { "Illegal width $dimension" }
-                require(dimension.height > 0) { "Illegal height $dimension" }
-                require(dimension.depth > 0) { "Illegal depth $dimension" }
-            }
-        }
-    }
 }

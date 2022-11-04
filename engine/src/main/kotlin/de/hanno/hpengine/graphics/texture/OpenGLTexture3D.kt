@@ -23,9 +23,8 @@ data class OpenGLTexture3D(
             internalFormat: Int,
             wrapMode: Int = GL11.GL_REPEAT
         ): OpenGLTexture3D {
-            val (textureId, internalFormat, handle) = allocateTexture(
-                gpuContext,
-                OpenGLTexture2D.TextureUploadInfo.Texture3DUploadInfo(dimension),
+            val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
+                UploadInfo.Texture3DUploadInfo(dimension),
                 TextureTarget.TEXTURE_3D,
                 filterConfig,
                 internalFormat,

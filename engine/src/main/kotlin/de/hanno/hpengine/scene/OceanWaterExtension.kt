@@ -22,12 +22,9 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
-import de.hanno.hpengine.graphics.texture.TextureDimension2D
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.texture.UploadState
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -294,12 +291,11 @@ class OceanWaterRenderSystem(
                                 ),
                                 wrapMode: Int = GL14.GL_REPEAT
     ): OpenGLTexture2D {
-        val (textureId, internalFormat, handle) = de.hanno.hpengine.graphics.texture.allocateTexture(
-            gpuContext,
-            OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo(textureDimension2D),
+        val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
+            UploadInfo.Texture2DUploadInfo(textureDimension2D),
             TextureTarget.TEXTURE_2D,
-            internalFormat = internalFormat,
             filterConfig = textureFilterConfig,
+            internalFormat = internalFormat,
             wrapMode = wrapMode
         )
 
