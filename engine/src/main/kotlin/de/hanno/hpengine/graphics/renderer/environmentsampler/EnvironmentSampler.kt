@@ -19,7 +19,7 @@ import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.Texture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
 import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
@@ -115,7 +115,7 @@ class EnvironmentSampler(
             EngineAsset("shaders/frst_pass_fragment.glsl").toCodeSource()
         )
     }
-    val renderTarget: RenderTarget<Texture2D>
+    val renderTarget: RenderTarget<OpenGLTexture2D>
     val camera: Camera
 
     var gpuContext: GpuContext

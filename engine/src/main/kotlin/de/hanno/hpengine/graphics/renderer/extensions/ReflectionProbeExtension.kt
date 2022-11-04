@@ -28,16 +28,13 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.CubeMap
-import de.hanno.hpengine.model.texture.TextureDimension
-import de.hanno.hpengine.model.texture.TextureManager
-import de.hanno.hpengine.model.texture.createView
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.math.Vector4fStrukt
+import de.hanno.hpengine.model.texture.*
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -348,7 +345,7 @@ class ReflectionProbeRenderer(
         frameBuffer = FrameBuffer(
             gpuContext = gpuContext,
             depthBuffer = DepthBuffer(
-                CubeMap(
+                OpenGLCubeMap(
                     gpuContext,
                     TextureDimension(cubeMap.dimension.width, cubeMap.dimension.height),
                     TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),

@@ -27,7 +27,7 @@ operator fun RenderTarget.Companion.invoke(
     frameBuffer: FrameBuffer,
     width: Int = 1280,
     height: Int = 720,
-    textures: List<Texture2D> = emptyList(),
+    textures: List<OpenGLTexture2D> = emptyList(),
     name: String,
     clear: Vector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f)
 ): RenderTarget2D {
@@ -56,7 +56,7 @@ operator fun RenderTarget.Companion.invoke(
     frameBuffer: FrameBuffer,
     width: Int = 1280,
     height: Int = 720,
-    textures: List<CubeMapArray> = emptyList(),
+    textures: List<OpenGLCubeMapArray> = emptyList(),
     name: String,
     clear: Vector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f)
 ): CubeMapArrayRenderTarget {
@@ -78,8 +78,8 @@ class CubeMapRenderTarget(
 
 class RenderTarget2D(
     gpuContext: GpuContext,
-    renderTarget: RenderTarget<Texture2D>
-) : RenderTarget<Texture2D> by renderTarget {
+    renderTarget: RenderTarget<OpenGLTexture2D>
+) : RenderTarget<OpenGLTexture2D> by renderTarget {
     init {
         gpuContext.register(this)
     }
@@ -138,7 +138,7 @@ class RenderTargetImpl<T : Texture>(
 //            TODO: Is this needed anymore?
 //            configureBorderColor()
 
-            if (textures.first() is CubeMapArray) {
+            if (textures.first() is OpenGLCubeMapArray) {
                 textures.forEachIndexed { index, it ->
                     GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + index, 0, 0, 0)
                 }
@@ -279,10 +279,10 @@ class RenderTargetImpl<T : Texture>(
             gpuContext: GpuContext,
             textureFilter: TextureFilterConfig,
             internalFormat: Int, texture2DUploadInfo:
-            Texture2D.TextureUploadInfo.Texture2DUploadInfo
-        ): Texture2D {
+            OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
+        ): OpenGLTexture2D {
 
-            return Texture2D.invoke(
+            return OpenGLTexture2D.invoke(
                 gpuContext = gpuContext,
                 info = texture2DUploadInfo,
                 textureFilterConfig = textureFilter,
@@ -309,10 +309,10 @@ fun List<ColorAttachmentDefinition>.toTextures(
     gpuContext: GpuContext,
     width: Int,
     height: Int
-): List<Texture2D> = map {
-    Texture2D(
+): List<OpenGLTexture2D> = map {
+    OpenGLTexture2D(
         gpuContext = gpuContext,
-        info = Texture2D.TextureUploadInfo.Texture2DUploadInfo(dimension = TextureDimension(width, height)),
+        info = OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo(dimension = TextureDimension(width, height)),
         textureFilterConfig = it.textureFilter,
         internalFormat = it.internalFormat
     )
@@ -334,8 +334,8 @@ fun List<ColorAttachmentDefinition>.toCubeMapArrays(
     width: Int,
     height: Int,
     depth: Int
-): List<CubeMapArray> = map {
-    CubeMapArray(
+): List<OpenGLCubeMapArray> = map {
+    OpenGLCubeMapArray(
         gpuContext = gpuContext,
         filterConfig = it.textureFilter,
         internalFormat = it.internalFormat,
@@ -346,20 +346,20 @@ fun List<ColorAttachmentDefinition>.toCubeMapArrays(
 
 class DepthBuffer<T : Texture>(val texture: T) {
     companion object {
-        operator fun invoke(gpuContext: GpuContext, width: Int, height: Int): DepthBuffer<Texture2D> {
+        operator fun invoke(gpuContext: GpuContext, width: Int, height: Int): DepthBuffer<OpenGLTexture2D> {
             val dimension = TextureDimension(width, height)
             val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
             val textureTarget = TextureTarget.TEXTURE_2D
             val internalFormat1 = GL14.GL_DEPTH_COMPONENT24
             val (textureId, internalFormat, handle) = allocateTexture(
                 gpuContext,
-                Texture2D.TextureUploadInfo.Texture2DUploadInfo(dimension),
+                OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo(dimension),
                 textureTarget,
                 filterConfig, internalFormat1
             )
 
             DepthBuffer(
-                Texture2D(
+                OpenGLTexture2D(
                     dimension,
                     textureId,
                     textureTarget,
@@ -372,7 +372,7 @@ class DepthBuffer<T : Texture>(val texture: T) {
             )
 
             return DepthBuffer(
-                Texture2D(
+                OpenGLTexture2D(
                     dimension,
                     textureId,
                     textureTarget,

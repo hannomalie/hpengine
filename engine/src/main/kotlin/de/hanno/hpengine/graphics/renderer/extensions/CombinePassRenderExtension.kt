@@ -12,7 +12,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.Texture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -31,7 +31,7 @@ class CombinePassRenderExtension(private val config: Config,
  Defines()
     )
 
-    fun renderCombinePass(state: RenderState, renderTarget: RenderTarget<Texture2D> = deferredRenderingBuffer.finalBuffer) {
+    fun renderCombinePass(state: RenderState, renderTarget: RenderTarget<OpenGLTexture2D> = deferredRenderingBuffer.finalBuffer) {
         if(!config.effects.isAutoExposureEnabled) {
             deferredRenderingBuffer.exposureBuffer.buffer.putFloat(0, state.camera.exposure)
         }

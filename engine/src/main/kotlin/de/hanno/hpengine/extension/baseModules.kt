@@ -32,7 +32,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.ProgramDescription
-import de.hanno.hpengine.model.texture.Texture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
 import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.scene.OceanWaterRenderSystem
@@ -46,6 +46,7 @@ import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.model.texture.TextureManager
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
@@ -54,7 +55,7 @@ import org.lwjgl.opengl.GL30
 import javax.swing.SwingUtilities
 import kotlin.collections.set
 
-data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
+data class IdTexture(val texture: OpenGLTexture2D) // TODO: Move to a proper place
 data class SharedDepthBuffer(val depthBuffer: DepthBuffer<*>)
 
 val deferredRendererModule = module {
@@ -149,9 +150,12 @@ val baseModule = module {
     single { RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll()) }
     single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(
         ProgramManager::class,
-        OpenGlProgramManager::class
+        OpenGlProgramManager::class,
     )
-    single { OpenGLTextureManager(get(), get(), get()) }
+    single { OpenGLTextureManager(get(), get(), get()) } binds arrayOf(
+        TextureManager::class,
+        OpenGLTextureManager::class,
+    )
 
     single { GlfwWindow(get()) } bind Window::class
 

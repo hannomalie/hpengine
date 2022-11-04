@@ -16,9 +16,9 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.CubeMapArray
-import de.hanno.hpengine.model.texture.Texture2D
-import de.hanno.hpengine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
+import de.hanno.hpengine.model.texture.OpenGLCubeMapArray
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector4f
@@ -49,7 +49,7 @@ class CubeShadowMapStrategy(
         Uniforms.Empty
     )
 
-    val cubeMapArray = CubeMapArray(
+    val cubeMapArray = OpenGLCubeMapArray(
         gpuContext,
         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
         TextureFilterConfig(MinFilter.NEAREST),
@@ -171,7 +171,7 @@ class DualParaboloidShadowMapStrategy(
         width = AREALIGHT_SHADOWMAP_RESOLUTION,
         height = AREALIGHT_SHADOWMAP_RESOLUTION,
         textures = listOf(
-            Texture2D.invoke(
+            OpenGLTexture2D.invoke(
                 gpuContext = gpuContext,
                 info = Texture2DUploadInfo(
                     TextureDimension(

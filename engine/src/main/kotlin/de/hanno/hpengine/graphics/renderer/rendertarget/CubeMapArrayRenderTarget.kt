@@ -5,11 +5,7 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.model.texture.OpenGLCubeMap
-import de.hanno.hpengine.model.texture.CubeMapArray
-import de.hanno.hpengine.model.texture.Texture2D
-import de.hanno.hpengine.model.texture.TextureDimension
-import de.hanno.hpengine.model.texture.createView
+import de.hanno.hpengine.model.texture.*
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL14
@@ -18,11 +14,11 @@ import java.util.ArrayList
 
 class CubeMapArrayRenderTarget(
     gpuContext: GpuContext,
-    renderTarget: RenderTarget<CubeMapArray>
-) : RenderTarget<CubeMapArray> by renderTarget {
+    renderTarget: RenderTarget<OpenGLCubeMapArray>
+) : RenderTarget<OpenGLCubeMapArray> by renderTarget {
 
-    val cubeMapViews = ArrayList<OpenGLCubeMap>()
-    val cubeMapFaceViews = ArrayList<Texture2D>()
+    val cubeMapViews = ArrayList<CubeMap>()
+    val cubeMapFaceViews = ArrayList<OpenGLTexture2D>()
     fun setCubeMapFace(attachmentIndex: Int, cubeMapIndex: Int, faceIndex: Int) {
         setCubeMapFace(attachmentIndex, attachmentIndex, cubeMapIndex, faceIndex)
     }
@@ -43,7 +39,7 @@ class CubeMapArrayRenderTarget(
         }
     }
 
-    fun getCubeMapArray(i: Int): CubeMapArray {
+    fun getCubeMapArray(i: Int): OpenGLCubeMapArray {
         return textures[i]
     }
 
@@ -73,7 +69,7 @@ class CubeMapArrayRenderTarget(
             gpuContext: GpuContext,
             width: Int, height: Int,
             name: String, clear: Vector4f,
-            vararg cubeMapArray: CubeMapArray
+            vararg cubeMapArray: OpenGLCubeMapArray
         ): CubeMapArrayRenderTarget {
             return CubeMapArrayRenderTarget(
                 gpuContext, RenderTarget(
@@ -93,11 +89,11 @@ class CubeMapArrayRenderTarget(
             width: Int,
             height: Int,
             depth: Int
-        ): DepthBuffer<CubeMapArray> {
+        ): DepthBuffer<OpenGLCubeMapArray> {
             val dimension = TextureDimension(width, height, depth)
             val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
             return DepthBuffer(
-                CubeMapArray(
+                OpenGLCubeMapArray(
                     gpuContext,
                     dimension,
                     filterConfig,

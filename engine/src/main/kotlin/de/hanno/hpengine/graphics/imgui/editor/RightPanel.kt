@@ -7,7 +7,7 @@ import de.hanno.hpengine.artemis.NameComponent
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.engine.graphics.imgui.float2Input
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
-import de.hanno.hpengine.model.texture.Texture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
 import imgui.ImGui
 import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiInputTextFlags
@@ -181,7 +181,7 @@ fun ImGuiEditor.rightPanel(
                     gpuContext.registeredRenderTargets.forEach { target ->
                         target.renderedTextures.forEachIndexed { textureIndex, _ ->
                             if (ImGui.radioButton(target.name + "[$textureIndex]", output, counter)) {
-                                (currentOutputTexture as? Texture2D)?.let {
+                                (currentOutputTexture as? OpenGLTexture2D)?.let {
                                     debugOutput.texture2D = it
                                 }
                             }
@@ -190,7 +190,7 @@ fun ImGuiEditor.rightPanel(
                     }
                     textureManager.texturesForDebugOutput.forEach { (name, _) ->
                         if (ImGui.radioButton(name, output, counter)) {
-                            (currentOutputTexture as? Texture2D)?.let {
+                            (currentOutputTexture as? OpenGLTexture2D)?.let {
                                 debugOutput.texture2D = it
                             }
                         }

@@ -5,7 +5,7 @@ import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import kotlin.math.log2
 import kotlin.math.nextUp
 
-interface Texture {
+sealed interface Texture {
     val dimension: TextureDimension
     val id: Int
     val target: TextureTarget
@@ -23,7 +23,18 @@ interface Texture {
     }
 }
 
-interface CubeMap: Texture
+interface Texture2D: Texture {
+    override val dimension: TextureDimension2D
+}
+interface Texture3D: Texture {
+    override val dimension: TextureDimension3D
+}
+interface CubeMap: Texture {
+    override val dimension: TextureDimension2D
+}
+interface CubeMapArray: Texture {
+    override val dimension: TextureDimension3D
+}
 
 val Texture.isMipMapped: Boolean get() = textureFilterConfig.minFilter.isMipMapped
 val Texture.mipmapCount: Int get() = if(isMipMapped) { dimension.getMipMapCount() } else 0

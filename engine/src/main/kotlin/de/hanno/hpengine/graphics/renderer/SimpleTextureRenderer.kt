@@ -16,7 +16,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.model.texture.OpenGLCubeMap
-import de.hanno.hpengine.model.texture.Texture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
 import de.hanno.hpengine.model.texture.createView
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
@@ -25,7 +25,7 @@ import org.lwjgl.opengl.GL11
 open class SimpleTextureRenderer(
     config: Config,
     private val gpuContext: GpuContext,
-    var texture: Texture2D,
+    var texture: OpenGLTexture2D,
     private val programManager: ProgramManager,
     private val frontBuffer: FrontBufferTarget
 ) : RenderSystem {
@@ -58,7 +58,7 @@ open class SimpleTextureRenderer(
     }
 
     fun drawToQuad(
-        texture: Texture2D,
+        texture: OpenGLTexture2D,
         buffer: IVertexBuffer = gpuContext.fullscreenBuffer,
         program: IProgram<Uniforms> = renderToQuadProgram,
         factorForDebugRendering: Float = 1f,

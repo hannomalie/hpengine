@@ -532,8 +532,8 @@ class OpenGLTextureManager(
         minFilter: MinFilter,
         magFilter: MagFilter,
         wrapMode: Int
-    ): Texture3D {
-        return Texture3D(
+    ): OpenGLTexture3D {
+        return OpenGLTexture3D(
             gpuContext,
             TextureDimension(gridResolution, gridResolution, gridResolution),
             TextureFilterConfig(minFilter, magFilter),

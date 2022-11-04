@@ -23,7 +23,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.Update
-import de.hanno.hpengine.model.texture.Texture3D
+import de.hanno.hpengine.model.texture.OpenGLTexture3D
 import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.Transform
@@ -79,10 +79,10 @@ class VoxelConeTracingExtension(
     val voxelGrids = renderStateManager.renderState.registerState {
         PersistentMappedBuffer(VoxelGrid.type.sizeInBytes, gpuContext).typed(VoxelGrid.type)
     }
-    data class GIVolumeGrids(val grid: Texture3D,
-                             val indexGrid: Texture3D,
-                             val albedoGrid: Texture3D,
-                             val normalGrid: Texture3D
+    data class GIVolumeGrids(val grid: OpenGLTexture3D,
+                             val indexGrid: OpenGLTexture3D,
+                             val albedoGrid: OpenGLTexture3D,
+                             val normalGrid: OpenGLTexture3D
     ) {
 
         val gridSize: Int = albedoGrid.dimension.width

@@ -8,7 +8,7 @@ import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
-import de.hanno.hpengine.model.texture.Texture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
 import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
@@ -101,15 +101,15 @@ class DeferredRenderingBuffer(gpuContext: GpuContext, width: Int, height: Int,
 
     val colorReflectivenessMap: Int = gBuffer.getRenderedTexture(2)
 
-    val colorReflectivenessTexture: Texture2D = gBuffer.textures[2]
+    val colorReflectivenessTexture: OpenGLTexture2D = gBuffer.textures[2]
 
     val motionMap: Int = gBuffer.getRenderedTexture(3)
 
     val visibilityMap: Int = gBuffer.getRenderedTexture(4)
 
-    val depthAndIndicesMap: Texture2D = gBuffer.textures[4]
+    val depthAndIndicesMap: OpenGLTexture2D = gBuffer.textures[4]
 
-    val finalMap: Texture2D = finalBuffer.textures[0]
+    val finalMap: OpenGLTexture2D = finalBuffer.textures[0]
 
     val finalMapId: Int = finalBuffer.getRenderedTexture(0)
 

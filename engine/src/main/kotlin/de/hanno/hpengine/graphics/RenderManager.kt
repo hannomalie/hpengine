@@ -13,21 +13,15 @@ import de.hanno.hpengine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
-import de.hanno.hpengine.model.texture.Texture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.fps.FPSCounter
-import de.hanno.hpengine.graphics.shader.Program
-import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
-import net.miginfocom.swing.MigLayout
 import org.lwjgl.opengl.GL11
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.swing.BorderFactory
-import javax.swing.JCheckBox
-import javax.swing.JPanel
 
-data class FinalOutput(var texture2D: Texture2D, var mipmapLevel: Int = 0)
-data class DebugOutput(var texture2D: Texture2D? = null, var mipmapLevel: Int = 0)
+data class FinalOutput(var texture2D: OpenGLTexture2D, var mipmapLevel: Int = 0)
+data class DebugOutput(var texture2D: OpenGLTexture2D? = null, var mipmapLevel: Int = 0)
 
 class RenderManager(
     val config: Config,

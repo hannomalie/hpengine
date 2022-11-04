@@ -26,8 +26,8 @@ import de.hanno.hpengine.graphics.shader.IProgram
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.Texture2D
-import de.hanno.hpengine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
+import de.hanno.hpengine.model.texture.OpenGLTexture2D
+import de.hanno.hpengine.model.texture.OpenGLTexture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.hpengine.model.texture.TextureManager
@@ -66,7 +66,7 @@ open class GPUCulledPipeline(
         programManager.getComputeProgram(EngineAsset("shaders/append_drawcommands_compute.glsl"))
     }
 
-    private val baseDepthTexture = Texture2D(
+    private val baseDepthTexture = OpenGLTexture2D(
         gpuContext = gpuContext,
         info = Texture2DUploadInfo(TextureDimension(config.width, config.height)),
         textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
@@ -76,7 +76,7 @@ open class GPUCulledPipeline(
         textureManager.registerTextureForDebugOutput("High Z base depth", this)
     }
 
-    private val debugMinMaxTexture = Texture2D(
+    private val debugMinMaxTexture = OpenGLTexture2D(
         gpuContext = gpuContext,
         info = Texture2DUploadInfo(TextureDimension(config.width / 2, config.height / 2)),
         textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
@@ -92,7 +92,7 @@ open class GPUCulledPipeline(
         width = config.width / 2,
         height = config.height / 2,
         textures = listOf(
-            Texture2D(
+            OpenGLTexture2D(
                 gpuContext = gpuContext,
                 info = Texture2DUploadInfo(TextureDimension(config.width / 2, config.height / 2)),
                 textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
