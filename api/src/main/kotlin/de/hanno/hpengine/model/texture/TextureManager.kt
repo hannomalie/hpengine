@@ -2,8 +2,8 @@ package de.hanno.hpengine.model.texture
 
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 
-interface ITextureManager {
-    val cubeMap: ICubeMap
+interface TextureManager {
+    val cubeMap: CubeMap
     val lensFlareTexture: Texture
 
     fun generateMipMaps(texture2d: TextureTarget, renderedTexture: Int)

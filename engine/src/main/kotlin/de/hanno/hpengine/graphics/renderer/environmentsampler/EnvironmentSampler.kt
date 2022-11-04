@@ -15,13 +15,12 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer.Companion.in
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer.Companion.invoke
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
-import de.hanno.hpengine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture2D
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.exitOnGLError
@@ -44,7 +43,7 @@ class EnvironmentSampler(
     width: Int, height: Int, probeIndex: Int,
     programManager: ProgramManager,
     config: Config,
-    textureManager: TextureManager,
+    textureManager: OpenGLTextureManager,
     cubeMapArrayRenderTarget: CubeMapArrayRenderTarget
 ) {
     val cubeMapProgram = config.run {
@@ -121,7 +120,7 @@ class EnvironmentSampler(
 
     var gpuContext: GpuContext
     val config: Config
-    val textureManager: TextureManager
+    val textureManager: OpenGLTextureManager
 
     fun registerSideAsDrawn(i: Int) {
         sidesDrawn.add(i)

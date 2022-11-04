@@ -34,7 +34,7 @@ import de.hanno.hpengine.graphics.state.DirectionalLightState
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
@@ -44,7 +44,7 @@ import org.lwjgl.opengl.GL30
 class DirectionalLightShadowMapExtension(
     val config: Config,
     val programManager: ProgramManager,
-    val textureManager: TextureManager,
+    val textureManager: OpenGLTextureManager,
     val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
 ) : DeferredRenderExtension {

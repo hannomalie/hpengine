@@ -15,8 +15,6 @@ interface Texture {
     val wrapMode: Int
     var uploadState: UploadState
     fun unload() {}
-    val isMipMapped: Boolean
-        get() = textureFilterConfig.minFilter.isMipMapped
 
     companion object {
         fun getMipMapCountForDimension(w: Int, h: Int, d: Int): Int {
@@ -24,8 +22,8 @@ interface Texture {
         }
     }
 }
-interface ICubeMap: Texture
 
+interface CubeMap: Texture
 
-val Texture.mipmapCount: Int
-    get() = if(isMipMapped) { dimension.getMipMapCount() } else 0
+val Texture.isMipMapped: Boolean get() = textureFilterConfig.minFilter.isMipMapped
+val Texture.mipmapCount: Int get() = if(isMipMapped) { dimension.getMipMapCount() } else 0

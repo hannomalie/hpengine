@@ -12,11 +12,10 @@ import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.model.texture.Texture
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.DebugOutput
@@ -40,7 +39,7 @@ interface ImGuiEditorExtension {
 class ImGuiEditor(
     internal val window: GlfwWindow,
     internal val gpuContext: GpuContext,
-    internal val textureManager: TextureManager,
+    internal val textureManager: OpenGLTextureManager,
     internal val finalOutput: FinalOutput,
     internal val debugOutput: DebugOutput,
     internal val config: ConfigImpl,

@@ -15,7 +15,7 @@ import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
-import de.hanno.hpengine.model.texture.CubeMap
+import de.hanno.hpengine.model.texture.OpenGLCubeMap
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.createView
 import de.hanno.hpengine.graphics.vertexbuffer.draw
@@ -86,7 +86,7 @@ open class SimpleTextureRenderer(
 
     fun renderCubeMapDebug(
         renderTarget: FrontBufferTarget = frontBuffer,
-        cubeMap: CubeMap
+        cubeMap: OpenGLCubeMap
     ) {
         renderTarget.use(gpuContext, true)
         (0..5).map { faceIndex ->

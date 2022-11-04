@@ -26,7 +26,7 @@ import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.TextureDimension2D
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.model.texture.UploadState
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.lwjgl.BufferUtils
@@ -41,7 +41,7 @@ class OceanWaterRenderSystem(
     val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager,
-    val textureManager: TextureManager,
+    val textureManager: OpenGLTextureManager,
 ) : RenderSystem {
     override lateinit var artemisWorld: World
     private val N = 512

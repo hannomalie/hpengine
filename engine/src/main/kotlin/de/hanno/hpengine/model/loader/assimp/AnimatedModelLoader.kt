@@ -9,7 +9,7 @@ import de.hanno.hpengine.model.Mesh
 import de.hanno.hpengine.model.animation.Node
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.texture.Texture
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AnimatedVertex
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -39,7 +39,7 @@ val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinI
         Assimp.aiProcess_GenNormals
 
 class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
-    fun load(file: String, textureManager: TextureManager, resourcesDir: AbstractDirectory): AnimatedModel {
+    fun load(file: String, textureManager: OpenGLTextureManager, resourcesDir: AbstractDirectory): AnimatedModel {
         val path = resourcesDir.resolve(file).path.apply {
             require(File(this).exists()) { "File doesn't exist: $this" }
         }
@@ -165,7 +165,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
     private fun AIMaterial.processMaterial(
         texturesDir: String,
         resourcesDir: AbstractDirectory,
-        textureManager: TextureManager
+        textureManager: OpenGLTextureManager
     ): Material {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->

@@ -1,12 +1,12 @@
 package de.hanno.hpengine.graphics.light.probe
 
 import de.hanno.hpengine.math.Vector3fStrukt
-import de.hanno.hpengine.model.texture.CubeMap
+import de.hanno.hpengine.model.texture.OpenGLCubeMap
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL13
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
-data class AmbientCubeData(val position: Vector3f, val cubeMap: CubeMap, val distanceMap: CubeMap, val index: Int)
+data class AmbientCubeData(val position: Vector3f, val cubeMap: OpenGLCubeMap, val distanceMap: OpenGLCubeMap, val index: Int)
 interface AmbientCube: Strukt {
     context(ByteBuffer) val position: Vector3fStrukt
     context(ByteBuffer) val dummy: Float

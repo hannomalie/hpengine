@@ -26,7 +26,7 @@ import de.hanno.hpengine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.model.material.ProgramDescription
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.BatchKey
 import de.hanno.hpengine.scene.VertexIndexBuffer
@@ -75,7 +75,7 @@ class InstancesComponent: Component() {
 class ModelSystem(
     val config: Config,
     val gpuContext: GpuContext,
-    val textureManager: TextureManager,
+    val textureManager: OpenGLTextureManager,
     val materialManager: MaterialManager,
     val programManager: ProgramManager,
     val entityBuffer: EntityBuffer,

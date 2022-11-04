@@ -16,7 +16,6 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.state.StateRef
-import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.pipelines.*

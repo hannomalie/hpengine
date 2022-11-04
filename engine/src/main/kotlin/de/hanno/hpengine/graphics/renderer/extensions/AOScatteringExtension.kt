@@ -14,7 +14,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
@@ -23,7 +23,7 @@ class AOScatteringExtension(
     val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val programManager: ProgramManager,
-    val textureManager: TextureManager
+    val textureManager: OpenGLTextureManager
 ): DeferredRenderExtension {
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(

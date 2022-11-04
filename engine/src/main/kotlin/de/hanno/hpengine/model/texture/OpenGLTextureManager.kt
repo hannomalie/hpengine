@@ -3,7 +3,6 @@ package de.hanno.hpengine.model.texture
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.AbstractDirectory
-import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.OpenGLContext
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_3D
@@ -68,11 +67,11 @@ import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 
-class TextureManager(
+class OpenGLTextureManager(
     val config: Config,
     programManager: OpenGlProgramManager,
     val gpuContext: OpenGLContext,
-) : BaseSystem(), ITextureManager {
+) : BaseSystem(), TextureManager {
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
     val engineDir = config.directories.engineDir
@@ -250,8 +249,8 @@ class TextureManager(
     }
 
     @Throws(IOException::class)
-    fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): ICubeMap {
-        val tex: ICubeMap = textures[resourceName + "_cube"] as ICubeMap?
+    fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap {
+        val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
             ?: FileBasedCubeMap(gpuContext, resourceName, file, srgba)
 
         textures[resourceName + "_cube"] = tex
@@ -259,8 +258,8 @@ class TextureManager(
     }
 
     @Throws(IOException::class)
-    fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): ICubeMap {
-        val tex: ICubeMap = textures[resourceName + "_cube"] as ICubeMap?
+    fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): CubeMap {
+        val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
             ?: FileBasedCubeMap(gpuContext, resourceName, files, srgba)
 
         textures[resourceName + "_cube"] = tex
@@ -623,7 +622,7 @@ class TextureManager(
     }
 
     companion object {
-        private val LOGGER = Logger.getLogger(TextureManager::class.java.name)
+        private val LOGGER = Logger.getLogger(OpenGLTextureManager::class.java.name)
         private val TEXTURE_FACTORY_THREAD_COUNT = 1
 
         @Volatile

@@ -23,17 +23,14 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.ZERO_BUFFER
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.shader.IProgram
-import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.model.texture.TextureDimension
-import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
-import de.hanno.hpengine.model.texture.ITextureManager
+import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.Util
 import org.jetbrains.kotlin.util.profile
@@ -45,7 +42,7 @@ open class GPUCulledPipeline(
     private val config: Config,
     private val gpuContext: GpuContext,
     private val programManager: ProgramManager,
-    private val textureManager: ITextureManager,
+    private val textureManager: TextureManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val useBackFaceCulling: Boolean = true,
 ) {

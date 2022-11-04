@@ -5,7 +5,7 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.model.texture.CubeMap
+import de.hanno.hpengine.model.texture.OpenGLCubeMap
 import de.hanno.hpengine.model.texture.CubeMapArray
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.TextureDimension
@@ -21,7 +21,7 @@ class CubeMapArrayRenderTarget(
     renderTarget: RenderTarget<CubeMapArray>
 ) : RenderTarget<CubeMapArray> by renderTarget {
 
-    val cubeMapViews = ArrayList<CubeMap>()
+    val cubeMapViews = ArrayList<OpenGLCubeMap>()
     val cubeMapFaceViews = ArrayList<Texture2D>()
     fun setCubeMapFace(attachmentIndex: Int, cubeMapIndex: Int, faceIndex: Int) {
         setCubeMapFace(attachmentIndex, attachmentIndex, cubeMapIndex, faceIndex)

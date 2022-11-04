@@ -6,7 +6,7 @@ import de.hanno.hpengine.model.StaticMesh
 import de.hanno.hpengine.model.StaticModel
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.texture.Texture
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.Vertex
 import de.hanno.hpengine.transform.AABBData
 import kotlinx.coroutines.GlobalScope
@@ -44,7 +44,7 @@ import kotlin.math.max
 const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_GenNormals + Assimp.aiProcess_GenSmoothNormals
 
 class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
-    fun load(file: String, textureManager: TextureManager, resourcesDir: AbstractDirectory): StaticModel {
+    fun load(file: String, textureManager: OpenGLTextureManager, resourcesDir: AbstractDirectory): StaticModel {
         val absolutePath = resourcesDir.resolve(file).absolutePath.apply {
             check(File(this).exists()) { "File $this does not exist, can't load static model" }
         }
@@ -68,7 +68,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         return StaticModel(resourcesDir.resolve(file), meshes)
     }
 
-    private fun AIMaterial.processMaterial(texturesDir: String, resourcesDir: AbstractDirectory, textureManager: TextureManager): Material {
+    private fun AIMaterial.processMaterial(texturesDir: String, resourcesDir: AbstractDirectory, textureManager: OpenGLTextureManager): Material {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)

@@ -24,7 +24,7 @@ import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.model.texture.Texture3D
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.Transform
 import org.joml.Vector3f
@@ -33,7 +33,7 @@ import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL30.GL_RED_INTEGER
 import kotlin.math.max
 
-fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExtension.GIVolumeGrids {
+fun OpenGLTextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExtension.GIVolumeGrids {
     return VoxelConeTracingExtension.GIVolumeGrids(
         getTexture3D(
             gridSize,

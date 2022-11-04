@@ -35,7 +35,7 @@ import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.model.enlarge
-import de.hanno.hpengine.model.texture.CubeMap
+import de.hanno.hpengine.model.texture.OpenGLCubeMap
 import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
@@ -72,7 +72,7 @@ class AreaLightSystem(
             FrameBuffer(
                 gpuContext,
                 DepthBuffer(
-                    CubeMap(
+                    OpenGLCubeMap(
                         gpuContext,
                         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
                         TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),

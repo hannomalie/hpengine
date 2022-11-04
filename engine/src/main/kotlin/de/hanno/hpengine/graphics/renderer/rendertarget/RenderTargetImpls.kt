@@ -40,7 +40,7 @@ operator fun RenderTarget.Companion.invoke(
     frameBuffer: FrameBuffer,
     width: Int = 1280,
     height: Int = 720,
-    textures: List<CubeMap> = emptyList(),
+    textures: List<OpenGLCubeMap> = emptyList(),
     name: String,
     clear: Vector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f)
 ): CubeMapRenderTarget {
@@ -69,8 +69,8 @@ operator fun RenderTarget.Companion.invoke(
 
 class CubeMapRenderTarget(
     gpuContext: GpuContext,
-    renderTarget: RenderTarget<CubeMap>
-) : RenderTarget<CubeMap> by renderTarget {
+    renderTarget: RenderTarget<OpenGLCubeMap>
+) : RenderTarget<OpenGLCubeMap> by renderTarget {
     init {
         gpuContext.register(this)
     }
@@ -318,9 +318,9 @@ fun List<ColorAttachmentDefinition>.toTextures(
     )
 }
 
-fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext, width: Int, height: Int): List<CubeMap> =
+fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext, width: Int, height: Int): List<OpenGLCubeMap> =
     map {
-        CubeMap(
+        OpenGLCubeMap(
             gpuContext = gpuContext,
             filterConfig = it.textureFilter,
             internalFormat = it.internalFormat,

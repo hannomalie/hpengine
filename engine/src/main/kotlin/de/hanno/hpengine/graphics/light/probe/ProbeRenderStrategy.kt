@@ -24,9 +24,9 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.CubeMap
+import de.hanno.hpengine.model.texture.OpenGLCubeMap
 import de.hanno.hpengine.model.texture.TextureDimension
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -47,7 +47,7 @@ class ProbeRenderStrategy(
     val config: Config,
     val gpuContext: GpuContext,
     programManager: ProgramManager,
-    val textureManager: TextureManager
+    val textureManager: OpenGLTextureManager
 ) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
@@ -57,7 +57,7 @@ class ProbeRenderStrategy(
         frameBuffer = FrameBuffer(
             gpuContext = gpuContext,
             depthBuffer = DepthBuffer(
-                CubeMap(
+                OpenGLCubeMap(
                     gpuContext,
                     TextureDimension(resolution, resolution),
                     TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
@@ -178,13 +178,13 @@ class ProbeRenderStrategy(
                 val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x, y, z)) {
                     val dimension = TextureDimension(resolution, resolution)
                     val filterConfig = TextureFilterConfig(MinFilter.LINEAR)
-                    val cubeMap = CubeMap.invoke(
+                    val cubeMap = OpenGLCubeMap.invoke(
                         gpuContext,
                         dimension,
                         filterConfig,
                         GL11.GL_RGBA8
                     )
-                    val distanceCubeMap = CubeMap(gpuContext, dimension, filterConfig, GL_RG16F)
+                    val distanceCubeMap = OpenGLCubeMap(gpuContext, dimension, filterConfig, GL_RG16F)
                     AmbientCubeData(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
                 }
 
@@ -235,7 +235,7 @@ class ProbeRenderStrategy(
 class EvaluateProbeRenderExtension(
     val gpuContext: GpuContext,
     val programManager: ProgramManager,
-    textureManager: TextureManager,
+    textureManager: OpenGLTextureManager,
     val config: Config,
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension {

@@ -14,12 +14,12 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.graphics.vertexbuffer.draw
-import de.hanno.hpengine.model.texture.ITextureManager
+import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
 class CombinePassRenderExtension(private val config: Config,
                                  private val programManager: ProgramManager,
-                                 private val textureManager: ITextureManager,
+                                 private val textureManager: TextureManager,
                                  private val gpuContext: GpuContext,
                                  private val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension {

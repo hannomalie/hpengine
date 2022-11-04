@@ -2,13 +2,13 @@ package de.hanno.hpengine.graphics.imgui.editor
 
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.texture.FileBasedTexture2D
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import imgui.ImGui
 
 context(ImGuiEditor)
 fun textureSelection(material: Material) {
     ImGui.text("Textures")
-    val all2DTextures = artemisWorld.getSystem(TextureManager::class.java)
+    val all2DTextures = artemisWorld.getSystem(OpenGLTextureManager::class.java)
         .textures.filterValues { it is FileBasedTexture2D } + textureManager.texturesForDebugOutput
 
     val all2DTexturesNames = all2DTextures.keys.toTypedArray()

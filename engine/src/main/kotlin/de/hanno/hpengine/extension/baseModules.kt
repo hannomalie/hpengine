@@ -33,7 +33,7 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.model.texture.Texture2D
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.scene.OceanWaterRenderSystem
 import de.hanno.hpengine.scene.dsl.Directory
@@ -116,7 +116,7 @@ val textureRendererModule = module {
 
     }
     single {
-        val textureManager: TextureManager = get()
+        val textureManager: OpenGLTextureManager = get()
         IdTexture(textureManager.defaultTexture.backingTexture)
     }
     single {
@@ -124,7 +124,7 @@ val textureRendererModule = module {
         FinalOutput(renderTarget.textures.first())
     }
     renderSystem {
-        val textureManager: TextureManager = get()
+        val textureManager: OpenGLTextureManager = get()
         val renderTarget: RenderTarget2D = get()
         val gpuContext: GpuContext = get()
 
@@ -151,7 +151,7 @@ val baseModule = module {
         ProgramManager::class,
         OpenGlProgramManager::class
     )
-    single { TextureManager(get(), get(), get()) }
+    single { OpenGLTextureManager(get(), get(), get()) }
 
     single { GlfwWindow(get()) } bind Window::class
 
@@ -241,7 +241,7 @@ object SwingUtils {
 
 @All(GiVolumeComponent::class)
 class GiVolumeSystem(
-    val textureManager: TextureManager,
+    val textureManager: OpenGLTextureManager,
 ) : BaseEntitySystem() {
     private val grids = mutableMapOf<Int, VoxelConeTracingExtension.GIVolumeGrids>()
     override fun inserted(entityId: Int) {
@@ -323,7 +323,7 @@ fun World.addSkyBox(config: Config) {
                         )
                 )
             ).apply {
-                this.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
+                this.put(Material.MAP.ENVIRONMENT, getSystem(OpenGLTextureManager::class.java).cubeMap)
             }
         }
     }

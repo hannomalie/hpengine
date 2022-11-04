@@ -10,14 +10,13 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.draw
-import de.hanno.hpengine.model.texture.ITextureManager
+import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 
 class PostProcessingExtension(private val config: Config,
                               private val programManager: ProgramManager,
-                              private val textureManager: ITextureManager,
+                              private val textureManager: TextureManager,
                               private val gpuContext: GpuContext,
                               private val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension {

@@ -19,9 +19,9 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.texture.CubeMap
+import de.hanno.hpengine.model.texture.OpenGLCubeMap
 import de.hanno.hpengine.model.texture.TextureDimension
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.model.texture.mipmapCount
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -47,7 +47,7 @@ class ProbeRenderer(
     val gpuContext: GpuContext,
     config: Config,
     programManager: ProgramManager,
-    val textureManager: TextureManager
+    val textureManager: OpenGLTextureManager
 ) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
@@ -117,7 +117,7 @@ class ProbeRenderer(
         frameBuffer = FrameBuffer(
             gpuContext = gpuContext,
             depthBuffer = DepthBuffer(
-                CubeMap(
+                OpenGLCubeMap(
                     gpuContext,
                     TextureDimension(probeResolution, probeResolution),
                     TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
@@ -213,7 +213,7 @@ class ProbeRenderer(
                         )
                     }
                 }
-                val cubeMap = cubeMapRenderTarget.textures.first() as CubeMap
+                val cubeMap = cubeMapRenderTarget.textures.first() as OpenGLCubeMap
                 textureManager.generateMipMaps(TextureTarget.TEXTURE_CUBE_MAP, cubeMap.id)
                 val floatArrayOf = (0 until 6 * 4).map { 0f }.toFloatArray()
                 GL45.glGetTextureSubImage(

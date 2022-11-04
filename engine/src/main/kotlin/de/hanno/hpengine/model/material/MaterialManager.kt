@@ -9,7 +9,7 @@ import de.hanno.hpengine.artemis.MaterialComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material.MAP
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
@@ -25,7 +25,7 @@ import de.hanno.hpengine.artemis.ModelComponent
 )
 class MaterialManager(
     val config: Config,
-    val textureManager: TextureManager,
+    val textureManager: OpenGLTextureManager,
     val singleThreadContext: AddResourceContext
 ) : BaseEntitySystem(), Clearable, Extractor {
 
@@ -134,7 +134,7 @@ class MaterialManager(
 
 
     companion object {
-        fun createDefaultMaterial(config: Config, textureManager: TextureManager) = Material("default", diffuse = Vector3f(1f, 0f, 0f)).apply {
+        fun createDefaultMaterial(config: Config, textureManager: OpenGLTextureManager) = Material("default", diffuse = Vector3f(1f, 0f, 0f)).apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, config.engineDir))
         }
     }

@@ -9,13 +9,13 @@ import de.hanno.hpengine.graphics.Window
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.input.Input
-import de.hanno.hpengine.model.texture.TextureManager
+import de.hanno.hpengine.model.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 
 class OpenGlBackend(override val eventBus: EventBus,
                     override val gpuContext: GpuContext,
                     override val programManager: ProgramManager,
-                    override val textureManager: TextureManager,
+                    override val textureManager: OpenGLTextureManager,
                     override val input: Input,
                     override val addResourceContext: AddResourceContext
 ) : Backend {
@@ -25,7 +25,7 @@ class OpenGlBackend(override val eventBus: EventBus,
             val eventBus = MBassadorEventBus()
             val gpuContext = OpenGLContext.invoke(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
-            val textureManager = TextureManager(config, programManager, gpuContext)
+            val textureManager = OpenGLTextureManager(config, programManager, gpuContext)
             val input = Input(gpuContext)
 
             return OpenGlBackend(eventBus, gpuContext, programManager, textureManager, input, singleThreadContext)

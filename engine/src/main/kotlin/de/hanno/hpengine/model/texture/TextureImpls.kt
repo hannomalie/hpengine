@@ -50,15 +50,15 @@ data class Texture3D(override val dimension: TextureDimension3D,
     }
 }
 
-data class CubeMap(override val dimension: TextureDimension2D,
-                   override val id: Int,
-                   override val target: TextureTarget,
-                   override val internalFormat: Int,
-                   override var handle: Long,
-                   override val textureFilterConfig: TextureFilterConfig,
-                   override val wrapMode: Int,
-                   override var uploadState: UploadState
-) : ICubeMap {
+data class OpenGLCubeMap(override val dimension: TextureDimension2D,
+                         override val id: Int,
+                         override val target: TextureTarget,
+                         override val internalFormat: Int,
+                         override var handle: Long,
+                         override val textureFilterConfig: TextureFilterConfig,
+                         override val wrapMode: Int,
+                         override var uploadState: UploadState
+) : CubeMap {
     companion object {
         operator fun invoke(gpuContext: GpuContext, dimension: TextureDimension2D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): CubeMap {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture2DUploadInfo(dimension), TextureTarget.TEXTURE_CUBE_MAP, filterConfig, internalFormat, wrapMode)
@@ -71,7 +71,7 @@ enum class BackingFileMode {
     Single,
     Six
 }
-data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val files: List<File>, val isBgrFormat: Boolean = false): ICubeMap by backingTexture {
+data class FileBasedCubeMap(val path: String, val backingTexture: CubeMap, val files: List<File>, val isBgrFormat: Boolean = false): CubeMap by backingTexture {
     init {
         require(files.isNotEmpty()) { "Cannot create CubeMap without any files!" }
         require(files.size == 1 || files.size == 6) { "Pass either 1 or 6 images to create a CubeMap!" }
@@ -88,7 +88,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val 
     val height = bufferedImage.height
     val tileDimension = if(backingFileMode == BackingFileMode.Six) { TextureDimension(width, height) } else TextureDimension(width / 4, height / 3)
 
-    constructor(path: String, backingTexture: ICubeMap, vararg file: File): this(path, backingTexture, file.toList())
+    constructor(path: String, backingTexture: CubeMap, vararg file: File): this(path, backingTexture, file.toList())
 
     fun load(gpuContext: GpuContext) = CompletableFuture.supplyAsync {
         if(backingFileMode == BackingFileMode.Six) {
