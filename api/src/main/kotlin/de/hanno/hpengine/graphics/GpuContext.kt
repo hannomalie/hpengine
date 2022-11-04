@@ -148,8 +148,10 @@ interface GpuContext {
     fun allocateTexture(
         info: UploadInfo,
         textureTarget: TextureTarget,
-        filterConfig: TextureFilterConfig = TextureFilterConfig(),
+        filterConfig: TextureFilterConfig,
         internalFormat: Int,
         wrapMode: Int,
     ): TextureAllocationData
+
+    fun getTextureHandle(textureId: Int): Long
 }

@@ -10,12 +10,12 @@ import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.TextureAllocationData
-import de.hanno.hpengine.graphics.texture.TextureDimension2D
 import de.hanno.hpengine.graphics.texture.UploadInfo
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import kotlinx.coroutines.*
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
+import org.lwjgl.opengl.ARBBindlessTexture.glGetTextureHandleARB
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL11.*
@@ -78,7 +78,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
     }
 
     override val isError: Boolean
-        get() = window.invoke { GL11.glGetError() != GL11.GL_NO_ERROR }
+        get() = window.invoke { glGetError() != GL_NO_ERROR }
 
     override val features = run {
         val bindlessTextures = if (capabilities.GL_ARB_bindless_texture) BindlessTextures else null
@@ -110,10 +110,10 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
     }
 
     private fun getMaxCombinedTextureImageUnits() =
-        window.invoke { GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
+        window.invoke { glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
 
     private fun getSupportedExtensions(): List<String> = window.invoke {
-        (0 until GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)).mapNotNull { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
+        (0 until glGetInteger(GL30.GL_NUM_EXTENSIONS)).mapNotNull { GL30.glGetStringi(GL_EXTENSIONS, it) }
     }
 
     override fun checkCommandSyncs() = window.invoke {
@@ -134,8 +134,8 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
         set(value) = window.invoke { Capability.CULL_FACE.run { if (value) enable() else disable() } }
 
     override var cullMode: CullMode
-        get() = CullMode.values().first { it.glMode == GL11.glGetInteger(GL_CULL_FACE_MODE) }
-        set(value) = window.invoke { GL11.glCullFace(value.glMode) }
+        get() = CullMode.values().first { it.glMode == glGetInteger(GL_CULL_FACE_MODE) }
+        set(value) = window.invoke { glCullFace(value.glMode) }
 
     override var depthTest: Boolean
         get() = Capability.DEPTH_TEST.isEnabled
@@ -166,7 +166,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
             throw IllegalArgumentException("Passed textureId of < 0")
         }
         window.invoke {
-            GL11.glBindTexture(target.glTarget, textureId)
+            glBindTexture(target.glTarget, textureId)
             getExceptionOnError("")?.let { throw it }
         }
     }
@@ -179,7 +179,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
             getExceptionOnError("beforeBindTexture")?.let { throw it }
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
             GL13.glActiveTexture(textureIndexGLInt)
-            GL11.glBindTexture(target.glTarget, textureId)
+            glBindTexture(target.glTarget, textureId)
             getExceptionOnError("bindTexture")?.let { throw it }
         }
     }
@@ -197,15 +197,15 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
     }
 
     override fun viewPort(x: Int, y: Int, width: Int, height: Int) {
-        GL11.glViewport(x, y, max(width, 0), max(height, 0))
+        glViewport(x, y, max(width, 0), max(height, 0))
     }
 
     override fun clearColorBuffer() {
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT)
     }
 
     override fun clearDepthBuffer() {
-        GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT)
+        glClear(GL_DEPTH_BUFFER_BIT)
     }
 
     override fun clearDepthAndColorBuffer() {
@@ -224,29 +224,29 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
         set(value) = window.invoke { GlFlag.DEPTH_MASK.run { if (value) enable() else disable() } }
 
     override var depthFunc: DepthFunc
-        get() = DepthFunc.values().first { it.glFunc == GL11.glGetInteger(GL_DEPTH_FUNC) }
+        get() = DepthFunc.values().first { it.glFunc == glGetInteger(GL_DEPTH_FUNC) }
         set(value) = window.invoke { glDepthFunc(value.glFunc) }
 
     override fun readBuffer(colorAttachmentIndex: Int) {
         val colorAttachment = GL30.GL_COLOR_ATTACHMENT0 + colorAttachmentIndex
         window.invoke {
-            GL11.glReadBuffer(colorAttachment)
+            glReadBuffer(colorAttachment)
         }
     }
 
     override var blendEquation: BlendMode
-        get() = BlendMode.values().first { it.mode == GL11.glGetInteger(GL20.GL_BLEND_EQUATION_RGB) }
+        get() = BlendMode.values().first { it.mode == glGetInteger(GL20.GL_BLEND_EQUATION_RGB) }
         set(value) = window.invoke { GL14.glBlendEquation(value.mode) }
 
     override fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor) = window.invoke {
-        GL11.glBlendFunc(sfactor.glFactor, dfactor.glFactor)
+        glBlendFunc(sfactor.glFactor, dfactor.glFactor)
     }
 
     private val clearColorArray = floatArrayOf(0f, 0f, 0f, 0f)
     private val clearColorVector = org.joml.Vector4f()
     override var clearColor: org.joml.Vector4f
         get() = window.invoke {
-            GL11.glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColorArray).let {
+            glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColorArray).let {
                 clearColorVector.apply {
                     x = clearColorArray[0]
                     y = clearColorArray[1]
@@ -255,7 +255,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
                 }
             }
         }
-        set(value) = window.invoke { GL11.glClearColor(value.x, value.y, value.z, value.w) }
+        set(value) = window.invoke { glClearColor(value.x, value.y, value.z, value.w) }
 
     override fun clearColor(r: Float, g: Float, b: Float, a: Float) {
         clearColor = clearColorVector.apply {
@@ -280,29 +280,29 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
     }
 
     override fun genTextures(): Int {
-        return window.invoke { GL11.glGenTextures() }
+        return window.invoke { glGenTextures() }
     }
 
     override val availableVRAM: Int
-        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) }
+        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) }
 
     override val availableTotalVRAM: Int
-        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) }
+        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) }
 
     override val dedicatedVRAM: Int
-        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) }
+        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) }
 
     override val evictedVRAM: Int
-        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) }
+        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) }
 
     override val evictionCount: Int
-        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
+        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
 
     inline fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
         if (CHECK_ERRORS) {
             val errorValue = getError()
 
-            if (errorValue != GL11.GL_NO_ERROR) {
+            if (errorValue != GL_NO_ERROR) {
                 val errorString = GLU.gluErrorString(errorValue)
                 System.err.println("ERROR: $errorString")
                 System.err.println(errorMessage())
@@ -318,7 +318,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
     override fun genFrameBuffer() = window.invoke { glGenFramebuffers() }
 
     override fun clearCubeMap(textureId: Int, textureFormat: Int) = window.invoke {
-        glClearTexImage(textureId, 0, textureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
+        glClearTexImage(textureId, 0, textureFormat, GL_UNSIGNED_BYTE, ZERO_BUFFER)
     }
 
     override fun clearCubeMapInCubeMapArray(
@@ -338,7 +338,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
             height,
             6,
             internalFormat,
-            GL11.GL_UNSIGNED_BYTE,
+            GL_UNSIGNED_BYTE,
             ZERO_BUFFER
         )
     }
@@ -422,7 +422,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
 
     fun onError(block: (errorString: String) -> Unit) {
         val error = getError()
-        val isError = error != GL11.GL_NO_ERROR
+        val isError = error != GL_NO_ERROR
         if (isError) {
             block(getErrorString(error))
         }
@@ -430,16 +430,16 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
 
     fun exceptionOnError(msg: String) {
         val error = getError()
-        val isError = error != GL11.GL_NO_ERROR
+        val isError = error != GL_NO_ERROR
         if (isError) {
             throw IllegalStateException(getErrorString(error) + "\n$msg")
         }
     }
 
-    fun getError(): Int = window.invoke { GL11.glGetError() }
+    fun getError(): Int = window.invoke { glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
-    fun Texture.delete() = invoke { GL11.glDeleteTextures(id) }
-    fun finish() = GL11.glFinish()
+    fun Texture.delete() = invoke { glDeleteTextures(id) }
+    fun finish() = glFinish()
 
     override fun allocateTexture(
         info: UploadInfo,
@@ -452,65 +452,65 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
         val glTarget = textureTarget.glTarget
 
         glBindTexture(glTarget, textureId)
-        glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, wrapMode)
-        glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, wrapMode)
-        glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, filterConfig.minFilter.glValue)
-        glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, filterConfig.magFilter.glValue)
+        texParameters(glTarget, wrapMode, filterConfig)
+        texStorage(info, internalFormat, glTarget)
 
-        when (info) {
-            is UploadInfo.CubeMapArrayUploadInfo -> {
-                GL42.glTexStorage3D(
-                    GL40.GL_TEXTURE_CUBE_MAP_ARRAY,
-                    info.dimension.getMipMapCount(),
-                    internalFormat,
-                    info.dimension.width,
-                    info.dimension.height,
-                    info.dimension.depth * 6
-                )
-                glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
-            }
-            is UploadInfo.CubeMapUploadInfo -> {
-                GL42.glTexStorage2D(
-                    GL40.GL_TEXTURE_CUBE_MAP,
-                    info.dimension.getMipMapCount(),
-                    internalFormat,
-                    info.dimension.width,
-                    info.dimension.height
-                )
-                glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
-            }
-            is UploadInfo.Texture2DUploadInfo -> GL42.glTexStorage2D(
-                glTarget,
-                info.dimension.getMipMapCount(),
-                internalFormat,
-                info.dimension.width,
-                info.dimension.height
-            )
-            is UploadInfo.Texture3DUploadInfo -> {
-                GL42.glTexStorage3D(
-                    glTarget,
-                    info.dimension.getMipMapCount(),
-                    internalFormat,
-                    info.dimension.width,
-                    info.dimension.height,
-                    info.dimension.depth
-                )
-                glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
-            }
-        }
+
         if (filterConfig.minFilter.isMipMapped) {
             GL30.glGenerateMipmap(glTarget)
         }
 
-        val handle = if (isSupported(BindlessTextures)) {
-            ARBBindlessTexture.glGetTextureHandleARB(textureId)
-        } else -1
+        val handle = getTextureHandle(textureId)
 
         TextureAllocationData(textureId, internalFormat, handle, wrapMode).apply {
             exceptionOnError()
         }
     }
 
+    override fun getTextureHandle(textureId: Int) = if (isSupported(BindlessTextures)) {
+        glGetTextureHandleARB(textureId)
+    } else -1
+
+    private fun texParameters(glTarget: Int, wrapMode: Int, filterConfig: TextureFilterConfig) {
+        glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, wrapMode)
+        glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, wrapMode)
+        glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, filterConfig.minFilter.glValue)
+        glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, filterConfig.magFilter.glValue)
+        glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
+    }
+
+    private fun texStorage(info: UploadInfo, internalFormat: Int, glTarget: Int) = when (info) {
+        is UploadInfo.CubeMapArrayUploadInfo -> GL42.glTexStorage3D(
+            GL40.GL_TEXTURE_CUBE_MAP_ARRAY,
+            info.dimension.getMipMapCount(),
+            internalFormat,
+            info.dimension.width,
+            info.dimension.height,
+            info.dimension.depth * 6
+        )
+        is UploadInfo.CubeMapUploadInfo -> GL42.glTexStorage2D(
+            GL40.GL_TEXTURE_CUBE_MAP,
+            info.dimension.getMipMapCount(),
+            internalFormat,
+            info.dimension.width,
+            info.dimension.height
+        )
+        is UploadInfo.Texture2DUploadInfo -> GL42.glTexStorage2D(
+            glTarget,
+            info.dimension.getMipMapCount(),
+            internalFormat,
+            info.dimension.width,
+            info.dimension.height
+        )
+        is UploadInfo.Texture3DUploadInfo -> GL42.glTexStorage3D(
+            glTarget,
+            info.dimension.getMipMapCount(),
+            internalFormat,
+            info.dimension.width,
+            info.dimension.height,
+            info.dimension.depth
+        )
+    }
 }
 
 
