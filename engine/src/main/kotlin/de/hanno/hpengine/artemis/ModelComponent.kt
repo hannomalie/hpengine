@@ -42,6 +42,7 @@ import de.hanno.hpengine.transform.StaticTransformSpatial
 import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.vertexbuffer.appendIndices
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -68,13 +69,13 @@ class InstancesComponent: Component() {
     val instances = mutableListOf<Int>()
 }
 
+context(GpuContext)
 @One(
     ModelComponent::class,
 //    InstanceComponent::class,
 )
 class ModelSystem(
     val config: Config,
-    val gpuContext: GpuContext,
     val textureManager: OpenGLTextureManager,
     val materialManager: MaterialManager,
     val programManager: ProgramManager,
@@ -90,8 +91,8 @@ class ModelSystem(
     lateinit var instancesComponentMapper: ComponentMapper<InstancesComponent>
     lateinit var spatialComponentMapper: ComponentMapper<SpatialComponent>
 
-    val vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
-    val vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10)
+    val vertexIndexBufferStatic = VertexIndexBuffer(10)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(10)
 
     val joints: MutableList<Matrix4f> = CopyOnWriteArrayList()
 
@@ -188,7 +189,7 @@ class ModelSystem(
                     materialManager.registerMaterial(meshMaterial)
                     meshMaterial.programDescription?.let { programDescription ->
                         programCache[programDescription] =
-                            programManager.getFirstPassProgram(programDescription, StaticFirstPassUniforms(gpuContext)) as Program<FirstPassUniforms>
+                            programManager.getFirstPassProgram(programDescription, StaticFirstPassUniforms()) as Program<FirstPassUniforms>
                     }
                 }
             }

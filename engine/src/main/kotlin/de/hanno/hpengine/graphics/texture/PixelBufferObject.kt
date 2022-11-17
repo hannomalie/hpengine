@@ -18,7 +18,7 @@ class PixelBufferObject(val id: Int) {
 
     fun put(gpuContext: GpuContext, data: ByteBuffer) {
 
-        val buffer = gpuContext.invoke {
+        val buffer = gpuContext.onGpu {
             GL15.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, id)
             GL15.glBufferData(GL_PIXEL_UNPACK_BUFFER, data.capacity().toLong(), GL15.GL_STREAM_COPY)
             val buffer = GL15.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)!!
@@ -31,7 +31,7 @@ class PixelBufferObject(val id: Int) {
     }
 
     fun unmap(gpuContext: GpuContext) {
-        gpuContext.invoke {
+        gpuContext.onGpu {
             bind()
             val isMapped = GL15.glGetBufferParameteri(GL_PIXEL_UNPACK_BUFFER, GL15.GL_BUFFER_MAPPED) == GL11.GL_TRUE
             val zeroIsBound = GL11.glGetInteger(GL_PIXEL_UNPACK_BUFFER_BINDING) == 0

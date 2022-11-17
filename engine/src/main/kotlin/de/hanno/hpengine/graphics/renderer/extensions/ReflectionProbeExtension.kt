@@ -59,19 +59,19 @@ class ReflectionProbeManager(val config: Config) : BaseEntitySystem() {
         config.debug.reRenderProbes = true
     }
 }
-
-class ReflectionProbeRenderState(val gpuContext: GpuContext, val renderStateManager: RenderStateManager) {
+context(GpuContext)
+class ReflectionProbeRenderState(val renderStateManager: RenderStateManager) {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
-    val probeMinMaxStructBuffer = gpuContext.window.invoke {
-        PersistentMappedBuffer(Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+    val probeMinMaxStructBuffer = onGpu {
+        PersistentMappedBuffer(Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
     val probePositions = mutableListOf<Vector3f>()
 }
 
+context(GpuContext)
 class ReflectionProbeRenderExtension(
     val config: Config,
-    val gpuContext: GpuContext,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val textureManager: TextureManager,
     val renderStateManager: RenderStateManager,
@@ -79,10 +79,10 @@ class ReflectionProbeRenderExtension(
 ) : DeferredRenderExtension {
 
     val reflectionProbeRenderState = renderStateManager.renderState.registerState {
-        ReflectionProbeRenderState(gpuContext, renderStateManager)
+        ReflectionProbeRenderState(renderStateManager)
     }
     private val linesProgram = programManager.run {
-        val uniforms = LinesProgramUniforms(gpuContext)
+        val uniforms = LinesProgramUniforms()
         getProgram(
             StringBasedCodeSource("mvp_vertex_vec4", """
                 //include(globals_structs.glsl)
@@ -126,7 +126,6 @@ class ReflectionProbeRenderExtension(
             TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR)
         )
     ).toCubeMapArrays(
-        gpuContext,
         probeResolution,
         probeResolution,
         maxReflectionProbes
@@ -134,7 +133,7 @@ class ReflectionProbeRenderExtension(
 
     private var renderedInCycle: Long = -1
     val probeRenderers = (0 until cubeMapArray.dimension.depth).map {
-        ReflectionProbeRenderer(config, gpuContext, programManager, cubeMapArray.createView(gpuContext, it), it)
+        ReflectionProbeRenderer(config, programManager, cubeMapArray.createView(it), it)
     }
 
     val evaluateProbeProgram = programManager.getProgram(
@@ -166,7 +165,7 @@ class ReflectionProbeRenderExtension(
 
     }
 
-    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     override fun renderEditor(renderState: RenderState, result: DrawResult) {
 
         if (config.debug.isEditorOverlay) {
@@ -176,8 +175,8 @@ class ReflectionProbeRenderExtension(
                 mutableListOf<Vector3fc>().apply { addAABBLines(minWorld, maxWorld) }
             }
 
-            deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
-            gpuContext.blend = false
+            deferredRenderingBuffer.finalBuffer.use(false)
+            blend = false
 
             drawLines(renderStateManager, programManager, linesProgram, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
         }
@@ -186,7 +185,6 @@ class ReflectionProbeRenderExtension(
 
     override fun renderFirstPass(
         backend: Backend,
-        gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {
@@ -209,17 +207,16 @@ class ReflectionProbeRenderExtension(
         val currentReflectionProbeRenderState = renderState[reflectionProbeRenderState]
 
         val gBuffer = deferredRenderingBuffer
-        val gpuContext = gpuContext
-        gpuContext.disable(Capability.DEPTH_TEST)
+        disable(Capability.DEPTH_TEST)
         evaluateProbeProgram.use()
-        gBuffer.reflectionBuffer.use(gpuContext, false)
+        gBuffer.reflectionBuffer.use(false)
 
-        gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, gBuffer.positionMap)
-        gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
-        gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
-        gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
-        gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
-        gpuContext.bindTexture(7, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
+        bindTexture(0, TextureTarget.TEXTURE_2D, gBuffer.positionMap)
+        bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
+        bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
+        bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
+        bindTexture(6, TextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+        bindTexture(7, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
         renderState.lightState.pointLightShadowMapStrategy.bindTextures()
 
         evaluateProbeProgram.setUniform("eyePosition", renderState.camera.getPosition())
@@ -231,29 +228,28 @@ class ReflectionProbeRenderExtension(
 
         evaluateProbeProgram.setUniform("probeCount", currentReflectionProbeRenderState.probeCount)
         evaluateProbeProgram.bindShaderStorageBuffer(4, currentReflectionProbeRenderState.probeMinMaxStructBuffer)
-        gpuContext.fullscreenBuffer.draw()
+        fullscreenBuffer.draw()
 
-        gBuffer.use(gpuContext, false)
+        gBuffer.use(false)
 
     }
 
     fun ReflectionProbeRenderer.renderProbes(renderState: RenderState, startIndex: Int, probesPerFrame: Int) {
-        val gpuContext = gpuContext
         val currentReflectionProbeRenderState = renderState[reflectionProbeRenderState]
         if (currentReflectionProbeRenderState.probeCount == 0) return
 
         profiled("ReflectionProbes") {
 
-            gpuContext.depthMask = true
-            gpuContext.enable(Capability.DEPTH_TEST)
-            gpuContext.enable(Capability.CULL_FACE)
-            cubeMapRenderTarget.use(gpuContext, true)
-            gpuContext.viewPort(0, 0, cubeMap.dimension.width, cubeMap.dimension.height)
+            depthMask = true
+            enable(Capability.DEPTH_TEST)
+            enable(Capability.CULL_FACE)
+            cubeMapRenderTarget.use(true)
+            viewPort(0, 0, cubeMap.dimension.width, cubeMap.dimension.height)
 
             val endIndex = startIndex + probesPerFrame
             val range = startIndex until endIndex
             for (probeIndex in range) {
-                gpuContext.clearDepthBuffer()
+                clearDepthBuffer()
 
                 val skyBox = textureManager.cubeMap
 
@@ -270,14 +266,14 @@ class ReflectionProbeRenderExtension(
 //                pointCubeShadowPassProgram.setUniform("lightIndex", probeIndex)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(6, renderState.directionalLightState)
 
-                if (!gpuContext.isSupported(BindlessTextures)) {
-                    gpuContext.bindTexture(
+                if (!isSupported(BindlessTextures)) {
+                    bindTexture(
                         8,
                         TextureTarget.TEXTURE_2D,
                         renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
-                gpuContext.bindTexture(8, skyBox)
+                bindTexture(8, skyBox)
                 val viewProjectionMatrices =
                     Util.getCubeViewProjectionMatricesForPosition(currentReflectionProbeRenderState.probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
@@ -303,7 +299,7 @@ class ReflectionProbeRenderExtension(
 
                 profiled("ReflectionProbe entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
-                        pointCubeShadowPassProgram.setTextureUniforms(gpuContext, batch.material.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
                         renderState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch
                                 .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
@@ -316,17 +312,16 @@ class ReflectionProbeRenderExtension(
         }
     }
 }
-
+context(GpuContext)
 class ReflectionProbeRenderer(
     val config: Config,
-    val gpuContext: GpuContext,
     val programManager: ProgramManager,
     val cubeMap: CubeMap,
     val indexInCubeMapArray: Int
 ) {
 
     init {
-        gpuContext.window.invoke {
+        onGpu {
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
         }
     }
@@ -341,15 +336,13 @@ class ReflectionProbeRenderer(
     )
 
     val cubeMapRenderTarget = RenderTarget(
-        gpuContext = gpuContext,
         frameBuffer = FrameBuffer(
-            gpuContext = gpuContext,
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
-                    gpuContext,
                     TextureDimension(cubeMap.dimension.width, cubeMap.dimension.height),
                     TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
-                    GL14.GL_DEPTH_COMPONENT24, GL11.GL_REPEAT
+                    GL14.GL_DEPTH_COMPONENT24,
+                    GL11.GL_REPEAT
                 )
             )
         ),

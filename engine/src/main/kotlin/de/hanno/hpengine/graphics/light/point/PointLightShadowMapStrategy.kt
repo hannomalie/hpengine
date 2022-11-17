@@ -24,7 +24,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_REPEAT
+import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
@@ -35,9 +35,9 @@ interface PointLightShadowMapStrategy {
     fun bindTextures()
 }
 
+context(GpuContext)
 class CubeShadowMapStrategy(
     config: Config,
-    val gpuContext: GpuContext,
     programManager: ProgramManager
 ): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
@@ -50,7 +50,6 @@ class CubeShadowMapStrategy(
     )
 
     val cubeMapArray = OpenGLCubeMapArray(
-        gpuContext,
         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
         TextureFilterConfig(MinFilter.NEAREST),
         GL30.GL_RGBA16F,
@@ -58,7 +57,6 @@ class CubeShadowMapStrategy(
     )
     val pointLightDepthMapsArrayCube = cubeMapArray.id
     var cubemapArrayRenderTarget: CubeMapArrayRenderTarget = CubeMapArrayRenderTarget(
-        gpuContext,
         cubeMapArray.dimension.width,
         cubeMapArray.dimension.height,
         "PointlightCubeMapArrayRenderTarget",
@@ -68,7 +66,7 @@ class CubeShadowMapStrategy(
     // TODO: Remove CubeMapArrayRenderTarget to new api
 
     override fun bindTextures() {
-        gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
+        bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
     }
 
     override fun renderPointLightShadowMaps(renderState: RenderState) {
@@ -142,10 +140,10 @@ class CubeShadowMapStrategy(
     }
 }
 
+context(GpuContext)
 class DualParaboloidShadowMapStrategy(
     private val pointLightSystem: PointLightSystem,
     programManager: ProgramManager,
-    val gpuContext: GpuContext,
     val config: Config
 ): PointLightShadowMapStrategy {
     private var pointShadowPassProgram = programManager.getProgram(
@@ -159,11 +157,8 @@ class DualParaboloidShadowMapStrategy(
     var pointLightDepthMapsArrayBack: Int = 0
 
     private val renderTarget = RenderTargetImpl(
-        gpuContext,
         frameBuffer = FrameBuffer(
-            gpuContext,
             DepthBuffer(
-                gpuContext,
                 AREALIGHT_SHADOWMAP_RESOLUTION,
                 AREALIGHT_SHADOWMAP_RESOLUTION
             )
@@ -171,16 +166,15 @@ class DualParaboloidShadowMapStrategy(
         width = AREALIGHT_SHADOWMAP_RESOLUTION,
         height = AREALIGHT_SHADOWMAP_RESOLUTION,
         textures = listOf(
-            OpenGLTexture2D.invoke(
-                gpuContext = gpuContext,
+            OpenGLTexture2D(
                 info = Texture2DUploadInfo(
                     TextureDimension(
                         AREALIGHT_SHADOWMAP_RESOLUTION,
                         AREALIGHT_SHADOWMAP_RESOLUTION
-                    )
+                    ),
+                    internalFormat = GL_RGBA8
                 ),
-                textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR),
-                internalFormat = GL30.GL_RGBA32F
+                textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
             )
         ),
         name = "PointLight Shadow"
@@ -188,7 +182,7 @@ class DualParaboloidShadowMapStrategy(
 
     init {
         pointLightDepthMapsArrayFront = GL11.glGenTextures()
-        gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
+        bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
         GL42.glTexStorage3D(
             GL30.GL_TEXTURE_2D_ARRAY,
             1,
@@ -203,7 +197,7 @@ class DualParaboloidShadowMapStrategy(
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
 
         pointLightDepthMapsArrayBack = GL11.glGenTextures()
-        gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
+        bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
         GL42.glTexStorage3D(
             GL30.GL_TEXTURE_2D_ARRAY,
             1,
@@ -219,8 +213,8 @@ class DualParaboloidShadowMapStrategy(
     }
 
     override fun bindTextures() {
-        gpuContext.bindTexture(6, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
-        gpuContext.bindTexture(7, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
+        bindTexture(6, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
+        bindTexture(7, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
     }
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)

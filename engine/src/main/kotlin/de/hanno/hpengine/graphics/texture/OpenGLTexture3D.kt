@@ -16,18 +16,17 @@ data class OpenGLTexture3D(
     override var uploadState: UploadState
 ) : Texture3D {
     companion object {
+        context(GpuContext)
         operator fun invoke(
-            gpuContext: GpuContext,
             dimension: TextureDimension3D,
             filterConfig: TextureFilterConfig,
             internalFormat: Int,
             wrapMode: Int = GL11.GL_REPEAT
         ): OpenGLTexture3D {
-            val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
-                UploadInfo.Texture3DUploadInfo(dimension),
+            val (textureId, handle) = allocateTexture(
+                UploadInfo.Texture3DUploadInfo(dimension, internalFormat = internalFormat),
                 TextureTarget.TEXTURE_3D,
                 filterConfig,
-                internalFormat,
                 wrapMode
             )
             return OpenGLTexture3D(

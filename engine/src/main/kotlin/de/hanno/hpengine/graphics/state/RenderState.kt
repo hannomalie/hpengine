@@ -15,16 +15,17 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.lifecycle.Updatable
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.buffers.copyTo
-import de.hanno.hpengine.graphics.OpenGlCommandSync
 import org.joml.Vector3f
 
-class RenderState(private val gpuContext: GpuContext) : IRenderState {
+context(GpuContext)
+// need dummy for now, because context receiver resolution bug
+class RenderState(private val dummy: Unit = Unit) : IRenderState {
     var entityIds: List<Int> = emptyList()
     var componentExtracts: MutableMap<Class<out Component>, List<Component>> = mutableMapOf()
     var componentsForEntities: MutableMap<Int, Bag<Component>> = mutableMapOf()
@@ -34,13 +35,13 @@ class RenderState(private val gpuContext: GpuContext) : IRenderState {
 
     var time = System.currentTimeMillis()
 
-    val directionalLightState = PersistentMappedBuffer(DirectionalLightState.type.sizeInBytes, gpuContext).typed(DirectionalLightState.type)
+    val directionalLightState = PersistentMappedBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type)
 
-    val lightState = LightState(gpuContext)
+    val lightState = LightState()
 
-    val entitiesState: EntitiesState = EntitiesState(gpuContext)
+    val entitiesState: EntitiesState = EntitiesState()
 
-    val environmentProbesState = EnvironmentProbeState(gpuContext)
+    val environmentProbesState = EnvironmentProbeState()
 
     var skyBoxMaterialIndex = -1
 
@@ -51,7 +52,7 @@ class RenderState(private val gpuContext: GpuContext) : IRenderState {
     var sceneMax = Vector3f()
 
     var cycle: Long = 0
-    override var gpuCommandSync: GpuCommandSync = gpuContext.createCommandSync()
+    override var gpuCommandSync: GpuCommandSync = createCommandSync()
 
     val renderBatchesStatic: List<RenderBatch>
         get() = entitiesState.renderBatchesStatic
@@ -71,7 +72,8 @@ class RenderState(private val gpuContext: GpuContext) : IRenderState {
 
     var deltaSeconds: Float = 0.1f
 
-    constructor(source: RenderState) : this(source.gpuContext) {
+    context(GpuContext)
+    constructor(source: RenderState) : this() {
         entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
         entitiesState.vertexIndexBufferAnimated = source.entitiesState.vertexIndexBufferAnimated
         camera.init(source.camera)
@@ -119,10 +121,8 @@ class RenderState(private val gpuContext: GpuContext) : IRenderState {
 
 }
 interface RenderSystem: Updatable {
-    val sharedRenderTarget: RenderTarget<*>?
-        get() = null
-    val requiresClearSharedRenderTarget: Boolean
-        get() = false
+    val sharedRenderTarget: BackBufferRenderTarget<*>? get() = null
+    val requiresClearSharedRenderTarget: Boolean get() = false
     var artemisWorld: World
     fun render(result: DrawResult, renderState: RenderState) { }
     fun renderEditor(result: DrawResult, renderState: RenderState) { }

@@ -15,18 +15,19 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
 import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.fps.FPSCounter
+import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.lwjgl.opengl.GL11
 import java.util.concurrent.atomic.AtomicBoolean
 
-data class FinalOutput(var texture2D: OpenGLTexture2D, var mipmapLevel: Int = 0)
-data class DebugOutput(var texture2D: OpenGLTexture2D? = null, var mipmapLevel: Int = 0)
+data class FinalOutput(var texture2D: Texture2D, var mipmapLevel: Int = 0)
+data class DebugOutput(var texture2D: Texture2D? = null, var mipmapLevel: Int = 0)
 
+context(GpuContext)
 class RenderManager(
     val config: Config,
     val input: Input,
-    val gpuContext: GpuContext,
     val window: Window,
     val programManager: ProgramManager,
     val renderStateManager: RenderStateManager,
@@ -38,7 +39,11 @@ class RenderManager(
 ) : BaseSystem() {
 
     private val drawToQuadProgram = programManager.getProgram(
-        FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
+        FileBasedCodeSource(config.engineDir.resolve("shaders/fullscreen_quad_vertex.glsl")),
+        FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
+    )
+    private val drawToDebugQuadProgram = programManager.getProgram(
+        FileBasedCodeSource(config.engineDir.resolve("shaders/quarterscreen_quad_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
     )
     var renderMode: RenderMode = RenderMode.Normal
@@ -46,8 +51,8 @@ class RenderManager(
     var renderSystems: MutableList<RenderSystem> = _renderSystems.distinct().toMutableList()
 
     private val textureRenderer = SimpleTextureRenderer(
+        this@GpuContext,
         config,
-        gpuContext,
         finalOutput.texture2D,
         programManager,
         window.frontBuffer
@@ -66,7 +71,7 @@ class RenderManager(
     internal val rendering = AtomicBoolean(false)
     init {
         launchEndlessRenderLoop { deltaSeconds ->
-            gpuContext.invoke(block = {
+            onGpu(block = {
                 rendering.getAndSet(true)
                 try {
                     renderState.readLocked { currentReadState ->
@@ -98,7 +103,7 @@ class RenderManager(
                                 profiled("renderSystems") {
                                     renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
                                         val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                        renderTarget?.use(gpuContext, clear)
+                                        renderTarget?.use(clear)
                                         renderSystems.forEach { renderSystem ->
                                             renderSystem.render(drawResult, currentReadState)
                                         }
@@ -115,24 +120,24 @@ class RenderManager(
 
                             renderSystems()
 
-                            window.frontBuffer.use(gpuContext, false)
+                            window.frontBuffer.use(true)
                             textureRenderer.drawToQuad(finalOutput.texture2D, mipMapLevel = finalOutput.mipmapLevel)
                             debugOutput.texture2D?.let { debugOutputTexture ->
                                 textureRenderer.drawToQuad(
                                     debugOutputTexture,
-                                    buffer = gpuContext.debugBuffer,
-                                    program = drawToQuadProgram,
+                                    buffer = debugBuffer,
+                                    program = drawToDebugQuadProgram,
                                     mipMapLevel = debugOutput.mipmapLevel
                                 )
                             }
 
                             profiled("checkCommandSyncs") {
-                                gpuContext.checkCommandSyncs()
+                                checkCommandSyncs()
                             }
 
                             val oldFenceSync = currentReadState.gpuCommandSync
                             profiled("finishFrame") {
-                                gpuContext.finishFrame(currentReadState)
+                                finishFrame(currentReadState)
                                 renderSystems.forEach {
                                     it.afterFrameFinished()
                                 }

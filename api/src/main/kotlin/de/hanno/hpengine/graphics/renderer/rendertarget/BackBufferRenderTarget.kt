@@ -1,9 +1,8 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
-import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.texture.*
+import de.hanno.hpengine.graphics.texture.Texture
 
-interface RenderTarget<T : Texture> : FrontBufferTarget {
+interface BackBufferRenderTarget<T : Texture> : RenderTarget {
     val textures: List<T>
     var renderedTextures: IntArray
     var renderedTextureHandles: LongArray
@@ -24,12 +23,14 @@ interface RenderTarget<T : Texture> : FrontBufferTarget {
     fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int)
 
 
-    fun using(gpuContext: GpuContext, clear: Boolean, block: () -> Unit) = try {
-        use(gpuContext, clear)
+    fun using(clear: Boolean, block: () -> Unit) = try {
+        use(clear)
         block()
     } finally {
         unUse()
     }
+
+    fun use(clear: Boolean)
 
     fun unUse()
     fun getRenderedTexture(index: Int): Int

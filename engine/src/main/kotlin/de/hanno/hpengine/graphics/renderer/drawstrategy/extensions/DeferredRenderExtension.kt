@@ -11,7 +11,7 @@ import de.hanno.hpengine.lifecycle.Updatable
 
 interface DeferredRenderExtension: Updatable {
     fun renderZeroPass(renderState: RenderState) {}
-    fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {}
+    fun renderFirstPass(backend: Backend, firstPassResult: FirstPassResult, renderState: RenderState) {}
     fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
     fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
     fun renderEditor(renderState: RenderState, result: DrawResult) {}

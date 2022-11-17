@@ -14,8 +14,8 @@ import java.nio.ByteBuffer
 
 val flags = GL_MAP_WRITE_BIT or GL_MAP_PERSISTENT_BIT or GL_MAP_COHERENT_BIT
 
-abstract class AbstractPersistentMappedBuffer(
-    private val gpuContext: GpuContext,
+context(GpuContext)
+open class AbstractPersistentMappedBuffer(
     override var target: Int,
     capacityInBytes: Int = 1024
 ) : GpuBuffer {
@@ -30,10 +30,6 @@ abstract class AbstractPersistentMappedBuffer(
     override val id: Int get() = bufferDefinition.id
     override val buffer: ByteBuffer get() = bufferDefinition.buffer
 
-    private val bindBufferRunnable = {
-        glBindBuffer(target, id)
-    }
-
     @Synchronized
     override fun ensureCapacityInBytes(requestedCapacity: Int) {
         var capacityInBytes = requestedCapacity
@@ -43,7 +39,7 @@ abstract class AbstractPersistentMappedBuffer(
 
         val needsResize = buffer.capacity() < capacityInBytes
         if (needsResize) {
-            val newBufferDefinition = gpuContext.window.invoke {
+            val newBufferDefinition = onGpu {
                 createBuffer(capacityInBytes)
             }
             bufferDefinition = newBufferDefinition
@@ -51,22 +47,12 @@ abstract class AbstractPersistentMappedBuffer(
     }
 
     private fun BufferDefinition.copyTo(newBuffer: BufferDefinition) {
-        gpuContext.window.invoke {
+        onGpu {
             glCopyNamedBufferSubData(this.id, newBuffer.id, 0, 0, this.buffer.capacity().toLong())
         }
     }
 
-    data class BufferDefinition(val id: Int, val buffer: ByteBuffer, val gpuContext: GpuContext) {
-        init {
-            require(id > 0) { "Buffer id is invalid: $id" }
-        }
-
-        fun deleteBuffer() = gpuContext.window.invoke {
-            glDeleteBuffers(id)
-        }
-    }
-
-    private fun createBuffer(capacityInBytes: Int): BufferDefinition = gpuContext.window.invoke {
+    private fun createBuffer(capacityInBytes: Int): BufferDefinition = onGpu {
         val id = glGenBuffers()
         glBindBuffer(target, id)
         GL44.glBufferStorage(target, capacityInBytes.toLong(), flags)
@@ -77,14 +63,22 @@ abstract class AbstractPersistentMappedBuffer(
 //                null)!!
             xxxx
         )!!
-        BufferDefinition(id, byteBuffer, gpuContext)
+
+        BufferDefinition(id, byteBuffer)
+    }
+    override fun bind() = onGpu {
+        glBindBuffer(target, id)
     }
 
-    override fun bind() {
-        gpuContext.window.invoke(bindBufferRunnable)
+    fun BufferDefinition.deleteBuffer() = onGpu {
+        glDeleteBuffers(id)
     }
 
-    override fun unbind() {
-        gpuContext.window.invoke { glBindBuffer(target, 0) }
+    override fun unbind() = onGpu { glBindBuffer(target, 0) }
+}
+
+data class BufferDefinition(val id: Int, val buffer: ByteBuffer) {
+    init {
+        require(id > 0) { "Buffer id is invalid: $id" }
     }
 }

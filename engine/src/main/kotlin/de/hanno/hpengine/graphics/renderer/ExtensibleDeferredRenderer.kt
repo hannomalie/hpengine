@@ -20,6 +20,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 
+context(GpuContext)
 class ExtensibleDeferredRenderer(
     val window: Window,
     val backend: Backend,
@@ -27,14 +28,13 @@ class ExtensibleDeferredRenderer(
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val renderStateManager: RenderStateManager,
     val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
-    extensions: List<DeferredRenderExtension>
+    extensions: List<DeferredRenderExtension>,
 ) : RenderSystem {
     override lateinit var artemisWorld: World
     private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
     private val extensions: List<DeferredRenderExtension>
         get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }
 
-    private val gpuContext: GpuContext = backend.gpuContext
     private val programManager: ProgramManager = backend.programManager
     private val textureManager = backend.textureManager
 
@@ -48,7 +48,7 @@ class ExtensibleDeferredRenderer(
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(),
-        StaticFirstPassUniforms(gpuContext)
+        StaticFirstPassUniforms()
     )
 
     val simpleColorProgramAnimated = programManager.getProgram(
@@ -56,24 +56,24 @@ class ExtensibleDeferredRenderer(
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(Define("ANIMATED", true)),
-        AnimatedFirstPassUniforms(gpuContext)
+        AnimatedFirstPassUniforms()
     )
 
     private val useIndirectRendering
-        get() = config.performance.isIndirectRendering && gpuContext.isSupported(BindlessTextures)
+        get() = config.performance.isIndirectRendering && isSupported(BindlessTextures)
 
     val indirectPipeline: StateRef<GPUCulledPipeline> = renderStateManager.renderState.registerState {
-        GPUCulledPipeline(config, gpuContext, programManager, textureManager, deferredRenderingBuffer, true)
+        GPUCulledPipeline(config, programManager, textureManager, deferredRenderingBuffer, true)
     }
     private val staticDirectPipeline: StateRef<DirectFirstPassPipeline> = renderStateManager.renderState.registerState {
-        object: DirectFirstPassPipeline(config, gpuContext, simpleColorProgramStatic) {
+        object: DirectFirstPassPipeline(config, simpleColorProgramStatic) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 renderBatchesStatic.filterNot { it.canBeRenderedInIndirectBatch }
             } else renderBatchesStatic
         }
     }
     private val animatedDirectPipeline: StateRef<DirectFirstPassPipeline> = renderStateManager.renderState.registerState {
-        object: DirectFirstPassPipeline(config, gpuContext, simpleColorProgramAnimated) {
+        object: DirectFirstPassPipeline(config, simpleColorProgramAnimated) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 renderBatchesAnimated.filterNot { it.canBeRenderedInIndirectBatch }
             } else renderBatchesAnimated
@@ -118,12 +118,12 @@ class ExtensibleDeferredRenderer(
             renderState[indirectPipeline].copyDepthTexture()
         }
 
-        gpuContext.cullFace = true
-        gpuContext.depthMask = true
-        gpuContext.depthTest = true
-        gpuContext.depthFunc = DepthFunc.LESS
-        gpuContext.blend = false
-        deferredRenderingBuffer.use(gpuContext, true)
+        cullFace = true
+        depthMask = true
+        depthTest = true
+        depthFunc = DepthFunc.LESS
+        blend = false
+        deferredRenderingBuffer.use(true)
 
         profiled("FirstPass") {
 
@@ -141,29 +141,29 @@ class ExtensibleDeferredRenderer(
             }
             for (extension in extensions) {
                 profiled(extension.javaClass.simpleName) {
-                    extension.renderFirstPass(backend, gpuContext, result.firstPassResult, renderState)
+                    extension.renderFirstPass(backend, result.firstPassResult, renderState)
                 }
             }
         }
         profiled("SecondPass") {
             profiled("HalfResolution") {
-                deferredRenderingBuffer.halfScreenBuffer.use(gpuContext, true)
+                deferredRenderingBuffer.halfScreenBuffer.use(true)
                 for (extension in extensions) {
                     extension.renderSecondPassHalfScreen(renderState, result.secondPassResult)
                 }
             }
-            deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
+            deferredRenderingBuffer.lightAccumulationBuffer.use(true)
             for (extension in extensions) {
                 profiled(extension.javaClass.simpleName) {
-                    deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, false)
+                    deferredRenderingBuffer.lightAccumulationBuffer.use(false)
                     extension.renderSecondPassFullScreen(renderState, result.secondPassResult)
                 }
             }
         }
 
-        window.frontBuffer.use(gpuContext, false)
+        window.frontBuffer.use(false)
         combinePassExtension.renderCombinePass(renderState)
-        deferredRenderingBuffer.use(gpuContext, false)
+        deferredRenderingBuffer.use(false)
 
         runCatching {
             if (config.effects.isEnablePostprocessing) {

@@ -125,6 +125,7 @@ fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
 val Vector4f.xyz: Vector3f
     get() = Vector3f(x, y, z)
 
+context(GpuContext)
 class BvHPointLightSecondPassExtension(
     val config: Config,
     val gpuContext: GpuContext,
@@ -132,12 +133,12 @@ class BvHPointLightSecondPassExtension(
     val programManager: ProgramManager,
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension {
-    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
     private val secondPassPointBvhComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 
     private val linesProgram = programManager.run {
-        val uniforms = LinesProgramUniforms(gpuContext)
+        val uniforms = LinesProgramUniforms()
         getProgram(
             StringBasedCodeSource("mvp_vertex_vec4", """
                 //include(globals_structs.glsl)
@@ -175,7 +176,7 @@ class BvHPointLightSecondPassExtension(
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    val bvh = PersistentMappedBuffer(BvhNodeGpu.type.sizeInBytes, gpuContext).typed(BvhNodeGpu.type)
+    val bvh = PersistentMappedBuffer(BvhNodeGpu.type.sizeInBytes).typed(BvhNodeGpu.type)
 
     fun Vector4f.set(other: Vector3f) {
         x = other.x
@@ -280,7 +281,7 @@ class BvHPointLightSecondPassExtension(
                     }
                 }
             }
-            deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
+            deferredRenderingBuffer.finalBuffer.use(false)
             gpuContext.blend = false
             drawLines(renderStateManager, programManager, linesProgram, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
         }

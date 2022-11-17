@@ -10,12 +10,11 @@ import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
-import java.util.ArrayList
 
+context(GpuContext)
 class CubeMapArrayRenderTarget(
-    gpuContext: GpuContext,
-    renderTarget: RenderTarget<OpenGLCubeMapArray>
-) : RenderTarget<OpenGLCubeMapArray> by renderTarget {
+    renderTarget: BackBufferRenderTarget<OpenGLCubeMapArray>
+) : BackBufferRenderTarget<OpenGLCubeMapArray> by renderTarget {
 
     val cubeMapViews = ArrayList<CubeMap>()
     val cubeMapFaceViews = ArrayList<OpenGLTexture2D>()
@@ -49,43 +48,40 @@ class CubeMapArrayRenderTarget(
     init {
         for (cubeMapArrayIndex in textures.indices) {
             val cma = textures[cubeMapArrayIndex]
-            gpuContext.invoke {
-                gpuContext.bindTexture(cma)
+            onGpu {
+                bindTexture(cma)
                 for (cubeMapIndex in 0 until cma.dimension.depth) {
-                    val cubeMapView = cma.createView(gpuContext, cubeMapIndex)
+                    val cubeMapView = cma.createView(cubeMapIndex)
                     cubeMapViews.add(cubeMapView)
                     for (faceIndex in 0..5) {
-                        cubeMapFaceViews.add(cma.createView(gpuContext, cubeMapIndex, faceIndex))
+                        cubeMapFaceViews.add(cma.createView(cubeMapIndex, faceIndex))
                     }
                 }
             }
         }
-        gpuContext.register(this)
+        register(this)
     }
 
     companion object {
 
+        context(GpuContext)
         operator fun invoke(
-            gpuContext: GpuContext,
             width: Int, height: Int,
             name: String, clear: Vector4f,
             vararg cubeMapArray: OpenGLCubeMapArray
-        ): CubeMapArrayRenderTarget {
-            return CubeMapArrayRenderTarget(
-                gpuContext, RenderTarget(
-                    gpuContext,
-                    FrameBuffer.invoke(gpuContext, createDepthBuffer(gpuContext, width, height, cubeMapArray.size)),
-                    width,
-                    height,
-                    cubeMapArray.toList(),
-                    name,
-                    clear
-                )
+        ) = CubeMapArrayRenderTarget(
+            RenderTarget(
+                FrameBuffer(createDepthBuffer(width, height, cubeMapArray.size)),
+                width,
+                height,
+                cubeMapArray.toList(),
+                name,
+                clear
             )
-        }
+        )
 
+        context(GpuContext)
         fun createDepthBuffer(
-            gpuContext: GpuContext,
             width: Int,
             height: Int,
             depth: Int
@@ -94,7 +90,6 @@ class CubeMapArrayRenderTarget(
             val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
             return DepthBuffer(
                 OpenGLCubeMapArray(
-                    gpuContext,
                     dimension,
                     filterConfig,
                     GL14.GL_DEPTH_COMPONENT24,

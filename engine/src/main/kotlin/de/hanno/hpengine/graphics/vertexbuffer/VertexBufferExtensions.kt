@@ -6,6 +6,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.graphics.renderer.pipelines.DrawElementsIndirectCommandStrukt
+import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.lwjgl.opengl.ARBIndirectParameters.*
@@ -33,7 +34,7 @@ fun drawLines(lineWidth: Float = 2f, verticesCount: Int): Int {
     return verticesCount
 }
 
-fun VertexBuffer.drawDebug(indexBuffer: IndexBuffer, lineWidth: Float = 1f): Int {
+fun VertexBuffer.drawDebug(indexBuffer: GpuBuffer, lineWidth: Float = 1f): Int {
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
     GL11.glLineWidth(lineWidth)
     bind()
@@ -43,7 +44,7 @@ fun VertexBuffer.drawDebug(indexBuffer: IndexBuffer, lineWidth: Float = 1f): Int
 }
 
 typealias TriangleCount = Int
-fun IndexBuffer.drawLinesInstancedBaseVertex(
+fun GpuBuffer.drawLinesInstancedBaseVertex(
     command: DrawElementsIndirectCommand,
     bindIndexBuffer: Boolean,
     mode: RenderingMode,
@@ -58,7 +59,7 @@ fun IndexBuffer.drawLinesInstancedBaseVertex(
     primitiveType
 )
 
-fun IndexBuffer.drawLinesInstancedBaseVertex(
+fun GpuBuffer.drawLinesInstancedBaseVertex(
     indexCount: Int, instanceCount: Int, indexOffset: Int,
     baseVertexIndex: Int, bindIndexBuffer: Boolean,
     mode: RenderingMode, primitiveType: PrimitiveType
@@ -91,45 +92,43 @@ fun drawLinesInstancedBaseVertex(indexCount: Int, instanceCount: Int): Int {
     return indexCount / 3
 }
 
-fun IndexBuffer.drawInstancedBaseVertex(
+fun GpuBuffer.drawInstancedBaseVertex(
     command: DrawElementsIndirectCommand,
     bindIndexBuffer: Boolean,
     mode: RenderingMode,
     primitiveType: PrimitiveType
-): Int {
-    return drawInstancedBaseVertex(
-        command.count,
-        command.instanceCount,
-        command.firstIndex,
-        command.baseVertex,
-        bindIndexBuffer,
-        mode,
-        primitiveType
-    )
-}
+): Int = drawInstancedBaseVertex(
+    command.count,
+    command.instanceCount,
+    command.firstIndex,
+    command.baseVertex,
+    bindIndexBuffer,
+    mode,
+    primitiveType
+)
 
-fun drawInstancedBaseVertex(command: DrawElementsIndirectCommand): Int {
-    return drawInstancedBaseVertex(command.count, command.instanceCount, command.firstIndex, command.baseVertex)
-}
+fun drawInstancedBaseVertex(
+    command: DrawElementsIndirectCommand
+): Int = drawInstancedBaseVertex(
+    command.count, command.instanceCount, command.firstIndex, command.baseVertex
+)
 
-fun IndexBuffer.drawPatchesInstancedBaseVertex(
+fun GpuBuffer.drawPatchesInstancedBaseVertex(
     command: DrawElementsIndirectCommand,
     bindIndexBuffer: Boolean,
     mode: RenderingMode,
     primitiveType: PrimitiveType
-): Int {
-    return drawPatchesInstancedBaseVertex(
-        command.count,
-        command.instanceCount,
-        command.firstIndex,
-        command.baseVertex,
-        bindIndexBuffer,
-        mode,
-        primitiveType
-    )
-}
+): Int = drawPatchesInstancedBaseVertex(
+    command.count,
+    command.instanceCount,
+    command.firstIndex,
+    command.baseVertex,
+    bindIndexBuffer,
+    mode,
+    primitiveType
+)
 
-fun IVertexBuffer.draw(indexBuffer: IndexBuffer? = null): Int {
+fun IVertexBuffer.draw(indexBuffer: GpuBuffer? = null): Int {
     bind()
     return drawActually(indexBuffer)
 }
@@ -138,16 +137,14 @@ fun IVertexBuffer.draw(indexBuffer: IndexBuffer? = null): Int {
  *
  * @return triangleCount that twas drawn
  */
-fun IVertexBuffer.drawActually(indexBuffer: IndexBuffer?): Int {
-    if (indexBuffer != null) {
-        indexBuffer.bind()
-        val indices = indexBuffer.buffer.asIntBuffer()
-        GL11.glDrawElements(GL11.GL_TRIANGLES, indices)
-        return indices.capacity() / 3
-    } else {
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount)
-        return verticesCount / 3
-    }
+fun IVertexBuffer.drawActually(indexBuffer: GpuBuffer?): Int = if (indexBuffer != null) {
+    indexBuffer.bind()
+    val indices = indexBuffer.buffer.asIntBuffer()
+    GL11.glDrawElements(GL11.GL_TRIANGLES, indices)
+    indices.capacity() / 3
+} else {
+    GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount)
+    verticesCount / 3
 }
 
 /**
@@ -159,7 +156,7 @@ fun IVertexBuffer.drawActually(indexBuffer: IndexBuffer?): Int {
  * @param baseVertexIndex the integer index, not the byte offset
  * @return
  */
-fun IndexBuffer.drawInstancedBaseVertex(
+fun GpuBuffer.drawInstancedBaseVertex(
     indexCount: Int, instanceCount: Int, indexOffset: Int,
     baseVertexIndex: Int, bindIndexBuffer: Boolean, mode: RenderingMode,
     primitiveType: PrimitiveType
@@ -186,7 +183,7 @@ fun IndexBuffer.drawInstancedBaseVertex(
     return indexCount / 3
 }
 
-fun IndexBuffer.drawPatchesInstancedBaseVertex(
+fun GpuBuffer.drawPatchesInstancedBaseVertex(
     indexCount: Int, instanceCount: Int, indexOffset: Int,
     baseVertexIndex: Int, bindIndexBuffer: Boolean,
     mode: RenderingMode, primitiveType: PrimitiveType
@@ -227,7 +224,7 @@ fun drawInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: In
 }
 
 fun multiDrawElementsIndirectCount(
-    indexBuffer: IndexBuffer,
+    indexBuffer: GpuBuffer,
     commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
     drawCount: Long = 0,
@@ -288,7 +285,7 @@ fun VertexIndexBuffer.multiDrawElementsIndirect(
 }
 
 fun multiDrawElementsIndirect(
-    indexBuffer: IndexBuffer,
+    indexBuffer: GpuBuffer,
     commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
     drawCount: Int
 ) {
@@ -305,7 +302,7 @@ fun VertexIndexBuffer.drawLinesInstancedIndirectBaseVertex(
 }
 
 fun drawLinesInstancedIndirectBaseVertex(
-    indexBuffer: IndexBuffer,
+    indexBuffer: GpuBuffer,
     commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
     primitiveCount: Int,
     mode: RenderingMode

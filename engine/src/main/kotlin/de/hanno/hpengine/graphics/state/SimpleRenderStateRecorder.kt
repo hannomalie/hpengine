@@ -1,9 +1,12 @@
 package de.hanno.hpengine.graphics.state
 
-import java.util.concurrent.CopyOnWriteArrayList
+import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.input.Input
 import org.lwjgl.glfw.GLFW
+import java.util.concurrent.CopyOnWriteArrayList
 
+
+context(GpuContext)
 class SimpleRenderStateRecorder(private val input: Input) : RenderStateRecorder {
     override val states = CopyOnWriteArrayList<RenderState>()
     override fun add(state: RenderState): Boolean {

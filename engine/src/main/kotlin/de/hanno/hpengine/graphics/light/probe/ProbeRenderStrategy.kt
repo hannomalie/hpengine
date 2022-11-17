@@ -42,7 +42,7 @@ import org.lwjgl.opengl.GL30.glFinish
 import org.lwjgl.opengl.GL43
 import java.nio.FloatBuffer
 
-
+context(GpuContext)
 class ProbeRenderStrategy(
     val config: Config,
     val gpuContext: GpuContext,
@@ -53,15 +53,13 @@ class ProbeRenderStrategy(
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
     private val cubeMapRenderTarget = RenderTargetImpl(
-        gpuContext = gpuContext,
         frameBuffer = FrameBuffer(
-            gpuContext = gpuContext,
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
-                    gpuContext,
                     TextureDimension(resolution, resolution),
                     TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
-                    GL14.GL_DEPTH_COMPONENT24, GL11.GL_REPEAT
+                    GL14.GL_DEPTH_COMPONENT24,
+                    GL11.GL_REPEAT
                 )
             )
         ),
@@ -78,7 +76,7 @@ class ProbeRenderStrategy(
                 GL_RG16F,
                 TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
             )
-        ).toCubeMaps(gpuContext, resolution, resolution),
+        ).toCubeMaps(resolution, resolution),
         name = "Probes"
     )
 
@@ -99,7 +97,6 @@ class ProbeRenderStrategy(
 
 
     val probeGrid = PersistentMappedBuffer(
-        gpuContext,
         resolution * resolution * resolution * AmbientCube.sizeInBytes
     )
     var x = 0
@@ -127,7 +124,7 @@ class ProbeRenderStrategy(
                 gpuContext.disable(Capability.CULL_FACE)
                 gpuContext.depthMask = true
                 gpuContext.clearColor(0f, 0f, 0f, 0f)
-                cubeMapRenderTarget.use(gpuContext, true)
+                cubeMapRenderTarget.use(true)
                 gpuContext.viewPort(0, 0, resolution, resolution)
 
                 val probePosition =
@@ -179,12 +176,11 @@ class ProbeRenderStrategy(
                     val dimension = TextureDimension(resolution, resolution)
                     val filterConfig = TextureFilterConfig(MinFilter.LINEAR)
                     val cubeMap = OpenGLCubeMap.invoke(
-                        gpuContext,
                         dimension,
                         filterConfig,
                         GL11.GL_RGBA8
                     )
-                    val distanceCubeMap = OpenGLCubeMap(gpuContext, dimension, filterConfig, GL_RG16F)
+                    val distanceCubeMap = OpenGLCubeMap(dimension, filterConfig, GL_RG16F)
                     AmbientCubeData(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
                 }
 
@@ -232,6 +228,7 @@ class ProbeRenderStrategy(
     }
 }
 
+context(GpuContext)
 class EvaluateProbeRenderExtension(
     val gpuContext: GpuContext,
     val programManager: ProgramManager,
@@ -256,7 +253,6 @@ class EvaluateProbeRenderExtension(
 
     override fun renderFirstPass(
         backend: Backend,
-        gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {
@@ -267,7 +263,7 @@ class EvaluateProbeRenderExtension(
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
 
         val deferredRenderingBuffer = deferredRenderingBuffer
-        deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, false)
+        deferredRenderingBuffer.lightAccumulationBuffer.use(false)
 
         gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
         gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)

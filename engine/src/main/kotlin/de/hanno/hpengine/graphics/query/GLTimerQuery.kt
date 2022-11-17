@@ -13,12 +13,12 @@ class GLTimerQuery(gpuContext: GpuContext) : GLQuery<Float?> {
     private var finished = false
     private var started = false
     private fun glGenQuery(): Int {
-        return gpuContext.invoke { GL15.glGenQueries() }
+        return gpuContext.onGpu { GL15.glGenQueries() }
     }
 
     override fun begin(): GLTimerQuery? {
         finished = false
-        gpuContext.invoke {
+        gpuContext.onGpu {
             GL33.glQueryCounter(queryToWaitFor, GL33.GL_TIMESTAMP)
             Unit
         }
@@ -28,7 +28,7 @@ class GLTimerQuery(gpuContext: GpuContext) : GLQuery<Float?> {
 
     override fun end() {
         check(started) { "Don't end a query before it was started!" }
-        gpuContext.invoke {
+        gpuContext.onGpu {
             GL33.glQueryCounter(end, GL33.GL_TIMESTAMP)
             Unit
         }
@@ -38,9 +38,9 @@ class GLTimerQuery(gpuContext: GpuContext) : GLQuery<Float?> {
     val timeTaken: Long
         get() = endTime - startTime
     val startTime: Long
-        get() = gpuContext.invoke { GL33.glGetQueryObjectui64(queryToWaitFor, GL15.GL_QUERY_RESULT) }
+        get() = gpuContext.onGpu { GL33.glGetQueryObjectui64(queryToWaitFor, GL15.GL_QUERY_RESULT) }
     val endTime: Long
-        get() = gpuContext.invoke { GL33.glGetQueryObjectui64(end, GL15.GL_QUERY_RESULT) }
+        get() = gpuContext.onGpu { GL33.glGetQueryObjectui64(end, GL15.GL_QUERY_RESULT) }
     override val result: Float
         get() {
             check(finished) { "Don't query result before query is finished!" }

@@ -13,7 +13,6 @@ import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
-import org.lwjgl.opengl.GLUtil
 import kotlin.system.exitProcess
 
 
@@ -133,30 +132,29 @@ class GlfwWindow(
 
 }
 
-fun Window.createFrontBufferRenderTarget(): FrontBufferTarget {
-    return object : FrontBufferTarget {
-        val frameBuffer = FrameBuffer.FrontBuffer
-        override val name = "FrontBuffer"
-        override val clear = Vector4f()
+fun Window.createFrontBufferRenderTarget(): FrontBufferTarget = object : FrontBufferTarget {
+    val frameBuffer = FrameBuffer.FrontBuffer
+    override val name = "FrontBuffer"
+    override val clear = Vector4f()
 
-        override var width: Int
-            get() = this@createFrontBufferRenderTarget.width
-            set(value) {
-                this@createFrontBufferRenderTarget.width = value
-            }
+    override var width: Int
+        get() = this@createFrontBufferRenderTarget.width
+        set(value) {
+            this@createFrontBufferRenderTarget.width = value
+        }
 
-        override var height: Int
-            get() = this@createFrontBufferRenderTarget.height
-            set(value) {
-                this@createFrontBufferRenderTarget.height = value
-            }
+    override var height: Int
+        get() = this@createFrontBufferRenderTarget.height
+        set(value) {
+            this@createFrontBufferRenderTarget.height = value
+        }
 
-        override fun use(gpuContext: GpuContext, clear: Boolean) {
-            gpuContext.bindFrameBuffer(frameBuffer)
-            gpuContext.viewPort(0, 0, width, height)
-            if (clear) {
-                gpuContext.clearDepthAndColorBuffer()
-            }
+    context(GpuContext)
+    override fun use(clear: Boolean) {
+        bindFrameBuffer(frameBuffer)
+        viewPort(0, 0, width, height)
+        if (clear) {
+            clearDepthAndColorBuffer()
         }
     }
 }

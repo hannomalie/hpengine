@@ -13,7 +13,8 @@ sealed class UploadInfo {
         val dimension: TextureDimension2D,
         val data: ByteBuffer? = null,
         val dataCompressed: Boolean = false,
-        val srgba: Boolean = false
+        val srgba: Boolean = false,
+        val internalFormat: Int,
     ) : UploadInfo() {
         init {
             require(dimension.width > 0) { "Illegal width $dimension" }
@@ -21,7 +22,8 @@ sealed class UploadInfo {
         }
     }
 
-    data class Texture3DUploadInfo(val dimension: TextureDimension3D) : UploadInfo() {
+    data class Texture3DUploadInfo(val dimension: TextureDimension3D,
+                                   val internalFormat: Int,) : UploadInfo() {
         init {
             require(dimension.width > 0) { "Illegal width $dimension" }
             require(dimension.height > 0) { "Illegal height $dimension" }
@@ -31,14 +33,16 @@ sealed class UploadInfo {
 
     data class CubeMapUploadInfo(
         val dimension: TextureDimension2D,
-        val buffers: List<ByteBuffer> = emptyList()
+        val buffers: List<ByteBuffer> = emptyList(),
+        val internalFormat: Int,
     ) : UploadInfo() {
         init {
             require(dimension.width > 0) { "Illegal width $dimension" }
             require(dimension.height > 0) { "Illegal height $dimension" }
         }
     }
-    data class CubeMapArrayUploadInfo(val dimension: TextureDimension3D) : UploadInfo() {
+    data class CubeMapArrayUploadInfo(val dimension: TextureDimension3D,
+                                      val internalFormat: Int,) : UploadInfo() {
         init {
             require(dimension.width > 0) { "Illegal width $dimension" }
             require(dimension.height > 0) { "Illegal height $dimension" }

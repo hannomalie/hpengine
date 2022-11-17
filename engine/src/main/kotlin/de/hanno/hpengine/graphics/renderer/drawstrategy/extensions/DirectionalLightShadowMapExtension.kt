@@ -41,30 +41,28 @@ import de.hanno.hpengine.scene.VertexStruktPacked
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL30
 
+context(GpuContext)
 class DirectionalLightShadowMapExtension(
     val config: Config,
     val programManager: ProgramManager,
     val textureManager: OpenGLTextureManager,
-    val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
 ) : DeferredRenderExtension {
 
     private var forceRerender = true
 
     val renderTarget = RenderTarget(
-        gpuContext = gpuContext,
-        frameBuffer = FrameBuffer(gpuContext, DepthBuffer(gpuContext, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
-        name = "DirectionalLight Shadow",
-        width = SHADOWMAP_RESOLUTION,
-        height = SHADOWMAP_RESOLUTION,
-        clear = Vector4f(1f, 1f, 1f, 1f),
+        FrameBuffer(DepthBuffer(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
+        SHADOWMAP_RESOLUTION,
+        SHADOWMAP_RESOLUTION,
         //                Reflective shadowmaps?
         //                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
-        textures = listOf(ColorAttachmentDefinition("Shadow", GL30.GL_RGBA16F)).toTextures(
-            gpuContext,
+        listOf(ColorAttachmentDefinition("Shadow", GL30.GL_RGBA16F)).toTextures(
             SHADOWMAP_RESOLUTION,
             SHADOWMAP_RESOLUTION
-        )
+        ),
+        "DirectionalLight Shadow",
+        Vector4f(1f, 1f, 1f, 1f),
     ).apply {
         factorsForDebugRendering[0] = 100f
     }
@@ -72,13 +70,13 @@ class DirectionalLightShadowMapExtension(
     private val staticDirectionalShadowPassProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/directional_shadowmap_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/shadowmap_fragment.glsl")),
-        StaticDirectionalShadowUniforms(gpuContext),
+        StaticDirectionalShadowUniforms(),
         Defines()
     )
     private val animatedDirectionalShadowPassProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/directional_shadowmap_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/shadowmap_fragment.glsl")),
-        AnimatedDirectionalShadowUniforms(gpuContext),
+        AnimatedDirectionalShadowUniforms(),
         Defines(Define("ANIMATED", true)),
     )
 
@@ -166,12 +164,12 @@ class DirectionalLightShadowMapExtension(
     }
 
     private fun drawShadowMap(renderState: RenderState) {
-        gpuContext.blend = false
-        gpuContext.depthMask = true
-        gpuContext.depthTest = true
-        gpuContext.depthFunc = DepthFunc.LESS
-        gpuContext.cullFace = false
-        renderTarget.use(gpuContext, true)
+        blend = false
+        depthMask = true
+        depthTest = true
+        depthFunc = DepthFunc.LESS
+        cullFace = false
+        renderTarget.use(true)
 
         renderState[staticPipeline].draw(renderState)
         renderState[animatedPipeline].draw(renderState)
@@ -187,32 +185,35 @@ class DirectionalLightShadowMapExtension(
     }
 }
 
-sealed class DirectionalShadowUniforms(gpuContext: GpuContext) : Uniforms() {
-    var materials by SSBO("Material", 1, PersistentMappedBuffer(1, gpuContext).typed(MaterialStrukt.type))
+context(GpuContext)
+sealed class DirectionalShadowUniforms() : Uniforms() {
+    var materials by SSBO("Material", 1, PersistentMappedBuffer(1).typed(MaterialStrukt.type))
     var directionalLightState by SSBO(
-        "DirectionalLightState", 2, PersistentMappedBuffer(1, gpuContext).typed(DirectionalLightState.type)
+        "DirectionalLightState", 2, PersistentMappedBuffer(1).typed(DirectionalLightState.type)
     )
-    var entities by SSBO("Entity", 3, PersistentMappedBuffer(1, gpuContext).typed(EntityStrukt.type))
-    var entityOffsets by SSBO("int", 4, PersistentMappedBuffer(1, gpuContext).typed(IntStrukt.type))
+    var entities by SSBO("Entity", 3, PersistentMappedBuffer(1).typed(EntityStrukt.type))
+    var entityOffsets by SSBO("int", 4, PersistentMappedBuffer(1).typed(IntStrukt.type))
 
     var indirect by BooleanType(true)
     var entityIndex by IntType(0)
     var entityBaseIndex by IntType(0)
 }
 
-class AnimatedDirectionalShadowUniforms(gpuContext: GpuContext) : DirectionalShadowUniforms(gpuContext) {
+context(GpuContext)
+class AnimatedDirectionalShadowUniforms : DirectionalShadowUniforms() {
     var joints by SSBO(
         "mat4",
         6,
-        PersistentMappedBuffer(Matrix4fStrukt.sizeInBytes, gpuContext).typed(Matrix4fStrukt.type)
+        PersistentMappedBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
     )
     var vertices by SSBO(
         "VertexAnimatedPacked", 7, PersistentMappedBuffer(
-            AnimatedVertexStruktPacked.sizeInBytes, gpuContext
+            AnimatedVertexStruktPacked.sizeInBytes
         ).typed(AnimatedVertexStruktPacked.type)
     )
 }
 
-class StaticDirectionalShadowUniforms(gpuContext: GpuContext) : DirectionalShadowUniforms(gpuContext) {
-    var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1, gpuContext).typed(VertexStruktPacked.type))
+context(GpuContext)
+class StaticDirectionalShadowUniforms : DirectionalShadowUniforms() {
+    var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1).typed(VertexStruktPacked.type))
 }

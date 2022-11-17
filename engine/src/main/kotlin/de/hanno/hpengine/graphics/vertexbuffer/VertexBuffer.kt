@@ -1,9 +1,13 @@
 package de.hanno.hpengine.graphics.vertexbuffer
 
 
+import de.hanno.hpengine.graphics.DEFAULTCHANNELS
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer.invoke
 import org.lwjgl.opengl.GL15
+import org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.*
@@ -11,21 +15,30 @@ import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 import javax.vecmath.Vector2f
 
-open class VertexBuffer(
-    gpuContext: GpuContext,
-    val channels: EnumSet<DataChannels>,
+context(GpuContext)
+class VertexBuffer(
+    _channels: EnumSet<DataChannels> = DEFAULTCHANNELS,
     values: FloatArray
-) : PersistentMappedBuffer(gpuContext, values.size * java.lang.Float.BYTES, GL15.GL_ARRAY_BUFFER),
-    IVertexBuffer {
+) : GpuBuffer, IVertexBuffer {
 
+    private val gpuBuffer = PersistentMappedBuffer(
+        values.size * java.lang.Float.BYTES,
+        GL_ARRAY_BUFFER,
+    )
+    override val buffer: ByteBuffer get() = gpuBuffer.buffer
+    override val target = GL_ARRAY_BUFFER
+    override val id: Int get() = gpuBuffer.id
 
-    override var verticesCount: Int = calculateVerticesCount(buffer, channels)
-        protected set
-    var triangleCount: Int = verticesCount / 3
-        private set
+    override fun ensureCapacityInBytes(requestedCapacity: Int) {
+        gpuBuffer.ensureCapacityInBytes(requestedCapacity)
+    }
 
-    private var vertexArrayObject: VertexArrayObject = gpuContext.invoke {
-        VertexArrayObject.getForChannels(gpuContext, channels)
+    val channels = _channels
+    override val verticesCount: Int = calculateVerticesCount(buffer, channels)
+    val triangleCount: Int = verticesCount / 3
+
+    private var vertexArrayObject: VertexArrayObject = onGpu {
+        VertexArrayObject.getForChannels(channels)
     }
 
     init {
@@ -33,27 +46,12 @@ open class VertexBuffer(
         buffer.asFloatBuffer().put(values)
     }
 
-    private val uploaded = true
-
-    val vertexData: FloatArray
-        get() {
-            val totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels)
-
-            val result = FloatArray(totalElementsPerVertex * verticesCount)
-
-            buffer.rewind()
-            buffer.asFloatBuffer().get(result)
-            return result
-        }
-
     enum class Usage constructor(val value: Int) {
         DYNAMIC(GL15.GL_DYNAMIC_DRAW),
         STATIC(GL15.GL_STATIC_DRAW)
     }
 
-    fun buffer(vertices: FloatArray): FloatBuffer {
-        return buffer(vertices, channels)
-    }
+    fun buffer(vertices: FloatArray): FloatBuffer = buffer(vertices, channels)
 
     private fun buffer(vertices: FloatArray, channels: EnumSet<DataChannels>): FloatBuffer {
 
@@ -74,18 +72,13 @@ open class VertexBuffer(
         return buffer.asFloatBuffer()
     }
 
-    fun totalElementsPerVertex(): Int {
-        return DataChannels.totalElementsPerVertex(this.channels)
-
-    }
-
-    fun upload(): CompletableFuture<VertexBuffer> {
+    override fun upload(): CompletableFuture<IVertexBuffer> {
         buffer.rewind()
-        val future = CompletableFuture<VertexBuffer>()
-        gpuContext.invoke {
+        val future = CompletableFuture<IVertexBuffer>()
+        onGpu {
             bind()
 //             Don't remove this, will break things
-            vertexArrayObject = VertexArrayObject.getForChannels(gpuContext, channels)
+            vertexArrayObject = VertexArrayObject.getForChannels(channels)
             future.complete(this@VertexBuffer)
         }
         return future
@@ -98,54 +91,12 @@ open class VertexBuffer(
 
     override fun bind() {
         LOGGER.finest("bind called")
-        super.bind()
+        gpuBuffer.bind()
         vertexArrayObject.bind()
     }
 
-    fun putValues(floatOffset: Int, vararg values: Float) {
-        ensureCapacityInBytes((floatOffset + values.size) * java.lang.Float.BYTES)
-        val floatBuffer = buffer.asFloatBuffer()
-        floatBuffer.position(floatOffset)
-        floatBuffer.put(values)
-        buffer.rewind()
-
-        val totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels)
-        verticesCount = (floatOffset + values.size) / totalElementsPerVertex
-        triangleCount = verticesCount / 3
-    }
-
-    fun getValues(forChannel: DataChannels): FloatArray {
-        var stride = 0
-
-        for (channel in channels) {
-            if (channel == forChannel) {
-                break
-            } else {
-                stride += channel.size
-            }
-        }
-
-        val elementCountAfterPositions = totalElementsPerVertex() - (stride + forChannel.size)
-
-        val result = FloatArray(verticesCount * forChannel.size)
-        var resultIndex = 0
-
-        val elementsPerChannel = forChannel.size
-        val floatBuffer = buffer.asFloatBuffer()
-        var vertexCounter = 0
-        var i = stride
-        while (i < floatBuffer.capacity() && vertexCounter < verticesCount) {
-            for (x in 0 until forChannel.size) {
-
-                result[resultIndex] = floatBuffer.get(i + x)
-                resultIndex++
-            }
-            vertexCounter++
-            i += stride + elementsPerChannel + elementCountAfterPositions
-        }
-
-        return result
-
+    override fun unbind() {
+        TODO("Not yet implemented")
     }
 
     companion object {
@@ -170,18 +121,19 @@ open class VertexBuffer(
     }
 }
 
-fun GpuContext.createSixDebugBuffers(): ArrayList<VertexBuffer> {
-    return invoke {
-        val sixDebugBuffers = object : ArrayList<VertexBuffer>() {
+fun GpuContext.createSixDebugBuffers(): List<IVertexBuffer> {
+    return onGpu {
+        val sixDebugBuffers = object : ArrayList<IVertexBuffer>() {
             init {
                 val height = -2f / 3f
                 val width = 2f
                 val widthDiv = width / 6f
                 for (i in 0..5) {
-                    val quadVertexBuffer = QuadVertexBuffer(
-                        this@createSixDebugBuffers,
-                        Vector2f(-1f + i * widthDiv, -1f),
-                        Vector2f(-1 + (i + 1) * widthDiv, height)
+                    val quadVertexBuffer = invoke(
+                        QuadVertexBuffer.getPositionsAndTexCoords(
+                            Vector2f(-1f + i * widthDiv, -1f),
+                            Vector2f(-1 + (i + 1) * widthDiv, height)
+                        )
                     )
                     add(quadVertexBuffer)
                     quadVertexBuffer.upload()

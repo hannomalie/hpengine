@@ -14,81 +14,85 @@ import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30
 
-class DeferredRenderingBuffer(gpuContext: GpuContext, width: Int, height: Int,
-                              val depthBuffer: DepthBuffer<*>
-) {
+context(GpuContext)
+class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuffer<*>) {
 
     internal val gBuffer = RenderTargetImpl(
-            gpuContext,
-            FrameBuffer(gpuContext, depthBuffer),
-            name = "GBuffer",
-            width = width,
-            height = height,
-            textures = (ColorAttachmentDefinitions(
-                    names = arrayOf("PositionView/Roughness", "Normal/Ambient", "Color/Metallic", "Motion/Depth/Transparency"),
-                    internalFormat = GL30.GL_RGBA16F,
-                    textureFilter = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
-            ).toList() + ColorAttachmentDefinition("Depth/Indices", GL30.GL_RGBA32F)).toTextures(gpuContext, width, height)
-        )
+        FrameBuffer(depthBuffer),
+        width,
+        height,
+        (ColorAttachmentDefinitions(
+            names = arrayOf("PositionView/Roughness", "Normal/Ambient", "Color/Metallic", "Motion/Depth/Transparency"),
+            internalFormat = GL30.GL_RGBA16F,
+            textureFilter = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
+        ).toList() + ColorAttachmentDefinition("Depth/Indices", GL30.GL_RGBA32F)).toTextures(width, height),
+        "GBuffer",
+    )
 
     internal val reflectionBuffer = RenderTarget(
-            gpuContext,
-            FrameBuffer(gpuContext, depthBuffer),
-            name = "Reflection",
-            width = width,
-            height = height,
-            textures = ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), GL30.GL_RGBA16F).toList().toTextures(gpuContext, width, height)
-        )
+        FrameBuffer(depthBuffer),
+        width,
+        height,
+        ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), GL30.GL_RGBA16F).toList().toTextures(
+            width,
+            height
+        ),
+        "Reflection"
+    )
 
     internal val forwardBuffer = RenderTarget(
-            gpuContext,
-            FrameBuffer(gpuContext, depthBuffer),
-            name = "Forward",
-            width = width,
-            height = height,
-            textures = (ColorAttachmentDefinitions(arrayOf("DiffuseSpecular", "Revealage"), GL30.GL_RGBA16F).toList()).toTextures(gpuContext, width, height)
-        )
+        FrameBuffer(depthBuffer),
+        width = width,
+        height = height,
+        textures = (ColorAttachmentDefinitions(
+            arrayOf("DiffuseSpecular", "Revealage"),
+            GL30.GL_RGBA16F
+        ).toList()).toTextures(
+            width,
+            height
+        ),
+        name = "Forward"
+    )
 
     internal val laBuffer = RenderTarget(
-            gpuContext,
-            FrameBuffer(gpuContext, depthBuffer),
-            name = "LightAccum",
-            width = width,
-            height = height,
-            textures = (ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), GL30.GL_RGBA16F).toList()).toTextures(gpuContext, width, height)
-        )
+        FrameBuffer(depthBuffer),
+        width = width,
+        height = height,
+        textures = (ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), GL30.GL_RGBA16F).toList()).toTextures(
+            width,
+            height
+        ),
+        name = "LightAccum"
+    )
 
     internal val finalBuffer = RenderTarget(
-            gpuContext,
-            FrameBuffer(gpuContext, depthBuffer),
-            name = "Final Image",
-            width = width,
-            height = height,
-            textures = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGBA8)).toTextures(gpuContext, width, height)
-        )
+        FrameBuffer(depthBuffer),
+        width = width,
+        height = height,
+        textures = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGBA8)).toTextures(width, height),
+        name = "Final Image"
+    )
 
     internal val halfScreenBuffer = RenderTarget(
-            gpuContext,
-            FrameBuffer(gpuContext, depthBuffer),
-            name = "Half Screen",
-            width = width / 2,
-            height = height / 2,
-            textures = listOf(
-                    ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F),
-                    ColorAttachmentDefinition("Indirect", GL30.GL_RGBA16F),
-                    ColorAttachmentDefinition("Bent Normals", GL30.GL_RGBA16F)
-            ).toTextures(gpuContext, width / 2, height / 2)
+        FrameBuffer(depthBuffer),
+        width = width / 2,
+        height = height / 2,
+        textures = listOf(
+            ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F),
+            ColorAttachmentDefinition("Indirect", GL30.GL_RGBA16F),
+            ColorAttachmentDefinition("Bent Normals", GL30.GL_RGBA16F)
+        ).toTextures(width / 2, height / 2),
+        name = "Half Screen"
     )
 
     val fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(width, height))
-    val exposureBuffer = PersistentMappedBuffer(gpuContext, 4 * 8).apply {
+    val exposureBuffer = PersistentMappedBuffer(4 * Double.SIZE_BYTES).apply {
         buffer.rewind()
         buffer.asDoubleBuffer().apply {
             put(1.0)
             put(-1.0)
             put(0.0)
             put(1.0)
-
         }
     }
     val lightAccumulationMapOneId: Int = laBuffer.getRenderedTexture(0)
@@ -113,11 +117,11 @@ class DeferredRenderingBuffer(gpuContext: GpuContext, width: Int, height: Int,
 
     val finalMapId: Int = finalBuffer.getRenderedTexture(0)
 
-    fun use(gpuContext: GpuContext, clear: Boolean) {
-        gBuffer.use(gpuContext, clear)
+    fun use(clear: Boolean) {
+        gBuffer.use(clear)
     }
 
-    val lightAccumulationBuffer: RenderTarget<*> = laBuffer
+    val lightAccumulationBuffer: BackBufferRenderTarget<*> = laBuffer
 
     val depthBufferTexture: Int = gBuffer.frameBuffer.depthBuffer!!.texture.id
 
@@ -131,12 +135,13 @@ class DeferredRenderingBuffer(gpuContext: GpuContext, width: Int, height: Int,
     init {
         Matrix4f().get(identityMatrixBuffer)
         identityMatrixBuffer.rewind()
-        gpuContext.getExceptionOnError("rendertarget creation")
+        getExceptionOnError("rendertarget creation")
     }
 
     companion object {
         @Volatile
         var IMPORTANCE_SAMPLE_COUNT = 8
+
         @Volatile
         var USE_COMPUTESHADER_FOR_REFLECTIONS = false
 

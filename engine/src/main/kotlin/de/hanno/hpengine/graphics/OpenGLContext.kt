@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.IFrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
@@ -11,6 +11,9 @@ import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.TextureAllocationData
 import de.hanno.hpengine.graphics.texture.UploadInfo
+import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer.invoke
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer.getPositionsAndTexCoords
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import kotlinx.coroutines.*
 import org.lwjgl.BufferUtils
@@ -27,58 +30,65 @@ import java.util.*
 import java.util.concurrent.Executors
 import javax.vecmath.Vector2f
 
-class OpenGLContext private constructor(override val window: Window, val debug: Boolean = false) :
-    GpuContext, GpuExecutor by window {
+class OpenGLContext private constructor(
+    override val window: Window,
+    val debug: Boolean = false
+) : GpuContext, GpuExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
-    private val debugProc = window.invoke { if (debug) GLUtil.setupDebugMessageCallback() else null }
-    private lateinit var dummyVertexIndexBuffer: VertexIndexBuffer
-
-    init {
-        val dummyVertexBuffer = VertexBuffer(this, DEFAULTCHANNELS, floatArrayOf(0f, 0f, 0f, 0f))
-        window.invoke {
-            enable(Capability.DEPTH_TEST)
-            enable(Capability.CULL_FACE)
-            enable(Capability.TEXTURE_CUBE_MAP_SEAMLESS)
-            GL40.glPatchParameteri(GL40.GL_PATCH_VERTICES, 3)
-
-            // Map the internal OpenGL coordinate system to the entire screen
-            viewPort(0, 0, window.width, window.height)
-            dummyVertexIndexBuffer = VertexIndexBuffer(this, 10).apply {
+    private val debugProc = onGpu { if (debug) GLUtil.setupDebugMessageCallback() else null }
+    private val dummyVertexIndexBuffer = run {
+        val dummyVertexBuffer = VertexBuffer(DEFAULTCHANNELS, floatArrayOf(0f, 0f, 0f, 0f))
+        onGpu {
+            VertexIndexBuffer(10).apply {
                 dummyVertexBuffer.bind()
                 indexBuffer.bind()
             }
         }
     }
 
-    private fun getCapabilities() = window { GL.getCapabilities() }
+    init {
+        onGpu {
+            // Map the internal OpenGL coordinate system to the entire screen
+            viewPort(0, 0, window.width, window.height)
+            enable(Capability.DEPTH_TEST)
+            enable(Capability.CULL_FACE)
+            enable(Capability.TEXTURE_CUBE_MAP_SEAMLESS)
+            GL40.glPatchParameteri(GL40.GL_PATCH_VERTICES, 3)
+        }
+    }
 
-    override val maxLineWidth = window.invoke { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
+    private fun getCapabilities() = onGpu { GL.getCapabilities() }
 
-    override val registeredRenderTargets = ArrayList<RenderTarget<*>>()
+    override val maxLineWidth = onGpu { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
 
-    override var maxTextureUnits = window { getMaxCombinedTextureImageUnits() }
+    override val registeredRenderTargets = ArrayList<BackBufferRenderTarget<*>>()
 
-    override val fullscreenBuffer = QuadVertexBuffer(this, true).apply { upload() }
-    override val debugBuffer = QuadVertexBuffer(this, false).apply { upload() }
-    override val sixDebugBuffers: List<VertexBuffer> = run {
+    override var maxTextureUnits = onGpu { getMaxCombinedTextureImageUnits() }
+
+    override val fullscreenBuffer = QuadVertexBuffer().apply { upload() }
+    override val debugBuffer = QuadVertexBuffer(QuadVertexBuffer.quarterScreenVertices).apply { upload() }
+    override val sixDebugBuffers: List<IVertexBuffer> = run {
         val height = -2f / 3f
         val width = 2f
         val widthDiv = width / 6f
         (0..5).map {
-            val quadVertexBuffer =
-                QuadVertexBuffer(this, Vector2f(-1f + it * widthDiv, -1f), Vector2f(-1 + (it + 1) * widthDiv, height))
-            quadVertexBuffer.upload()
-            quadVertexBuffer
+            invoke(
+                getPositionsAndTexCoords(
+                    Vector2f(-1f + it * widthDiv, -1f),
+                    Vector2f(-1 + (it + 1) * widthDiv, height)
+                )
+            ).apply {
+                upload()
+            }
         }
     }
 
-    private val extensions = window.invoke {
+    private val extensions = onGpu {
         getSupportedExtensions()
     }
 
-    override val isError: Boolean
-        get() = window.invoke { glGetError() != GL_NO_ERROR }
+    override val isError: Boolean get() = onGpu { glGetError() != GL_NO_ERROR }
 
     override val features = run {
         val bindlessTextures = if (capabilities.GL_ARB_bindless_texture) BindlessTextures else null
@@ -98,6 +108,8 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
             commandSyncs.add(it)
         }
     }
+
+    override fun <T> onGpu(block: context(GpuContext)() -> T) = invoke { block(this) }
 
     override fun exceptionOnError() {
         exceptionOnError("")
@@ -175,7 +187,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
         if (textureId < 0) {
             throw IllegalArgumentException("Passed textureId of < 0")
         }
-        window.invoke {
+        onGpu {
             getExceptionOnError("beforeBindTexture")?.let { throw it }
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
             GL13.glActiveTexture(textureIndexGLInt)
@@ -343,7 +355,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
         )
     }
 
-    override fun register(target: RenderTarget<*>) {
+    override fun register(target: BackBufferRenderTarget<*>) {
         if (registeredRenderTargets.any { it.name == target.name } || registeredRenderTargets.contains(target)) return
         registeredRenderTargets.add(target)
     }
@@ -438,22 +450,21 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
 
     fun getError(): Int = window.invoke { glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
-    fun Texture.delete() = invoke { glDeleteTextures(id) }
+    fun Texture.delete() = onGpu { glDeleteTextures(id) }
     fun finish() = glFinish()
 
     override fun allocateTexture(
         info: UploadInfo,
         textureTarget: TextureTarget,
         filterConfig: TextureFilterConfig,
-        internalFormat: Int,
         wrapMode: Int,
-    ): TextureAllocationData = invoke {
+    ): TextureAllocationData = onGpu {
         val textureId = glGenTextures()
         val glTarget = textureTarget.glTarget
 
         glBindTexture(glTarget, textureId)
         texParameters(glTarget, wrapMode, filterConfig)
-        texStorage(info, internalFormat, glTarget)
+        texStorage(info, glTarget)
 
 
         if (filterConfig.minFilter.isMipMapped) {
@@ -462,7 +473,7 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
 
         val handle = getTextureHandle(textureId)
 
-        TextureAllocationData(textureId, internalFormat, handle, wrapMode).apply {
+        TextureAllocationData(textureId, handle, wrapMode).apply {
             exceptionOnError()
         }
     }
@@ -479,11 +490,11 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
         glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
     }
 
-    private fun texStorage(info: UploadInfo, internalFormat: Int, glTarget: Int) = when (info) {
+    private fun texStorage(info: UploadInfo, glTarget: Int) = when (info) {
         is UploadInfo.CubeMapArrayUploadInfo -> GL42.glTexStorage3D(
             GL40.GL_TEXTURE_CUBE_MAP_ARRAY,
             info.dimension.getMipMapCount(),
-            internalFormat,
+            info.internalFormat,
             info.dimension.width,
             info.dimension.height,
             info.dimension.depth * 6
@@ -491,21 +502,21 @@ class OpenGLContext private constructor(override val window: Window, val debug: 
         is UploadInfo.CubeMapUploadInfo -> GL42.glTexStorage2D(
             GL40.GL_TEXTURE_CUBE_MAP,
             info.dimension.getMipMapCount(),
-            internalFormat,
+            info.internalFormat,
             info.dimension.width,
             info.dimension.height
         )
         is UploadInfo.Texture2DUploadInfo -> GL42.glTexStorage2D(
             glTarget,
             info.dimension.getMipMapCount(),
-            internalFormat,
+            info.internalFormat,
             info.dimension.width,
             info.dimension.height
         )
         is UploadInfo.Texture3DUploadInfo -> GL42.glTexStorage3D(
             glTarget,
             info.dimension.getMipMapCount(),
-            internalFormat,
+            info.internalFormat,
             info.dimension.width,
             info.dimension.height,
             info.dimension.depth
@@ -528,19 +539,39 @@ class OpenGlExecutorImpl(
 
     inline val Thread.isOpenGLThread: Boolean get() = id == gpuThreadId
 
-    override suspend fun <T> execute(block: () -> T): T {
-        if (isOpenGLThread) return block()
-
-        return withContext(coroutineContext) {
-            block()
+    override suspend fun <T> execute(block: () -> T) = if (isOpenGLThread) {
+        block().apply { onError() }
+    } else {
+        withContext(coroutineContext) {
+            block().apply {
+                onError()
+            }
         }
     }
 
-    override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE {
-        if (isOpenGLThread) return block()
+    override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE) = if (isOpenGLThread) {
+        block().apply { onError() }
+    } else {
+        var error: Int = GL_NO_ERROR
+        val value = runBlocking(coroutineContext) {
+            block().apply {
+                error = glGetError()
+            }
+        }
+        if(error != GL_NO_ERROR) {
+            throw IllegalStateException(GLU.gluErrorString(error)).apply {
+                printStackTrace()
+            }
+        } else value
+    }
 
-        return runBlocking(coroutineContext) {
-            block()
+    override fun onError() {
+        val error = glGetError()
+        val isError = error != GL_NO_ERROR
+        if (isError) {
+            throw IllegalStateException(GLU.gluErrorString(error)).apply {
+                printStackTrace()
+            }
         }
     }
 

@@ -7,7 +7,7 @@ import de.hanno.hpengine.graphics.renderer.constants.Capability
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -28,15 +28,15 @@ class CombinePassRenderExtension(private val config: Config,
         config.EngineAsset("shaders/combine_pass_vertex.glsl").toCodeSource(),
         config.EngineAsset("shaders/combine_pass_fragment.glsl").toCodeSource(),
         Uniforms.Empty,
- Defines()
+        Defines()
     )
 
-    fun renderCombinePass(state: RenderState, renderTarget: RenderTarget<OpenGLTexture2D> = deferredRenderingBuffer.finalBuffer) {
+    fun renderCombinePass(state: RenderState, renderTarget: BackBufferRenderTarget<OpenGLTexture2D> = deferredRenderingBuffer.finalBuffer) {
         if(!config.effects.isAutoExposureEnabled) {
             deferredRenderingBuffer.exposureBuffer.buffer.putFloat(0, state.camera.exposure)
         }
         profiled("Combine pass") {
-            renderTarget.use(gpuContext, false)
+            renderTarget.use(false)
 
             textureManager.generateMipMaps(TextureTarget.TEXTURE_2D, renderTarget.getRenderedTexture(0))
 

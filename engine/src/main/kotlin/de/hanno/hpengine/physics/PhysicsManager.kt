@@ -49,18 +49,18 @@ import javax.vecmath.Matrix4f
 import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
 
+context(GpuContext)
 @All(PhysicsComponent::class)
 class PhysicsManager(
     private val config: Config,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager,
-    val gpuContext: GpuContext,
     gravity: Vector3f = Vector3f(0f, -20f, 0f)
 ) : BaseEntitySystem(), RenderSystem {
     override lateinit var artemisWorld: World
-    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
-        val uniforms = LinesProgramUniforms(gpuContext)
+        val uniforms = LinesProgramUniforms()
         getProgram(
             StringBasedCodeSource("mvp_vertex_vec4", """
                 //include(globals_structs.glsl)

@@ -25,13 +25,13 @@ import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.buffers.copyTo
 
 // TODO: Autoadd Transform
+context(GpuContext)
 @All(PointLightComponent::class, TransformComponent::class)
 class PointLightSystem(
-    config: Config, programManager: ProgramManager,
-    gpuContext: GpuContext
+    config: Config, programManager: ProgramManager
 ): BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
-    private var gpuPointLights = PersistentMappedBuffer(20 * PointLightStruct.type.sizeInBytes, gpuContext).typed(PointLightStruct.type)
+    private var gpuPointLights = PersistentMappedBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
@@ -42,11 +42,10 @@ class PointLightSystem(
             DualParaboloidShadowMapStrategy(
                 this,
                 programManager,
-                gpuContext,
                 config
             )
         } else {
-            CubeShadowMapStrategy(config, gpuContext, programManager)
+            CubeShadowMapStrategy(config, programManager)
         }
 
     private var shadowMapsRenderedInCycle: Long = -1

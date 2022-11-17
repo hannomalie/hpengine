@@ -52,28 +52,33 @@ import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.lwjgl.opengl.GL30
-import javax.swing.SwingUtilities
 import kotlin.collections.set
 
 data class IdTexture(val texture: OpenGLTexture2D) // TODO: Move to a proper place
 data class SharedDepthBuffer(val depthBuffer: DepthBuffer<*>)
 
 val deferredRendererModule = module {
-    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll<DeferredRenderExtension>().distinct()) }
-    single {
-        val config: Config = get()
-        SharedDepthBuffer(DepthBuffer(get(), config.width, config.height))
+    renderSystem {
+        get<GpuContext>().run {
+            ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll<DeferredRenderExtension>().distinct())
+        }
     }
     single {
         val config: Config = get()
-        val gpuContext: GpuContext = get()
+        get<GpuContext>().run {
+            SharedDepthBuffer(DepthBuffer(config.width, config.height))
+        }
+    }
+    single {
+        val config: Config = get()
         val sharedDepthBuffer: SharedDepthBuffer = get()
-        DeferredRenderingBuffer(
-            gpuContext,
-            config.width,
-            config.height,
-            sharedDepthBuffer.depthBuffer
-        )
+        get<GpuContext>().run {
+            DeferredRenderingBuffer(
+                config.width,
+                config.height,
+                sharedDepthBuffer.depthBuffer
+            )
+        }
     }
     single {
         val deferredRenderingBuffer: DeferredRenderingBuffer = get()
@@ -89,32 +94,44 @@ val deferredRendererModule = module {
 
 val imGuiEditorModule = module {
     renderSystem {
-        val gpuContext: GpuContext = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll<DeferredRenderExtension>().distinct(), get(), get(), getAll<ImGuiEditorExtension>().distinct())
+
+        get<GpuContext>().run {
+            ImGuiEditor(
+                get(),
+                get(),
+                finalOutput,
+                get(),
+                get(),
+                get(),
+                get(),
+                getAll<DeferredRenderExtension>().distinct(),
+                get(),
+                get(),
+                getAll<ImGuiEditorExtension>().distinct()
+            )
+        }
     }
 }
 val textureRendererModule = module {
     single {
         val config: Config = get()
-        val gpuContext: GpuContext = get()
 
-        RenderTarget(
-            gpuContext,
-            FrameBuffer(
-                gpuContext,
-                depthBuffer = DepthBuffer(gpuContext, config.width, config.height)
-            ),
-            name = "Final Image",
-            width = config.width,
-            height = config.height,
-            textures = listOf(
-                ColorAttachmentDefinition("Color", GL30.GL_RGBA8)
-            ).toTextures(
-                gpuContext, config.width, config.height
+        get<GpuContext>().run {
+            RenderTarget(
+                FrameBuffer(
+                    depthBuffer = DepthBuffer(config.width, config.height)
+                ),
+                width = config.width,
+                height = config.height,
+                textures = listOf(
+                    ColorAttachmentDefinition("Color", GL30.GL_RGBA8)
+                ).toTextures(
+                    config.width, config.height
+                ),
+                name = "Final Image"
             )
-        )
-
+        }
     }
     single {
         val textureManager: OpenGLTextureManager = get()
@@ -127,18 +144,16 @@ val textureRendererModule = module {
     renderSystem {
         val textureManager: OpenGLTextureManager = get()
         val renderTarget: RenderTarget2D = get()
-        val gpuContext: GpuContext = get()
 
-        object : SimpleTextureRenderer(get(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
-            override val sharedRenderTarget = renderTarget
-            override val requiresClearSharedRenderTarget = true
-            override lateinit var artemisWorld: World
+            object : SimpleTextureRenderer(get<GpuContext>(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
+                override val sharedRenderTarget = renderTarget
+                override val requiresClearSharedRenderTarget = true
 
-            override fun render(result: DrawResult, renderState: RenderState) {
-                gpuContext.clearColor(1f, 0f, 0f, 1f)
-                drawToQuad(texture = texture)
+                override fun render(result: DrawResult, renderState: RenderState) {
+                    gpuContext.clearColor(1f, 0f, 0f, 1f)
+                    drawToQuad(texture = texture)
+                }
             }
-        }
     }
 }
 val baseModule = module {
@@ -147,12 +162,20 @@ val baseModule = module {
         val system: FPSCounterSystem = get()
         system.fpsCounter
     }
-    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll()) }
+    single {
+        get<GpuContext>().run {
+            RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll())
+        }
+    }
     single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(
         ProgramManager::class,
         OpenGlProgramManager::class,
     )
-    single { OpenGLTextureManager(get(), get(), get()) } binds arrayOf(
+    single {
+        get<GpuContext>().run {
+            OpenGLTextureManager(get(), get())
+        }
+    } binds arrayOf(
         TextureManager::class,
         OpenGLTextureManager::class,
     )
@@ -173,35 +196,63 @@ val baseModule = module {
         ImGuiEditorExtension::class
     )
 
-    renderExtension { ForwardRenderExtension(get(), get(), get(), get()) }
+    renderExtension {
+        get<GpuContext>().run {
+            ForwardRenderExtension(get(), get(), get())
+        }
+    }
     renderExtension { AOScatteringExtension(get(), get(), get(), get(), get()) }
 //    TODO: Fails because of shader code errors
 //    renderExtension { EvaluateProbeRenderExtension(get(), get(), get(), get(), get()) }
 }
 
 fun Module.addGIModule() {
-    renderExtension { VoxelConeTracingExtension(get(), get(), get(), get(), get(), get()) }
+    renderExtension {
+        get<GpuContext>().run {
+            VoxelConeTracingExtension(get(), get(), get(), get(), get())
+        }
+    }
 }
 
 fun Module.addPointLightModule() {
-    renderExtension { BvHPointLightSecondPassExtension(get(), get(), get(), get(), get()) }
+    renderExtension {
+        get<GpuContext>().run {
+            BvHPointLightSecondPassExtension(get(), get(), get(), get(), get())
+        }
+    }
 }
 
 fun Module.addDirectionalLightModule() {
-    renderExtension { DirectionalLightShadowMapExtension(get(), get(), get(), get(), get()) }
+    renderExtension {
+        get<GpuContext>().run {
+            DirectionalLightShadowMapExtension(get(), get(), get(), get())
+        }
+    }
     renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get()) }
 }
 
 fun Module.addOceanWaterModule() {
-    renderSystem { OceanWaterRenderSystem(get(), get(), get(), get(), get()) }
+    renderSystem {
+        get<GpuContext>().run {
+            OceanWaterRenderSystem(get(), get(), get(), get())
+        }
+    }
 }
 
 fun Module.addReflectionProbeModule() {
-    renderExtension { ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get()) }
+    renderExtension {
+        get<GpuContext>().run {
+            ReflectionProbeRenderExtension(get(), get(), get(), get(), get())
+        }
+    }
 }
 
 fun Module.addCameraModule() {
-    renderExtension { CameraRenderExtension(get(), get(), get(), get()) }
+    renderExtension {
+        get<GpuContext>().run {
+            CameraRenderExtension(get(), get(), get())
+        }
+    }
 }
 
 fun Module.addSkyboxModule() {
@@ -219,27 +270,9 @@ fun Module.addBackendModule() {
     single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
     single { RenderSystemsConfig(getAll()) }
     single {
-        val gpuContext: GpuContext = get()
-        RenderStateManager { RenderState(gpuContext) }
-    }
-}
-
-// TODO: Don't duplicate, move to core
-object SwingUtils {
-    fun invokeLater(block: () -> Unit) = if (SwingUtilities.isEventDispatchThread()) {
-        block()
-    } else {
-        SwingUtilities.invokeLater(block)
-    }
-
-    fun <T> invokeAndWait(block: () -> T) = if (SwingUtilities.isEventDispatchThread()) {
-        block()
-    } else {
-        var result: T? = null
-        SwingUtilities.invokeAndWait {
-            result = block()
+        get<GpuContext>().run {
+            RenderStateManager { RenderState() }
         }
-        result!!
     }
 }
 

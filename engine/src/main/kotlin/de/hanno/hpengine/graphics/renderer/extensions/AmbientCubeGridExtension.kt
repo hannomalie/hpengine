@@ -43,6 +43,7 @@ import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GL45
 import java.nio.FloatBuffer
 
+context(GpuContext)
 class ProbeRenderer(
     val gpuContext: GpuContext,
     config: Config,
@@ -68,13 +69,13 @@ class ProbeRenderer(
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
     val probePositionsStructBuffer = gpuContext.window.invoke {
-        PersistentMappedBuffer(probeCount * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+        PersistentMappedBuffer(probeCount * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
     val probeAmbientCubeValues = gpuContext.window.invoke {
-        PersistentMappedBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+        PersistentMappedBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
     val probeAmbientCubeValuesOld = gpuContext.window.invoke {
-        PersistentMappedBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+        PersistentMappedBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
 
     init {
@@ -113,15 +114,13 @@ class ProbeRenderer(
     )
 
     val cubeMapRenderTarget = de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget(
-        gpuContext = gpuContext,
         frameBuffer = FrameBuffer(
-            gpuContext = gpuContext,
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
-                    gpuContext,
                     TextureDimension(probeResolution, probeResolution),
                     TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
-                    GL14.GL_DEPTH_COMPONENT24, GL_REPEAT
+                    GL14.GL_DEPTH_COMPONENT24,
+                    GL_REPEAT
                 )
             )
         ),
@@ -129,7 +128,7 @@ class ProbeRenderer(
         height = probeResolution,
         textures = listOf(
             ColorAttachmentDefinition("Probes", GL30.GL_RGBA16F, TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR))
-        ).toCubeMaps(gpuContext, probeResolution, probeResolution),
+        ).toCubeMaps(probeResolution, probeResolution),
         name = "Probes"
     )
 
@@ -148,7 +147,7 @@ class ProbeRenderer(
             gpuContext.depthMask = true
             gpuContext.disable(Capability.DEPTH_TEST)
             gpuContext.disable(Capability.CULL_FACE)
-            cubeMapRenderTarget.use(gpuContext, true)
+            cubeMapRenderTarget.use(true)
 //            gpuContext.clearDepthAndColorBuffer()
             gpuContext.viewPort(0, 0, probeResolution, probeResolution)
 
@@ -207,7 +206,7 @@ class ProbeRenderer(
 
                 profiled("Probe entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
-                        pointCubeShadowPassProgram.setTextureUniforms(gpuContext, batch.material.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
                         renderState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
                         )

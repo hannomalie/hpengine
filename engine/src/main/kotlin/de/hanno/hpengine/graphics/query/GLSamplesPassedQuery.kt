@@ -13,7 +13,7 @@ class GLSamplesPassedQuery(gpuContext: GpuContext) : GLQuery<Int?> {
     private var finished = false
     private var started = false
     override fun begin(): GLTimerQuery? {
-        gpuContext.invoke {
+        gpuContext.onGpu {
             GL15.glBeginQuery(GL15.GL_SAMPLES_PASSED, queryToWaitFor)
             Unit
         }
@@ -23,7 +23,7 @@ class GLSamplesPassedQuery(gpuContext: GpuContext) : GLQuery<Int?> {
 
     override fun end() {
         check(started) { "Don't end a query before it was started!" }
-        gpuContext.invoke {
+        gpuContext.onGpu {
             GL15.glEndQuery(target)
             Unit
         }
@@ -35,11 +35,11 @@ class GLSamplesPassedQuery(gpuContext: GpuContext) : GLQuery<Int?> {
             check(finished) { "Don't query result before query is finished!" }
             while (!resultsAvailable(gpuContext)) {
             }
-            return gpuContext.invoke { GL33.glGetQueryObjectui64(queryToWaitFor, GL15.GL_QUERY_RESULT).toInt() }
+            return gpuContext.onGpu { GL33.glGetQueryObjectui64(queryToWaitFor, GL15.GL_QUERY_RESULT).toInt() }
         }
 
     init {
         this.gpuContext = gpuContext
-        queryToWaitFor = this.gpuContext.invoke { GL15.glGenQueries() }
+        queryToWaitFor = this.gpuContext.onGpu { GL15.glGenQueries() }
     }
 }

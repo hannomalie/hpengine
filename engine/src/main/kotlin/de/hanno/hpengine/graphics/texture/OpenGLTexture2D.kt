@@ -9,12 +9,19 @@ import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import jogl.DDSImage
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
+import org.lwjgl.opengl.EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+import org.lwjgl.opengl.EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
+import org.lwjgl.opengl.EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
 
+
+val compressInternal = true
+
+context(GpuContext)
 data class OpenGLTexture2D(
     override val dimension: TextureDimension2D,
     override val id: Int,
@@ -25,50 +32,63 @@ data class OpenGLTexture2D(
     override val wrapMode: Int,
     override var uploadState: UploadState
 ) : Texture2D {
+
     companion object {
-        operator fun invoke(gpuContext: GpuContext, file: File, path: String, srgba: Boolean = false): OpenGLTexture2D {
-            val fileAsDds = File(path.split(".")[0] + ".dds")
-            if (!file.exists() || !file.isFile) {
-                throw IllegalStateException("Cannot load file $file as texture as it doesn't exist")
+
+        context(GpuContext)
+        operator fun invoke(file: File, srgba: Boolean = false): OpenGLTexture2D {
+            require(file.exists()) { "File ${file.absolutePath} must exist!" }
+            require(file.isFile) { "File ${file.absolutePath} is not a file!" }
+            val internalFormat = if (compressInternal) {
+                if (srgba) GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+            } else {
+                if (srgba) GL_SRGB8_ALPHA8_EXT else GL30.GL_RGBA16F
             }
+
             return if (file.extension == "dds") {
                 val ddsImage = DDSImage.read(file)
                 val compressedTextures = true
                 if (compressedTextures) {
-                    val image = Texture2DUploadInfo(
-                        TextureDimension(ddsImage.width, ddsImage.height),
-                        ddsImage.getMipMap(0).data,
-                        dataCompressed = true,
-                        srgba = srgba
+                    OpenGLTexture2D(
+                        Texture2DUploadInfo(
+                            TextureDimension(ddsImage.width, ddsImage.height),
+                            ddsImage.getMipMap(0).data,
+                            dataCompressed = true,
+                            srgba = srgba,
+                            internalFormat = internalFormat
+                        )
                     )
-                    OpenGLTexture2D(gpuContext, image)
                 } else {
                     OpenGLTexture2D(
-                        gpuContext,
                         DDSUtil.decompressTexture(
                             ddsImage.getMipMap(0).data,
                             ddsImage.width,
                             ddsImage.height,
                             ddsImage.compressionFormat
                         ).apply {
-                            with(DDSConverter) { this@apply.rescaleToNextPowerOfTwo() }
-                        })
+                            DDSConverter.run { rescaleToNextPowerOfTwo() }
+                        },
+                        srgba = srgba,
+                    )
                 }
             } else OpenGLTexture2D(
-                gpuContext,
-                ImageIO.read(file).apply { with(DDSConverter) { this@apply.rescaleToNextPowerOfTwo() } },
+                ImageIO.read(file).apply { DDSConverter.run { rescaleToNextPowerOfTwo() } },
                 srgba
             )
-
         }
 
-        operator fun invoke(gpuContext: GpuContext, image: BufferedImage, srgba: Boolean = false): OpenGLTexture2D {
+        context(GpuContext)
+        operator fun invoke(image: BufferedImage, srgba: Boolean = false): OpenGLTexture2D {
             val buffer = image.toByteBuffer()
-            val image1 = Texture2DUploadInfo(TextureDimension(image.width, image.height), buffer, srgba = srgba)
+            val internalFormat = if (compressInternal) {
+                if (srgba) GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+            } else {
+                if (srgba) GL_SRGB8_ALPHA8_EXT else GL30.GL_RGBA16F
+            }
             return OpenGLTexture2D(
-                gpuContext,
-                Texture2DUploadInfo(TextureDimension(image.width, image.height), buffer, srgba = srgba),
-                internalFormat = if (image1.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+                Texture2DUploadInfo(
+                    TextureDimension(image.width, image.height), buffer, false, srgba, internalFormat = internalFormat
+                )
             )
         }
 
@@ -95,63 +115,61 @@ data class OpenGLTexture2D(
             return buffer
         }
 
+        context(GpuContext)
         operator fun invoke(
-            gpuContext: GpuContext,
             info: Texture2DUploadInfo,
             textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
-            internalFormat: Int = if (info.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
             wrapMode: Int = GL12.GL_REPEAT
-        ): OpenGLTexture2D {
-            return gpuContext.invoke {
-                val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
-                    info,
-                    TextureTarget.TEXTURE_2D,
-                    textureFilterConfig,
-                    internalFormat,
-                    wrapMode
-                )
-                if (gpuContext.isSupported(BindlessTextures)) ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
-                OpenGLTexture2D(
-                    dimension = info.dimension,
-                    id = textureId,
-                    target = TextureTarget.TEXTURE_2D,
-                    textureFilterConfig = textureFilterConfig,
-                    internalFormat = internalFormat,
-                    handle = handle,
-                    wrapMode = wrapMode,
-                    uploadState = UploadState.NOT_UPLOADED
-                ).apply {
-                    CompletableFuture.supplyAsync {
-                        upload(gpuContext, info, internalFormat)
-                    }
-                }
+        ) = onGpu {
+            val (textureId, handle) = allocateTexture(
+                info,
+                TextureTarget.TEXTURE_2D,
+                textureFilterConfig,
+                wrapMode
+            )
+            if (isSupported(BindlessTextures)) ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
+
+            OpenGLTexture2D(
+                info.dimension,
+                textureId,
+                TextureTarget.TEXTURE_2D,
+                info.internalFormat,
+                handle,
+                textureFilterConfig,
+                wrapMode,
+                UploadState.NOT_UPLOADED
+            )
+        }.apply {
+            CompletableFuture.supplyAsync {
+                upload(info, internalFormat)
             }
         }
 
-        private fun OpenGLTexture2D.upload(gpuContext: GpuContext, info: Texture2DUploadInfo, internalFormat: Int) {
-            val usePbo = true
+        context(GpuContext)
+        private fun OpenGLTexture2D.upload(info: Texture2DUploadInfo, internalFormat: Int) {
+            val usePbo = false
             if (usePbo) {
-                uploadWithPixelBuffer(gpuContext, info, internalFormat)
+                uploadWithPixelBuffer(info, internalFormat)
             } else {
-                uploadWithoutPixelBuffer(gpuContext, info, internalFormat)
+                uploadWithoutPixelBuffer(info, internalFormat)
             }
         }
 
+        context(GpuContext)
         private fun OpenGLTexture2D.uploadWithPixelBuffer(
-            gpuContext: GpuContext,
             info: Texture2DUploadInfo,
             internalFormat: Int
         ) {
             val data = info.data ?: return
 
-            val pbo = gpuContext.invoke {
+            val pbo = onGpu {
                 PixelBufferObject()
             }
-            pbo.put(gpuContext, data)
-            gpuContext.invoke {
-                pbo.unmap(gpuContext)
+            pbo.put(this@GpuContext, data)
+            onGpu {
+                pbo.unmap(this@GpuContext)
                 pbo.bind()
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
+                bindTexture(TextureTarget.TEXTURE_2D, id)
                 if (info.dataCompressed) {
                     GL13.glCompressedTexSubImage2D(
                         GL11.GL_TEXTURE_2D,
@@ -177,20 +195,17 @@ data class OpenGLTexture2D(
                         0
                     )
                 }
-                gpuContext.getExceptionOnError("After glTexSubImage")
                 GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
                 pbo.unbind()
                 uploadState = UploadState.UPLOADED
             }
         }
 
-        private fun OpenGLTexture2D.uploadWithoutPixelBuffer(
-            gpuContext: GpuContext,
-            info: Texture2DUploadInfo,
-            internalFormat: Int
-        ) {
-            gpuContext.invoke {
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
+        context(GpuContext)
+        private fun OpenGLTexture2D.uploadWithoutPixelBuffer(info: Texture2DUploadInfo, internalFormat: Int) = onGpu {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
+            val data = info.data
+            if(data != null) {
                 if (info.dataCompressed) {
                     GL13.glCompressedTexSubImage2D(
                         GL11.GL_TEXTURE_2D,
@@ -200,7 +215,7 @@ data class OpenGLTexture2D(
                         info.dimension.width,
                         info.dimension.height,
                         internalFormat,
-                        info.data
+                        data
                     )
                 } else {
                     GL11.glTexSubImage2D(
@@ -212,14 +227,12 @@ data class OpenGLTexture2D(
                         info.dimension.height,
                         GL11.GL_RGBA,
                         GL11.GL_UNSIGNED_BYTE,
-                        info.data
+                        data
                     )
                 }
-                GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
-                uploadState = UploadState.UPLOADED
             }
+            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
+            uploadState = UploadState.UPLOADED
         }
-
     }
-
 }

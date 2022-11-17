@@ -59,7 +59,7 @@ class PixelBufferObject(private val gpuContext: GpuContext, private val width: I
         buffer: ByteBuffer?
     ) {
         mapAndUnmap(offsetX, offsetY, width, height, buffer)
-        gpuContext.invoke {
+        gpuContext.onGpu {
             gpuContext.bindTexture(target, textureId)
             GL11.glTexSubImage2D(
                 target.glTarget,
@@ -87,7 +87,7 @@ class PixelBufferObject(private val gpuContext: GpuContext, private val width: I
         border: Int,
         textureBuffer: ByteBuffer?
     ) {
-        gpuContext.invoke {
+        gpuContext.onGpu {
             mapAndUnmap(0, 0, width, height, buffer)
             gpuContext.bindTexture(target, textureId)
             GL13.glCompressedTexImage2D(target.glTarget, level, internalformat, width, height, border, null)

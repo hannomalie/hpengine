@@ -27,9 +27,9 @@ import org.lwjgl.opengl.GL40.GL_ZERO
 import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
 import org.lwjgl.opengl.GL40.glBlendFunci
 
+context(GpuContext)
 class ForwardRenderExtension(
     val config: Config,
-    val gpuContext: GpuContext,
     val programManager: ProgramManager,
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension {
@@ -40,21 +40,21 @@ class ForwardRenderExtension(
     val programStatic = programManager.getProgram(
         firstpassDefaultVertexshaderSource,
         firstpassDefaultFragmentshaderSource,
-        StaticFirstPassUniforms(gpuContext),
+        StaticFirstPassUniforms(),
         Defines()
     )
 
-    override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
-        deferredRenderingBuffer.forwardBuffer.use(gpuContext, false)
+    override fun renderFirstPass(backend: Backend, firstPassResult: FirstPassResult, renderState: RenderState) {
+        deferredRenderingBuffer.forwardBuffer.use(false)
 
         GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f, 0f, 0f, 0f))
         GL30.glClearBufferfv(GL11.GL_COLOR, 1, floatArrayOf(1f, 1f, 1f, 1f))
 //        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
         GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, deferredRenderingBuffer.depthBufferTexture, 0)
-        gpuContext.depthMask = false
-        gpuContext.depthFunc = DepthFunc.LEQUAL
-        gpuContext.blend = true
-        gpuContext.blendEquation = BlendMode.FUNC_ADD
+        depthMask = false
+        depthFunc = DepthFunc.LEQUAL
+        blend = true
+        blendEquation = BlendMode.FUNC_ADD
         glBlendFunci(0, GL_ONE, GL_ONE)
         glBlendFuncSeparatei(1, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
 
@@ -70,13 +70,13 @@ class ForwardRenderExtension(
 
         renderState.vertexIndexBufferStatic.indexBuffer.bind()
         for (batch in renderState.renderBatchesStatic.filter { it.material.transparencyType.needsForwardRendering }) {
-            programStatic.setTextureUniforms(gpuContext, batch.material.maps)
+            programStatic.setTextureUniforms(batch.material.maps)
             renderState.vertexIndexBufferStatic.indexBuffer.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
                 primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Faces
             )
         }
-        gpuContext.disable(Capability.BLEND)
+        blend = false
         deferredRenderingBuffer.forwardBuffer.unUse()
     }
 

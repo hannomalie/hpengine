@@ -39,7 +39,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     override val heightMappingFirstPassProgramDescription = getFirstPassHeightMappingProgramDescription()
 
     override fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines, uniforms: Uniforms?): ComputeProgram {
-        return gpuContext.invoke {
+        return gpuContext.onGpu {
             val program = ComputeProgram(this, codeSource, defines)
             programsCache.add(program)
             eventBus.register(program)
@@ -64,7 +64,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                                            defines: Defines,
                                            uniforms: T): Program<T> {
 
-        return gpuContext.invoke {
+        return gpuContext.onGpu {
             Program(
                 programManager = this,
                 vertexShader = VertexShader(this, vertexShaderSource, defines),
@@ -81,7 +81,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         }
     }
 
-    override fun getComputeProgram(codeSource: CodeSource) = gpuContext.invoke { ComputeProgram(this, ComputeShader(this, codeSource)) }
+    override fun getComputeProgram(codeSource: CodeSource) = gpuContext.onGpu { ComputeProgram(this, ComputeShader(this, codeSource)) }
 
     var programsSourceCache: WeakHashMap<Shader, Int> = WeakHashMap()
     override fun update(deltaSeconds: Float) {

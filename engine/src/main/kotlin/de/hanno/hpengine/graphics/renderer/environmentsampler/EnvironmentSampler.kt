@@ -9,12 +9,7 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer.Companion.invoke
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer.Companion.invoke
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
@@ -24,8 +19,11 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.exitOnGLError
+import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
-import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer.invoke
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
@@ -37,6 +35,8 @@ import org.lwjgl.opengl.GL43
 import java.nio.FloatBuffer
 import java.util.HashSet
 
+
+context(GpuContext)
 class EnvironmentSampler(
     val transform: Transform,
     probe: EnvironmentProbeComponent,
@@ -80,7 +80,7 @@ class EnvironmentSampler(
     var sidesDrawn: MutableSet<Int> = HashSet()
 
     val probe: EnvironmentProbeComponent
-    val fullscreenBuffer: VertexBuffer
+    val fullscreenBuffer: IVertexBuffer
     val cubeMapView: Int
     val cubeMapView1: Int
     val cubeMapView2: Int
@@ -115,7 +115,7 @@ class EnvironmentSampler(
             EngineAsset("shaders/frst_pass_fragment.glsl").toCodeSource()
         )
     }
-    val renderTarget: RenderTarget<OpenGLTexture2D>
+    val renderTarget: BackBufferRenderTarget<OpenGLTexture2D>
     val camera: Camera
 
     var gpuContext: GpuContext
@@ -331,17 +331,15 @@ class EnvironmentSampler(
             6
         )
         renderTarget = RenderTarget(
-            gpuContext,
-            invoke(gpuContext, invoke(gpuContext, RESOLUTION, RESOLUTION)),
+            FrameBuffer(DepthBuffer(RESOLUTION, RESOLUTION)),
             RESOLUTION, RESOLUTION,
             listOf(ColorAttachmentDefinition("Environment Diffuse", diffuseInternalFormat)).toTextures(
-                gpuContext,
                 RESOLUTION,
                 RESOLUTION
             ),
             "Environment Sampler"
         )
-        fullscreenBuffer = QuadVertexBuffer(gpuContext, true)
+        fullscreenBuffer = QuadVertexBuffer()
         fullscreenBuffer.upload()
         exitOnGLError("EnvironmentSampler constructor")
     }

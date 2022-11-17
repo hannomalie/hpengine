@@ -11,16 +11,17 @@ data class FileBasedTexture2D(
 ) : Texture2D by backingTexture {
 
     companion object {
+
+        context(GpuContext)
         operator fun invoke(
-            gpuContext: GpuContext,
             path: String,
             directory: AbstractDirectory,
             srgba: Boolean = false
-        ): FileBasedTexture2D {
-            return invoke(gpuContext, path, directory.resolve(path), srgba)
-        }
+        ) = invoke(path, directory.resolve(path), srgba)
 
-        operator fun invoke(gpuContext: GpuContext, path: String, file: File, srgba: Boolean = false) =
-            FileBasedTexture2D(path, file, OpenGLTexture2D(gpuContext, file, path, srgba))
+        context(GpuContext)
+        operator fun invoke(path: String, file: File, srgba: Boolean = false) = FileBasedTexture2D(
+            path, file, OpenGLTexture2D(file, srgba)
+        )
     }
 }

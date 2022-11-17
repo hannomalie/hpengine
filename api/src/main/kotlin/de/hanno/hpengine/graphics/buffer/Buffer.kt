@@ -19,5 +19,6 @@ interface GpuBuffer : Buffer {
     fun bind()
     fun unbind()
 }
+interface IndexBuffer: GpuBuffer
 
 interface AtomicCounterBuffer: GpuBuffer

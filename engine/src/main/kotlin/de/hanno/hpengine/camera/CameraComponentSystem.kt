@@ -23,17 +23,17 @@ import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
 
+context(GpuContext)
 class CameraRenderExtension(
     val config: Config,
-    val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager
 ): DeferredRenderExtension {
 
     private val frustumLines = renderStateManager.renderState.registerState { mutableListOf<Vector3fc>() }
-    private val lineVertices = PersistentMappedBuffer(24 * Vector4fStrukt.type.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+    private val lineVertices = PersistentMappedBuffer(24 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
-        val uniforms = LinesProgramUniforms(gpuContext)
+        val uniforms = LinesProgramUniforms()
         getProgram(
             StringBasedCodeSource("mvp_vertex_vec4", """
                 //include(globals_structs.glsl)
@@ -70,7 +70,6 @@ class CameraRenderExtension(
 
     override fun renderFirstPass(
         backend: Backend,
-        gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {

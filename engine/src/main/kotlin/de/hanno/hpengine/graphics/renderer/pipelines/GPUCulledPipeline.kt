@@ -36,11 +36,12 @@ import de.hanno.hpengine.util.Util
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.lwjgl.opengl.*
+import org.lwjgl.opengl.GL15.GL_RGBA16
 import org.lwjgl.opengl.GL15.GL_WRITE_ONLY
 
+context(GpuContext)
 open class GPUCulledPipeline(
     private val config: Config,
-    private val gpuContext: GpuContext,
     private val programManager: ProgramManager,
     private val textureManager: TextureManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -49,8 +50,8 @@ open class GPUCulledPipeline(
     // TODO: Fill these if possible
     private var verticesCount = 0
     private var entitiesCount = 0
-    internal var commandOrganizationStatic = CommandOrganizationGpuCulled(gpuContext)
-    internal var commandOrganizationAnimated = CommandOrganizationGpuCulled(gpuContext)
+    internal var commandOrganizationStatic = CommandOrganizationGpuCulled()
+    internal var commandOrganizationAnimated = CommandOrganizationGpuCulled()
 
     private var occlusionCullingPhase1Vertex = config.run {
         programManager.getProgram(EngineAsset("shaders/occlusion_culling1_vertex.glsl").toCodeSource(), null)
@@ -67,41 +68,34 @@ open class GPUCulledPipeline(
     }
 
     private val baseDepthTexture = OpenGLTexture2D(
-        gpuContext = gpuContext,
-        info = Texture2DUploadInfo(TextureDimension(config.width, config.height)),
+        info = Texture2DUploadInfo(TextureDimension(config.width, config.height), internalFormat = GL30.GL_RGBA16F),
         textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
-        internalFormat = deferredRenderingBuffer.depthAndIndicesMap.internalFormat,
         wrapMode = GL12.GL_CLAMP_TO_EDGE,
     ).apply {
         textureManager.registerTextureForDebugOutput("High Z base depth", this)
     }
 
     private val debugMinMaxTexture = OpenGLTexture2D(
-        gpuContext = gpuContext,
-        info = Texture2DUploadInfo(TextureDimension(config.width / 2, config.height / 2)),
+        info = Texture2DUploadInfo(TextureDimension(config.width / 2, config.height / 2), internalFormat = GL30.GL_RGBA16F),
         textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
-        internalFormat = GL30.GL_RGBA8,
         wrapMode = GL12.GL_CLAMP_TO_EDGE,
     ).apply {
         textureManager.registerTextureForDebugOutput("Min Max Debug", this)
     }
 
     private val highZBuffer = RenderTarget(
-        gpuContext = gpuContext,
-        frameBuffer = FrameBuffer(gpuContext, null),
+        frameBuffer = FrameBuffer(null),
         width = config.width / 2,
         height = config.height / 2,
         textures = listOf(
             OpenGLTexture2D(
-                gpuContext = gpuContext,
-                info = Texture2DUploadInfo(TextureDimension(config.width / 2, config.height / 2)),
+                info = Texture2DUploadInfo(TextureDimension(config.width / 2, config.height / 2), internalFormat = GL30.GL_RGBA16F),
                 textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
-                internalFormat = HIGHZ_FORMAT,
                 wrapMode = GL12.GL_CLAMP_TO_EDGE,
             )
         ), name = "High Z"
     ).apply {
-        gpuContext.register(this)
+        register(this)
     }
 
     fun copyDepthTexture() {
@@ -215,11 +209,11 @@ open class GPUCulledPipeline(
             highZProgram.setUniform("lastHeight", lastHeight)
             highZProgram.setUniform("mipmapTarget", mipmapTarget)
             if (mipmapTarget == 0) {
-                gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, baseDepthTexture.id)
+                bindTexture(0, TextureTarget.TEXTURE_2D, baseDepthTexture.id)
             } else {
-                gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
+                bindTexture(0, TextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
             }
-            gpuContext.bindImageTexture(
+            bindImageTexture(
                 1,
                 highZBuffer.renderedTexture,
                 mipmapTarget,
@@ -228,7 +222,7 @@ open class GPUCulledPipeline(
                 GL15.GL_READ_WRITE,
                 HIGHZ_FORMAT
             )
-            gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, baseDepthTexture.id)
+            bindTexture(2, TextureTarget.TEXTURE_2D, baseDepthTexture.id)
             val num_groups_x = Math.max(1, (currentWidth + 7) / 8)
             val num_groups_y = Math.max(1, (currentHeight + 7) / 8)
             highZProgram.dispatchCompute(num_groups_x, num_groups_y, 1)
@@ -272,9 +266,9 @@ open class GPUCulledPipeline(
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             setUniform("useFrustumCulling", config.debug.isUseGpuFrustumCulling)
             setUniform("useOcclusionCulling", config.debug.isUseGpuOcclusionCulling)
-            gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
-//            gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT)
-            gpuContext.bindImageTexture(
+            bindTexture(0, TextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
+//            bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT)
+            bindImageTexture(
                 1,
                 debugMinMaxTexture.id,
                 0,
@@ -299,7 +293,7 @@ open class GPUCulledPipeline(
         renderState: RenderState
     ) {
         val drawCountBuffer = commandOrganization.drawCountsCompacted
-        drawCountBuffer.put(0, 0)
+        drawCountBuffer.buffer.asIntBuffer().put(0, 0)
         val appendProgram = if (config.debug.isUseComputeShaderDrawCommandAppend) {
             appendDrawCommandsComputeProgram
         } else appendDrawCommandsProgram
@@ -327,7 +321,7 @@ open class GPUCulledPipeline(
                     bindShaderStorageBuffer(12, commandOffsets)
                     bindShaderStorageBuffer(13, currentCompactedPointers)
                     setUniform("maxDrawCommands", commandCount)
-                    gpuContext.bindImageTexture(
+                    bindImageTexture(
                         1,
                         debugMinMaxTexture.id,
                         0,
@@ -355,8 +349,8 @@ open class GPUCulledPipeline(
     }
 
     private fun IndirectCulledDrawDescription<out FirstPassUniforms>.cullAndRender(phase: CullingPhase) {
-        commandOrganization.drawCountsCompacted.put(0, 0)
-        commandOrganization.entitiesCompactedCounter.put(0, 0)
+        commandOrganization.drawCountsCompacted.buffer.asIntBuffer().put(0, 0)
+        commandOrganization.entitiesCompactedCounter.buffer.asIntBuffer().put(0, 0)
 
         if (commandOrganization.commandCount != 0) {
             profiled("Culling Phase") {
@@ -365,7 +359,7 @@ open class GPUCulledPipeline(
             }
             profiled("Actually render") {
 
-                gpuContext.cullFace = useBackFaceCulling
+                cullFace = useBackFaceCulling
 
                 program.use()
                 program.uniforms.apply {
@@ -467,21 +461,22 @@ val CoarseCullingPhase.staticPhase: CullingPhase
 val CoarseCullingPhase.animatedPhase: CullingPhase
     get() = if (this == CoarseCullingPhase.ONE) CullingPhase.ANIMATED_ONE else CullingPhase.ANIMATED_TWO
 
-class CommandOrganizationGpuCulled(gpuContext: GpuContext) {
+context(GpuContext)
+class CommandOrganizationGpuCulled() {
     var commandCount = 0
     var primitiveCount = 0
     var filteredRenderBatches: List<RenderBatch> = emptyList()
-    val commands = CommandBuffer(gpuContext, 10000)
-    val commandsCompacted = CommandBuffer(gpuContext, 10000)
-    val offsetsForCommand = IndexBuffer(gpuContext, 10000)
+    val commands = CommandBuffer(10000)
+    val commandsCompacted = CommandBuffer(10000)
+    val offsetsForCommand = IndexBuffer()
 
-    val drawCountsCompacted = AtomicCounterBuffer(gpuContext, 1)
-    val visibilities = IndexBuffer(gpuContext, 10000)
-    val commandOffsets = IndexBuffer(gpuContext, 10000)
-    val currentCompactedPointers = IndexBuffer(gpuContext, 10000)
-    val offsetsCompacted = IndexBuffer(gpuContext, 10000)
-    val entitiesCompacted = PersistentMappedBuffer(EntityStrukt.type.sizeInBytes, gpuContext).typed(EntityStrukt.type)
-    val entitiesCompactedCounter = AtomicCounterBuffer(gpuContext, 1)
-    val instanceCountForCommand = IndexBuffer(gpuContext)
+    val drawCountsCompacted = AtomicCounterBuffer(1)
+    val visibilities = IndexBuffer()
+    val commandOffsets = IndexBuffer()
+    val currentCompactedPointers = IndexBuffer()
+    val offsetsCompacted = IndexBuffer()
+    val entitiesCompacted = PersistentMappedBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
+    val entitiesCompactedCounter = AtomicCounterBuffer(1)
+    val instanceCountForCommand = IndexBuffer()
 }
 

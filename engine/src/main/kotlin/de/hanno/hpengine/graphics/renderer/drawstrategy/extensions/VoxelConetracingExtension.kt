@@ -65,19 +65,18 @@ fun OpenGLTextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTrac
         )
     )
 }
-
+context(GpuContext)
 class VoxelConeTracingExtension(
     val config: Config,
-    val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager,
     val pointLightExtension: BvHPointLightSecondPassExtension,
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ) : DeferredRenderExtension {
 
-    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
     val voxelGrids = renderStateManager.renderState.registerState {
-        PersistentMappedBuffer(VoxelGrid.type.sizeInBytes, gpuContext).typed(VoxelGrid.type)
+        PersistentMappedBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type)
     }
     data class GIVolumeGrids(val grid: OpenGLTexture3D,
                              val indexGrid: OpenGLTexture3D,
@@ -94,7 +93,7 @@ class VoxelConeTracingExtension(
         config.EngineAsset("shaders/voxelize_fragment.glsl").toCodeSource(),
         config.EngineAsset("shaders/voxelize_geometry.glsl").toCodeSource(),
         Defines(),
-        VoxelizerUniformsStatic(gpuContext)
+        VoxelizerUniformsStatic()
     )
 
     private val voxelizerAnimated = programManager.getProgram(
@@ -102,7 +101,7 @@ class VoxelConeTracingExtension(
         config.EngineAsset("shaders/voxelize_fragment.glsl").toCodeSource(),
         config.EngineAsset("shaders/voxelize_geometry.glsl").toCodeSource(),
         Defines(),
-        VoxelizerUniformsStatic(gpuContext)
+        VoxelizerUniformsStatic()
     )
 
     private val voxelConeTraceProgram = programManager.getProgram(
@@ -121,8 +120,8 @@ class VoxelConeTracingExtension(
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val staticPipeline = DirectFirstPassPipeline(config, gpuContext, voxelizerStatic)
-    private val animatedPipeline = DirectFirstPassPipeline(config, gpuContext, voxelizerAnimated)
+    private val staticPipeline = DirectFirstPassPipeline(config, voxelizerStatic)
+    private val animatedPipeline = DirectFirstPassPipeline(config, voxelizerAnimated)
     private val firstPassResult = FirstPassResult()
     private val useIndirectDrawing = false
 
@@ -134,7 +133,7 @@ class VoxelConeTracingExtension(
 
     private var gridCache = mutableMapOf<Int, GIVolumeGrids>()
 
-    override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
+    override fun renderFirstPass(backend: Backend, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
         val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
         val bounces = 1
@@ -177,10 +176,16 @@ class VoxelConeTracingExtension(
         voxelGrids.typedBuffer.forEachIndexed(maxGridCount) { voxelGridIndex, currentVoxelGrid ->
             profiled("Clear voxels") {
                 if (config.debug.isForceRevoxelization || !sceneInitiallyDrawn) {
-                    ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
-                    ARBClearTexture.glClearTexImage(currentVoxelGrid.indexGrid, 0, indexGridTextureFormat, GL11.GL_INT, ZERO_BUFFER_INT)
-                    ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
-                    ARBClearTexture.glClearTexImage(currentVoxelGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                    if(currentVoxelGrid.grid != 0 &&
+                        currentVoxelGrid.indexGrid != 0 &&
+                        currentVoxelGrid.normalGrid != 0 &&
+                        currentVoxelGrid.albedoGrid != 0
+                    ) {
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.indexGrid, 0, indexGridTextureFormat, GL11.GL_INT, ZERO_BUFFER_INT)
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                    }
                 } else {
                     clearDynamicVoxelsComputeProgram.use()
                     val num_groups_xyz = Math.max(currentVoxelGrid.gridSize / 8, 1)
@@ -194,7 +199,7 @@ class VoxelConeTracingExtension(
             }
 
             profiled("Voxelization") {
-                gpuContext.viewPort(0, 0, currentVoxelGrid.gridSize, currentVoxelGrid.gridSize)
+                viewPort(0, 0, currentVoxelGrid.gridSize, currentVoxelGrid.gridSize)
                 voxelizerStatic.use()
                 GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                 GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
@@ -208,15 +213,15 @@ class VoxelConeTracingExtension(
                 voxelizerStatic.bindShaderStorageBuffer(7, renderState.vertexIndexBufferStatic.vertexStructArray)
 
                 voxelizerStatic.setUniform("writeVoxels", true)
-                gpuContext.depthMask = false
-                gpuContext.disable(DEPTH_TEST)
-                gpuContext.disable(BLEND)
-                gpuContext.disable(CULL_FACE)
+                depthMask = false
+                disable(DEPTH_TEST)
+                disable(BLEND)
+                disable(CULL_FACE)
                 GL11.glColorMask(false, false, false, false)
 
                 renderState.vertexIndexBufferStatic.indexBuffer.bind()
                 for (entity in batches) {
-                    voxelizerStatic.setTextureUniforms(gpuContext, entity.material.maps)
+                    voxelizerStatic.setTextureUniforms(entity.material.maps)
                     renderState.vertexIndexBufferStatic.indexBuffer.draw(
                         entity.drawElementsIndirectCommand,
                         bindIndexBuffer = false,
@@ -252,11 +257,11 @@ class VoxelConeTracingExtension(
                     if(lightInjectedFramesAgo == 0) {
                         with(injectLightComputeProgram) {
                             use()
-                            gpuContext.bindTexture(1, TEXTURE_3D, currentVoxelGrid.albedoGrid)
-                            gpuContext.bindTexture(2, TEXTURE_3D, currentVoxelGrid.normalGrid)
-                            gpuContext.bindTexture(3, TEXTURE_3D, currentVoxelGrid.indexGrid)
+                            bindTexture(1, TEXTURE_3D, currentVoxelGrid.albedoGrid)
+                            bindTexture(2, TEXTURE_3D, currentVoxelGrid.normalGrid)
+                            bindTexture(3, TEXTURE_3D, currentVoxelGrid.indexGrid)
                             if(renderState.directionalLightState.typedBuffer.size > 0) {
-                                gpuContext.bindTexture(6, TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+                                bindTexture(6, TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
                             }
                             GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                             setUniform("pointLightCount", renderState.lightState.pointLights.size)
@@ -329,7 +334,7 @@ class VoxelConeTracingExtension(
     }
 
     override fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
-        gpuContext.depthTest = false
+        depthTest = false
         val voxelGrids = renderState[this.voxelGrids]
         profiled("VCT second pass") {
 
@@ -340,16 +345,16 @@ class VoxelConeTracingExtension(
             voxelGrids.typedBuffer.forEachIndexed(maxGridCount) { voxelGridIndex, currentVoxelGrid ->
                 // Just for safety, if voxelgrid data is not initialized, to not freeze your pc
                 if(currentVoxelGrid.scale > 0.1f) {
-                    gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
-                    gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
-                    gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-                    gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
-                    gpuContext.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-                    gpuContext.bindTexture(9, TEXTURE_3D, currentVoxelGrid.grid)
-                    gpuContext.bindTexture(10, TEXTURE_3D, currentVoxelGrid.indexGrid)
-                    gpuContext.bindTexture(11, TEXTURE_2D, deferredRenderingBuffer.ambientOcclusionScatteringMap)
-                    gpuContext.bindTexture(12, TEXTURE_3D, currentVoxelGrid.albedoGrid)
-                    gpuContext.bindTexture(13, TEXTURE_3D, currentVoxelGrid.normalGrid)
+                    bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
+                    bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
+                    bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+                    bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
+                    bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
+                    bindTexture(9, TEXTURE_3D, currentVoxelGrid.grid)
+                    bindTexture(10, TEXTURE_3D, currentVoxelGrid.indexGrid)
+                    bindTexture(11, TEXTURE_2D, deferredRenderingBuffer.ambientOcclusionScatteringMap)
+                    bindTexture(12, TEXTURE_3D, currentVoxelGrid.albedoGrid)
+                    bindTexture(13, TEXTURE_3D, currentVoxelGrid.normalGrid)
 
                     voxelConeTraceProgram.use()
                     val camTranslation = Vector3f()
@@ -365,7 +370,7 @@ class VoxelConeTracingExtension(
                     voxelConeTraceProgram.setUniform("screenHeight", config.height.toFloat() / 2f)
                     voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", renderState.skyBoxMaterialIndex)
                     voxelConeTraceProgram.setUniform("debugVoxels", config.debug.isDebugVoxels)
-                    gpuContext.fullscreenBuffer.draw()
+                    fullscreenBuffer.draw()
                     //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;
                     //        if(entityOrDirectionalLightHasMoved)
                     //        {
@@ -375,7 +380,7 @@ class VoxelConeTracingExtension(
                 }
             }
         }
-        gpuContext.depthTest = true
+        depthTest = true
     }
 
     override fun extract(renderState: RenderState, world: World) {
@@ -435,17 +440,18 @@ class VoxelConeTracingExtension(
         val indexGridTextureFormatSized = GL30.GL_R16I//GL30.GL_R32UI;
     }
 }
-
-class VoxelizerUniformsStatic(val gpuContext: GpuContext) : StaticFirstPassUniforms(gpuContext) {
+context(GpuContext)
+class VoxelizerUniformsStatic : StaticFirstPassUniforms() {
     val voxelGridIndex by IntType()
     val voxelGridCount by IntType()
-    val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedBuffer(VoxelGrid.type.sizeInBytes, gpuContext).typed(VoxelGrid.type))
+    val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type))
     val writeVoxels by BooleanType(true)
 }
-class VoxelizerUniformsAnimated(val gpuContext: GpuContext) : AnimatedFirstPassUniforms(gpuContext) {
+context(GpuContext)
+class VoxelizerUniformsAnimated() : AnimatedFirstPassUniforms() {
     val voxelGridIndex by IntType()
     val voxelGridCount by IntType()
-    val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedBuffer(VoxelGrid.type.sizeInBytes, gpuContext).typed(VoxelGrid.type))
+    val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type))
     val writeVoxels by BooleanType(true)
 }
 

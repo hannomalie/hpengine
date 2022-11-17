@@ -32,6 +32,7 @@ import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABBData
 import de.hanno.hpengine.extension.*
+import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
@@ -50,14 +51,22 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
 
-class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemoScene() }) {
+class Engine(
+    config: ConfigImpl,
+    useEditor: Boolean = false,
+    afterInit: Engine.() -> Unit = { world.loadDemoScene() })
+{
     private val configModule = module {
         single { config } binds arrayOf(Config::class, ConfigImpl::class)
     }
     val application = startKoin {
-        modules(configModule, baseModule, deferredRendererModule, imGuiEditorModule)
+        modules(configModule, baseModule, deferredRendererModule)
+        if(useEditor) {
+            modules(imGuiEditorModule)
+        }
     }
     private val koin = application.koin
+    val gpuContext: GpuContext = koin.get()
     val config = koin.get<Config>()
     private val addResourceContext = koin.get<AddResourceContext>()
     private val window = koin.get<Window>()
@@ -66,14 +75,15 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
 
     private val openGlProgramManager: OpenGlProgramManager = koin.get()
     private val textureManager: OpenGLTextureManager = koin.get()
-    val modelSystem = ModelSystem(
-        config,
-        koin.get(),
-        koin.get(),
-        MaterialManager(config, koin.get(), koin.get()),
-        koin.get(),
-        EntityBuffer(),
-    )
+    val modelSystem = gpuContext.run {
+        ModelSystem(
+            config,
+            koin.get(),
+            MaterialManager(config, koin.get(), koin.get()),
+            koin.get(),
+            EntityBuffer(),
+        )
+    }
     val entityLinkManager = EntityLinkManager()
     val systems = listOf(
         entityLinkManager,
@@ -85,11 +95,15 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
         EditorCameraInputSystem(),
         CycleSystem(),
         DirectionalLightSystem(),
-        PointLightSystem(config, koin.get(), koin.get()).apply {
-            renderManager.renderSystems.add(this)
+        gpuContext.run {
+            PointLightSystem(config, koin.get()).apply {
+                renderManager.renderSystems.add(this)
+            }
         },
-        AreaLightSystem(koin.get(), koin.get(), config).apply {
-            renderManager.renderSystems.add(this)
+        gpuContext.run {
+            AreaLightSystem(gpuContext, koin.get(), config).apply {
+                renderManager.renderSystems.add(this)
+            }
         },
         MaterialManager(config, koin.get(), koin.get()),
         openGlProgramManager,
@@ -99,7 +113,7 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
         SpatialComponentSystem(),
         InvisibleComponentSystem(),
         GiVolumeSystem(koin.get()),
-        PhysicsManager(config, koin.get(), koin.get(), koin.get()),
+        gpuContext.run { PhysicsManager(config, koin.get(), koin.get()) },
         ReflectionProbeManager(config),
         koin.get<KotlinComponentSystem>(),
         CameraSystem(),
@@ -141,6 +155,7 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
     val updateCycle = AtomicLong()
 
     private val updating = AtomicBoolean(false)
+
     init {
         afterInit()
 
@@ -285,6 +300,7 @@ fun World.loadDemoScene() = loadScene {
     addStaticModelEntity("Cube", "assets/models/cube.obj", Directory.Engine)
 
 }
+
 fun World.addStaticModelEntity(
     name: String,
     path: String,

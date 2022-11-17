@@ -10,7 +10,6 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL40
-import org.lwjgl.opengl.GL40.GL_DRAW_INDIRECT_BUFFER
 import org.lwjgl.opengl.GL43
 import org.lwjgl.opengl.GL44
 import struktgen.api.Strukt
@@ -28,13 +27,15 @@ interface Allocator<T : Buffer> {
     fun allocate(capacityInBytes: Int, current: T?): T
 }
 
+
+context(GpuContext)
 class PersistentMappedBufferAllocator(
-    val gpuContext: GpuContext,
     val target: Int = GL43.GL_SHADER_STORAGE_BUFFER
 ) : Allocator<GpuBuffer> {
 
-    override fun allocate(capacityInBytes: Int, current: GpuBuffer?): GpuBuffer = gpuContext.window.invoke {
+    override fun allocate(capacityInBytes: Int, current: GpuBuffer?): GpuBuffer = window.invoke {
         require(capacityInBytes > 0) { "Cannot allocate buffer of size 0!" }
+
         val id = GL15.glGenBuffers()
         GL15.glBindBuffer(target, id)
         GL44.glBufferStorage(target, capacityInBytes.toLong(), flags)
@@ -86,7 +87,7 @@ class PersistentMappedBufferAllocator(
             val needsResize = oldBuffer.buffer.capacity() < capacityInBytes
             if (needsResize) {
                 val newBuffer = allocate(capacityInBytes, oldBuffer)
-                gpuContext.invoke {
+                onGpu {
                     GL15.glDeleteBuffers(oldBuffer.id)
                 }
                 newBuffer
@@ -98,13 +99,11 @@ class PersistentMappedBufferAllocator(
 }
 
 
+context(GpuContext)
 fun CommandBuffer(
-    gpuContext: GpuContext,
     size: Int = 1000
 ) = PersistentMappedBuffer(
-    size * DrawElementsIndirectCommandStrukt.type.sizeInBytes,
-    gpuContext,
-    GL_DRAW_INDIRECT_BUFFER
+    size * DrawElementsIndirectCommandStrukt.type.sizeInBytes
 ).typed(
     DrawElementsIndirectCommandStrukt.type
 )
@@ -115,8 +114,10 @@ interface IntStrukt : Strukt {
     companion object
 }
 
-fun IndexBuffer(gpuContext: GpuContext, size: Int = 1000) =
-    PersistentMappedBuffer(size * IntStrukt.sizeInBytes, gpuContext, GL40.GL_ELEMENT_ARRAY_BUFFER).typed(IntStrukt.type)
+context(GpuContext)
+fun IndexBuffer(size: Int = 1000): PersistentTypedBuffer<IntStrukt> {
+    return PersistentMappedBuffer(size * IntStrukt.sizeInBytes, GL40.GL_ELEMENT_ARRAY_BUFFER).typed(IntStrukt.type)
+}
 
 data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMappedBuffer, val type: StruktType<T>) :
     GpuBuffer by persistentMappedBuffer,
@@ -143,13 +144,13 @@ data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMapped
 
 fun <T> PersistentMappedBuffer.typed(type: StruktType<T>) = PersistentTypedBuffer(this, type)
 
+context(GpuContext)
 class PersistentMappedBuffer(
     initialSizeInBytes: Int,
-    private val gpuContext: GpuContext,
     _target: Int = GL43.GL_SHADER_STORAGE_BUFFER
 ) : GpuBuffer {
 
-    private val allocator = PersistentMappedBufferAllocator(gpuContext, _target)
+    private val allocator = PersistentMappedBufferAllocator(_target)
 
     private var gpuBuffer: GpuBuffer = allocator.allocate(initialSizeInBytes, null)
 
@@ -166,13 +167,13 @@ class PersistentMappedBuffer(
     }
 
     override fun bind() {
-        gpuContext.invoke {
+        onGpu {
             GL15.glBindBuffer(target, id)
         }
     }
 
     override fun unbind() {
-        gpuContext.invoke { GL15.glBindBuffer(target, 0) }
+        onGpu { GL15.glBindBuffer(target, 0) }
     }
 
     @Synchronized

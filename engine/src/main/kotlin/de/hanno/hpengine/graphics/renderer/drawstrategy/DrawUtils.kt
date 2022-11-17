@@ -4,6 +4,7 @@ import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.scene.VertexIndexBuffer
 
 import de.hanno.hpengine.graphics.renderer.pipelines.DrawElementsIndirectCommand
+import de.hanno.hpengine.graphics.renderer.pipelines.IndexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.*
 import org.lwjgl.opengl.GL40.GL_PATCHES
 import org.lwjgl.opengl.GL42.GL_LINES

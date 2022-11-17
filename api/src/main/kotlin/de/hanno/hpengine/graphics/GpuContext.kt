@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.IFrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.texture.Texture
@@ -33,7 +33,7 @@ interface GpuContext {
     val debugBuffer: IVertexBuffer
     val sixDebugBuffers: List<IVertexBuffer>
 
-    val registeredRenderTargets: List<RenderTarget<*>>
+    val registeredRenderTargets: List<BackBufferRenderTarget<*>>
 
     val features: List<GpuFeature>
 
@@ -75,7 +75,6 @@ interface GpuContext {
         bindTexture(textureUnitIndex, texture.target, 0)
     }
 
-
     fun viewPort(x: Int, y: Int, width: Int, height: Int)
 
     fun clearColorBuffer()
@@ -111,7 +110,7 @@ interface GpuContext {
 
     fun clearCubeMapInCubeMapArray(textureID: Int, internalFormat: Int, width: Int, height: Int, cubeMapIndex: Int)
 
-    fun register(target: RenderTarget<*>)
+    fun register(target: BackBufferRenderTarget<*>)
 
     fun clearRenderTargets()
 
@@ -140,7 +139,7 @@ interface GpuContext {
 
     fun createCommandSync(): GpuCommandSync
     fun createCommandSync(onSignaled: () -> Unit): GpuCommandSync
-    operator fun <T> invoke(block: () -> T): T
+    fun <T> onGpu(block: context(GpuContext)() -> T): T
     fun exceptionOnError()
 
     val maxLineWidth: Float
@@ -149,7 +148,6 @@ interface GpuContext {
         info: UploadInfo,
         textureTarget: TextureTarget,
         filterConfig: TextureFilterConfig,
-        internalFormat: Int,
         wrapMode: Int,
     ): TextureAllocationData
 

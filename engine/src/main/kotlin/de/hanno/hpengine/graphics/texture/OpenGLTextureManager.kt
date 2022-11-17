@@ -3,7 +3,6 @@ package de.hanno.hpengine.graphics.texture
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.AbstractDirectory
-import de.hanno.hpengine.graphics.OpenGLContext
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_3D
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_CUBE_MAP
@@ -16,6 +15,7 @@ import de.hanno.hpengine.graphics.texture.DDSConverter.getFullPathAsDDS
 import de.hanno.hpengine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.commandqueue.CommandQueue
+import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.exitOnGLError
 import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -23,7 +23,6 @@ import jogl.DDSImage
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
-import org.joml.Vector2i
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBBindlessTexture
 import org.lwjgl.opengl.EXTTextureCompressionS3TC
@@ -32,12 +31,6 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL13.GL_RGBA8
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
@@ -46,10 +39,7 @@ import org.lwjgl.opengl.GL30.GL_RGBA32F
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
 import java.awt.Color
-import java.awt.color.ColorSpace
 import java.awt.image.BufferedImage
-import java.awt.image.ColorModel
-import java.awt.image.ComponentColorModel
 import java.awt.image.DataBuffer
 import java.awt.image.DataBufferByte
 import java.awt.image.Raster
@@ -58,7 +48,6 @@ import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import java.util.ArrayList
 import java.util.Hashtable
 import java.util.LinkedHashMap
 import java.util.concurrent.CompletableFuture
@@ -67,10 +56,10 @@ import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 
+context(GpuContext)
 class OpenGLTextureManager(
     val config: Config,
     programManager: OpenGlProgramManager,
-    val gpuContext: OpenGLContext,
 ) : BaseSystem(), TextureManager {
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
@@ -149,33 +138,22 @@ class OpenGLTextureManager(
         }
     }
 
-    fun removeTexture(path: String): Boolean {
-        if (textures.containsKey(path)) {
-            textures.remove(path)
-            return !textures.containsKey(path)
-        }
-        return true
-    }
-
-    fun AbstractDirectory.getTexture(resourceName: String, srgba: Boolean = false): Texture {
-        return getTexture(resourceName, srgba, this)
-    }
+    fun AbstractDirectory.getTexture(resourceName: String, srgba: Boolean = false) = getTexture(
+        resourceName, srgba, this
+    )
 
     fun getTexture(
         resourceName: String,
         srgba: Boolean = false,
         directory: AbstractDirectory = config.directories.gameDir
-    ): Texture {
-
-        return textures.ifAbsentPutInSingleThreadContext(resourceName) {
-            FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
-        }
+    ) = textures.ifAbsentPutInSingleThreadContext(resourceName) {
+        FileBasedTexture2D(resourceName, directory, srgba)
     }
 
-    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture {
-        return textures.ifAbsentPutInSingleThreadContext(resourceName) {
-            FileBasedTexture2D(gpuContext, resourceName, file, srgba)
-        }
+    fun getTexture(
+        resourceName: String, srgba: Boolean = false, file: File
+    ) = textures.ifAbsentPutInSingleThreadContext(resourceName) {
+        FileBasedTexture2D(resourceName, file, srgba)
     }
 
     private inline fun <T> MutableMap<String, T>.ifAbsentPutInSingleThreadContext(
@@ -248,25 +226,23 @@ class OpenGLTextureManager(
         }
     }
 
-    @Throws(IOException::class)
     fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-            ?: FileBasedOpenGLCubeMap(gpuContext, resourceName, file, srgba)
+            ?: FileBasedOpenGLCubeMap(resourceName, file, srgba)
 
         textures[resourceName + "_cube"] = tex
         return tex
     }
 
-    @Throws(IOException::class)
     fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-            ?: FileBasedOpenGLCubeMap(gpuContext, resourceName, files, srgba)
+            ?: FileBasedOpenGLCubeMap(resourceName, files, srgba)
 
         textures[resourceName + "_cube"] = tex
         return tex
     }
 
-    fun Texture.createTextureHandleAndMakeResident() = gpuContext.invoke {
+    fun Texture.createTextureHandleAndMakeResident() = onGpu {
         handle = ARBBindlessTexture.glGetTextureHandleARB(id)
         ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
     }
@@ -308,12 +284,10 @@ class OpenGLTextureManager(
      * @return The loaded buffered image
      * @throws IOException Indicates a failure to find a resource
      */
-    @Throws(IOException::class)
     fun loadImage(ref: String): BufferedImage {
         return loadImageAsStream(ref)
     }
 
-    @Throws(IOException::class)
     fun loadImageAsStream(ref: String): BufferedImage {
         val file = config.directories.engineDir.resolve(ref) // TODO: Inject dir
         return try {
@@ -326,21 +300,21 @@ class OpenGLTextureManager(
     }
 
     override fun generateMipMaps(textureTarget: TextureTarget, textureId: Int) {
-        gpuContext.invoke {
-            gpuContext.bindTexture(textureTarget, textureId)
+        onGpu {
+            bindTexture(textureTarget, textureId)
             GL30.glGenerateMipmap(textureTarget.glTarget)
         }
     }
 
     fun getTextureData(textureId: Int, mipLevel: Int, format: Int, pixels: ByteBuffer): ByteBuffer {
-        gpuContext.bindTexture(TEXTURE_2D, textureId)
+        bindTexture(TEXTURE_2D, textureId)
         GL11.glGetTexImage(GL11.GL_TEXTURE_2D, mipLevel, format, GL11.GL_UNSIGNED_BYTE, pixels)
         return pixels
     }
 
     fun copyCubeMap(sourceTextureId: Int, width: Int, height: Int, internalFormat: Int): Int {
-        val copyTextureId = gpuContext.genTextures()
-        gpuContext.bindTexture(15, TEXTURE_CUBE_MAP, copyTextureId)
+        val copyTextureId = genTextures()
+        bindTexture(15, TEXTURE_CUBE_MAP, copyTextureId)
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
@@ -360,7 +334,7 @@ class OpenGLTextureManager(
             width, height, 6
         )
 
-        gpuContext.bindTexture(15, TEXTURE_CUBE_MAP, 0)
+        bindTexture(15, TEXTURE_CUBE_MAP, 0)
         return copyTextureId
     }
 
@@ -378,11 +352,11 @@ class OpenGLTextureManager(
     }
 
     fun getTexture(width: Int, height: Int, format: Int, target: TextureTarget, depth: Int = 1): Int {
-        val textureId = gpuContext.genTextures()
-        gpuContext.bindTexture(target, textureId)
+        val textureId = genTextures()
+        bindTexture(target, textureId)
 
 
-        gpuContext.invoke {
+        onGpu {
             setupTextureParameters(target)
             texStorage(target, format, width, height, depth, 1)
         }
@@ -397,7 +371,7 @@ class OpenGLTextureManager(
         height: Int,
         depth: Int,
         mipMapCount: Int
-    ) = gpuContext.invoke {
+    ) = onGpu {
         when (target) {
             TEXTURE_CUBE_MAP_ARRAY -> GL42.glTexStorage3D(
                 target.glTarget,
@@ -413,7 +387,7 @@ class OpenGLTextureManager(
     }
 
     fun texImage(target: TextureTarget, mipMapLevel: Int, internalFormat: Int, width: Int, height: Int, depth: Int) =
-        gpuContext.invoke {
+        onGpu {
             val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
             when {
                 target == TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
@@ -447,7 +421,7 @@ class OpenGLTextureManager(
 
     //    TODO: The data buffer mustn't be null
     fun texSubImage(target: TextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) =
-        gpuContext.invoke {
+        onGpu {
             val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
             //null as FloatBuffer?)
             when (target) {
@@ -481,7 +455,7 @@ class OpenGLTextureManager(
 
     //    TODO: The data buffer mustn't be null
     fun compressedTexSubImage(target: TextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) =
-        gpuContext.invoke {
+        onGpu {
             val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
             //null as FloatBuffer?)
             when (target) {
@@ -534,7 +508,6 @@ class OpenGLTextureManager(
         wrapMode: Int
     ): OpenGLTexture3D {
         return OpenGLTexture3D(
-            gpuContext,
             TextureDimension(gridResolution, gridResolution, gridResolution),
             TextureFilterConfig(minFilter, magFilter),
             internalFormat,
@@ -551,10 +524,10 @@ class OpenGLTextureManager(
         }
         val finalWidth = width
         val finalHeight = height
-        gpuContext.invoke {
+        onGpu {
             blur2dProgramSeparableHorizontal.use()
-            gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture)
-            gpuContext.bindImageTexture(
+            bindTexture(0, TEXTURE_2D, sourceTexture)
+            bindImageTexture(
                 1,
                 sourceTexture,
                 mipmapTarget,
@@ -595,10 +568,10 @@ class OpenGLTextureManager(
         }
         val finalWidth = width
         val finalHeight = height
-        gpuContext.invoke {
+        onGpu {
             blur2dProgramSeparableHorizontal.use()
-            gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture)
-            gpuContext.bindImageTexture(
+            bindTexture(0, TEXTURE_2D, sourceTexture)
+            bindImageTexture(
                 1,
                 sourceTexture,
                 mipmapTarget,
@@ -617,8 +590,8 @@ class OpenGLTextureManager(
         }
     }
 
-    fun Texture.delete() = gpuContext.run {
-        delete()
+    fun Texture.delete() = onGpu {
+        deleteTexture(id)
     }
 
     companion object {

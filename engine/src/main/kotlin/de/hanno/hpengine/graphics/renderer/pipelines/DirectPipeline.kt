@@ -17,9 +17,9 @@ import de.hanno.hpengine.model.material.Material
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
+context(GpuContext)
 open class DirectFirstPassPipeline(
     private val config: Config,
-    private val gpuContext: GpuContext,
     private val program: IProgram<out FirstPassUniforms>,
     private val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
@@ -54,9 +54,9 @@ open class DirectFirstPassPipeline(
         for (groupedBatches in batchesWithOwnProgram) {
             for (batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
                 val program = batch.program!!
-                gpuContext.cullFace = batch.material.cullBackFaces
-                gpuContext.depthTest = batch.material.depthTest
-                gpuContext.depthMask = batch.material.writesDepth
+                cullFace = batch.material.cullBackFaces
+                depthTest = batch.material.depthTest
+                depthMask = batch.material.writesDepth
 
                 program.use()
                 val viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer
@@ -92,7 +92,7 @@ open class DirectFirstPassPipeline(
                 }
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.uniforms.entityBaseIndex = 0
-                program.setTextureUniforms(gpuContext, batch.material.maps)
+                program.setTextureUniforms(batch.material.maps)
 
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -143,10 +143,10 @@ open class DirectFirstPassPipeline(
         val batchesWithPipelineProgram =
             renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }
         for (batch in batchesWithPipelineProgram) {
-            gpuContext.depthMask = batch.material.writesDepth
-            gpuContext.cullFace = batch.material.cullBackFaces
-            gpuContext.depthTest = batch.material.depthTest
-            program.setTextureUniforms(gpuContext, batch.material.maps)
+            depthMask = batch.material.writesDepth
+            cullFace = batch.material.cullBackFaces
+            depthTest = batch.material.depthTest
+            program.setTextureUniforms(batch.material.maps)
             program.uniforms.entityIndex = batch.entityBufferIndex
             program.bind()
             vertexIndexBuffer.indexBuffer.draw(
@@ -159,7 +159,7 @@ open class DirectFirstPassPipeline(
             entitiesCount += 1
         }
 
-        gpuContext.depthMask = true // TODO: Resetting defaults here should not be necessary
+        depthMask = true // TODO: Resetting defaults here should not be necessary
 
         renderState.latestDrawResult.firstPassResult.verticesDrawn += verticesCount
         renderState.latestDrawResult.firstPassResult.entitiesDrawn += entitiesCount
@@ -176,7 +176,8 @@ val Program<*>.primitiveType
         PrimitiveType.Triangles
     }
 
-fun DirectDrawDescription<FirstPassUniforms>.draw(gpuContext: GpuContext) {
+context(GpuContext)
+fun DirectDrawDescription<FirstPassUniforms>.draw() {
     beforeDraw(renderState, program, drawCam)
     if(ignoreCustomPrograms) {
         program.use()
@@ -195,10 +196,10 @@ fun DirectDrawDescription<FirstPassUniforms>.draw(gpuContext: GpuContext) {
             }
             program.uniforms.entityIndex = batch.entityBufferIndex
             beforeDraw(renderState, program, drawCam)
-            gpuContext.cullFace = batch.material.cullBackFaces
-            gpuContext.depthTest = batch.material.depthTest
-            gpuContext.depthMask = batch.material.writesDepth
-            program.setTextureUniforms(gpuContext, batch.material.maps)
+            cullFace = batch.material.cullBackFaces
+            depthTest = batch.material.depthTest
+            depthMask = batch.material.writesDepth
+            program.setTextureUniforms(batch.material.maps)
             val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
 
             program.bind()
@@ -214,10 +215,10 @@ fun DirectDrawDescription<FirstPassUniforms>.draw(gpuContext: GpuContext) {
     beforeDraw(renderState, program, drawCam)
     vertexIndexBuffer.indexBuffer.bind()
     for (batch in renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }) {
-        gpuContext.depthMask = batch.material.writesDepth
-        gpuContext.cullFace = batch.material.cullBackFaces
-        gpuContext.depthTest = batch.material.depthTest
-        program.setTextureUniforms(gpuContext, batch.material.maps)
+        depthMask = batch.material.writesDepth
+        cullFace = batch.material.cullBackFaces
+        depthTest = batch.material.depthTest
+        program.setTextureUniforms(batch.material.maps)
         program.uniforms.entityIndex = batch.entityBufferIndex
         program.bind()
         vertexIndexBuffer.indexBuffer.draw(
@@ -228,7 +229,7 @@ fun DirectDrawDescription<FirstPassUniforms>.draw(gpuContext: GpuContext) {
         )
     }
 
-    gpuContext.depthMask = true // TODO: Resetting defaults here should not be necessary
+    depthMask = true // TODO: Resetting defaults here should not be necessary
 }
 
 fun RenderBatch.isCulled(cullCam: Camera): Boolean {

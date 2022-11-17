@@ -1,9 +1,9 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.backend.Backend
+import de.hanno.hpengine.graphics.GpuContext
 
 import java.nio.FloatBuffer
-import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.state.RenderState
 import org.joml.Vector2f
@@ -12,22 +12,22 @@ import org.lwjgl.opengl.GL11
 import java.lang.Exception
 import java.util.logging.Logger
 
+context(GpuContext)
 class PixelPerfectPickingExtension : DeferredRenderExtension {
     private val floatBuffer: FloatBuffer = BufferUtils.createFloatBuffer(4)
 
     override fun renderFirstPass(
         backend: Backend,
-        gpuContext: GpuContext,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {
         if (backend.input.pickingClick == 1) {
-            gpuContext.readBuffer(4)
+            readBuffer(4)
             floatBuffer.rewind()
             //             TODO: This doesn't make sense anymore, does it?
             val ratio = Vector2f(
-                gpuContext.window.width.toFloat() / gpuContext.window.width.toFloat(),
-                gpuContext.window.height.toFloat() / gpuContext.window.height.toFloat()
+                window.width.toFloat() / window.width.toFloat(),
+                window.height.toFloat() / window.height.toFloat()
             )
             val adjustedX = (backend.input.getMouseX() * ratio.x).toInt()
             val adjustedY = (backend.input.getMouseY() * ratio.y).toInt()

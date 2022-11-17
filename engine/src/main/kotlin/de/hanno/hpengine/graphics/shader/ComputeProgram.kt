@@ -204,7 +204,7 @@ class ComputeProgram(
     }
 
     override fun reload() = try {
-        gpuContext.invoke {
+        gpuContext.onGpu {
             detach(computeShader)
             computeShader.reload()
             load()

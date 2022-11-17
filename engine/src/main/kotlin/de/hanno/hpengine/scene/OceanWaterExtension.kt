@@ -33,9 +33,10 @@ import kotlin.math.max
 
 private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
 
+
+context(GpuContext)
 class OceanWaterRenderSystem(
     val config: Config,
-    val gpuContext: GpuContext,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager,
     val textureManager: OpenGLTextureManager,
@@ -49,8 +50,11 @@ class OceanWaterRenderSystem(
     private val random2 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_2.png", srgba = false, directory = engineDir)
     private val random3 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_3.png", srgba = false, directory = engineDir)
 
-    private fun createRandomTexture(): OpenGLTexture2D = listOf(ColorAttachmentDefinition("Random", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first().apply {
-        gpuContext.invoke {
+    private fun createRandomTexture(): OpenGLTexture2D = listOf(ColorAttachmentDefinition("Random", GL30.GL_RGBA32F)).toTextures(
+        N,
+        N
+    ).first().apply {
+        onGpu {
             val buffer = BufferUtils.createFloatBuffer(dimension.width * dimension.height * 4)
             val random = java.util.Random()
             for (x in 0 until dimension.width) {
@@ -79,39 +83,39 @@ class OceanWaterRenderSystem(
 //        GL30.GL_RGBA32F, dimension,
 //        defaultTextureFilterConfig
 //    )
-    val displacementMap = listOf(ColorAttachmentDefinition("Displacement", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
+    val displacementMap = listOf(ColorAttachmentDefinition("Displacement", GL30.GL_RGBA32F)).toTextures(N, N).first()
 //    val displacementMapX = allocateTexture(GL30.GL_RGBA32F, dimension)
 //    val displacementMapY = allocateTexture(GL30.GL_RGBA32F, dimension)
 //    val displacementMapZ = allocateTexture(GL30.GL_RGBA32F, dimension)
-    val displacementMapX = listOf(ColorAttachmentDefinition("DisplacementX", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
-    val displacementMapY = listOf(ColorAttachmentDefinition("DisplacementY", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
-    val displacementMapZ = listOf(ColorAttachmentDefinition("DisplacementZ", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
+    val displacementMapX = listOf(ColorAttachmentDefinition("DisplacementX", GL30.GL_RGBA32F)).toTextures(N, N).first()
+    val displacementMapY = listOf(ColorAttachmentDefinition("DisplacementY", GL30.GL_RGBA32F)).toTextures(N, N).first()
+    val displacementMapZ = listOf(ColorAttachmentDefinition("DisplacementZ", GL30.GL_RGBA32F)).toTextures(N, N).first()
 //    val normalMap = allocateTexture(
 //        GL30.GL_RGBA32F, dimension,
 //        defaultTextureFilterConfig
 //    )
-    val normalMap = listOf(ColorAttachmentDefinition("Normals", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
+    val normalMap = listOf(ColorAttachmentDefinition("Normals", GL30.GL_RGBA32F)).toTextures(N, N).first()
 //    val albedoMap = allocateTexture(
 //        GL30.GL_RGBA32F, dimension,
 //        defaultTextureFilterConfig
 //    )
-    val albedoMap = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
+    val albedoMap = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGBA32F)).toTextures(N, N).first()
 //    val roughnessMap = allocateTexture(
 //        GL30.GL_RGBA32F, dimension,
 //        defaultTextureFilterConfig
 //    )
-    val roughnessMap = listOf(ColorAttachmentDefinition("Roughness", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
+    val roughnessMap = listOf(ColorAttachmentDefinition("Roughness", GL30.GL_RGBA32F)).toTextures(N, N).first()
 
-    val debugMap = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first().apply {
-        gpuContext { ARBClearTexture.glClearTexImage(id, 0, GL30.GL_RGBA, GL11.GL_FLOAT, RED_BUFFER) }
+    val debugMap = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGBA32F)).toTextures(N, N).first().apply {
+        onGpu { ARBClearTexture.glClearTexImage(id, 0, GL30.GL_RGBA, GL11.GL_FLOAT, RED_BUFFER) }
     }
-    private val pingPongMapX = listOf(ColorAttachmentDefinition("PingPongX", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
-    private val pingPongMapY = listOf(ColorAttachmentDefinition("PingPongY", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
-    private val pingPongMapZ = listOf(ColorAttachmentDefinition("PingPongZ", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
+    private val pingPongMapX = listOf(ColorAttachmentDefinition("PingPongX", GL30.GL_RGBA32F)).toTextures(N, N).first()
+    private val pingPongMapY = listOf(ColorAttachmentDefinition("PingPongY", GL30.GL_RGBA32F)).toTextures(N, N).first()
+    private val pingPongMapZ = listOf(ColorAttachmentDefinition("PingPongZ", GL30.GL_RGBA32F)).toTextures(N, N).first()
 
-    private val tildeHktDyMap = listOf(ColorAttachmentDefinition("tildeHktDyMap", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
-    private val tildeHktDxMap = listOf(ColorAttachmentDefinition("tildeHktDxMap", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
-    private val tildeHktDzMap = listOf(ColorAttachmentDefinition("tildeHktDzMap", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
+    private val tildeHktDyMap = listOf(ColorAttachmentDefinition("tildeHktDyMap", GL30.GL_RGBA32F)).toTextures(N, N).first()
+    private val tildeHktDxMap = listOf(ColorAttachmentDefinition("tildeHktDxMap", GL30.GL_RGBA32F)).toTextures(N, N).first()
+    private val tildeHktDzMap = listOf(ColorAttachmentDefinition("tildeHktDzMap", GL30.GL_RGBA32F)).toTextures(N, N).first()
     data class TildeMapHelper(val tildeMap: OpenGLTexture2D, val displacementMap: OpenGLTexture2D, val pingPongMap: OpenGLTexture2D)
     val tildeMapHelpers = listOf(
         TildeMapHelper(tildeHktDyMap, displacementMapY, pingPongMapY),
@@ -122,11 +126,11 @@ class OceanWaterRenderSystem(
         TildeMapHelper(tildeHktDzMap, displacementMapZ, pingPongMapZ),
     )
 
-    private val h0kMap = listOf(ColorAttachmentDefinition("h0kMap", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
-    private val h0MinuskMap = listOf(ColorAttachmentDefinition("h0MinuskMap", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
+    private val h0kMap = listOf(ColorAttachmentDefinition("h0kMap", GL30.GL_RGBA32F)).toTextures(N, N).first()
+    private val h0MinuskMap = listOf(ColorAttachmentDefinition("h0MinuskMap", GL30.GL_RGBA32F)).toTextures(N, N).first()
     private val log2N = (ln(N.toFloat()) / ln(2.0f)).toInt()
-    private val twiddleIndicesMap = listOf(ColorAttachmentDefinition("h0kMap", GL30.GL_RGBA32F)).toTextures(gpuContext, log2N, N).first()
-    private val bitReversedIndices = PersistentMappedBuffer(N * IntStrukt.sizeInBytes, gpuContext).typed(IntStrukt.type).apply {
+    private val twiddleIndicesMap = listOf(ColorAttachmentDefinition("h0kMap", GL30.GL_RGBA32F)).toTextures(log2N, N).first()
+    private val bitReversedIndices = PersistentMappedBuffer(N * IntStrukt.sizeInBytes).typed(IntStrukt.type).apply {
         initBitReversedIndices(N).forEachIndexed { index, value ->
             typedBuffer.forIndex(index) { it.value = value }
         }
@@ -140,7 +144,7 @@ class OceanWaterRenderSystem(
     private val mergeDisplacementMapsShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/merge_displacement_maps_compute.glsl").toCodeSource())
 
     init {
-        gpuContext {
+        onGpu {
             twiddleIndicesShader.use()
             twiddleIndicesShader.setUniform("N", N)
             GL42.glBindImageTexture(
@@ -203,10 +207,10 @@ class OceanWaterRenderSystem(
         h0kShader.use()
         GL42.glBindImageTexture(0, h0kMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, h0kMap.internalFormat)
         GL42.glBindImageTexture(1, h0MinuskMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, h0MinuskMap.internalFormat)
-        gpuContext.bindTexture(2, random0)
-        gpuContext.bindTexture(3, random1)
-        gpuContext.bindTexture(4, random2)
-        gpuContext.bindTexture(5, random3)
+        bindTexture(2, random0)
+        bindTexture(3, random1)
+        bindTexture(4, random2)
+        bindTexture(5, random3)
         h0kShader.setUniform("N", N)
         h0kShader.setUniform("L", oceanWaterComponent.L)
         h0kShader.setUniform("amplitude", oceanWaterComponent.amplitude)
@@ -273,13 +277,13 @@ class OceanWaterRenderSystem(
         mergeDisplacementMapsShader.setUniform("waveHeight", oceanWaterComponent.waveHeight)
         mergeDisplacementMapsShader.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         GL42.glBindImageTexture(0, displacementMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, displacementMap.internalFormat)
-        gpuContext.bindTexture(1, displacementMapX)
-        gpuContext.bindTexture(2, displacementMapY)
-        gpuContext.bindTexture(3, displacementMapZ)
+        bindTexture(1, displacementMapX)
+        bindTexture(2, displacementMapY)
+        bindTexture(3, displacementMapZ)
         GL42.glBindImageTexture(4, normalMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, normalMap.internalFormat)
         GL42.glBindImageTexture(5, albedoMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, albedoMap.internalFormat)
         GL42.glBindImageTexture(6, roughnessMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, roughnessMap.internalFormat)
-        gpuContext.bindTexture(7, random3)
+        bindTexture(7, random3)
         mergeDisplacementMapsShader.dispatchCompute(N/16,N/16,1)
     }
 
@@ -291,11 +295,10 @@ class OceanWaterRenderSystem(
                                 ),
                                 wrapMode: Int = GL14.GL_REPEAT
     ): OpenGLTexture2D {
-        val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
-            UploadInfo.Texture2DUploadInfo(textureDimension2D),
+        val (textureId, handle) = allocateTexture(
+            UploadInfo.Texture2DUploadInfo(textureDimension2D, internalFormat = internalFormat),
             TextureTarget.TEXTURE_2D,
             filterConfig = textureFilterConfig,
-            internalFormat = internalFormat,
             wrapMode = wrapMode
         )
 

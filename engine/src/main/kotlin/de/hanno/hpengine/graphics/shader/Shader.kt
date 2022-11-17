@@ -18,19 +18,19 @@ sealed class Shader(private val programManager: ProgramManager,
 ) : Reloadable, de.hanno.hpengine.graphics.shader.api.Shader {
     private val gpuContext = programManager.gpuContext
 
-    override val id = programManager.gpuContext { GL20.glCreateShader(shaderType.glShaderType) } // TODO: Abstract createShader in gpuContext
+    override val id = programManager.gpuContext.onGpu { GL20.glCreateShader(shaderType.glShaderType) } // TODO: Abstract createShader in gpuContext
 
     override fun load() {
         source.load()
 
         val resultingShaderSource = programManager.run { source.toResultingShaderSource(defines) }
 
-        gpuContext.invoke {
+        gpuContext.onGpu {
             GL20.glShaderSource(id, resultingShaderSource)
             GL20.glCompileShader(id)
         }
 
-        val shaderLoadFailed = gpuContext.invoke {
+        val shaderLoadFailed = gpuContext.onGpu {
             val shaderStatus = GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS)
             if (shaderStatus == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + shaderType + ": " + source.name)

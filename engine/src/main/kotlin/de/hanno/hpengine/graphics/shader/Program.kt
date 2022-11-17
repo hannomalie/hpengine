@@ -59,7 +59,7 @@ class Program<T : Uniforms> constructor(
         fragmentShader?.let { add(it.name) }
     }.toString()
 
-    override fun load() = gpuContext.invoke {
+    override fun load() = gpuContext.onGpu {
         shaders.forEach { attach(it) }
 
         bindShaderAttributeChannels()
@@ -102,7 +102,7 @@ class Program<T : Uniforms> constructor(
     }
 
     override fun reload() = try {
-        gpuContext.invoke {
+        gpuContext.onGpu {
             shaders.forEach {
                 detach(it)
                 gpuContext.getExceptionOnError("Couldn't detach, maybe is already detached")

@@ -7,17 +7,18 @@ import org.lwjgl.opengl.ARBBindlessTexture
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL43
 
-fun OpenGLCubeMapArray.createViews(gpuContext: GpuContext): List<CubeMap> {
-    return (0 until dimension.depth).map { index ->
-        createView(gpuContext, index)
-    }
+
+context(GpuContext)
+fun OpenGLCubeMapArray.createViews() = (0 until dimension.depth).map { index ->
+    createView(index)
 }
 
-fun OpenGLCubeMapArray.createView(gpuContext: GpuContext, index: Int): CubeMap {
-    val cubeMapView = gpuContext.genTextures()
+context(GpuContext)
+fun OpenGLCubeMapArray.createView(index: Int): CubeMap {
+    val cubeMapView = genTextures()
     require(index < dimension.depth) { "Index out of bounds: $index / ${dimension.depth}" }
 
-    gpuContext.invoke {
+    onGpu {
         GL43.glTextureView(
             cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, id,
             internalFormat, 0, mipmapCount - 1,
@@ -25,9 +26,9 @@ fun OpenGLCubeMapArray.createView(gpuContext: GpuContext, index: Int): CubeMap {
         )
     }
 
-    val cubeMapHandle = if (gpuContext.isSupported(BindlessTextures)) {
-        val handle = gpuContext.invoke { ARBBindlessTexture.glGetTextureHandleARB(cubeMapView) }
-        gpuContext.invoke { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
+    val cubeMapHandle = if (isSupported(BindlessTextures)) {
+        val handle = onGpu { ARBBindlessTexture.glGetTextureHandleARB(cubeMapView) }
+        onGpu { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
         handle
     } else -1
 
@@ -43,11 +44,14 @@ fun OpenGLCubeMapArray.createView(gpuContext: GpuContext, index: Int): CubeMap {
     )
 }
 
-fun OpenGLCubeMapArray.createView(gpuContext: GpuContext, index: Int, faceIndex: Int): OpenGLTexture2D {
-    val cubeMapFaceView = gpuContext.genTextures()
+context(GpuContext)
+fun OpenGLCubeMapArray.createView(index: Int, faceIndex: Int): OpenGLTexture2D {
     require(index < dimension.depth) { "Index out of bounds: $index / ${dimension.depth}" }
     require(faceIndex < 6) { "Index out of bounds: $faceIndex / 6" }
-    gpuContext.invoke {
+
+    val cubeMapFaceView = genTextures()
+
+    onGpu {
         GL43.glTextureView(
             cubeMapFaceView, GL13.GL_TEXTURE_2D, id,
             internalFormat, 0, 1,
@@ -55,9 +59,9 @@ fun OpenGLCubeMapArray.createView(gpuContext: GpuContext, index: Int, faceIndex:
         )
     }
 
-    val cubeMapFaceHandle = if (gpuContext.isSupported(BindlessTextures)) {
-        val handle = gpuContext.invoke { ARBBindlessTexture.glGetTextureHandleARB(cubeMapFaceView) }
-        gpuContext.invoke { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
+    val cubeMapFaceHandle = if (isSupported(BindlessTextures)) {
+        val handle = onGpu { ARBBindlessTexture.glGetTextureHandleARB(cubeMapFaceView) }
+        onGpu { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
         handle
     } else -1
 
@@ -73,10 +77,11 @@ fun OpenGLCubeMapArray.createView(gpuContext: GpuContext, index: Int, faceIndex:
     )
 }
 
-fun CubeMap.createView(gpuContext: GpuContext, faceIndex: Int): OpenGLTexture2D {
-    val cubeMapFaceView = gpuContext.genTextures()
+context(GpuContext)
+fun CubeMap.createView(faceIndex: Int): OpenGLTexture2D {
     require(faceIndex < 6) { "Index out of bounds: $faceIndex / 6" }
-    gpuContext.invoke {
+    val cubeMapFaceView = genTextures()
+    onGpu {
         GL43.glTextureView(
             cubeMapFaceView, GL13.GL_TEXTURE_2D, id,
             internalFormat, 0, 1,
@@ -84,9 +89,9 @@ fun CubeMap.createView(gpuContext: GpuContext, faceIndex: Int): OpenGLTexture2D 
         )
     }
 
-    val cubeMapFaceHandle = if (gpuContext.isSupported(BindlessTextures)) {
-        val handle = gpuContext.invoke { ARBBindlessTexture.glGetTextureHandleARB(cubeMapFaceView) }
-        gpuContext.invoke { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
+    val cubeMapFaceHandle = if (isSupported(BindlessTextures)) {
+        val handle = onGpu { ARBBindlessTexture.glGetTextureHandleARB(cubeMapFaceView) }
+        onGpu { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
         handle
     } else -1
 

@@ -18,18 +18,18 @@ data class OpenGLCubeMapArray(
     val size: Int get() = dimension.depth
 
     companion object {
+
+        context(GpuContext)
         operator fun invoke(
-            gpuContext: GpuContext,
             dimension: TextureDimension3D,
             filterConfig: TextureFilterConfig,
             internalFormat: Int,
             wrapMode: Int
         ): OpenGLCubeMapArray {
-            val (textureId, internalFormat, handle) = gpuContext.allocateTexture(
-                UploadInfo.CubeMapArrayUploadInfo(dimension),
+            val (textureId, handle) = allocateTexture(
+                UploadInfo.CubeMapArrayUploadInfo(dimension, internalFormat = internalFormat),
                 TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
                 filterConfig,
-                internalFormat,
                 wrapMode
             )
             return OpenGLCubeMapArray(

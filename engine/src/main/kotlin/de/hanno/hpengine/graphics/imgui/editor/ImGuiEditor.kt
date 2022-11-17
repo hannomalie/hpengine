@@ -24,21 +24,23 @@ import de.hanno.hpengine.graphics.GlfwWindow
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
+import de.hanno.hpengine.graphics.texture.Texture2D
 import imgui.ImGui
 import imgui.flag.*
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
+import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
+import org.lwjgl.opengl.GL11
 
 interface ImGuiEditorExtension {
     fun render(imGuiEditor: ImGuiEditor)
 }
-
+context(GpuContext)
 class ImGuiEditor(
     internal val window: GlfwWindow,
-    internal val gpuContext: GpuContext,
     internal val textureManager: OpenGLTextureManager,
     internal val finalOutput: FinalOutput,
     internal val debugOutput: DebugOutput,
@@ -52,13 +54,12 @@ class ImGuiEditor(
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val renderTarget = RenderTarget2D(
-        gpuContext, RenderTargetImpl(
-            gpuContext,
-            FrameBuffer(gpuContext, sharedDepthBuffer.depthBuffer),
-            name = "Final Image",
-            width = finalOutput.texture2D.dimension.width,
-            height = finalOutput.texture2D.dimension.height,
-            textures = listOf(finalOutput.texture2D)
+         RenderTargetImpl(
+            FrameBuffer(sharedDepthBuffer.depthBuffer),
+            finalOutput.texture2D.dimension.width,
+            finalOutput.texture2D.dimension.height,
+            listOf(finalOutput.texture2D),
+            "Final Image",
         )
     )
     var selection: Selection? = null
@@ -67,7 +68,12 @@ class ImGuiEditor(
     }
 
     val output = ImInt(-1)
-    val renderTargetTextures: List<Texture> get() = gpuContext.registeredRenderTargets.flatMap { it.textures } + textureManager.texturesForDebugOutput.values
+    val renderTargetTextures: List<Texture>
+        get() {
+            return registeredRenderTargets.flatMap { it.textures } +
+                    textureManager.texturesForDebugOutput.values +
+                    textureManager.textures.values.filterIsInstance<Texture2D>()
+        }
     val currentOutputTexture: Texture get() = renderTargetTextures[output.get()]
 
     val fillBag = Bag<Component>()
@@ -98,7 +104,8 @@ class ImGuiEditor(
     override fun renderEditor(result: DrawResult, renderState: RenderState) {
         if (!config.debug.isEditorOverlay) return
 
-        renderTarget.use(gpuContext, false)
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
+        renderTarget.use(true)
         imGuiImplGlfw.newFrame()
         ImGui.getIO().setDisplaySize(renderTarget.width.toFloat(), renderTarget.height.toFloat())
         try {

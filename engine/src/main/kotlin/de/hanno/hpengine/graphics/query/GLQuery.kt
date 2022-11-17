@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL33
 interface GLQuery<RESULT> {
     fun begin(): GLTimerQuery?
     fun end()
-    fun resultsAvailable(gpuContext: GpuContext): Boolean = gpuContext.invoke {
+    fun resultsAvailable(gpuContext: GpuContext): Boolean = gpuContext.onGpu {
         GL33.glGetQueryObjectui64(
             queryToWaitFor,
             GL15.GL_QUERY_RESULT_AVAILABLE
