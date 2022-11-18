@@ -102,7 +102,6 @@ class GlfwWindow(
         executor.launch {
             makeContextCurrent()
             GL.createCapabilities()
-//            GLUtil.setupDebugMessageCallback()
         }
 
         frontBuffer = createFrontBufferRenderTarget()

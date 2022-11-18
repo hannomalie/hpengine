@@ -434,4 +434,5 @@ void main(void) {
         vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(maxValue)); // whitescale marks the maximum value we can have before tone mapping
 	    out_color.rgb = out_color.rgb * whiteScale;
     }
+	out_color.a = 1;
 }

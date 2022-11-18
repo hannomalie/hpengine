@@ -11,10 +11,8 @@ import de.hanno.hpengine.extension.SharedDepthBuffer
 import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
-import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.fps.FPSCounter
@@ -22,18 +20,17 @@ import de.hanno.hpengine.graphics.DebugOutput
 import de.hanno.hpengine.graphics.FinalOutput
 import de.hanno.hpengine.graphics.GlfwWindow
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget2D
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
+import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.texture.Texture2D
 import imgui.ImGui
 import imgui.flag.*
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
-import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL30
 
 interface ImGuiEditorExtension {
     fun render(imGuiEditor: ImGuiEditor)
@@ -53,35 +50,46 @@ class ImGuiEditor(
     internal val editorExtensions: List<ImGuiEditorExtension>,
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
-    private val renderTarget = RenderTarget2D(
+    val formerFinalOutput = finalOutput.texture2D
+
+    val renderTarget = RenderTarget2D(
          RenderTargetImpl(
-            FrameBuffer(sharedDepthBuffer.depthBuffer),
-            finalOutput.texture2D.dimension.width,
-            finalOutput.texture2D.dimension.height,
-            listOf(finalOutput.texture2D),
-            "Final Image",
+            FrameBuffer(null),
+            config.width,
+            config.height,
+             listOf(
+                 ColorAttachmentDefinition("Color", GL30.GL_RGBA32F)
+             ).toTextures(config.width, config.height),
+            "Final Editor Image",
         )
-    )
+    ).apply {
+        finalOutput.texture2D = textures[0]
+    }
     var selection: Selection? = null
     fun selectOrUnselect(newSelection: Selection) {
         selection = if (selection == newSelection) null else newSelection
     }
 
     val output = ImInt(-1)
-    val renderTargetTextures: List<Texture>
-        get() {
-            return registeredRenderTargets.flatMap { it.textures } +
-                    textureManager.texturesForDebugOutput.values +
-                    textureManager.textures.values.filterIsInstance<Texture2D>()
-        }
-    val currentOutputTexture: Texture get() = renderTargetTextures[output.get()]
+
+    data class TextureOutputSelection(val identifier: String, val texture: Texture2D)
+    val textureOutputOptions: List<TextureOutputSelection>
+        get() = registeredRenderTargets.flatMap {
+                    target -> target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
+                        TextureOutputSelection(target.name + "[$index]", texture)
+                    }
+                } +
+                textureManager.texturesForDebugOutput.filterValues { it is Texture2D }.map { TextureOutputSelection(it.key, it.value as Texture2D) } +
+                textureManager.textures.filterValues { it is Texture2D }.map { TextureOutputSelection(it.key, it.value as Texture2D) }
+
+    val currentOutputTexture: TextureOutputSelection get() = textureOutputOptions[output.get()]
 
     val fillBag = Bag<Component>()
 
     override lateinit var artemisWorld: World
 
     init {
-        window {
+        onGpu {
             ImGui.createContext()
             ImGui.getIO().apply {
 //                addConfigFlags(ImGuiConfigFlags.ViewportsEnable)
@@ -90,12 +98,12 @@ class ImGuiEditor(
         }
     }
 
-    private val imGuiImplGlfw = window {
+    private val imGuiImplGlfw = onGpu {
         ImGuiImplGlfw().apply {
             init(window.handle, true)
         }
     }
-    private val imGuiImplGl3 = window {
+    private val imGuiImplGl3 = onGpu {
         ImGuiImplGl3().apply {
             init(glslVersion)
         }
@@ -148,27 +156,8 @@ class ImGuiEditor(
                 }
             }
 
-            if (output.get() != -1) {
-                val windowFlags =
-                    NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
-                            NoNavFocus or  // so turn off everything that would make it act like a window
-//                            NoDocking or
-                            NoTitleBar or
-                            NoResize or
-                            NoMove or
-                            NoCollapse or
-                            NoBackground
-                de.hanno.hpengine.graphics.imgui.dsl.ImGui.run {
-                    ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
-                    window("Main", windowFlags) {
-                        ImGui.popStyleVar()
-
-                        ImGui.image(finalOutput.texture2D.id, screenWidth, screenHeight)
-                    }
-                }
-            }
+            background(screenWidth, screenHeight)
             menu(screenWidth, screenHeight)
-
 
             if (::artemisWorld.isInitialized) {
                 leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
@@ -194,6 +183,39 @@ class ImGuiEditor(
                 ImGui.updatePlatformWindows()
                 ImGui.renderPlatformWindowsDefault()
                 GLFW.glfwMakeContextCurrent(backupWindowHandle)
+            }
+        }
+    }
+
+    private fun background(screenWidth: Float, screenHeight: Float) {
+        val windowFlags =
+            NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
+                    NoNavFocus or  // so turn off everything that would make it act like a window
+    //                            NoDocking or
+                    NoTitleBar or
+                    NoResize or
+                    NoMove or
+                    NoCollapse or
+                    NoBackground
+        de.hanno.hpengine.graphics.imgui.dsl.ImGui.run {
+            ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
+            window("Main", windowFlags) {
+                ImGui.popStyleVar()
+
+                val textureToDraw = if (output.get() > -1) {
+                    textureOutputOptions[output.get()].texture.id
+                } else {
+                    formerFinalOutput.id
+                }
+                ImGui.image(
+                    textureToDraw,
+                    screenWidth,
+                    screenHeight,
+                    0f,
+                    1f,
+                    1f,
+                    0f,
+                )
             }
         }
     }

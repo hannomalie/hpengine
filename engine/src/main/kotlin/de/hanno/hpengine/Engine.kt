@@ -179,8 +179,8 @@ class Engine(
             } finally {
                 updating.getAndSet(false)
             }
+            window.pollEvents()
         }
-        window.pollEventsInLoop()
     }
 
 
@@ -231,7 +231,7 @@ class Engine(
 
     }
 
-    fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
+    fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit) = runBlocking {
         var currentTimeNs = System.nanoTime()
         val dtS = 1 / 60.0
 

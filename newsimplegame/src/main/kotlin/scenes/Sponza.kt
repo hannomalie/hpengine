@@ -21,7 +21,7 @@ fun main() {
     )
 
     // TODO: remove useEditor by passing in editor module?
-    Engine(config, useEditor = false) {
+    Engine(config, useEditor = true) {
         world.loadScene {
             addStaticModelEntity("Sponza", "assets/models/sponza.obj")
         }

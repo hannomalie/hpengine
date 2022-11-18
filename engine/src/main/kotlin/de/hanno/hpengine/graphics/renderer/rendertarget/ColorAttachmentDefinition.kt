@@ -5,7 +5,7 @@ import org.lwjgl.opengl.GL11
 
 data class ColorAttachmentDefinition(
     val name: String,
-    val internalFormat: Int = GL11.GL_RGB,
+    val internalFormat: Int = GL11.GL_RGB8,
     var textureFilter: TextureFilterConfig = TextureFilterConfig()
 ) {
     fun setInternalFormat(internalFormat: Int): ColorAttachmentDefinition {

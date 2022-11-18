@@ -69,7 +69,7 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
         FrameBuffer(depthBuffer),
         width = width,
         height = height,
-        textures = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGBA8)).toTextures(width, height),
+        textures = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGB8)).toTextures(width, height),
         name = "Final Image"
     )
 
