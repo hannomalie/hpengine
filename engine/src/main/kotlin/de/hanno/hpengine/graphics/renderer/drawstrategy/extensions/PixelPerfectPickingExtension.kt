@@ -10,6 +10,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.input.MouseClickListener
 import org.joml.Vector2f
+import org.joml.Vector2i
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import java.lang.Exception
@@ -21,7 +22,7 @@ data class Indices(
     val materialIndex: Int
 )
 interface OnClickListener {
-    fun onClick(indices: Indices)
+    fun onClick(coordinates: Vector2i, indices: Indices)
 }
 context(GpuContext)
 class PixelPerfectPickingExtension(
@@ -59,7 +60,7 @@ class PixelPerfectPickingExtension(
                 val meshIndex = floatBuffer[3].toInt()
                 val indices = Indices(entityBufferIndex, entityId, meshIndex, materialIndex)
                 listeners.forEach {
-                    it.onClick(indices)
+                    it.onClick(Vector2i(adjustedX, adjustedY), indices)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

@@ -19,6 +19,7 @@ fun ImGuiEditor.leftPanel(
     ImGui.setNextWindowSize(leftPanelWidth, screenHeight - leftPanelYOffset)
     de.hanno.hpengine.graphics.imgui.dsl.ImGui.run {
         window("Scene", ImGuiWindowFlags.NoCollapse or ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.NoResize or ImGuiWindowFlags.AlwaysVerticalScrollbar or ImGuiWindowFlags.AlwaysHorizontalScrollbar) {
+            ImGui.setNextItemOpen(true)
             treeNode("Scene") {
 
                 val entities = artemisWorld.aspectSubscriptionManager
@@ -29,6 +30,9 @@ fun ImGuiEditor.leftPanel(
                     fillBag.clear()
                     val components = componentManager.getComponentsFor(entityId, fillBag)
 
+                    (selection as? SimpleEntitySelection)?.let { selection ->
+                        ImGui.setNextItemOpen(selection.entity == entityId)
+                    }
                     Window.treeNode(
                         components.firstIsInstanceOrNull<NameComponent>()?.name
                             ?: (artemisWorld.getSystem(TagManager::class.java).getTag(entityId)
@@ -38,22 +42,69 @@ fun ImGuiEditor.leftPanel(
                             selectOrUnselect(SimpleEntitySelection(entityId, components.toList()))
                         }
                         components.forEach { component ->
-                            text(component.javaClass.simpleName) {
-                                when (component) {
-                                    is ModelComponent -> {
+
+                            val openNextNode = when (val selection = selection) {
+                                is EntitySelection -> {
+                                    when (val selection: EntitySelection = selection) {
+                                        is CameraSelection -> false
+                                        is MeshSelection -> false
+                                        is ModelComponentSelection -> {
+                                            if(component is ModelComponent) {
+                                                selection.modelComponent == component
+                                            } else false
+                                        }
+                                        is ModelSelection -> {
+                                            if(component is ModelComponent) {
+                                                selection.modelComponent == component
+                                            } else false
+                                        }
+                                        is NameSelection -> false
+                                        is SimpleEntitySelection -> false
+                                        is TransformSelection -> false
+                                    }
+                                }
+                                is GiVolumeSelection -> false
+                                is MaterialSelection -> false
+                                Selection.None -> false
+                                is OceanWaterSelection -> false
+                                is ReflectionProbeSelection -> false
+                                null -> false
+                            }
+                            val componentName = component.javaClass.simpleName
+                            ImGui.setNextItemOpen(openNextNode)
+                            when (component) {
+                                is ModelComponent -> {
+                                    text(componentName) {
                                         selectOrUnselect(ModelComponentSelection(entityId, component, components.toList()))
                                     }
-                                    is MaterialComponent -> {
-                                        selectOrUnselect(MaterialSelection(component.material))
+                                    treeNode("Meshes") {
+                                        val modelSystem = artemisWorld.getSystem(ModelSystem::class.java)!!
+                                        modelSystem[component.modelComponentDescription]!!.meshes.forEach { mesh ->
+                                            text(mesh.name) {
+                                                selectOrUnselect(MeshSelection(entityId, mesh, component, components.toList()))
+                                            }
+                                        }
+
                                     }
-                                    is NameComponent -> selectOrUnselect(
+                                }
+                                is MaterialComponent -> text(componentName) {
+                                    selectOrUnselect(MaterialSelection(component.material))
+                                }
+                                is NameComponent -> text(componentName) {
+                                    selectOrUnselect(
                                         NameSelection(entityId, component.name, components.toList())
                                     )
-                                    is TransformComponent -> selectOrUnselect(
+                                }
+                                is TransformComponent -> text(componentName) {
+                                    selectOrUnselect(
                                         TransformSelection(entityId, component, components.toList())
                                     )
-                                    is OceanWaterComponent -> selectOrUnselect(OceanWaterSelection(component))
-                                    is CameraComponent -> selectOrUnselect(CameraSelection(entityId, component, components.toList()))
+                                }
+                                is OceanWaterComponent -> text(componentName) {
+                                    selectOrUnselect(OceanWaterSelection(component))
+                                }
+                                is CameraComponent -> text(componentName) {
+                                    selectOrUnselect(CameraSelection(entityId, component, components.toList()))
                                 }
                             }
                         }

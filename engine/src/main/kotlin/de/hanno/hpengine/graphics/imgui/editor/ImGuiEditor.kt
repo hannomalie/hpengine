@@ -33,6 +33,8 @@ import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImInt
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
+import org.joml.Vector2f
+import org.joml.Vector2i
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL30
@@ -41,13 +43,13 @@ interface ImGuiEditorExtension {
     fun render(imGuiEditor: ImGuiEditor)
 }
 
-data class EntityClicked(var indices: Indices)
+data class EntityClicked(val coordinates: Vector2i, val indices: Indices)
 
 class EntityClickListener : OnClickListener {
     var clickState: EntityClicked? = null
-    override fun onClick(indices: Indices) = indices.run {
+    override fun onClick(coordinates: Vector2i, indices: Indices) = indices.run {
         if (clickState == null) {
-            clickState = EntityClicked(indices)
+            clickState = EntityClicked(coordinates, indices)
         }
     }
 
@@ -144,18 +146,38 @@ class ImGuiEditor(
     override fun renderEditor(result: DrawResult, renderState: RenderState) {
         if (!config.debug.isEditorOverlay) return
 
+        val screenWidth = ImGui.getIO().displaySizeX
+        val screenHeight = ImGui.getIO().displaySizeY
+
+        val leftPanelYOffset = screenHeight * 0.015f
+        val leftPanelWidthPercentage = 0.1f
+        val leftPanelWidth = screenWidth * leftPanelWidthPercentage
+
+        val rightPanelWidthPercentage = 0.2f
+        val rightPanelWidth = screenWidth * rightPanelWidthPercentage
+
+        val midPanelHeight = screenHeight - leftPanelYOffset
+        val midPanelWidth = screenWidth - leftPanelWidth - rightPanelWidth
+
+
         entityClickListener.consumeClick { entityClicked ->
-            val entityId = entityClicked.indices.entityId
-            val meshIndex = entityClicked.indices.meshIndex
-            val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
-            val components = componentManager.getComponentsFor(entityId, Bag())
-            selection = when (editorConfig.selectionMode) {
-                SelectionMode.Mesh -> {
-                    val modelComponent = components.firstIsInstance<ModelComponent>()
-                    val model = artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
-                    MeshSelection(entityId, model.meshes[meshIndex], modelComponent, components.toList())
+            if(
+                entityClicked.coordinates.x > leftPanelWidth &&
+                entityClicked.coordinates.x < (leftPanelWidth + midPanelWidth)
+            ) {
+                val entityId = entityClicked.indices.entityId
+                val meshIndex = entityClicked.indices.meshIndex
+                val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
+                val components = componentManager.getComponentsFor(entityId, Bag())
+                selection = when (editorConfig.selectionMode) {
+                    SelectionMode.Mesh -> {
+                        val modelComponent = components.firstIsInstance<ModelComponent>()
+                        val model =
+                            artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
+                        MeshSelection(entityId, model.meshes[meshIndex], modelComponent, components.toList())
+                    }
+                    else -> SimpleEntitySelection(entityId, components.toList())
                 }
-                else -> SimpleEntitySelection(entityId, components.toList())
             }
         }
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
@@ -163,18 +185,6 @@ class ImGuiEditor(
         imGuiImplGlfw.newFrame()
         ImGui.getIO().setDisplaySize(renderTarget.width.toFloat(), renderTarget.height.toFloat())
         try {
-            val screenWidth = ImGui.getIO().displaySizeX
-            val screenHeight = ImGui.getIO().displaySizeY
-
-            val leftPanelYOffset = screenHeight * 0.015f
-            val leftPanelWidthPercentage = 0.1f
-            val leftPanelWidth = screenWidth * leftPanelWidthPercentage
-
-            val rightPanelWidthPercentage = 0.2f
-            val rightPanelWidth = screenWidth * rightPanelWidthPercentage
-
-            val midPanelHeight = screenHeight - leftPanelYOffset
-            val midPanelWidth = screenWidth - leftPanelWidth - rightPanelWidth
 
             ImGui.newFrame()
 

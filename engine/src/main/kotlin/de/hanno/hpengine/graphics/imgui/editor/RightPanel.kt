@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.imgui.float2Input
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.imgui.dsl.Window
+import de.hanno.hpengine.model.material.MaterialManager
 import imgui.ImGui
 import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiInputTextFlags
@@ -45,6 +46,19 @@ fun ImGuiEditor.rightPanel(
                             is MeshSelection -> tab("Entity") {
                                 entityInputs(components, invisibleComponentSystem, entity)
                                 text(entitySelection.mesh.name)
+
+                                if (ImGui.beginCombo("Material", entitySelection.mesh.material.name)) {
+                                    artemisWorld.getSystem(MaterialManager::class.java).materials.distinctBy { it.name }.forEach { material ->
+                                        val selected = entitySelection.mesh.material.name == material.name
+                                        if (ImGui.selectable(material.name, selected)) {
+                                            entitySelection.mesh.material = material
+                                        }
+                                        if (selected) {
+                                            ImGui.setItemDefaultFocus()
+                                        }
+                                    }
+                                    ImGui.endCombo()
+                                }
                             }
                             is ModelComponentSelection -> tab("Entity") {
                                 artemisWorld.getSystem(ModelSystem::class.java)[entitySelection.modelComponent.modelComponentDescription]?.let {
