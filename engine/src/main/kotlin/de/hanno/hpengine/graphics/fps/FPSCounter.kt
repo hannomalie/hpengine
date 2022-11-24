@@ -31,7 +31,7 @@ open class FPSCounter {
         push(nanoTime)
 
         val diffInNanosForNFrames = last - longestAgo
-        msPerFrame = diffInNanosForNFrames / stack.size / (1000f * 1000f)
+        msPerFrame = diffInNanosForNFrames / stack.size / 1000000.0f
     }
 
     val fps: Float
@@ -39,12 +39,6 @@ open class FPSCounter {
 
     var msPerFrame = 0f
         private set
-
-    val deltaInS: Double
-        get() {
-            val diffInNanos = last - longestAgo
-            return (diffInNanos / (1000f * 1000f * 1000f)).toDouble()
-        }
 
     fun push(value: Long) {
         stack[currentIndex] = value

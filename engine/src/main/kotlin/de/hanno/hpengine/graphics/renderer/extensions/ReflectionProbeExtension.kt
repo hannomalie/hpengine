@@ -77,6 +77,7 @@ class ReflectionProbeRenderExtension(
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager
 ) : DeferredRenderExtension {
+    override val renderPriority = 3000
 
     val reflectionProbeRenderState = renderStateManager.renderState.registerState {
         ReflectionProbeRenderState(renderStateManager)

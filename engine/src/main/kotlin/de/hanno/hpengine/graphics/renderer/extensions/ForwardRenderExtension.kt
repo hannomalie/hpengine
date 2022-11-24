@@ -33,6 +33,7 @@ class ForwardRenderExtension(
     val programManager: ProgramManager,
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension {
+    override val renderPriority = 2000
 
     val firstpassDefaultVertexshaderSource = FileBasedCodeSource(config.engineDir.resolve("shaders/" + "first_pass_vertex.glsl"))
     val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(config.engineDir.resolve("shaders/" + "forward_fragment.glsl"))

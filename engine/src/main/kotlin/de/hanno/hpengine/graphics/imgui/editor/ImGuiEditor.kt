@@ -1,16 +1,18 @@
 package de.hanno.hpengine.graphics.imgui.editor
 
 import com.artemis.Component
+import com.artemis.ComponentManager
 import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
+import de.hanno.hpengine.artemis.ModelComponent
+import de.hanno.hpengine.artemis.ModelSystem
 import de.hanno.hpengine.artemis.TransformComponent
 
 import de.hanno.hpengine.config.ConfigImpl
 import de.hanno.hpengine.extension.SharedDepthBuffer
 import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
@@ -20,6 +22,8 @@ import de.hanno.hpengine.graphics.DebugOutput
 import de.hanno.hpengine.graphics.FinalOutput
 import de.hanno.hpengine.graphics.GlfwWindow
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.Indices
+import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.OnClickListener
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.texture.Texture2D
 import imgui.ImGui
@@ -28,6 +32,7 @@ import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImInt
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL30
@@ -35,6 +40,28 @@ import org.lwjgl.opengl.GL30
 interface ImGuiEditorExtension {
     fun render(imGuiEditor: ImGuiEditor)
 }
+
+data class EntityClicked(var indices: Indices)
+
+class EntityClickListener : OnClickListener {
+    var clickState: EntityClicked? = null
+    override fun onClick(indices: Indices) = indices.run {
+        if (clickState == null) {
+            clickState = EntityClicked(indices)
+        }
+    }
+
+    inline fun <T> consumeClick(onClick: (EntityClicked) -> T): T? = clickState?.let {
+        try {
+            onClick(it)
+        } finally {
+            this.clickState = null
+        }
+    }
+}
+
+enum class SelectionMode { Entity, Mesh; }
+data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
 context(GpuContext)
 class ImGuiEditor(
     internal val window: GlfwWindow,
@@ -44,22 +71,24 @@ class ImGuiEditor(
     internal val config: ConfigImpl,
     internal val sharedDepthBuffer: SharedDepthBuffer,
     internal val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
-    internal val renderExtensions: List<DeferredRenderExtension>,
     internal val addResourceContext: AddResourceContext,
     internal val fpsCounter: FPSCounter,
     internal val editorExtensions: List<ImGuiEditorExtension>,
+    internal val entityClickListener: EntityClickListener,
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     val formerFinalOutput = finalOutput.texture2D
 
+    private var editorConfig = EditorConfig()
+
     val renderTarget = RenderTarget2D(
-         RenderTargetImpl(
+        RenderTargetImpl(
             FrameBuffer(null),
             config.width,
             config.height,
-             listOf(
-                 ColorAttachmentDefinition("Color", GL30.GL_RGBA32F)
-             ).toTextures(config.width, config.height),
+            listOf(
+                ColorAttachmentDefinition("Color", GL30.GL_RGBA32F)
+            ).toTextures(config.width, config.height),
             "Final Editor Image",
         )
     ).apply {
@@ -73,14 +102,17 @@ class ImGuiEditor(
     val output = ImInt(-1)
 
     data class TextureOutputSelection(val identifier: String, val texture: Texture2D)
+
     val textureOutputOptions: List<TextureOutputSelection>
-        get() = registeredRenderTargets.flatMap {
-                    target -> target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
-                        TextureOutputSelection(target.name + "[$index]", texture)
-                    }
-                } +
-                textureManager.texturesForDebugOutput.filterValues { it is Texture2D }.map { TextureOutputSelection(it.key, it.value as Texture2D) } +
-                textureManager.textures.filterValues { it is Texture2D }.map { TextureOutputSelection(it.key, it.value as Texture2D) }
+        get() = registeredRenderTargets.flatMap { target ->
+            target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
+                TextureOutputSelection(target.name + "[$index]", texture)
+            }
+        } +
+                textureManager.texturesForDebugOutput.filterValues { it is Texture2D }
+                    .map { TextureOutputSelection(it.key, it.value as Texture2D) } +
+                textureManager.textures.filterValues { it is Texture2D }
+                    .map { TextureOutputSelection(it.key, it.value as Texture2D) }
 
     val currentOutputTexture: TextureOutputSelection get() = textureOutputOptions[output.get()]
 
@@ -112,6 +144,20 @@ class ImGuiEditor(
     override fun renderEditor(result: DrawResult, renderState: RenderState) {
         if (!config.debug.isEditorOverlay) return
 
+        entityClickListener.consumeClick { entityClicked ->
+            val entityId = entityClicked.indices.entityId
+            val meshIndex = entityClicked.indices.meshIndex
+            val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
+            val components = componentManager.getComponentsFor(entityId, Bag())
+            selection = when (editorConfig.selectionMode) {
+                SelectionMode.Mesh -> {
+                    val modelComponent = components.firstIsInstance<ModelComponent>()
+                    val model = artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
+                    MeshSelection(entityId, model.meshes[meshIndex], modelComponent, components.toList())
+                }
+                else -> SimpleEntitySelection(entityId, components.toList())
+            }
+        }
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
         renderTarget.use(true)
         imGuiImplGlfw.newFrame()
@@ -163,7 +209,7 @@ class ImGuiEditor(
                 leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
             }
 
-            rightPanel(screenWidth, rightPanelWidth, screenHeight)
+            rightPanel(screenWidth, rightPanelWidth, screenHeight, editorConfig)
 
             editorExtensions.forEach {
                 try {
@@ -191,7 +237,7 @@ class ImGuiEditor(
         val windowFlags =
             NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
                     NoNavFocus or  // so turn off everything that would make it act like a window
-    //                            NoDocking or
+                    //                            NoDocking or
                     NoTitleBar or
                     NoResize or
                     NoMove or
@@ -219,5 +265,4 @@ class ImGuiEditor(
             }
         }
     }
-
 }

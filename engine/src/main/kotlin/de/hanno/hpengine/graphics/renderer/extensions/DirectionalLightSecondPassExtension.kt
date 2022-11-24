@@ -32,23 +32,15 @@ class DirectionalLightSecondPassExtension(
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         profiled("Directional light") {
 
-            val viewMatrix = renderState.camera.viewMatrixAsBuffer
-            val projectionMatrix = renderState.camera.projectionMatrixAsBuffer
-
-            gpuContext.depthMask = false
-            gpuContext.depthTest = false
-            gpuContext.blend = true
-            gpuContext.blendEquation = BlendMode.FUNC_ADD
-            gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
-//             TODO: Do i need this?
-//            GL32.glFramebufferTexture(
-//                GL30.GL_FRAMEBUFFER,
-//                GL30.GL_DEPTH_ATTACHMENT,
-//                deferredRenderingBuffer.depthBufferTexture,
-//                0
-//            )
-            gpuContext.clearColor(0f, 0f, 0f, 0f)
-            gpuContext.clearColorBuffer()
+            profiled("Set state") {
+                gpuContext.depthMask = false
+                gpuContext.depthTest = false
+                gpuContext.blend = true
+                gpuContext.blendEquation = BlendMode.FUNC_ADD
+                gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
+                gpuContext.clearColor(0f, 0f, 0f, 0f)
+                gpuContext.clearColorBuffer()
+            }
 
             profiled("Activate DeferredRenderingBuffer textures") {
                 gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
@@ -77,25 +69,30 @@ class DirectionalLightSecondPassExtension(
                 )
             }
 
-            secondPassDirectionalProgram.use()
-            val camTranslation = Vector3f()
-            secondPassDirectionalProgram.setUniform(
-                "eyePosition",
-                renderState.camera.getTranslation(camTranslation)
-            )
-            secondPassDirectionalProgram.setUniform(
-                "ambientOcclusionRadius",
-                config.effects.ambientocclusionRadius
-            )
-            secondPassDirectionalProgram.setUniform(
-                "ambientOcclusionTotalStrength",
-                config.effects.ambientocclusionTotalStrength
-            )
-            secondPassDirectionalProgram.setUniform("screenWidth", config.width.toFloat())
-            secondPassDirectionalProgram.setUniform("screenHeight", config.height.toFloat())
-            secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
-            secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
-            secondPassDirectionalProgram.bindShaderStorageBuffer(2, renderState.directionalLightState)
+            profiled("set shader input") {
+                secondPassDirectionalProgram.use()
+                val camTranslation = Vector3f()
+                secondPassDirectionalProgram.setUniform(
+                    "eyePosition",
+                    renderState.camera.getTranslation(camTranslation)
+                )
+                secondPassDirectionalProgram.setUniform(
+                    "ambientOcclusionRadius",
+                    config.effects.ambientocclusionRadius
+                )
+                secondPassDirectionalProgram.setUniform(
+                    "ambientOcclusionTotalStrength",
+                    config.effects.ambientocclusionTotalStrength
+                )
+                secondPassDirectionalProgram.setUniform("screenWidth", config.width.toFloat())
+                secondPassDirectionalProgram.setUniform("screenHeight", config.height.toFloat())
+                secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
+                secondPassDirectionalProgram.setUniformAsMatrix4(
+                    "projectionMatrix",
+                    renderState.camera.projectionMatrixAsBuffer
+                )
+                secondPassDirectionalProgram.bindShaderStorageBuffer(2, renderState.directionalLightState)
+            }
             profiled("Draw fullscreen buffer") {
                 gpuContext.fullscreenBuffer.draw()
             }

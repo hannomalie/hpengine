@@ -28,7 +28,7 @@ fun main() {
         ),
     )
 
-    Engine(config) {
+    Engine(config, useEditor = true) {
         world.loadScene {
             val cube = addStaticModelEntity("Cube", "assets/models/cube.obj", Directory.Engine)
             val sphere = addStaticModelEntity("Sphere", "assets/models/sphere.obj", Directory.Engine, Vector3f(0f, 0f, -20f))

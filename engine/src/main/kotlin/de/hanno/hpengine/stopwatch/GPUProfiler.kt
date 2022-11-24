@@ -13,7 +13,8 @@ import kotlin.math.max
 object GPUProfiler {
 
     var profiling = false
-    var printing = false
+    //var printing = false
+    var printing: Boolean by ::profiling
 
     private var queryObjects: ArrayList<Int> = ArrayList()
 
@@ -149,7 +150,7 @@ object GPUProfiler {
 
             var indentationString = ""
             for (i in (0 until indentation)) {
-                indentationString += "    "
+                indentationString += "  "
             }
             builder.append(indentationString)
             builder.append(String.format("%s : %.5fms (CPU: %.5fms)", name, timeTaken.toFloat() / 1000f / 1000f, timeTakenCpu.toFloat() / 1000f / 1000f))
@@ -164,7 +165,12 @@ object GPUProfiler {
     }
 
     fun dump() {
-        currentTimings = currentTask?.dumpTimings() ?: ""
+        // TODO: Why is this fps count different from the fsp count by fps counter?
+        currentTimings = currentTask?.let {
+            val timeTakenMilliseconds = it.timeTaken / 1000000.0
+            val fps = (1000f / timeTakenMilliseconds).toInt()
+            """$fps - ${it.dumpTimings()}"""
+        } ?: ""
         currentAverages = dumpAverages()
         currentTask = null
     }

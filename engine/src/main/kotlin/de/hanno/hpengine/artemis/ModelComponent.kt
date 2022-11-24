@@ -101,7 +101,11 @@ class ModelSystem(
     private var gpuJointsArray = BufferUtils.createByteBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
 
     var gpuEntitiesArray = entityBuffer.underlying
-    private val entityIndices: MutableMap<Int, Int> = mutableMapOf()
+    val entityIndices: MutableMap<Int, Int> = mutableMapOf()
+    fun getEntityIdForEntityBufferIndex(entityBufferIndex: Int): Int = gpuEntitiesArray.byteBuffer.run {
+        return gpuEntitiesArray[entityBufferIndex].entityIndex
+    }
+
     private val modelCache = mutableMapOf<ModelComponentDescription, Model<*>>()
     private val programCache = mutableMapOf<ProgramDescription, Program<FirstPassUniforms>>()
     private val staticModelLoader = StaticModelLoader()
@@ -259,6 +263,7 @@ class ModelSystem(
                                 materialIndex = targetMaterialIndex
                                 update = Update.STATIC.value
                                 meshBufferIndex = entityBufferIndex
+                                entityIndex = entityId
                                 meshIndex = targetMeshIndex
                                 baseVertex = allocation.forMeshes[targetMeshIndex].vertexOffset
                                 baseJointIndex = allocation.baseJointIndex

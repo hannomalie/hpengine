@@ -23,9 +23,6 @@ import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
@@ -42,8 +39,9 @@ import de.hanno.hpengine.graphics.fps.FPSCounterSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.graphics.*
+import de.hanno.hpengine.graphics.imgui.editor.EntityClickListener
 import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
+import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.*
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.texture.TextureManager
@@ -105,13 +103,16 @@ val imGuiEditorModule = module {
                 get(),
                 get(),
                 get(),
-                getAll<DeferredRenderExtension>().distinct(),
                 get(),
                 get(),
-                getAll<ImGuiEditorExtension>().distinct()
+                getAll<ImGuiEditorExtension>().distinct(),
+                get(),
             )
         }
     }
+    single {
+        EntityClickListener()
+    } binds arrayOf(EntityClickListener::class, OnClickListener::class)
 }
 val textureRendererModule = module {
     single {
@@ -202,6 +203,11 @@ val baseModule = module {
         }
     }
     renderExtension { AOScatteringExtension(get(), get(), get(), get(), get()) }
+    renderExtension {
+        get<GpuContext>().run {
+            PixelPerfectPickingExtension(get(), get(), getAll())
+        }
+    }
 //    TODO: Fails because of shader code errors
 //    renderExtension { EvaluateProbeRenderExtension(get(), get(), get(), get(), get()) }
 }

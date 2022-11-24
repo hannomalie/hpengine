@@ -162,24 +162,21 @@ class Engine(
         launchEndlessLoop { deltaSeconds ->
             try {
                 updating.getAndSet(true)
+
+                input.update()
+                window.pollEvents()
+
                 executeCommands()
                 withContext(updateScopeDispatcher) {
-                    update(deltaSeconds)
-                }
-                world.delta = deltaSeconds
-                try {
+                    world.delta = deltaSeconds
                     world.process()
-                } catch (e: Exception) {
-                    e.printStackTrace()
                 }
-
                 extract(deltaSeconds)
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
                 updating.getAndSet(false)
             }
-            window.pollEvents()
         }
     }
 
@@ -204,12 +201,6 @@ class Engine(
         renderManager.finishCycle(deltaSeconds)
 
         return updateCycle.getAndIncrement()
-    }
-
-    fun update(deltaSeconds: Float) = try {
-        window.invoke { input.update() }
-    } catch (e: Exception) {
-        e.printStackTrace()
     }
 
     companion object {
@@ -255,15 +246,13 @@ class Engine(
 
 fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
     var currentTimeNs = System.nanoTime()
-    val dtS = 1 / 60.0
 
     while (true) {
         val newTimeNs = System.nanoTime()
         val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
         val frameTimeS = frameTimeNs / 1000000000.0
         currentTimeNs = newTimeNs
-        val deltaTime = frameTimeS//min(frameTimeS, dtS)
-        val deltaSeconds = deltaTime.toFloat()
+        val deltaSeconds = frameTimeS.toFloat()
 
         actualUpdateStep(deltaSeconds)
     }

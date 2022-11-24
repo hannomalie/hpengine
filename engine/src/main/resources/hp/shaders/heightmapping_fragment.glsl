@@ -40,7 +40,7 @@ layout(location=0)out vec4 out_positionRoughness;
 layout(location=1)out vec4 out_normalAmbient;
 layout(location=2)out vec4 out_colorMetallic;
 layout(location=3)out vec4 out_motionDepthTransparency;
-layout(location=4)out vec4 out_depthAndIndices;
+layout(location=4)out vec4 out_indices;
 
 //include(normals.glsl)
 
@@ -107,5 +107,5 @@ void main()
 //    out_colorMetallic = vec4(UV, 1, material.metallic);
     out_colorMetallic = vec4(color.rgb, material.metallic);
     out_motionDepthTransparency = vec4(motionVec,depth,material.transparency);
-    out_depthAndIndices = vec4(float(entity.entityIndexWithoutMeshIndex), depth, entity.materialIndex, float(entity.meshIndex));
+    out_indices = vec4(float(entity.entityIndexWithoutMeshIndex), entityBufferIndex_FS_in, entity.materialIndex, float(entity.meshIndex));
 }

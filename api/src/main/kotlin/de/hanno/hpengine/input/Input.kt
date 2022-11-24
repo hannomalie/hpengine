@@ -1,22 +1,23 @@
 package de.hanno.hpengine.input
 
 import com.carrotsearch.hppc.IntArrayList
-import de.hanno.hpengine.bus.EventBus
 import de.hanno.hpengine.graphics.GpuContext
+import org.joml.Vector2f
+import org.joml.Vector2i
 
 import org.lwjgl.glfw.GLFW.*
 
 class Input(
     private val gpuContext: GpuContext
 ) {
-
     val keysPressed = IntArrayList()
     private val keysPressedLastFrame = IntArrayList()
     private val keysReleased = IntArrayList()
 
-    private val currentMouse = IntArrayList()
-    private val downMouse = IntArrayList()
-    private val upMouse = IntArrayList()
+    private val mousePressed = IntArrayList()
+    private val mouseReleased = IntArrayList()
+
+    private val mousePressedLastFrame = IntArrayList()
 
     private val FIRST_KEY = GLFW_KEY_SPACE
     private val NUM_KEYS = GLFW_KEY_LAST - GLFW_KEY_SPACE
@@ -33,10 +34,6 @@ class Input(
     private var dxBeforeLast: Int = 0
     private var dyBeforeLast: Int = 0
 
-    private var MOUSE_LEFT_PRESSED_LAST_FRAME: Boolean = false
-    private var STRG_PRESSED_LAST_FRAME = false
-    @Volatile
-    var pickingClick = 0
     private val mouseX = DoubleArray(1)
     private val mouseY = DoubleArray(1)
     private val mouseXLast = DoubleArray(1)
@@ -57,54 +54,36 @@ class Input(
 
     private fun updateKeyboard() {
 
-        MOUSE_LEFT_PRESSED_LAST_FRAME = isMouseClicked(0)
-        run {
-            if (pickingClick == 0 && isKeyDown(gpuContext, GLFW_KEY_LEFT_CONTROL)) {
-                if (isMouseClicked(0) && !STRG_PRESSED_LAST_FRAME) {
-                    pickingClick = 1
-                    STRG_PRESSED_LAST_FRAME = true
-                }
-            } else {
-                STRG_PRESSED_LAST_FRAME = false
-            }
-        }
         keysPressedLastFrame.clear()
         keysPressedLastFrame.addAll(keysPressed)
         keysPressed.clear()
         keysReleased.clear()
 
         for (i in FIRST_KEY until NUM_KEYS) {
-            if (isKeyDown(gpuContext, i)) {
+            if (isKeyPressedImpl(gpuContext, i)) {
                 keysPressed.add(i)
-            } else if (keysPressedLastFrame.contains(i)) {
+            } else if (isKeyReleasedImpl(gpuContext, i)) {
                 keysReleased.add(i)
             }
         }
     }
 
     private fun updateMouse() {
-        downMouse.clear()
-        upMouse.clear()
+        mousePressedLastFrame.clear()
+        mousePressedLastFrame.addAll(mousePressed)
 
-        currentMouse.clear()
+        mousePressed.clear()
+        mouseReleased.clear()
 
         for (i in 0 until NUM_BUTTONS) {
-            if (isMouseDown(i) && !currentMouse.contains(i)) {
-                downMouse.add(i)
+            if (isMousePressedImpl(i)) {
+                mousePressed.add(i)
             }
         }
 
         for (i in 0 until NUM_BUTTONS) {
-            if (!isMouseDown(i) && currentMouse.contains(i)) {
-                upMouse.add(i)
-            }
-        }
-
-        currentMouse.clear()
-
-        for (i in 0 until NUM_BUTTONS) {
-            if (isMouseDown(i)) {
-                currentMouse.add(i)
+            if (isMouseReleasedImpl(i)) {
+                mouseReleased.add(i)
             }
         }
 
@@ -122,46 +101,55 @@ class Input(
     }
 
 
-    private fun isKeyDown(gpuContext: GpuContext, keyCode: Int): Boolean {
+    private fun isKeyPressedImpl(gpuContext: GpuContext, keyCode: Int): Boolean {
         val action = gpuContext.window.getKey(keyCode)
         return action == GLFW_PRESS || action == GLFW_REPEAT
     }
-    private fun isKeyUp(gpuContext: GpuContext, keyCode: Int): Boolean {
-        return gpuContext.window.getKey(keyCode) == GLFW_RELEASE
-    }
+    private fun isKeyReleasedImpl(gpuContext: GpuContext, keyCode: Int) = gpuContext.window.getKey(keyCode) == GLFW_RELEASE
+    private fun isMousePressedImpl(buttonCode: Int) = gpuContext.window.getMouseButton(buttonCode) == GLFW_PRESS
+    private fun isMouseReleasedImpl(buttonCode: Int) = gpuContext.window.getMouseButton(buttonCode) == GLFW_RELEASE
 
-    fun isKeyPressed(keyCode: Int): Boolean {
-        return isKeyDown(gpuContext, keyCode)
-    }
-    fun wasKeyPressedLastFrame(keyCode: Int): Boolean {
-        return keysPressedLastFrame.contains(keyCode)
-    }
-    fun wasKeyReleasedLastFrame(keyCode: Int): Boolean {
-        return !wasKeyPressedLastFrame(keyCode)
-    }
+    fun isKeyPressed(keyCode: Int) = keysPressed.contains(keyCode)
+    fun isKeyReleased(keyCode: Int) = keysReleased.contains(keyCode)
+    fun wasKeyClicked(keyCode: Int) = wasKeyPressedLastFrame(keyCode) && isKeyReleased(keyCode)
 
-    fun isKeyReleased(keyCode: Int): Boolean {
-        return keysReleased.contains(keyCode)
-    }
+    fun wasKeyPressedLastFrame(keyCode: Int) = keysPressedLastFrame.contains(keyCode)
+    fun wasKeyReleasedLastFrame(keyCode: Int) = !wasKeyPressedLastFrame(keyCode)
 
-    private fun isMouseDown(buttonCode: Int): Boolean {
-        return gpuContext.window.getMouseButton(buttonCode) == GLFW_PRESS
-    }
+    fun isMousePressed(buttonCode: Int) = mousePressed.contains(buttonCode)
+    fun isMouseClicked(buttonCode: Int): Boolean = mousePressedLastFrame.contains(buttonCode) && isMouseReleased(buttonCode)
+    fun isMouseReleased(buttonCode: Int) = mouseReleased.contains(buttonCode)
 
-    fun isMouseClicked(buttonCode: Int): Boolean {
-        return downMouse.contains(buttonCode)
-    }
+    fun getMouseX() = mouseX[0].toInt()
+    fun getMouseY() = height[0] - mouseY[0].toInt()
+    fun getMouseXY() = Vector2i(getMouseX(), getMouseY())
 
-    fun isMouseUp(buttonCode: Int): Boolean {
-        return upMouse.contains(buttonCode)
-    }
+}
 
-    fun getMouseX(): Int {
-        return mouseX[0].toInt()
-    }
+class MouseClickListener(
+    private val input: Input,
+) {
+    var clicked = false
+    private var mousePressStartPosition: Vector2i? = null
 
-    fun getMouseY(): Int {
-        return height[0] - mouseY[0].toInt()
+    fun update(deltaSeconds: Float) {
+        if(mousePressStartPosition == null && input.isMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+            mousePressStartPosition = Vector2i(input.getMouseXY())
+        } else if(input.isMouseReleased(GLFW_MOUSE_BUTTON_LEFT)) {
+            mousePressStartPosition?.let { mousePressStartPosition ->
+                val distance = input.getMouseXY().distance(mousePressStartPosition)
+                if(distance <= 1.0) {
+                    clicked = true
+                }
+                this.mousePressStartPosition = null
+            }
+        }
     }
-
+    inline fun <T> consumeClick(onClick: () -> T): T? = if(clicked) {
+        try {
+            onClick()
+        } finally {
+            clicked = false
+        }
+    } else null
 }

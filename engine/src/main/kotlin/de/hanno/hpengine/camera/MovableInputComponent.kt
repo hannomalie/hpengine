@@ -45,7 +45,7 @@ class MovableInputComponentComponentSystem: BaseEntitySystem() {
                 }
 
                 val rotationAmount = 10.1f * turbo * deltaSeconds * rotationDelta * cameraSpeed
-                if (input.isMouseClicked(0)) {
+                if (input.isMousePressed(0)) {
                     val pitchAmount = Math.toRadians((input.dySmooth * rotationAmount % 360).toDouble())
                     pitchAccel = Math.max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()
                     pitchAccel = Math.max(0f, pitchAccel * 0.9f)

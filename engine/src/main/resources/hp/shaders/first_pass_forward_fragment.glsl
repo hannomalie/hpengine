@@ -57,7 +57,7 @@ layout(location=0)out vec4 out_positionRoughness; // position, roughness
 layout(location=1)out vec4 out_normalAmbient; // normal, depth
 layout(location=2)out vec4 out_colorMetallic; // color, metallic
 layout(location=3)out vec4 out_motionDepthTransparency; // motion, probeIndices
-layout(location=4)out vec4 out_depthAndIndices; // visibility
+layout(location=4)out vec4 out_indices; // visibility
 
 //include(globals.glsl)
 
@@ -211,7 +211,7 @@ void main(void) {
     }
 
   	out_motionDepthTransparency = vec4(motionVec,depth,materialTransparency);
-  	out_depthAndIndices = vec4(float(outEntity.entityIndexWithoutMeshIndex), depth, outMaterialIndex, float(outEntity.meshIndex));
+	out_indices = vec4(float(outEntity.entityIndexWithoutMeshIndex), entityIndex, outMaterialIndex, float(outEntity.meshIndex));
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));

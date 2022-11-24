@@ -10,6 +10,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.lifecycle.Updatable
 
 interface DeferredRenderExtension: Updatable {
+    val renderPriority get() = -1
     fun renderZeroPass(renderState: RenderState) {}
     fun renderFirstPass(backend: Backend, firstPassResult: FirstPassResult, renderState: RenderState) {}
     fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}

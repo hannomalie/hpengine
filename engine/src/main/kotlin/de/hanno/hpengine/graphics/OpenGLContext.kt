@@ -84,10 +84,6 @@ class OpenGLContext private constructor(
         }
     }
 
-    private val extensions = onGpu {
-        getSupportedExtensions()
-    }
-
     override val isError: Boolean get() = onGpu { glGetError() != GL_NO_ERROR }
 
     override val features = run {
@@ -103,7 +99,7 @@ class OpenGLContext private constructor(
         currentReadState.gpuCommandSync = createCommandSync()
     }
 
-    override fun createCommandSync(onSignaled: (() -> Unit)): OpenGlCommandSync = window.invoke {
+    override fun createCommandSync(onSignaled: (() -> Unit)): OpenGlCommandSync = onGpu {
         OpenGlCommandSync(onSignaled).also {
             commandSyncs.add(it)
         }
@@ -115,20 +111,20 @@ class OpenGLContext private constructor(
         exceptionOnError("")
     }
 
-    override fun createCommandSync(): OpenGlCommandSync = window.invoke {
+    override fun createCommandSync(): OpenGlCommandSync = onGpu {
         OpenGlCommandSync().also {
             commandSyncs.add(it)
         }
     }
 
     private fun getMaxCombinedTextureImageUnits() =
-        window.invoke { glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
+        onGpu { glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
 
-    private fun getSupportedExtensions(): List<String> = window.invoke {
+    private fun getSupportedExtensions(): List<String> = onGpu {
         (0 until glGetInteger(GL30.GL_NUM_EXTENSIONS)).mapNotNull { GL30.glGetStringi(GL_EXTENSIONS, it) }
     }
 
-    override fun checkCommandSyncs() = window.invoke {
+    override fun checkCommandSyncs() = onGpu {
         commandSyncs.check()
         val (signaled, nonSignaled) = commandSyncs.partition { it.signaled }
         signaled.forEach {
@@ -138,31 +134,28 @@ class OpenGLContext private constructor(
         commandSyncs = nonSignaled.toMutableList()
     }
 
-    override fun enable(cap: Capability) = window.invoke { cap.enable() }
-    override fun disable(cap: Capability) = window.invoke { cap.disable() }
+    override fun enable(cap: Capability) = onGpu { cap.enable() }
+    override fun disable(cap: Capability) = onGpu { cap.disable() }
 
     override var cullFace: Boolean
         get() = Capability.CULL_FACE.isEnabled
-        set(value) = window.invoke { Capability.CULL_FACE.run { if (value) enable() else disable() } }
+        set(value) = onGpu { Capability.CULL_FACE.run { if (value) enable() else disable() } }
 
     override var cullMode: CullMode
         get() = CullMode.values().first { it.glMode == glGetInteger(GL_CULL_FACE_MODE) }
-        set(value) = window.invoke { glCullFace(value.glMode) }
+        set(value) = onGpu { glCullFace(value.glMode) }
 
     override var depthTest: Boolean
         get() = Capability.DEPTH_TEST.isEnabled
-        set(value) = window.invoke { Capability.DEPTH_TEST.run { if (value) enable() else disable() } }
+        set(value) = onGpu { Capability.DEPTH_TEST.run { if (value) enable() else disable() } }
 
     override var blend: Boolean
         get() = Capability.BLEND.isEnabled
-        set(value) = window.invoke { Capability.BLEND.run { if (value) enable() else disable() } }
+        set(value) = onGpu { Capability.BLEND.run { if (value) enable() else disable() } }
 
     override fun activeTexture(textureUnitIndex: Int) {
-        if (textureUnitIndex < 0) {
-            throw IllegalArgumentException("Passed textureUnitIndex of < 0")
-        }
         val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
-        window.invoke { GL13.glActiveTexture(textureIndexGLInt) }
+        onGpu { GL13.glActiveTexture(textureIndexGLInt) }
     }
 
     private fun getCleanedTextureUnitValue(textureUnit: Int): Int {
@@ -174,19 +167,13 @@ class OpenGLContext private constructor(
     }
 
     override fun bindTexture(target: TextureTarget, textureId: Int) {
-        if (textureId < 0) {
-            throw IllegalArgumentException("Passed textureId of < 0")
-        }
-        window.invoke {
+        onGpu {
             glBindTexture(target.glTarget, textureId)
             getExceptionOnError("")?.let { throw it }
         }
     }
 
     override fun bindTexture(textureUnitIndex: Int, target: TextureTarget, textureId: Int) {
-        if (textureId < 0) {
-            throw IllegalArgumentException("Passed textureId of < 0")
-        }
         onGpu {
             getExceptionOnError("beforeBindTexture")?.let { throw it }
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
@@ -197,15 +184,15 @@ class OpenGLContext private constructor(
     }
 
     override fun bindTextures(textureIds: IntBuffer) {
-        window.invoke { GL44.glBindTextures(0, textureIds) }
+        onGpu { GL44.glBindTextures(0, textureIds) }
     }
 
     override fun bindTextures(count: Int, textureIds: IntBuffer) {
-        window.invoke { GL44.glBindTextures(0, textureIds) }
+        onGpu { GL44.glBindTextures(0, textureIds) }
     }
 
     override fun bindTextures(firstUnit: Int, count: Int, textureIds: IntBuffer) {
-        window.invoke { GL44.glBindTextures(firstUnit, textureIds) }
+        onGpu { GL44.glBindTextures(firstUnit, textureIds) }
     }
 
     override fun viewPort(x: Int, y: Int, width: Int, height: Int) {
@@ -226,38 +213,38 @@ class OpenGLContext private constructor(
     }
 
     override fun bindFrameBuffer(frameBuffer: Int) {
-        window.invoke {
+        onGpu {
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer)
         }
     }
 
     override var depthMask: Boolean
         get() = GlFlag.DEPTH_MASK.enabled
-        set(value) = window.invoke { GlFlag.DEPTH_MASK.run { if (value) enable() else disable() } }
+        set(value) = onGpu { GlFlag.DEPTH_MASK.run { if (value) enable() else disable() } }
 
     override var depthFunc: DepthFunc
         get() = DepthFunc.values().first { it.glFunc == glGetInteger(GL_DEPTH_FUNC) }
-        set(value) = window.invoke { glDepthFunc(value.glFunc) }
+        set(value) = onGpu { glDepthFunc(value.glFunc) }
 
     override fun readBuffer(colorAttachmentIndex: Int) {
         val colorAttachment = GL30.GL_COLOR_ATTACHMENT0 + colorAttachmentIndex
-        window.invoke {
+        onGpu {
             glReadBuffer(colorAttachment)
         }
     }
 
     override var blendEquation: BlendMode
         get() = BlendMode.values().first { it.mode == glGetInteger(GL20.GL_BLEND_EQUATION_RGB) }
-        set(value) = window.invoke { GL14.glBlendEquation(value.mode) }
+        set(value) = onGpu { GL14.glBlendEquation(value.mode) }
 
-    override fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor) = window.invoke {
+    override fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor) = onGpu {
         glBlendFunc(sfactor.glFactor, dfactor.glFactor)
     }
 
     private val clearColorArray = floatArrayOf(0f, 0f, 0f, 0f)
     private val clearColorVector = org.joml.Vector4f()
     override var clearColor: org.joml.Vector4f
-        get() = window.invoke {
+        get() = onGpu {
             glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColorArray).let {
                 clearColorVector.apply {
                     x = clearColorArray[0]
@@ -267,7 +254,7 @@ class OpenGLContext private constructor(
                 }
             }
         }
-        set(value) = window.invoke { glClearColor(value.x, value.y, value.z, value.w) }
+        set(value) = onGpu { glClearColor(value.x, value.y, value.z, value.w) }
 
     override fun clearColor(r: Float, g: Float, b: Float, a: Float) {
         clearColor = clearColorVector.apply {
@@ -292,23 +279,23 @@ class OpenGLContext private constructor(
     }
 
     override fun genTextures(): Int {
-        return window.invoke { glGenTextures() }
+        return onGpu { glGenTextures() }
     }
 
     override val availableVRAM: Int
-        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) }
+        get() = onGpu { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) }
 
     override val availableTotalVRAM: Int
-        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) }
+        get() = onGpu { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) }
 
     override val dedicatedVRAM: Int
-        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) }
+        get() = onGpu { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) }
 
     override val evictedVRAM: Int
-        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) }
+        get() = onGpu { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) }
 
     override val evictionCount: Int
-        get() = window.invoke { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
+        get() = onGpu { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
 
     inline fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
         if (CHECK_ERRORS) {
@@ -325,11 +312,11 @@ class OpenGLContext private constructor(
         return null
     }
 
-    override fun createProgramId(): Int = window.invoke { GL20.glCreateProgram() }
+    override fun createProgramId(): Int = onGpu { GL20.glCreateProgram() }
 
-    override fun genFrameBuffer() = window.invoke { glGenFramebuffers() }
+    override fun genFrameBuffer() = onGpu { glGenFramebuffers() }
 
-    override fun clearCubeMap(textureId: Int, textureFormat: Int) = window.invoke {
+    override fun clearCubeMap(textureId: Int, textureFormat: Int) = onGpu {
         glClearTexImage(textureId, 0, textureFormat, GL_UNSIGNED_BYTE, ZERO_BUFFER)
     }
 
@@ -339,7 +326,7 @@ class OpenGLContext private constructor(
         width: Int,
         height: Int,
         cubeMapIndex: Int
-    ) = window.invoke {
+    ) = onGpu {
         glClearTexSubImage(
             textureID,
             0,
@@ -448,7 +435,7 @@ class OpenGLContext private constructor(
         }
     }
 
-    fun getError(): Int = window.invoke { glGetError() }
+    fun getError(): Int = onGpu { glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
     fun Texture.delete() = onGpu { glDeleteTextures(id) }
     fun finish() = glFinish()
@@ -540,41 +527,20 @@ class OpenGlExecutorImpl(
     inline val Thread.isOpenGLThread: Boolean get() = id == gpuThreadId
 
     override suspend fun <T> execute(block: () -> T) = if (isOpenGLThread) {
-        block().apply { onError() }
+        block()
     } else {
         withContext(coroutineContext) {
-            block().apply {
-                onError()
-            }
+            block()
         }
     }
 
     override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE) = if (isOpenGLThread) {
-        block().apply { onError() }
+        block()
     } else {
-        var error: Int = GL_NO_ERROR
-        val value = runBlocking(coroutineContext) {
-            block().apply {
-                error = glGetError()
-            }
-        }
-        if(error != GL_NO_ERROR) {
-            throw IllegalStateException(GLU.gluErrorString(error)).apply {
-                printStackTrace()
-            }
-        } else value
-    }
-
-    override fun onError() {
-        val error = glGetError()
-        val isError = error != GL_NO_ERROR
-        if (isError) {
-            throw IllegalStateException(GLU.gluErrorString(error)).apply {
-                printStackTrace()
-            }
+        runBlocking(coroutineContext) {
+            block()
         }
     }
-
 }
 
 var DEFAULTCHANNELS = EnumSet.of(

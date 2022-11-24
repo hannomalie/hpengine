@@ -49,7 +49,7 @@ layout(location=0)out vec4 out_positionRoughness;
 layout(location=1)out vec4 out_normalAmbient;
 layout(location=2)out vec4 out_colorMetallic;
 layout(location=3)out vec4 out_motionDepthTransparency;
-layout(location=4)out vec4 out_depthAndIndices;
+layout(location=4)out vec4 out_indices;
 
 //include(globals.glsl)
 //include(normals.glsl)
@@ -58,6 +58,7 @@ void main(void) {
 
     int entityIndex = vertexShaderFlatOutput.entityBufferIndex;
     Entity entity = vertexShaderFlatOutput.entity;
+	int entityId = entity.entityIndexWithoutMeshIndex;
 
 	Material material = vertexShaderFlatOutput.material;
 
@@ -161,9 +162,9 @@ void main(void) {
 	out_colorMetallic = vec4(color.rgb, material.metallic);
 	out_normalAmbient = vec4(PN_view, material.ambient);
 	out_motionDepthTransparency = vec4(motionVec,depth,material.transparency);
-	out_depthAndIndices = vec4(float(entity.entityIndexWithoutMeshIndex), depth, entity.materialIndex, float(entity.meshIndex));
-//	out_depthAndIndices = vec4(0f, depth, 0f, 0f);
-
+	out_indices = vec4(float(entity.entityIndexWithoutMeshIndex), entityIndex, entity.materialIndex, float(entity.meshIndex));
+//	out_indices = vec4(12f, depth, 98f, 45f);
+//
 //	This is for reusability, remove this somewhen with a better
 //	mechanism for color output channel options
 #ifdef COLOR_OUTPUT_0

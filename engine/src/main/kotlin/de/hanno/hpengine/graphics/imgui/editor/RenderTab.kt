@@ -5,6 +5,7 @@ import de.hanno.hpengine.graphics.imgui.dsl.TabBar
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.pipelines.GPUCulledPipeline
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.stopwatch.ProfilingTask
 import imgui.ImGui
@@ -15,25 +16,7 @@ context(Window, ImGuiEditor)
 fun TabBar.renderTab() {
     tab("Render") {
         text("FPS: ${fpsCounter.fps}") {}
-        fun ProfilingTask.dump(indentation: Int = 0) {
-            var indentationString = ""
-            for (i in (0 until indentation)) {
-                indentationString += "  "
-            }
-            text(
-                indentationString + String.format(
-                    "%s : %.5fms (CPU: %.5fms)",
-                    name,
-                    timeTaken.toFloat() / 1000f / 1000f,
-                    timeTakenCpu.toFloat() / 1000f / 1000f
-                ) + "\n"
-            ) {}
-
-            children.forEach {
-                it.dump(indentation + 1)
-            }
-        }
-        de.hanno.hpengine.stopwatch.GPUProfiler.currentTask?.dump()
+        text(GPUProfiler.currentTimings)
 
         val renderManager = artemisWorld.getSystem(de.hanno.hpengine.graphics.RenderManager::class.java)!!
         val renderMode = renderManager.renderMode

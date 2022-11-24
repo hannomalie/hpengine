@@ -41,6 +41,7 @@ class ProfilingTask(val name: String, val parent: ProfilingTask? = null) {
         this.endQuery = GPUProfiler.query
         this.endTimeCpu = System.nanoTime()
         currentTask = parent ?: currentTask
+
         if(parent == null) {
             val last100 = GPUProfiler.collectedTimes.takeLast(100)
             GPUProfiler.collectedTimes.clear()
@@ -61,7 +62,7 @@ class ProfilingTask(val name: String, val parent: ProfilingTask? = null) {
     fun dumpTimings(): String {
         if (GPUProfiler.profiling) {
             val builder = StringBuilder()
-            this.dump(builder)
+            dump(builder)
             return builder.toString()
         }
         return ""

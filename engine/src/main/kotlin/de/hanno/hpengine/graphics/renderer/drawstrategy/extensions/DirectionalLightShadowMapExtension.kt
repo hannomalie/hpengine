@@ -130,7 +130,7 @@ class DirectionalLightShadowMapExtension(
         private fun RenderState.getRenderBatches(uniforms: DirectionalShadowUniforms) = when (uniforms) {
             is AnimatedDirectionalShadowUniforms -> renderBatchesAnimated
             is StaticDirectionalShadowUniforms -> renderBatchesStatic
-        }
+        }.filter { it.isVisible && it.isShadowCasting }
 
         private fun RenderState.selectVertexIndexBuffer(uniforms: DirectionalShadowUniforms) = when (uniforms) {
             is AnimatedDirectionalShadowUniforms -> entitiesState.vertexIndexBufferAnimated

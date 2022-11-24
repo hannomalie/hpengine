@@ -33,7 +33,7 @@ class ExtensibleDeferredRenderer(
     override lateinit var artemisWorld: World
     private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
     private val extensions: List<DeferredRenderExtension>
-        get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }
+        get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }.sortedBy { it.renderPriority }
 
     private val programManager: ProgramManager = backend.programManager
     private val textureManager = backend.textureManager
@@ -69,14 +69,14 @@ class ExtensibleDeferredRenderer(
         object: DirectFirstPassPipeline(config, simpleColorProgramStatic) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 renderBatchesStatic.filterNot { it.canBeRenderedInIndirectBatch }
-            } else renderBatchesStatic
+            } else renderBatchesStatic.filterNot { it.shouldBeSkipped(camera) }
         }
     }
     private val animatedDirectPipeline: StateRef<DirectFirstPassPipeline> = renderStateManager.renderState.registerState {
         object: DirectFirstPassPipeline(config, simpleColorProgramAnimated) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 renderBatchesAnimated.filterNot { it.canBeRenderedInIndirectBatch }
-            } else renderBatchesAnimated
+            } else renderBatchesAnimated.filterNot { it.shouldBeSkipped(camera) }
 
             override fun RenderState.selectVertexIndexBuffer() = vertexIndexBufferAnimated
         }
@@ -147,16 +147,22 @@ class ExtensibleDeferredRenderer(
         }
         profiled("SecondPass") {
             profiled("HalfResolution") {
-                deferredRenderingBuffer.halfScreenBuffer.use(true)
+                profiled("Use rendertarget") {
+                    deferredRenderingBuffer.halfScreenBuffer.use(true)
+                }
                 for (extension in extensions) {
                     extension.renderSecondPassHalfScreen(renderState, result.secondPassResult)
                 }
             }
-            deferredRenderingBuffer.lightAccumulationBuffer.use(true)
-            for (extension in extensions) {
-                profiled(extension.javaClass.simpleName) {
-                    deferredRenderingBuffer.lightAccumulationBuffer.use(false)
-                    extension.renderSecondPassFullScreen(renderState, result.secondPassResult)
+
+            profiled("FullResolution") {
+                profiled("Use rendertarget") {
+                    deferredRenderingBuffer.lightAccumulationBuffer.use(true)
+                }
+                for (extension in extensions) {
+                    profiled(extension.javaClass.simpleName) {
+                        extension.renderSecondPassFullScreen(renderState, result.secondPassResult)
+                    }
                 }
             }
         }

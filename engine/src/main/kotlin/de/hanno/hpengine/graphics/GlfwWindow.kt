@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics
 
 
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
 import org.joml.Vector4f
@@ -13,6 +14,9 @@ import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
+import org.lwjgl.opengl.GL11.glGetError
+import org.lwjgl.system.APIUtil
+import java.lang.reflect.Field
 import kotlin.system.exitProcess
 
 
@@ -26,6 +30,23 @@ private val exitOnCloseCallback = GLFWWindowCloseCallbackI { _: Long ->
     exitProcess(0)
 }
 
+private val exceptionOnErrorCallback = object : GLFWErrorCallback() {
+    private val ERROR_CODES = APIUtil.apiClassTokens(
+        { _: Field?, value: Int -> value in 0x10001..0x1ffff }, null,
+        org.lwjgl.glfw.GLFW::class.java
+    )
+
+    override fun invoke(error: Int, description: Long) {
+        val msg = getDescription(description)
+        "[LWJGL] ${ERROR_CODES[error]} error\n" +
+        "Error: ${GLU.gluErrorString(error)}" +
+        "\tDescription : $msg"
+
+        throw OpenGlException(msg)
+    }
+}
+class OpenGlException(msg: String): RuntimeException(msg)
+
 class GlfwWindow(
     override var width: Int,
     override var height: Int,
@@ -38,7 +59,9 @@ class GlfwWindow(
 
     override var vSync: Boolean = _vSync
         set(value) {
-            glfwSwapInterval(if (value) 1 else 0)
+            executor.invoke {
+                glfwSwapInterval(if (value) 1 else 0)
+            }
             field = value
         }
     override var title = title
@@ -74,7 +97,7 @@ class GlfwWindow(
 
     init {
         check(glfwInit()) { "Unable to initialize GLFW" }
-        glfwSetErrorCallback(errorCallback)
+        glfwSetErrorCallback(exceptionOnErrorCallback)
         glfwDefaultWindowHints()
         glfwWindowHint(GLFW_RESIZABLE, GL11.GL_TRUE)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
@@ -105,7 +128,6 @@ class GlfwWindow(
         }
 
         frontBuffer = createFrontBufferRenderTarget()
-        vSync = _vSync
     }
 
     override fun showWindow() = glfwShowWindow(handle)
@@ -128,7 +150,6 @@ class GlfwWindow(
     override fun awaitEvents() {
         glfwWaitEvents()
     }
-
 }
 
 fun Window.createFrontBufferRenderTarget(): FrontBufferTarget = object : FrontBufferTarget {

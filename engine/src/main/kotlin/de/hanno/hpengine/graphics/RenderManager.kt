@@ -13,7 +13,6 @@ import de.hanno.hpengine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.ressources.FileBasedCodeSource
@@ -99,36 +98,33 @@ class RenderManager(
                             recorder.add(currentReadState)
                             val drawResult = currentReadState.latestDrawResult.apply { reset() }
 
-                            fun renderSystems() {
-                                profiled("renderSystems") {
-                                    renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
-                                        val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                        renderTarget?.use(clear)
-                                        renderSystems.forEach { renderSystem ->
-                                            renderSystem.render(drawResult, currentReadState)
-                                        }
-
+                            profiled("renderSystems") {
+                                renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
+                                    val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
+                                    renderTarget?.use(clear)
+                                    renderSystems.forEach { renderSystem ->
+                                        renderSystem.render(drawResult, currentReadState)
                                     }
+                                }
 
-                                    if (config.debug.isEditorOverlay) {
-                                        renderSystems.forEach {
-                                            it.renderEditor(drawResult, currentReadState)
-                                        }
+                                if (config.debug.isEditorOverlay) {
+                                    renderSystems.forEach {
+                                        it.renderEditor(drawResult, currentReadState)
                                     }
                                 }
                             }
 
-                            renderSystems()
-
-                            window.frontBuffer.use(true)
-                            textureRenderer.drawToQuad(finalOutput.texture2D, mipMapLevel = finalOutput.mipmapLevel)
-                            debugOutput.texture2D?.let { debugOutputTexture ->
-                                textureRenderer.drawToQuad(
-                                    debugOutputTexture,
-                                    buffer = debugBuffer,
-                                    program = drawToDebugQuadProgram,
-                                    mipMapLevel = debugOutput.mipmapLevel
-                                )
+                            profiled("present") {
+                                window.frontBuffer.use(true)
+                                textureRenderer.drawToQuad(finalOutput.texture2D, mipMapLevel = finalOutput.mipmapLevel)
+                                debugOutput.texture2D?.let { debugOutputTexture ->
+                                    textureRenderer.drawToQuad(
+                                        debugOutputTexture,
+                                        buffer = debugBuffer,
+                                        program = drawToDebugQuadProgram,
+                                        mipMapLevel = debugOutput.mipmapLevel
+                                    )
+                                }
                             }
 
                             profiled("checkCommandSyncs") {
@@ -142,12 +138,15 @@ class RenderManager(
                                     it.afterFrameFinished()
                                 }
                             }
-
-                            window.swapBuffers()
-                            GL11.glFinish()
-                            require(oldFenceSync.isSignaled) {
-                                "GPU has not finished all actions using resources of read state, can't swap"
+                            profiled("finish") {
+                                GL11.glFinish()
                             }
+                            profiled("swapBuffers") {
+                                window.swapBuffers()
+                            }
+//                            require(oldFenceSync.isSignaled) {
+//                                "GPU has not finished all actions using resources of read state, can't swap"
+//                            }
                         }
                         GPUProfiler.dump()
                     }
@@ -183,7 +182,9 @@ class RenderSystemsConfig(renderSystems: List<RenderSystem>) {
 
 inline fun <T> profiled(name: String, action: () -> T): T {
     val task = GPUProfiler.start(name)
-    val result = action()
-    task?.end()
-    return result
+    try {
+        return action()
+    } finally {
+        task?.end()
+    }
 }

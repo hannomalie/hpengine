@@ -12,7 +12,4 @@ interface GpuExecutor {
             execute(block)
         }
     }
-
-    fun onError()
-
 }

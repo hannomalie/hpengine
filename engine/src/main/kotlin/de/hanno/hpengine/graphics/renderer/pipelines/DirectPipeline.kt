@@ -21,7 +21,7 @@ context(GpuContext)
 open class DirectFirstPassPipeline(
     private val config: Config,
     private val program: IProgram<out FirstPassUniforms>,
-    private val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
+    protected val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
     }
 ) {

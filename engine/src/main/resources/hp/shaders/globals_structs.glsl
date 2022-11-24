@@ -52,9 +52,9 @@ struct Entity {
     int isSelected;
     int materialIndex;
     int isStatic;
-    int entityIndex;
+    int entityIndex; // TODO: this is meshBufferIndex
 
-    int entityIndexWithoutMeshIndex; //TODO: Rename this properly
+    int entityIndexWithoutMeshIndex; //TODO: Rename this properly, it's entityIndex really
     int meshIndex;
     int baseVertex;
     int baseJointIndex;

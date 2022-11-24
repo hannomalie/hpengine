@@ -1,48 +1,69 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.backend.Backend
+import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 
 import java.nio.FloatBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.input.Input
+import de.hanno.hpengine.input.MouseClickListener
 import org.joml.Vector2f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import java.lang.Exception
-import java.util.logging.Logger
 
+data class Indices(
+    val entityBufferIndex: Int,
+    val entityId: Int,
+    val meshIndex: Int,
+    val materialIndex: Int
+)
+interface OnClickListener {
+    fun onClick(indices: Indices)
+}
 context(GpuContext)
-class PixelPerfectPickingExtension : DeferredRenderExtension {
+class PixelPerfectPickingExtension(
+    val config: Config,
+    input: Input,
+    private val listeners: List<OnClickListener>
+) : DeferredRenderExtension {
+    override val renderPriority: Int = 1000
     private val floatBuffer: FloatBuffer = BufferUtils.createFloatBuffer(4)
 
+    private val mouseClickListener = MouseClickListener(input)
+
+    override fun update(deltaSeconds: Float) {
+        mouseClickListener.update(deltaSeconds)
+    }
     override fun renderFirstPass(
         backend: Backend,
         firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {
-        if (backend.input.pickingClick == 1) {
+        mouseClickListener.consumeClick {
             readBuffer(4)
             floatBuffer.rewind()
-            //             TODO: This doesn't make sense anymore, does it?
             val ratio = Vector2f(
-                window.width.toFloat() / window.width.toFloat(),
-                window.height.toFloat() / window.height.toFloat()
+                config.width.toFloat() / window.width.toFloat(),
+                config.height.toFloat() / window.height.toFloat()
             )
             val adjustedX = (backend.input.getMouseX() * ratio.x).toInt()
             val adjustedY = (backend.input.getMouseY() * ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
-            Logger.getGlobal().info("Picked: $adjustedX : $adjustedY")
             try {
-                val entityIndexComponentIndex = 0 // red component
-                val meshIndexComponentIndex = 3 // alpha component
-                val entityIndex = floatBuffer[entityIndexComponentIndex].toInt()
-                val meshIndex = floatBuffer[meshIndexComponentIndex].toInt()
-                println("Clicked mesh \$meshIndex")
+                val entityId = floatBuffer[0].toInt()
+                val entityBufferIndex = floatBuffer[1].toInt()
+                val materialIndex = floatBuffer[2].toInt()
+                val meshIndex = floatBuffer[3].toInt()
+                val indices = Indices(entityBufferIndex, entityId, meshIndex, materialIndex)
+                listeners.forEach {
+                    it.onClick(indices)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            backend.input.pickingClick = 0
         }
     }
 }
