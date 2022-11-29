@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.renderer.constants.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.IFrameBuffer
+import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
@@ -105,10 +105,6 @@ class OpenGLContext private constructor(
     }
 
     override fun <T> onGpu(block: context(GpuContext)() -> T) = invoke { block(this) }
-
-    override fun exceptionOnError() {
-        exceptionOnError("")
-    }
 
     override fun createCommandSync(): OpenGlCommandSync = onGpu {
         OpenGlCommandSync().also {
@@ -293,21 +289,6 @@ class OpenGLContext private constructor(
     override val evictionCount: Int
         get() = onGpu { glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
 
-    inline fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
-        if (CHECK_ERRORS) {
-            val errorValue = getError()
-
-            if (errorValue != GL_NO_ERROR) {
-                val errorString = GLU.gluErrorString(errorValue)
-                System.err.println("ERROR: $errorString")
-                System.err.println(errorMessage())
-
-                return RuntimeException("$errorString\n${errorMessage()}")
-            }
-        }
-        return null
-    }
-
     override fun createProgramId(): Int = onGpu { GL20.glCreateProgram() }
 
     override fun genFrameBuffer() = onGpu { glGenFramebuffers() }
@@ -374,7 +355,7 @@ class OpenGLContext private constructor(
     fun getOpenGlVersionsDefine(): String = "#version 430 core\n"
 
 
-    override fun bindFrameBuffer(frameBuffer: IFrameBuffer) {
+    override fun bindFrameBuffer(frameBuffer: FrameBuffer) {
         bindFrameBuffer(frameBuffer.frameBuffer)
     }
 
@@ -400,35 +381,15 @@ class OpenGLContext private constructor(
 
         @JvmStatic
         @JvmName("create")
-        operator fun invoke(window: Window): OpenGLContext {
-            return if (openGLContextSingleton != null) {
-                throw IllegalStateException("Can only instantiate one OpenGLContext!")
-            } else {
-                OpenGLContext(window).apply {
-                    openGLContextSingleton = this
-                }
+        operator fun invoke(window: Window): OpenGLContext = if (openGLContextSingleton != null) {
+            throw IllegalStateException("Can only instantiate one OpenGLContext!")
+        } else {
+            OpenGLContext(window).apply {
+                openGLContextSingleton = this
             }
         }
     }
 
-    fun onError(block: (errorString: String) -> Unit) {
-        val error = getError()
-        val isError = error != GL_NO_ERROR
-        if (isError) {
-            block(getErrorString(error))
-        }
-    }
-
-    fun exceptionOnError(msg: String) {
-        val error = getError()
-        val isError = error != GL_NO_ERROR
-        if (isError) {
-            throw IllegalStateException(getErrorString(error) + "\n$msg")
-        }
-    }
-
-    fun getError(): Int = onGpu { glGetError() }
-    fun getErrorString(error: Int) = GLU.gluErrorString(error)
     fun Texture.delete() = onGpu { glDeleteTextures(id) }
     fun finish() = glFinish()
 
@@ -452,9 +413,7 @@ class OpenGLContext private constructor(
 
         val handle = getTextureHandle(textureId)
 
-        TextureAllocationData(textureId, handle, wrapMode).apply {
-            exceptionOnError()
-        }
+        TextureAllocationData(textureId, handle, wrapMode)
     }
 
     override fun getTextureHandle(textureId: Int) = if (isSupported(BindlessTextures)) {

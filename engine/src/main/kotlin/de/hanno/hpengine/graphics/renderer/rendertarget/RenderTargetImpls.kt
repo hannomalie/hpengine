@@ -24,35 +24,29 @@ val borderColorBuffer = BufferUtils.createFloatBuffer(4).apply {
 
 context(GpuContext)
 operator fun BackBufferRenderTarget.Companion.invoke(
-    frameBuffer: FrameBuffer,
+    frameBuffer: OpenGLFrameBuffer,
     width: Int = 1280,
     height: Int = 720,
     textures: List<OpenGLTexture2D> = emptyList(),
     name: String,
     clear: Vector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f)
-): RenderTarget2D {
-
-    return RenderTarget2D(RenderTargetImpl(frameBuffer, width, height, textures, name, clear))
-}
+) = RenderTarget2D(RenderTargetImpl(frameBuffer, width, height, textures, name, clear))
 
 context(GpuContext)
 operator fun BackBufferRenderTarget.Companion.invoke(
-    frameBuffer: FrameBuffer,
+    frameBuffer: OpenGLFrameBuffer,
     width: Int = 1280,
     height: Int = 720,
     textures: List<OpenGLCubeMap> = emptyList(),
     name: String,
     clear: Vector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f)
-): CubeMapRenderTarget {
-
-    return CubeMapRenderTarget(
-        RenderTargetImpl(frameBuffer, width, height, textures, name, clear)
-    )
-}
+) = CubeMapRenderTarget(
+    RenderTargetImpl(frameBuffer, width, height, textures, name, clear)
+)
 
 context(GpuContext)
 operator fun BackBufferRenderTarget.Companion.invoke(
-    frameBuffer: FrameBuffer,
+    frameBuffer: OpenGLFrameBuffer,
     width: Int = 1280,
     height: Int = 720,
     textures: List<OpenGLCubeMapArray> = emptyList(),
@@ -65,24 +59,16 @@ operator fun BackBufferRenderTarget.Companion.invoke(
 context(GpuContext)
 class CubeMapRenderTarget(
     renderTarget: BackBufferRenderTarget<OpenGLCubeMap>
-) : BackBufferRenderTarget<OpenGLCubeMap> by renderTarget {
-    init {
-        register(this)
-    }
-}
+) : BackBufferRenderTarget<OpenGLCubeMap> by renderTarget
 
 context(GpuContext)
 class RenderTarget2D(
     renderTarget: BackBufferRenderTarget<Texture2D>
-) : BackBufferRenderTarget<Texture2D> by renderTarget {
-    init {
-        register(this)
-    }
-}
+) : BackBufferRenderTarget<Texture2D> by renderTarget
 
 context(GpuContext)
 internal fun <T : Texture> RenderTarget(
-    frameBuffer: FrameBuffer,
+    frameBuffer: OpenGLFrameBuffer,
     width: Int = 1280,
     height: Int = 720,
     textures: List<T> = emptyList(),
@@ -104,7 +90,7 @@ internal fun <T : Texture> RenderTarget(
 
 context(GpuContext)
 class RenderTargetImpl<T : Texture>(
-    override val frameBuffer: FrameBuffer,
+    override val frameBuffer: OpenGLFrameBuffer,
     override val width: Int = 1280,
     override val height: Int = 720,
     override val textures: List<T> = emptyList(),
@@ -134,7 +120,7 @@ class RenderTargetImpl<T : Texture>(
 
             if (textures.first() is OpenGLCubeMapArray) {
                 textures.forEachIndexed { index, it ->
-                    GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + index, 0, 0, 0)
+                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, 0, 0, 0)
                 }
             } else {
                 textures.forEachIndexed { index, it ->
@@ -246,11 +232,11 @@ class RenderTargetImpl<T : Texture>(
                 when (frameBufferStatus) {
                     GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT")
                     GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT")
-                    GL30.GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER")
-                    GL30.GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER")
-                    GL30.GL_FRAMEBUFFER_UNSUPPORTED -> LOGGER.severe("GL_FRAMEBUFFER_UNSUPPORTED")
-                    GL30.GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE")
-                    GL30.GL_FRAMEBUFFER_UNDEFINED -> LOGGER.severe("GL_FRAMEBUFFER_UNDEFINED")
+                    GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER")
+                    GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER")
+                    GL_FRAMEBUFFER_UNSUPPORTED -> LOGGER.severe("GL_FRAMEBUFFER_UNSUPPORTED")
+                    GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE")
+                    GL_FRAMEBUFFER_UNDEFINED -> LOGGER.severe("GL_FRAMEBUFFER_UNDEFINED")
                 }
                 throw RuntimeException("Rendertarget $name fucked up")
             }
@@ -268,19 +254,6 @@ class RenderTargetImpl<T : Texture>(
             ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
             handle
         } else -1
-
-        context(GpuContext)
-        fun createTexture(
-            textureFilter: TextureFilterConfig,
-            internalFormat: Int, texture2DUploadInfo:
-            UploadInfo.Texture2DUploadInfo
-        ): OpenGLTexture2D {
-
-            return OpenGLTexture2D.invoke(
-                info = texture2DUploadInfo,
-                textureFilterConfig = textureFilter
-            )
-        }
 
         fun getComponentsForFormat(internalFormat: Int): Int = when (internalFormat) {
             GL11.GL_RGBA8, GL_RGBA16F, GL_RGBA32F -> GL11.GL_RGBA

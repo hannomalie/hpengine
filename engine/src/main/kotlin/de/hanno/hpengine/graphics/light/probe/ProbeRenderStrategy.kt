@@ -52,7 +52,7 @@ class ProbeRenderStrategy(
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
     private val cubeMapRenderTarget = RenderTargetImpl(
-        frameBuffer = FrameBuffer(
+        frameBuffer = OpenGLFrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
                     TextureDimension(resolution, resolution),

@@ -20,7 +20,7 @@ import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.ZERO_BUFFER
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.shader.IProgram
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -36,7 +36,6 @@ import de.hanno.hpengine.util.Util
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL15.GL_RGBA16
 import org.lwjgl.opengl.GL15.GL_WRITE_ONLY
 
 context(GpuContext)
@@ -84,7 +83,7 @@ open class GPUCulledPipeline(
     }
 
     private val highZBuffer = RenderTarget(
-        frameBuffer = FrameBuffer(null),
+        frameBuffer = OpenGLFrameBuffer(null),
         width = config.width / 2,
         height = config.height / 2,
         textures = listOf(
@@ -462,7 +461,7 @@ val CoarseCullingPhase.animatedPhase: CullingPhase
     get() = if (this == CoarseCullingPhase.ONE) CullingPhase.ANIMATED_ONE else CullingPhase.ANIMATED_TWO
 
 context(GpuContext)
-class CommandOrganizationGpuCulled() {
+class CommandOrganizationGpuCulled {
     var commandCount = 0
     var primitiveCount = 0
     var filteredRenderBatches: List<RenderBatch> = emptyList()

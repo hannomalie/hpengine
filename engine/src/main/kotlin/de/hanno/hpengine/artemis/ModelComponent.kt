@@ -393,8 +393,7 @@ class ModelSystem(
                     vertexIndexOffsets.vertexOffset * AnimatedVertexStruktPacked.sizeInBytes,
                     model.verticesPacked.byteBuffer
                 )
-                else -> throw IllegalStateException("Hello compiler bug")
-            } // TODO: sealed classes!!
+            }
 
             indexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, model.indices)
 

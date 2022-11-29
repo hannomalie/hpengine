@@ -377,7 +377,7 @@ class ReflectionProbeRenderer(
     )
 
     val cubeMapRenderTarget = RenderTarget(
-        frameBuffer = FrameBuffer(
+        frameBuffer = OpenGLFrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
                     TextureDimension(cubeMap.dimension.width, cubeMap.dimension.height),

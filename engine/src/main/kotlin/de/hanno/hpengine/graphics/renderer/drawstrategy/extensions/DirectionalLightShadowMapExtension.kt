@@ -24,7 +24,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.*
@@ -51,7 +51,7 @@ class DirectionalLightShadowMapExtension(
     private var forceRerender = true
 
     val renderTarget = RenderTarget(
-        FrameBuffer(DepthBuffer(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
+        OpenGLFrameBuffer(DepthBuffer(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
         SHADOWMAP_RESOLUTION,
         SHADOWMAP_RESOLUTION,
         //                Reflective shadowmaps?

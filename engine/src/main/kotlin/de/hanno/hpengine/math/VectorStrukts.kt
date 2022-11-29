@@ -11,7 +11,6 @@ import org.lwjgl.BufferUtils
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
 
-
 interface Vector2fStrukt : Strukt {
     context(ByteBuffer) var x: Float
     context(ByteBuffer) var y: Float
@@ -30,8 +29,10 @@ interface Vector2fStrukt : Strukt {
 
     context(ByteBuffer)
     fun toJoml(): org.joml.Vector2f = org.joml.Vector2f(x, y)
+
     companion object
 }
+
 interface Vector3fStrukt : Strukt {
     context(ByteBuffer) var x: Float
     context(ByteBuffer) var y: Float
@@ -53,6 +54,7 @@ interface Vector3fStrukt : Strukt {
 
     context(ByteBuffer)
     fun toJoml(): org.joml.Vector3f = org.joml.Vector3f(x, y, z)
+
     companion object
 }
 
@@ -78,6 +80,7 @@ interface Vector4fStrukt : Strukt {
         x = target.x()
         y = target.y()
     }
+
     companion object
 }
 interface Vector4iStrukt : Strukt {
@@ -102,6 +105,7 @@ interface Vector4iStrukt : Strukt {
         x = target.x()
         y = target.y()
     }
+
     companion object
 }
 interface Matrix4fStrukt: Strukt {

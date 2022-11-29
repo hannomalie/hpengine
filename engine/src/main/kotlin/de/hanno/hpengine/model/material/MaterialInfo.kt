@@ -1,24 +1,11 @@
 package de.hanno.hpengine.model.material
 
+import de.hanno.hpengine.math.Vector2fStrukt
+import de.hanno.hpengine.math.Vector3fStrukt
 import de.hanno.hpengine.model.material.Material.MaterialType
 import de.hanno.hpengine.model.material.Material.TransparencyType
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
-
-interface Vector2fStrukt : Strukt {
-    context(ByteBuffer) var x: Float
-    context(ByteBuffer) var y: Float
-
-    companion object
-}
-
-interface Vector3fStrukt : Strukt {
-    context(ByteBuffer) var x: Float
-    context(ByteBuffer) var y: Float
-    context(ByteBuffer) var z: Float
-
-    companion object
-}
 
 interface MaterialStrukt : Strukt {
     context(ByteBuffer) val diffuse: Vector3fStrukt

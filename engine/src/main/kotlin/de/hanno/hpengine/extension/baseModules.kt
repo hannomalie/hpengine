@@ -128,7 +128,7 @@ val textureRendererModule = module {
 
         get<GpuContext>().run {
             RenderTarget(
-                FrameBuffer(
+                OpenGLFrameBuffer(
                     depthBuffer = DepthBuffer(config.width, config.height)
                 ),
                 width = config.width,

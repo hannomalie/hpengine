@@ -70,7 +70,7 @@ class AreaLightSystem(
 
     private val mapRenderTarget = CubeMapRenderTarget(
         RenderTargetImpl(
-            FrameBuffer(
+            OpenGLFrameBuffer(
                 DepthBuffer(
                     OpenGLCubeMap(
                         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),

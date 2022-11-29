@@ -47,12 +47,11 @@ class ComputeProgram(
         validateProgram()
 
         registerUniforms()
-        gpuContext.exceptionOnError()
 
         createFileListeners()
     }
 
-    // TODO: Extract all those things to an abstractopenglprogram or to programmanager
+    // TODO: Extract all those things to an abstractopenglprogram or to prog:rammanager
 
     override fun use() {
         GL20.glUseProgram(id)

@@ -25,6 +25,9 @@ data class FileBasedOpenGLCubeMap(
     val files: List<File>,
     val isBgrFormat: Boolean = false
 ) : CubeMap by backingTexture {
+
+    constructor(path: String, backingTexture: CubeMap, vararg file: File) : this(path, backingTexture, file.toList())
+
     init {
         require(files.isNotEmpty()) { "Cannot create CubeMap without any files!" }
         require(files.size == 1 || files.size == 6) { "Pass either 1 or 6 images to create a CubeMap!" }
@@ -44,7 +47,6 @@ data class FileBasedOpenGLCubeMap(
         TextureDimension(width, height)
     } else TextureDimension(width / 4, height / 3)
 
-    constructor(path: String, backingTexture: CubeMap, vararg file: File) : this(path, backingTexture, file.toList())
 
     fun load() = CompletableFuture.supplyAsync {
         if (backingFileMode == CubeMapFileDataFormat.Six) {

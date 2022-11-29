@@ -157,7 +157,7 @@ class DualParaboloidShadowMapStrategy(
     var pointLightDepthMapsArrayBack: Int = 0
 
     private val renderTarget = RenderTargetImpl(
-        frameBuffer = FrameBuffer(
+        frameBuffer = OpenGLFrameBuffer(
             DepthBuffer(
                 AREALIGHT_SHADOWMAP_RESOLUTION,
                 AREALIGHT_SHADOWMAP_RESOLUTION

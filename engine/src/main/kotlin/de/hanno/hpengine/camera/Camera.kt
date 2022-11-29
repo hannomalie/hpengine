@@ -6,7 +6,7 @@ import de.hanno.hpengine.util.Util
 import org.joml.*
 import org.lwjgl.BufferUtils
 
-open class Camera(
+class Camera(
     val transform: Transform,
     ratio: Float = 1280f/720f
 ) {

@@ -4,7 +4,6 @@ import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.exitOnGLError
 import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.*
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
@@ -96,7 +95,6 @@ class OpenGLTextureManager(
     private fun loadAllAvailableTextures() {
         val textureDir = config.directories.engineDir.textures
         val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE) as List<File>
-        exitOnGLError("Before loadAllAvailableTextures")
         for (file in files) {
             try {
                 if (FilenameUtils.isExtension(file.absolutePath, "hptexture")) {

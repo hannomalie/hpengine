@@ -47,7 +47,6 @@ sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
         get() = when(this) {
             is AnimatedModel -> false
             is StaticModel -> true
-            else -> throw IllegalStateException() // Hello compiler bug
         }
     var isInvertTexCoordY = true
     abstract val bytesPerVertex: Int

@@ -18,7 +18,6 @@ import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.graphics.exitOnGLError
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
@@ -251,7 +250,6 @@ class EnvironmentSampler(
         cubeMapView = GL11.glGenTextures()
         cubeMapView1 = GL11.glGenTextures()
         cubeMapView2 = GL11.glGenTextures()
-        exitOnGLError("EnvironmentSampler before view creation")
         val diffuseInternalFormat = cubeMapArrayRenderTarget.getCubeMapArray(3).internalFormat
         for (z in 0..5) {
             cubeMapFaceViews[0][z] = GL11.glGenTextures()
@@ -331,7 +329,7 @@ class EnvironmentSampler(
             6
         )
         renderTarget = RenderTarget(
-            FrameBuffer(DepthBuffer(RESOLUTION, RESOLUTION)),
+            OpenGLFrameBuffer(DepthBuffer(RESOLUTION, RESOLUTION)),
             RESOLUTION, RESOLUTION,
             listOf(ColorAttachmentDefinition("Environment Diffuse", diffuseInternalFormat)).toTextures(
                 RESOLUTION,
@@ -341,7 +339,6 @@ class EnvironmentSampler(
         )
         fullscreenBuffer = QuadVertexBuffer()
         fullscreenBuffer.upload()
-        exitOnGLError("EnvironmentSampler constructor")
     }
 }
 

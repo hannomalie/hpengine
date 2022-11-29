@@ -67,7 +67,6 @@ class Program<T : Uniforms> constructor(
         validateProgram()
 
         registerUniforms()
-        gpuContext.exceptionOnError()
 
         createFileListeners()
     }
@@ -232,7 +231,6 @@ class Program<T : Uniforms> constructor(
         for (channel in channels) {
             glBindAttribLocation(id, channel.location, channel.binding)
         }
-        gpuContext.exceptionOnError()
     }
 
     fun delete() {

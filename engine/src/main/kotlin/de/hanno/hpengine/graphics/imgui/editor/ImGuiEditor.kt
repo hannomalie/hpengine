@@ -30,7 +30,6 @@ import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImInt
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
-import org.joml.Vector2f
 import org.joml.Vector2i
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.GL11
@@ -82,7 +81,7 @@ class ImGuiEditor(
 
     val renderTarget = RenderTarget2D(
         RenderTargetImpl(
-            FrameBuffer(null),
+            OpenGLFrameBuffer(null),
             config.width,
             config.height,
             listOf(

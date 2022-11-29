@@ -71,7 +71,7 @@ class CubeMapArrayRenderTarget(
             vararg cubeMapArray: OpenGLCubeMapArray
         ) = CubeMapArrayRenderTarget(
             RenderTarget(
-                FrameBuffer(createDepthBuffer(width, height, cubeMapArray.size)),
+                OpenGLFrameBuffer(createDepthBuffer(width, height, cubeMapArray.size)),
                 width,
                 height,
                 cubeMapArray.toList(),

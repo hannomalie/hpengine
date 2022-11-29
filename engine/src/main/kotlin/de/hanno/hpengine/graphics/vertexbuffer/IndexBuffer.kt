@@ -10,7 +10,7 @@ import org.lwjgl.opengl.GL15
 import java.nio.ByteBuffer
 
 context(GpuContext)
-fun IndexBuffer(): IndexBuffer {
+fun OpenGLIndexBuffer(): IndexBuffer {
     val underlying = PersistentMappedBuffer(
         GL15.GL_ELEMENT_ARRAY_BUFFER
     )
@@ -18,7 +18,7 @@ fun IndexBuffer(): IndexBuffer {
 }
 
 context(GpuContext)
-fun IndexBuffer(intBuffer: IntBuffer): IndexBuffer = de.hanno.hpengine.graphics.vertexbuffer.IndexBuffer().apply {
+fun IndexBuffer(intBuffer: IntBuffer): IndexBuffer = OpenGLIndexBuffer().apply {
     ensureCapacityInBytes(intBuffer.capacity())
     buffer.asIntBuffer().put(intBuffer)
 }

@@ -1,5 +1,5 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
-interface IFrameBuffer {
+interface FrameBuffer {
     val frameBuffer: Int
 }

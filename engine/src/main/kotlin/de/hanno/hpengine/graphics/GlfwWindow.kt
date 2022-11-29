@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.renderer.GLU
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
@@ -50,13 +50,14 @@ class GlfwWindow(
     override var width: Int,
     override var height: Int,
     title: String,
-    _vSync: Boolean = true,
-    errorCallback: GLFWErrorCallbackI = printErrorCallback,
+    vSync: Boolean = true,
     closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
-    val executor: GpuExecutor = OpenGlExecutorImpl()
+    private val executor: GpuExecutor = OpenGlExecutorImpl()
 ) : Window, GpuExecutor by executor {
 
-    override var vSync: Boolean = _vSync
+    constructor(config: Config) : this(config.width, config.height, "HPEngine", config.performance.isVsync)
+
+    override var vSync: Boolean = vSync
         set(value) {
             executor.invoke {
                 glfwSwapInterval(if (value) 1 else 0)
@@ -69,15 +70,6 @@ class GlfwWindow(
             field = value
         }
     override val frontBuffer: FrontBufferTarget
-
-    constructor(config: Config) : this(config.width, config.height, "HPEngine", config.performance.isVsync)
-
-    override fun pollEvents() = glfwPollEvents()
-    override fun pollEventsInLoop() {
-        while (!glfwWindowShouldClose(handle)) {
-            pollEvents()
-        }
-    }
 
     // Don't remove this strong reference
     private var framebufferSizeCallback: GLFWFramebufferSizeCallback = object : GLFWFramebufferSizeCallback() {
@@ -112,7 +104,7 @@ class GlfwWindow(
         // This has to happen on the main thread, or it will break, look at glfwShowWindow documentation
         makeContextCurrent()
         glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
-        glfwSwapInterval(if (vSync) 1 else 0)
+        glfwSwapInterval(if (this.vSync) 1 else 0)
         glfwShowWindow(handle)
         GL.createCapabilities()
 
@@ -125,6 +117,13 @@ class GlfwWindow(
         }
 
         frontBuffer = createFrontBufferRenderTarget()
+    }
+
+    override fun pollEvents() = glfwPollEvents()
+    override fun pollEventsInLoop() {
+        while (!glfwWindowShouldClose(handle)) {
+            pollEvents()
+        }
     }
 
     override fun showWindow() = glfwShowWindow(handle)
@@ -142,7 +141,7 @@ class GlfwWindow(
 }
 
 fun Window.createFrontBufferRenderTarget(): FrontBufferTarget = object : FrontBufferTarget {
-    val frameBuffer = FrameBuffer.FrontBuffer
+    val frameBuffer = OpenGLFrameBuffer.FrontBuffer
     override val name = "FrontBuffer"
     override val clear = Vector4f()
 

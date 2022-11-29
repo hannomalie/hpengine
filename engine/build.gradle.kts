@@ -58,7 +58,6 @@ dependencies {
     api(fileTree(mapOf("dir" to "../libs", "include" to "*.jar")))
     api("", "PNGDecoder")
     api("", "dds", "1.0.1-SNAPSHOT")
-    api("", "dahie-dds", "1.0.0-SNAPSHOT")
     api("", "DDSUtils")
 
     api("org.lwjgl:lwjgl:$lwjgl_version")

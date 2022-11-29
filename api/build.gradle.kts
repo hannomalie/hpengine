@@ -37,6 +37,8 @@ dependencies {
     api("io.github.classgraph:classgraph:4.8.89")
 
     api("com.carrotsearch:hppc:0.7.2")
+
+    api("", "dahie-dds", "1.0.0-SNAPSHOT")
 }
 
 kotlin {

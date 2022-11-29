@@ -27,7 +27,7 @@ import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.buffers.copyTo
@@ -114,7 +114,7 @@ class ProbeRenderer(
     )
 
     val cubeMapRenderTarget = de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget(
-        frameBuffer = FrameBuffer(
+        frameBuffer = OpenGLFrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
                     TextureDimension(probeResolution, probeResolution),

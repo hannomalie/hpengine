@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.graphics.renderer.constants.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.IFrameBuffer
+import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
@@ -128,7 +128,7 @@ interface GpuContext {
         }
     }
 
-    fun bindFrameBuffer(frameBuffer: IFrameBuffer)
+    fun bindFrameBuffer(frameBuffer: FrameBuffer)
     fun checkCommandSyncs()
 
     sealed class SupportResult {
@@ -139,7 +139,6 @@ interface GpuContext {
     fun createCommandSync(): GpuCommandSync
     fun createCommandSync(onSignaled: () -> Unit): GpuCommandSync
     fun <T> onGpu(block: context(GpuContext)() -> T): T
-    fun exceptionOnError()
 
     val maxLineWidth: Float
 

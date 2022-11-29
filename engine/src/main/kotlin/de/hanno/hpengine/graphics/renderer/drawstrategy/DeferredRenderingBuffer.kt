@@ -19,7 +19,7 @@ context(GpuContext)
 class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuffer<*>) {
 
     internal val gBuffer = RenderTargetImpl(
-        FrameBuffer(depthBuffer),
+        OpenGLFrameBuffer(depthBuffer),
         width,
         height,
         (ColorAttachmentDefinitions(
@@ -31,7 +31,7 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
     )
 
     internal val reflectionBuffer = RenderTarget(
-        FrameBuffer(depthBuffer),
+        OpenGLFrameBuffer(depthBuffer),
         width,
         height,
         ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), GL30.GL_RGBA16F).toList().toTextures(
@@ -42,7 +42,7 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
     )
 
     internal val forwardBuffer = RenderTarget(
-        FrameBuffer(depthBuffer),
+        OpenGLFrameBuffer(depthBuffer),
         width = width,
         height = height,
         textures = (ColorAttachmentDefinitions(
@@ -56,7 +56,7 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
     )
 
     internal val laBuffer = RenderTarget(
-        FrameBuffer(depthBuffer),
+        OpenGLFrameBuffer(depthBuffer),
         width = width,
         height = height,
         textures = (ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), GL30.GL_RGBA16F).toList()).toTextures(
@@ -67,7 +67,7 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
     )
 
     internal val finalBuffer = RenderTarget(
-        FrameBuffer(depthBuffer),
+        OpenGLFrameBuffer(depthBuffer),
         width = width,
         height = height,
         textures = listOf(ColorAttachmentDefinition("Color", GL30.GL_RGB8)).toTextures(width, height),
@@ -75,7 +75,7 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
     )
 
     internal val halfScreenBuffer = RenderTarget(
-        FrameBuffer(depthBuffer),
+        OpenGLFrameBuffer(depthBuffer),
         width = width / 2,
         height = height / 2,
         textures = listOf(
