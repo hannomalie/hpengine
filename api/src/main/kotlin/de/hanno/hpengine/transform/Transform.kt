@@ -25,11 +25,9 @@ class Transform() : Matrix4f(), Parentable<Transform>, Serializable {
             field = value
         }
 
-    protected fun nodeAlreadyParentedSomewhere(node: Transform): Boolean {
-        return if (hasParent) {
-            parent!!.nodeAlreadyParentedSomewhere(node)
-        } else node === this
-    }
+    protected fun nodeAlreadyParentedSomewhere(node: Transform): Boolean = if (hasParent) {
+        parent!!.nodeAlreadyParentedSomewhere(node)
+    } else node === this
 
     override val children: MutableList<Transform> = ArrayList()
 
@@ -43,17 +41,14 @@ class Transform() : Matrix4f(), Parentable<Transform>, Serializable {
         children.remove(child)
     }
     val transformation: Matrix4f
-        get() {
-            return parent?.let { parent ->
-                Matrix4f(parent.transformation).mul(this)
-            } ?: this
-        }
+        get() = parent?.let { parent ->
+            Matrix4f(parent.transformation).mul(this)
+        } ?: this
 
-    override fun equals(b: Any?): Boolean {
-        if (b !is Transform) {
-            return false
-        }
-        val other = b
+    override fun equals(other: Any?): Boolean {
+        if (other !is Transform) return false
+
+        // TODO: Why does this miss scaling?
         return equals(position, other.position) && equals(orientation, other.orientation)
     }
 
@@ -65,44 +60,30 @@ class Transform() : Matrix4f(), Parentable<Transform>, Serializable {
             setRotationXYZ(eulerAngles.x(), eulerAngles.y(), eulerAngles.z())
         }
 
+    // Why do I reimplement those tweo methods?
     private fun equals(a: Vector3f, b: Vector3f): Boolean {
         return a.x == b.x && a.y == b.y && a.z == b.z
     }
-
     private fun equals(a: Quaternionf, b: Quaternionf): Boolean {
         return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w
     }
 
     var _position = Vector3f()
     var position: Vector3f
-        get() {
-            return transformation.getTranslation(_position)
-        }
+        get() = transformation.getTranslation(_position)
         set(value) {
             _position = value
         }
 
-    val rightDirection: Vector3f
-        get() = this.transformDirection(Vector3f(1f, 0f, 0f)).normalize()
-    val upDirection: Vector3f
-        get() = this.transformDirection(Vector3f(0f, 1f, 0f)).normalize()
-    val viewDirection: Vector3f
-        get() = this.transformDirection(Vector3f(0f, 0f, 1f)).normalize()
+    val rightDirection: Vector3f get() = transformDirection(Vector3f(1f, 0f, 0f)).normalize()
+    val upDirection: Vector3f get() = transformDirection(Vector3f(0f, 1f, 0f)).normalize()
+    val viewDirection: Vector3f get() = transformDirection(Vector3f(0f, 0f, 1f)).normalize()
     val rotation: Quaternionf
-        get() {
-            val rotation = Quaternionf()
-            return transformation.getNormalizedRotation(rotation)
-        }
+        get() = transformation.getNormalizedRotation(Quaternionf())
     val scale: Vector3f
-        get() {
-            val scale = Vector3f()
-            return transformation.getScale(scale)
-        }
+        get() = transformation.getScale(Vector3f())
     val center: Vector3f
-        get() {
-            val position = Vector3f()
-            return transformation.getTranslation(position)
-        }
+        get() = transformation.getTranslation(Vector3f())
 
     fun rotate(axisAngle: Vector4f) {
         rotate(axisAngle.w, axisAngle.x, axisAngle.y, axisAngle.z)

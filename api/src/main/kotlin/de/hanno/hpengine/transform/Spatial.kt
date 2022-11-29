@@ -1,11 +1,10 @@
 package de.hanno.hpengine.transform
 
-import de.hanno.hpengine.camera.Camera
+import de.hanno.hpengine.camera.Frustum
 import de.hanno.hpengine.lifecycle.Updatable
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector3fc
-
 import java.lang.Float.MAX_VALUE
 
 interface Spatial : Updatable {
@@ -31,7 +30,7 @@ interface Spatial : Updatable {
         val MIN: Vector3fc = Vector3f(MAX_VALUE, MAX_VALUE, MAX_VALUE)
         val MAX: Vector3fc = Vector3f(-MAX_VALUE, -MAX_VALUE, -MAX_VALUE)
 
-        fun isInFrustum(camera: Camera, centerWorld: Vector3f, minWorld: Vector3fc, maxWorld: Vector3fc): Boolean {
+        fun isInFrustum(frustum: Frustum, centerWorld: Vector3f, minWorld: Vector3fc, maxWorld: Vector3fc): Boolean {
             val tempDistVector = Vector3f()
             Vector3f(minWorld).sub(maxWorld, tempDistVector)
 
@@ -40,7 +39,7 @@ interface Spatial : Updatable {
             //		if (de.hanno.hpengine.camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
             //		if (de.hanno.hpengine.camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
             //				|| de.hanno.hpengine.camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
-            return camera.frustum.sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, tempDistVector.length() / 2)
+            return frustum.sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, tempDistVector.length() / 2)
         }
     }
 }

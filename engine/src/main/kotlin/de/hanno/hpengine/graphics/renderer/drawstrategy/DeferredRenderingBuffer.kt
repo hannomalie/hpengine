@@ -13,6 +13,7 @@ import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL43
 
 context(GpuContext)
 class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuffer<*>) {
@@ -86,15 +87,16 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
     )
 
     val fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(width, height))
-    val exposureBuffer = PersistentMappedBuffer(4 * Double.SIZE_BYTES).apply {
-        buffer.rewind()
-        buffer.asDoubleBuffer().apply {
-            put(1.0)
-            put(-1.0)
-            put(0.0)
-            put(1.0)
+    val exposureBuffer =
+        PersistentMappedBuffer(GL43.GL_SHADER_STORAGE_BUFFER, capacityInBytes = 4 * Double.SIZE_BYTES).apply {
+            buffer.rewind()
+            buffer.asDoubleBuffer().apply {
+                put(1.0)
+                put(-1.0)
+                put(0.0)
+                put(1.0)
+            }
         }
-    }
     val lightAccumulationMapOneId: Int = laBuffer.getRenderedTexture(0)
 
     val ambientOcclusionMapId: Int = laBuffer.getRenderedTexture(1)
@@ -135,7 +137,6 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
     init {
         Matrix4f().get(identityMatrixBuffer)
         identityMatrixBuffer.rewind()
-        getExceptionOnError("rendertarget creation")
     }
 
     companion object {

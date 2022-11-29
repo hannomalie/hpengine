@@ -1,11 +1,9 @@
 package de.hanno.hpengine.transform
 
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.camera.Camera
-import de.hanno.hpengine.artemis.SpatialComponent
+import de.hanno.hpengine.Transform.Companion.IDENTITY
+import de.hanno.hpengine.camera.Frustum
 import de.hanno.hpengine.model.Instance
-import de.hanno.hpengine.model.Mesh.Companion.IDENTITY
-import de.hanno.hpengine.util.isEqualTo
 import org.joml.*
 
 sealed class BoundingVolume
@@ -23,7 +21,7 @@ class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
     var localBoundingSphere = BoundingSphereData()
         set(value) {
             field = value
-            actuallyRecalculate(lastUsedTransformationMatrix ?: IDENTITY)
+            actuallyRecalculate(lastUsedTransformationMatrix ?: Transform.IDENTITY)
             lastUsedTransformationMatrix = null
         }
     var boundingSphere = BoundingSphereData()
@@ -35,9 +33,9 @@ class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
     }
 
     private val scaleTemp = Vector3f()
-    fun isClean(transform: Matrix4f): Boolean {
+    private fun isClean(transform: Matrix4f): Boolean {
         if(lastUsedTransformationMatrix == null) return false
-        return transform.isEqualTo(lastUsedTransformationMatrix!!)
+        return transform == lastUsedTransformationMatrix!!
     }
 
     fun recalculate(transform: Matrix4f) {
@@ -103,7 +101,7 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
             return AABBData(newMin.toImmutable(), newMax.toImmutable())
         }
 
-        @JvmName("getSurroundingAABBInstance")
+        @JvmName("getSurroundingAABBForInstances")
         fun List<Instance>.getSurroundingAABB(): AABBData {
             val newMin = Vector3f(first().boundingVolume.min)
             val newMax = Vector3f(first().boundingVolume.max)
@@ -169,7 +167,7 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
 
     fun isClean(transform: Matrix4f): Boolean {
         if(lastUsedTransformationMatrix == null) return false
-        return transform.isEqualTo(lastUsedTransformationMatrix!!)
+        return transform == lastUsedTransformationMatrix!!
     }
 
     fun recalculate(transform: Matrix4f) {
@@ -275,15 +273,6 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
 
 }
 
-fun List<SpatialComponent>.calculateAABB(): AABBData {
-    val minResult = Vector3f(absoluteMaximum)
-    val maxResult = Vector3f(absoluteMinimum)
-    forEach {
-        minResult.min(it.spatial.boundingVolume.min)
-        maxResult.max(it.spatial.boundingVolume.max)
-    }
-    return AABBData(minResult, maxResult)
-}
 @JvmName("calculateAABBForAABBs")
 fun List<AABB>.calculateAABB(): AABBData {
     val minResult = Vector3f(absoluteMaximum)
@@ -295,10 +284,10 @@ fun List<AABB>.calculateAABB(): AABBData {
     return AABBData(minResult, maxResult)
 }
 
-fun AABB.isInFrustum(camera: Camera): Boolean {
+fun AABB.isInFrustum(frustum: Frustum): Boolean {
     val centerWorld = Vector3f()
     min.add(halfExtents, centerWorld)
-    return camera.frustum.sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, halfExtents.x.coerceAtLeast(halfExtents.y.coerceAtLeast(halfExtents.z)) / 2f)
+    return frustum.sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, halfExtents.x.coerceAtLeast(halfExtents.y.coerceAtLeast(halfExtents.z)) / 2f)
 }
 
 // TODO: Fix

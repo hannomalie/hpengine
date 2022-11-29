@@ -14,7 +14,6 @@ import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
-import org.lwjgl.opengl.GL11.glGetError
 import org.lwjgl.system.APIUtil
 import java.lang.reflect.Field
 import kotlin.system.exitProcess
@@ -104,23 +103,21 @@ class GlfwWindow(
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
         glfwWindowHint(GLFW_VISIBLE, GL_FALSE)
-        handle = glfwCreateWindow(width, height, title, 0, 0)
-        if (handle == 0L) {
-            throw RuntimeException("Failed to create windowHandle")
+        handle = glfwCreateWindow(width, height, title, 0, 0).apply {
+            check(this != 0L) { "Failed to create windowHandle" }
         }
-        setCallbacks(framebufferSizeCallback, closeCallback)
+        glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback)
+        glfwSetWindowCloseCallback(handle, closeCallback)
 
         // This has to happen on the main thread, or it will break, look at glfwShowWindow documentation
-        run {
-            makeContextCurrent()
-            glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
-            glfwSwapInterval(if (vSync) 1 else 0)
-            glfwShowWindow(handle)
-            GL.createCapabilities()
+        makeContextCurrent()
+        glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
+        glfwSwapInterval(if (vSync) 1 else 0)
+        glfwShowWindow(handle)
+        GL.createCapabilities()
 
-            // Don't remove that, or some operating systems won't make context current on another thread
-            glfwMakeContextCurrent(0)
-        }
+        // Don't remove that, or some operating systems won't make context current on another thread
+        glfwMakeContextCurrent(0)
 
         executor.launch {
             makeContextCurrent()
@@ -132,14 +129,6 @@ class GlfwWindow(
 
     override fun showWindow() = glfwShowWindow(handle)
     override fun hideWindow() = glfwHideWindow(handle)
-
-    private fun setCallbacks(
-        framebufferSizeCallback: GLFWFramebufferSizeCallback,
-        closeCallback: GLFWWindowCloseCallbackI
-    ) {
-        glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback)
-        glfwSetWindowCloseCallback(handle, closeCallback)
-    }
 
     override fun getCursorPosition(mouseX: DoubleArray, mouseY: DoubleArray) = glfwGetCursorPos(handle, mouseX, mouseY)
     override fun getFrameBufferSize(width: IntArray, height: IntArray) = glfwGetFramebufferSize(handle, width, height)

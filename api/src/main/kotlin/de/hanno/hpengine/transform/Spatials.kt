@@ -1,7 +1,6 @@
 package de.hanno.hpengine.transform
 
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.model.StaticModel
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.Serializable
@@ -21,9 +20,5 @@ class StaticTransformSpatial(transform: Transform, val aabb: AABB) : TransformSp
         recalculate(transform)
     }
     override fun update(deltaSeconds: Float) { }
-    override fun getBoundingVolume(transform: Matrix4f): AABB = boundingVolume
-}
-class DynamicTransformSpatial(transform: Transform, val model: StaticModel) : TransformSpatial(transform, AABB(model.boundingVolume.localAABB)) {
-    override fun update(deltaSeconds: Float) = recalculate(transform)
     override fun getBoundingVolume(transform: Matrix4f): AABB = boundingVolume
 }

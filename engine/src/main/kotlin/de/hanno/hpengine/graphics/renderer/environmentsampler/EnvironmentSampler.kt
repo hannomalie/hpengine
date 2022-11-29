@@ -148,7 +148,7 @@ class EnvironmentSampler(
             program
         )
         for (e in renderState.renderBatchesStatic) {
-            if (!isInFrustum(camera, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
+            if (!isInFrustum(camera.frustum, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
 //				continue;
             }
             renderState.vertexIndexBufferStatic.indexBuffer.draw(

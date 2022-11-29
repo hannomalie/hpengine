@@ -9,13 +9,9 @@ import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.*
-import de.hanno.hpengine.backend.Backend
-import de.hanno.hpengine.backend.OpenGlBackend
 import de.hanno.hpengine.camera.CameraRenderExtension
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.config.ConfigImpl
-import de.hanno.hpengine.bus.EventBus
-import de.hanno.hpengine.bus.MBassadorEventBus
 import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
 import de.hanno.hpengine.graphics.imgui.editor.primaryCamera
 import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
@@ -58,7 +54,17 @@ data class SharedDepthBuffer(val depthBuffer: DepthBuffer<*>)
 val deferredRendererModule = module {
     renderSystem {
         get<GpuContext>().run {
-            ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll<DeferredRenderExtension>().distinct())
+            get<RenderStateContext>().run {
+                ExtensibleDeferredRenderer(
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    getAll<DeferredRenderExtension>().distinct()
+                )
+            }
         }
     }
     single {
@@ -95,19 +101,21 @@ val imGuiEditorModule = module {
         val finalOutput: FinalOutput = get()
 
         get<GpuContext>().run {
-            ImGuiEditor(
-                get(),
-                get(),
-                finalOutput,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                getAll<ImGuiEditorExtension>().distinct(),
-                get(),
-            )
+            get<RenderStateContext>().run {
+                ImGuiEditor(
+                    get(),
+                    get(),
+                    finalOutput,
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    getAll<ImGuiEditorExtension>().distinct(),
+                    get(),
+                )
+            }
         }
     }
     single {
@@ -168,7 +176,7 @@ val baseModule = module {
             RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll())
         }
     }
-    single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(
+    single { OpenGlProgramManager(get(), get()) } binds arrayOf(
         ProgramManager::class,
         OpenGlProgramManager::class,
     )
@@ -215,7 +223,9 @@ val baseModule = module {
 fun Module.addGIModule() {
     renderExtension {
         get<GpuContext>().run {
-            VoxelConeTracingExtension(get(), get(), get(), get(), get())
+            get<RenderStateContext>().run {
+                VoxelConeTracingExtension(get(), get(), get(), get())
+            }
         }
     }
 }
@@ -231,7 +241,9 @@ fun Module.addPointLightModule() {
 fun Module.addDirectionalLightModule() {
     renderExtension {
         get<GpuContext>().run {
-            DirectionalLightShadowMapExtension(get(), get(), get(), get())
+            get<RenderStateContext>().run {
+                DirectionalLightShadowMapExtension(get(), get(), get())
+            }
         }
     }
     renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get()) }
@@ -248,7 +260,9 @@ fun Module.addOceanWaterModule() {
 fun Module.addReflectionProbeModule() {
     renderExtension {
         get<GpuContext>().run {
-            ReflectionProbeRenderExtension(get(), get(), get(), get(), get())
+            get<RenderStateContext>().run {
+                ReflectionProbeRenderExtension(get(), get(), get(), get())
+            }
         }
     }
 }
@@ -256,28 +270,30 @@ fun Module.addReflectionProbeModule() {
 fun Module.addCameraModule() {
     renderExtension {
         get<GpuContext>().run {
-            CameraRenderExtension(get(), get(), get())
+            get<RenderStateContext>().run {
+                CameraRenderExtension(get(), get())
+            }
         }
     }
 }
 
 fun Module.addSkyboxModule() {
     renderExtension {
-        SkyboxRenderExtension(get(), get(), get(), get(), get(), get())
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                SkyboxRenderExtension(get(), get(), get(), get())
+            }
+        }
     }
 }
-
 fun Module.addBackendModule() {
     single { AddResourceContext() }
-    single { MBassadorEventBus() } bind EventBus::class
-
-    single { OpenGLContext.invoke(get()) } bind GpuContext::class
+    single { OpenGLContext(get()) } bind GpuContext::class
     single { Input(get()) }
-    single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
     single { RenderSystemsConfig(getAll()) }
     single {
         get<GpuContext>().run {
-            RenderStateManager { RenderState() }
+            RenderStateContext { RenderState() }
         }
     }
 }

@@ -1,26 +1,24 @@
 package de.hanno.hpengine.graphics.renderer
 
 
-import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.graphics.shader.*
-import de.hanno.hpengine.math.identityMatrix4fBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.drawLines
 import de.hanno.hpengine.math.Vector4fStrukt
+import de.hanno.hpengine.math.identityMatrix4fBuffer
 import org.joml.Vector3fc
 import java.nio.FloatBuffer
 import kotlin.math.min
 
 fun drawLines(
-    renderStateManager: RenderStateManager,
     programManager: ProgramManager,
     linesProgram: IProgram<LinesProgramUniforms>,
     vertices: PersistentTypedBuffer<Vector4fStrukt>,
     linePoints: List<Vector3fc>,
     lineWidth: Float = 5f,
     modelMatrix: FloatBuffer = identityMatrix4fBuffer,
-    viewMatrix: FloatBuffer = renderStateManager.renderState.currentReadState.camera.viewMatrixAsBuffer,
-    projectionMatrix: FloatBuffer = renderStateManager.renderState.currentReadState.camera.projectionMatrixAsBuffer,
+    viewMatrix: FloatBuffer,
+    projectionMatrix: FloatBuffer,
     color: Vector3fc
 ) {
 
@@ -29,7 +27,6 @@ fun drawLines(
     vertices.putLinesPoints(linePoints)
 
     drawLines(
-        renderStateManager,
         programManager,
         linesProgram,
         vertices,
@@ -51,15 +48,14 @@ fun PersistentTypedBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector
 }
 
 fun drawLines(
-    renderStateManager: RenderStateManager,
     programManager: ProgramManager,
     linesProgram: IProgram<LinesProgramUniforms>,
     vertices: PersistentTypedBuffer<Vector4fStrukt>,
     lineWidth: Float = 5f,
     verticesCount: Int,
     modelMatrix: FloatBuffer = identityMatrix4fBuffer,
-    viewMatrix: FloatBuffer = renderStateManager.renderState.currentReadState.camera.viewMatrixAsBuffer,
-    projectionMatrix: FloatBuffer = renderStateManager.renderState.currentReadState.camera.projectionMatrixAsBuffer,
+    viewMatrix: FloatBuffer,
+    projectionMatrix: FloatBuffer,
     color: Vector3fc
 ) {
 

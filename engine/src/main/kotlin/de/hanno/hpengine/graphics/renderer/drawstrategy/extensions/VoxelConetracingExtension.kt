@@ -4,11 +4,10 @@ import Vector4fStruktImpl.Companion.type
 import VoxelGridImpl.Companion.type
 import com.artemis.World
 import de.hanno.hpengine.artemis.GiVolumeComponent
-import de.hanno.hpengine.backend.Backend
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.RenderStateManager
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.constants.Capability.*
@@ -65,17 +64,16 @@ fun OpenGLTextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTrac
         )
     )
 }
-context(GpuContext)
+context(GpuContext, RenderStateContext)
 class VoxelConeTracingExtension(
     val config: Config,
-    val renderStateManager: RenderStateManager,
     val programManager: ProgramManager,
     val pointLightExtension: BvHPointLightSecondPassExtension,
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ) : DeferredRenderExtension {
 
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
-    val voxelGrids = renderStateManager.renderState.registerState {
+    val voxelGrids = renderState.registerState {
         PersistentMappedBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type)
     }
     data class GIVolumeGrids(val grid: OpenGLTexture3D,
@@ -133,7 +131,7 @@ class VoxelConeTracingExtension(
 
     private var gridCache = mutableMapOf<Int, GIVolumeGrids>()
 
-    override fun renderFirstPass(backend: Backend, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
+    override fun renderFirstPass(renderState: RenderState) = profiled("VCT first pass") {
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
         val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
         val bounces = 1
@@ -301,7 +299,7 @@ class VoxelConeTracingExtension(
         GL11.glColorMask(true, true, true, true)
     }
 
-    override fun update(deltaSeconds: Float) = staticPipeline.prepare(renderStateManager.renderState.currentWriteState)
+    override fun update(deltaSeconds: Float) = staticPipeline.prepare(renderState.currentWriteState)
 
     private fun mipmapGrid(textureId: Int, renderState: RenderState) = profiled("grid mipmap") {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)

@@ -33,6 +33,7 @@ import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABBData
 import de.hanno.hpengine.extension.*
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
@@ -113,7 +114,11 @@ class Engine(
         SpatialComponentSystem(),
         InvisibleComponentSystem(),
         GiVolumeSystem(koin.get()),
-        gpuContext.run { PhysicsManager(config, koin.get(), koin.get()) },
+        gpuContext.run {
+            koin.get<RenderStateContext>().run {
+                PhysicsManager(config, koin.get())
+            }
+       },
         ReflectionProbeManager(config),
         koin.get<KotlinComponentSystem>(),
         CameraSystem(),
@@ -181,7 +186,6 @@ class Engine(
     }
 
 
-    //    private suspend fun executeCommands() = withContext(addResourceContext.singleThreadDispatcher) {
     private suspend fun executeCommands() {
         while (!addResourceContext.channel.isEmpty) {
             val command = addResourceContext.channel.receiveOrNull() ?: break
@@ -190,7 +194,7 @@ class Engine(
     }
 
     private fun extract(deltaSeconds: Float): Long {
-        val currentWriteState = renderManager.renderState.currentWriteState
+        val currentWriteState = renderManager.renderStateContext.renderState.currentWriteState
         currentWriteState.cycle = updateCycle.get()
         currentWriteState.time = System.currentTimeMillis()
 

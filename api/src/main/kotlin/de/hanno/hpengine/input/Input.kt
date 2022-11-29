@@ -2,7 +2,6 @@ package de.hanno.hpengine.input
 
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.graphics.GpuContext
-import org.joml.Vector2f
 import org.joml.Vector2i
 
 import org.lwjgl.glfw.GLFW.*
@@ -10,7 +9,7 @@ import org.lwjgl.glfw.GLFW.*
 class Input(
     private val gpuContext: GpuContext
 ) {
-    val keysPressed = IntArrayList()
+    private val keysPressed = IntArrayList()
     private val keysPressedLastFrame = IntArrayList()
     private val keysReleased = IntArrayList()
 
@@ -41,11 +40,9 @@ class Input(
     private val width = IntArray(1)
     private val height = IntArray(1)
 
-    val dxSmooth: Int
-        get() = (dx + dxLast + dxBeforeLast) / 3
+    val dxSmooth: Int get() = (dx + dxLast + dxBeforeLast) / 3
 
-    val dySmooth: Int
-        get() = (dy + dyLast + dyBeforeLast) / 3
+    val dySmooth: Int get() = (dy + dyLast + dyBeforeLast) / 3
 
     fun update() {
         updateKeyboard()
@@ -53,7 +50,6 @@ class Input(
     }
 
     private fun updateKeyboard() {
-
         keysPressedLastFrame.clear()
         keysPressedLastFrame.addAll(keysPressed)
         keysPressed.clear()
@@ -93,13 +89,11 @@ class Input(
         dyLast = dy
         mouseXLast[0] = mouseX[0]
         mouseYLast[0] = mouseY[0]
-//        TODO: Move temp buffers to window instance
         gpuContext.window.getCursorPosition(mouseX, mouseY)
         gpuContext.window.getFrameBufferSize(width, height)
         dx = (-(mouseXLast[0] - mouseX[0])).toInt()
         dy = (mouseYLast[0] - mouseY[0]).toInt()
     }
-
 
     private fun isKeyPressedImpl(gpuContext: GpuContext, keyCode: Int): Boolean {
         val action = gpuContext.window.getKey(keyCode)
@@ -124,32 +118,4 @@ class Input(
     fun getMouseY() = height[0] - mouseY[0].toInt()
     fun getMouseXY() = Vector2i(getMouseX(), getMouseY())
 
-}
-
-class MouseClickListener(
-    private val input: Input,
-) {
-    var clicked = false
-    private var mousePressStartPosition: Vector2i? = null
-
-    fun update(deltaSeconds: Float) {
-        if(mousePressStartPosition == null && input.isMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
-            mousePressStartPosition = Vector2i(input.getMouseXY())
-        } else if(input.isMouseReleased(GLFW_MOUSE_BUTTON_LEFT)) {
-            mousePressStartPosition?.let { mousePressStartPosition ->
-                val distance = input.getMouseXY().distance(mousePressStartPosition)
-                if(distance <= 1.0) {
-                    clicked = true
-                }
-                this.mousePressStartPosition = null
-            }
-        }
-    }
-    inline fun <T> consumeClick(onClick: () -> T): T? = if(clicked) {
-        try {
-            onClick()
-        } finally {
-            clicked = false
-        }
-    } else null
 }

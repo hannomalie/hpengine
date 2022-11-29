@@ -25,7 +25,7 @@ sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
     var indices = BufferUtils.createByteBuffer(Integer.BYTES * meshIndexSum).apply {
         var offsetPerMesh = 0
         meshes.forEach { mesh ->
-            mesh.indexBufferValues.copyTo(this, targetOffset = offsetPerMesh)
+            mesh.indexBufferValues.copyTo(this, targetOffsetInBytes = offsetPerMesh)
             offsetPerMesh += mesh.indexBufferValues.capacity()
         }
     }

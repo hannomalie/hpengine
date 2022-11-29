@@ -42,6 +42,7 @@ import de.hanno.hpengine.transform.StaticTransformSpatial
 import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.vertexbuffer.appendIndices
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
@@ -408,8 +409,8 @@ class ModelSystem(
 
         currentWriteState.entitiesState.jointsBuffer.ensureCapacityInBytes(gpuJointsArray.byteBuffer.capacity())
         currentWriteState.entitiesState.entitiesBuffer.ensureCapacityInBytes(gpuEntitiesArray.byteBuffer.capacity())
-        gpuJointsArray.byteBuffer.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer, true)
-        gpuEntitiesArray.byteBuffer.copyTo(currentWriteState.entitiesBuffer.buffer, true)
+        gpuJointsArray.byteBuffer.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
+        gpuEntitiesArray.byteBuffer.copyTo(currentWriteState.entitiesBuffer.buffer)
 
         extract(
             currentWriteState.camera, currentWriteState, currentWriteState.camera.getPosition(),

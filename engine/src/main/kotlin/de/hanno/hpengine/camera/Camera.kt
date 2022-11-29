@@ -5,7 +5,6 @@ import de.hanno.hpengine.Transform
 import de.hanno.hpengine.util.Util
 import org.joml.*
 import org.lwjgl.BufferUtils
-import java.nio.FloatBuffer
 
 open class Camera(
     val transform: Transform,
@@ -28,9 +27,7 @@ open class Camera(
     val viewMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
 
     var viewMatrix = Matrix4f()
-        get() {
-            return transform.transformation.invert(field)
-        }
+        get() = transform.transformation.invert(field)
     var projectionMatrix = Matrix4f()
     var viewProjectionMatrix = Matrix4f()
 
@@ -160,21 +157,21 @@ open class Camera(
     }
 
     private fun transform() {
-        frustum.calculate(this)
+        frustum.calculate(projectionMatrix, viewMatrix)
     }
 
     fun saveViewMatrixAsLastViewMatrix() = lastViewMatrixAsBuffer.safePut(viewMatrixAsBuffer)
 
     private fun updateProjectionMatrixAndFrustum() {
         calculateProjectionMatrix()
-        frustum.calculate(this)
+        frustum.calculate(projectionMatrix, viewMatrix)
     }
 
     private fun calculateProjectionMatrix() {
-        if (perspective) {
-            projectionMatrix = Util.createPerspective(fov, ratio, near, far)
+        projectionMatrix = if (perspective) {
+            Util.createPerspective(fov, ratio, near, far)
         } else {
-            projectionMatrix = Util.createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
+            Util.createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
         }
     }
 
@@ -190,12 +187,7 @@ open class Camera(
     fun getPosition() = transform.position
 
 
-    fun getTranslationRotationBuffer(): FloatBuffer {
-        return viewMatrixAsBuffer
-    }
-
-    companion object {
-    }
+    companion object
 
     object Defaults {
         const val focalDepth = 1.84f

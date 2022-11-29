@@ -21,39 +21,33 @@ import com.bulletphysics.linearmath.DebugDrawModes
 import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
-
 import de.hanno.hpengine.artemis.PhysicsComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.RenderStateManager
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.addLine
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderSystem
-import de.hanno.hpengine.threads.TimeStepThread
-import de.hanno.hpengine.commandqueue.CommandQueue
-import de.hanno.hpengine.commandqueue.FutureCallable
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
+import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3fc
-import java.util.concurrent.CompletableFuture
 import java.util.function.Supplier
 import java.util.logging.Logger
 import javax.vecmath.Matrix4f
 import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
 
-context(GpuContext)
+context(GpuContext, RenderStateContext)
 @All(PhysicsComponent::class)
 class PhysicsManager(
     private val config: Config,
-    val renderStateManager: RenderStateManager,
     val programManager: ProgramManager,
     gravity: Vector3f = Vector3f(0f, -20f, 0f)
 ) : BaseEntitySystem(), RenderSystem {
@@ -62,7 +56,8 @@ class PhysicsManager(
     val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms()
         getProgram(
-            StringBasedCodeSource("mvp_vertex_vec4", """
+            StringBasedCodeSource(
+                "mvp_vertex_vec4", """
                 //include(globals_structs.glsl)
                 
                 ${uniforms.shaderDeclarations}
@@ -81,8 +76,10 @@ class PhysicsManager(
                 	pass_Position = ${uniforms::projectionMatrix.name} * ${uniforms::viewMatrix.name} * pass_WorldPosition;
                     gl_Position = pass_Position;
                 }
-            """.trimIndent()),
-            StringBasedCodeSource("simple_color_vec3", """
+            """.trimIndent()
+            ),
+            StringBasedCodeSource(
+                "simple_color_vec3", """
             ${uniforms.shaderDeclarations}
 
             layout(location=0)out vec4 out_color;
@@ -91,7 +88,8 @@ class PhysicsManager(
             {
                 out_color = vec4(${uniforms::color.name},1);
             }
-        """.trimIndent()), null, Defines(), uniforms
+        """.trimIndent()
+            ), null, Defines(), uniforms
         )
     }
 
@@ -99,24 +97,15 @@ class PhysicsManager(
 
     private var dynamicsWorld: DynamicsWorld? = null
     var ground: RigidBody? = null
-    val commandQueue = CommandQueue()
 
     internal var rigidBodyCache: MutableList<RigidBody> = ArrayList()
 
     init {
         setupBullet(gravity)
-        object : TimeStepThread("Physics", 0.001f) {
-            override fun update(seconds: Float) {
-                try {
-                    commandQueue.executeCommands()
-                    dynamicsWorld!!.stepSimulation(seconds * 1000)
-                } catch (e: Exception) {
-                    println("e = $e")
-                    e.printStackTrace()
-                }
+    }
 
-            }
-        }.start()
+    override fun update(deltaSeconds: Float) {
+        dynamicsWorld!!.stepSimulation(deltaSeconds)
     }
 
     fun createBallPhysicsComponent(radius: Float = 1f, mass: Float = 10f): PhysicsComponent {
@@ -189,7 +178,15 @@ class PhysicsManager(
     override fun render(result: DrawResult, renderState: RenderState) {
         if (config.debug.isDrawLines) {
             debugDrawWorld()
-            drawLines(renderStateManager, programManager, linesProgram, lineVertices, linePoints, color = org.joml.Vector3f(1f, 1f, 0f))
+            drawLines(
+                programManager,
+                linesProgram,
+                lineVertices,
+                linePoints,
+                viewMatrix = renderState.camera.viewMatrixAsBuffer,
+                projectionMatrix = renderState.camera.projectionMatrixAsBuffer,
+                color = org.joml.Vector3f(1f, 1f, 0f)
+            )
         }
     }
 
@@ -201,16 +198,17 @@ class PhysicsManager(
         val collisionConfiguration = DefaultCollisionConfiguration()
         val dispatcher = CollisionDispatcher(collisionConfiguration)
         val constraintSolver = SequentialImpulseConstraintSolver()
-        dynamicsWorld = object : DiscreteDynamicsWorld(dispatcher, broadphase, constraintSolver, collisionConfiguration) {
-            override fun debugDrawObject(worldTransform: Transform, shape: CollisionShape?, color: Vector3f?) {
-                super.debugDrawObject(worldTransform, shape, color)
-                val from = Vector3f()
-                val to = Vector3f()
-                shape!!.getAabb(worldTransform, from, to)
-                from.negate()
-                getDebugDrawer().drawAabb(from, to, color)
+        dynamicsWorld =
+            object : DiscreteDynamicsWorld(dispatcher, broadphase, constraintSolver, collisionConfiguration) {
+                override fun debugDrawObject(worldTransform: Transform, shape: CollisionShape?, color: Vector3f?) {
+                    super.debugDrawObject(worldTransform, shape, color)
+                    val from = Vector3f()
+                    val to = Vector3f()
+                    shape!!.getAabb(worldTransform, from, to)
+                    from.negate()
+                    getDebugDrawer().drawAabb(from, to, color)
+                }
             }
-        }
         dynamicsWorld!!.setGravity(gravity)
         dynamicsWorld!!.debugDrawer = object : IDebugDraw() {
             internal var logger = Logger.getLogger("Physics Factory Debug Draw")
@@ -248,8 +246,10 @@ class PhysicsManager(
                 drawLine(from, to, color)
             }
 
-            override fun drawContactPoint(arg0: Vector3f, arg1: Vector3f, arg2: Float,
-                                          arg3: Int, arg4: Vector3f) {
+            override fun drawContactPoint(
+                arg0: Vector3f, arg1: Vector3f, arg2: Float,
+                arg3: Int, arg4: Vector3f
+            ) {
             }
 
             override fun draw3dText(arg0: Vector3f, arg1: String) {
@@ -279,15 +279,13 @@ class PhysicsManager(
         }
     }
 
-    fun unregisterRigidBody(rigidBody: RigidBody): CompletableFuture<Any> {
-        return commandQueue.addCommand(object : FutureCallable<Any>() {
-            @Throws(Exception::class)
-            override fun execute(): Any {
-                dynamicsWorld!!.removeRigidBody(rigidBody)
-                return Unit
-            }
-        })
+    override fun removed(entityId: Int) {
+//        TODO: unregister rigid body through component removal here
+//        unregisterRigidBody(rigidBody)
+    }
+    private fun unregisterRigidBody(rigidBody: RigidBody) {
+        dynamicsWorld!!.removeRigidBody(rigidBody)
     }
 
-    override fun processSystem() { }
+    override fun processSystem() {}
 }

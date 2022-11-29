@@ -1,11 +1,9 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
-import de.hanno.hpengine.backend.Backend
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 
 import java.nio.FloatBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.input.MouseClickListener
@@ -26,8 +24,8 @@ interface OnClickListener {
 }
 context(GpuContext)
 class PixelPerfectPickingExtension(
-    val config: Config,
-    input: Input,
+    private val config: Config,
+    private val input: Input,
     private val listeners: List<OnClickListener>
 ) : DeferredRenderExtension {
     override val renderPriority: Int = 1000
@@ -39,8 +37,6 @@ class PixelPerfectPickingExtension(
         mouseClickListener.update(deltaSeconds)
     }
     override fun renderFirstPass(
-        backend: Backend,
-        firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {
         mouseClickListener.consumeClick {
@@ -50,8 +46,8 @@ class PixelPerfectPickingExtension(
                 config.width.toFloat() / window.width.toFloat(),
                 config.height.toFloat() / window.height.toFloat()
             )
-            val adjustedX = (backend.input.getMouseX() * ratio.x).toInt()
-            val adjustedY = (backend.input.getMouseY() * ratio.y).toInt()
+            val adjustedX = (input.getMouseX() * ratio.x).toInt()
+            val adjustedY = (input.getMouseY() * ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
             try {
                 val entityId = floatBuffer[0].toInt()

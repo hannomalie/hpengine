@@ -17,7 +17,7 @@ class FileBasedCodeSource(val file: File) : CodeSource {
     override var source: String = getSourceStringFromFile()
         private set
 
-    val filename = file.nameWithoutExtension
+    private val filename = file.nameWithoutExtension
 
     override val name: String = filename
 

@@ -11,6 +11,7 @@ import de.hanno.hpengine.artemis.TransformComponent
 
 import de.hanno.hpengine.config.ConfigImpl
 import de.hanno.hpengine.extension.SharedDepthBuffer
+import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.state.RenderState
@@ -18,10 +19,6 @@ import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.fps.FPSCounter
-import de.hanno.hpengine.graphics.DebugOutput
-import de.hanno.hpengine.graphics.FinalOutput
-import de.hanno.hpengine.graphics.GlfwWindow
-import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.Indices
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.OnClickListener
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
@@ -64,7 +61,7 @@ class EntityClickListener : OnClickListener {
 
 enum class SelectionMode { Entity, Mesh; }
 data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
-context(GpuContext)
+context(GpuContext, RenderStateContext)
 class ImGuiEditor(
     internal val window: GlfwWindow,
     internal val textureManager: OpenGLTextureManager,

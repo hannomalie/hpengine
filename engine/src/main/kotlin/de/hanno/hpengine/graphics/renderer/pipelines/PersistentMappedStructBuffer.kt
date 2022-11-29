@@ -3,30 +3,15 @@ package de.hanno.hpengine.graphics.renderer.pipelines
 import DrawElementsIndirectCommandStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
+import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.flags
-import de.hanno.hpengine.buffers.copyTo
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL40
-import org.lwjgl.opengl.GL43
-import org.lwjgl.opengl.GL44
+import org.lwjgl.opengl.*
 import struktgen.api.Strukt
 import struktgen.api.StruktType
 import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
-
-interface TypedGpuBuffer<T> : GpuBuffer {
-    val typedBuffer: TypedBuffer<T>
-}
-
-
-interface Allocator<T : Buffer> {
-    fun allocate(capacityInBytes: Int) = allocate(capacityInBytes, null)
-    fun allocate(capacityInBytes: Int, current: T?): T
-}
-
 
 context(GpuContext)
 class PersistentMappedBufferAllocator(
@@ -54,7 +39,7 @@ class PersistentMappedBufferAllocator(
         }
     }
 
-    fun mapBuffer(capacityInBytes: Long, oldBuffer: GpuBuffer?): ByteBuffer {
+    private fun mapBuffer(capacityInBytes: Long, oldBuffer: GpuBuffer?): ByteBuffer {
         require(capacityInBytes > 0) { "Cannot map buffer with 0 capacity!" }
 //            TODO: This causes segfaults in Unsafe class, wtf...
         val xxxx = BufferUtils.createByteBuffer(capacityInBytes.toInt())
@@ -65,18 +50,10 @@ class PersistentMappedBufferAllocator(
             xxxx
         )!!
 
-        oldBuffer?.let { oldBuffer ->
-            val array = ByteArray(oldBuffer.buffer.capacity())
-            oldBuffer.buffer.rewind()
-            oldBuffer.buffer.get(array)
-//            byteBuffer.put(buffer)
-            byteBuffer.put(array)
-            byteBuffer.rewind()
-        }
+        oldBuffer?.buffer?.copyTo(byteBuffer)
         return byteBuffer
     }
 
-    @Synchronized // TODO: Question this
     fun ensureCapacityInBytes(oldBuffer: GpuBuffer?, requestedCapacity: Int): GpuBuffer {
         var capacityInBytes = requestedCapacity
         if (capacityInBytes <= 0) {
@@ -115,13 +92,13 @@ interface IntStrukt : Strukt {
 }
 
 context(GpuContext)
-fun IndexBuffer(size: Int = 1000): PersistentTypedBuffer<IntStrukt> {
-    return PersistentMappedBuffer(size * IntStrukt.sizeInBytes, GL40.GL_ELEMENT_ARRAY_BUFFER).typed(IntStrukt.type)
-}
+fun IndexBuffer(size: Int = 1000) = PersistentMappedBuffer(
+    size * IntStrukt.sizeInBytes, GL40.GL_ELEMENT_ARRAY_BUFFER
+).typed(IntStrukt.type)
 
-data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMappedBuffer, val type: StruktType<T>) :
-    GpuBuffer by persistentMappedBuffer,
-    TypedGpuBuffer<T> {
+data class PersistentTypedBuffer<T: Strukt>(
+    val persistentMappedBuffer: PersistentMappedBuffer, val type: StruktType<T>
+) : GpuBuffer by persistentMappedBuffer, TypedGpuBuffer<T> {
 
     override val typedBuffer = object : TypedBuffer<T>(type) {
         override val byteBuffer: ByteBuffer get() = persistentMappedBuffer.buffer
@@ -138,11 +115,11 @@ data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMapped
     fun addAll(offset: Int? = null, elements: ByteBuffer) {
         val offset = offset ?: buffer.capacity()
         ensureCapacityInBytes(offset + elements.capacity())
-        elements.copyTo(buffer, rewindBuffers = true, targetOffset = offset)
+        elements.copyTo(buffer, targetOffsetInBytes = offset)
     }
 }
 
-fun <T> PersistentMappedBuffer.typed(type: StruktType<T>) = PersistentTypedBuffer(this, type)
+fun <T: Strukt> PersistentMappedBuffer.typed(type: StruktType<T>) = PersistentTypedBuffer(this, type)
 
 context(GpuContext)
 class PersistentMappedBuffer(
@@ -154,12 +131,9 @@ class PersistentMappedBuffer(
 
     private var gpuBuffer: GpuBuffer = allocator.allocate(initialSizeInBytes, null)
 
-    override val buffer: ByteBuffer
-        get() = gpuBuffer.buffer
-    override val id: Int
-        get() = gpuBuffer.id
-    override val target: Int
-        get() = gpuBuffer.target
+    override val buffer: ByteBuffer get() = gpuBuffer.buffer
+    override val id: Int get() = gpuBuffer.id
+    override val target: Int get() = gpuBuffer.target
 
     @Synchronized
     override fun ensureCapacityInBytes(requestedCapacity: Int) {

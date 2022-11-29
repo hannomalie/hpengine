@@ -36,7 +36,6 @@ class OpenGLContext private constructor(
 ) : GpuContext, GpuExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
-    private val debugProc = onGpu { if (debug) GLUtil.setupDebugMessageCallback() else null }
     private val dummyVertexIndexBuffer = run {
         val dummyVertexBuffer = VertexBuffer(DEFAULTCHANNELS, floatArrayOf(0f, 0f, 0f, 0f))
         onGpu {
@@ -169,17 +168,14 @@ class OpenGLContext private constructor(
     override fun bindTexture(target: TextureTarget, textureId: Int) {
         onGpu {
             glBindTexture(target.glTarget, textureId)
-            getExceptionOnError("")?.let { throw it }
         }
     }
 
     override fun bindTexture(textureUnitIndex: Int, target: TextureTarget, textureId: Int) {
         onGpu {
-            getExceptionOnError("beforeBindTexture")?.let { throw it }
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
             GL13.glActiveTexture(textureIndexGLInt)
             glBindTexture(target.glTarget, textureId)
-            getExceptionOnError("bindTexture")?.let { throw it }
         }
     }
 
@@ -377,10 +373,6 @@ class OpenGLContext private constructor(
 
     fun getOpenGlVersionsDefine(): String = "#version 430 core\n"
 
-
-    override fun getExceptionOnError(errorMessage: String): RuntimeException? {
-        return getExceptionOnError { errorMessage }
-    }
 
     override fun bindFrameBuffer(frameBuffer: IFrameBuffer) {
         bindFrameBuffer(frameBuffer.frameBuffer)

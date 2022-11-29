@@ -5,13 +5,12 @@ import Vector4fStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.World
 import com.artemis.annotations.All
-import de.hanno.hpengine.backend.Backend
 
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.RenderStateManager
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.graphics.renderer.constants.Capability
@@ -54,13 +53,14 @@ class ReflectionProbe(val extents: Vector3f = Vector3f(100f)) : com.artemis.Comp
 
 @All(ReflectionProbe::class)
 class ReflectionProbeManager(val config: Config) : BaseEntitySystem() {
-    override fun processSystem() { }
+    override fun processSystem() {}
     override fun inserted(entityId: Int) {
         config.debug.reRenderProbes = true
     }
 }
+
 context(GpuContext)
-class ReflectionProbeRenderState(val renderStateManager: RenderStateManager) {
+class ReflectionProbeRenderState() {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
     val probeMinMaxStructBuffer = onGpu {
@@ -69,23 +69,23 @@ class ReflectionProbeRenderState(val renderStateManager: RenderStateManager) {
     val probePositions = mutableListOf<Vector3f>()
 }
 
-context(GpuContext)
+context(GpuContext, RenderStateContext)
 class ReflectionProbeRenderExtension(
     val config: Config,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val textureManager: TextureManager,
-    val renderStateManager: RenderStateManager,
     val programManager: ProgramManager
 ) : DeferredRenderExtension {
     override val renderPriority = 3000
 
-    val reflectionProbeRenderState = renderStateManager.renderState.registerState {
-        ReflectionProbeRenderState(renderStateManager)
+    val reflectionProbeRenderState = renderState.registerState {
+        ReflectionProbeRenderState()
     }
     private val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms()
         getProgram(
-            StringBasedCodeSource("mvp_vertex_vec4", """
+            StringBasedCodeSource(
+                "mvp_vertex_vec4", """
                 //include(globals_structs.glsl)
                 
                 ${uniforms.shaderDeclarations}
@@ -104,8 +104,10 @@ class ReflectionProbeRenderExtension(
                 	pass_Position = ${uniforms::projectionMatrix.name} * ${uniforms::viewMatrix.name} * pass_WorldPosition;
                     gl_Position = pass_Position;
                 }
-            """.trimIndent()),
-            StringBasedCodeSource("simple_color_vec3", """
+            """.trimIndent()
+            ),
+            StringBasedCodeSource(
+                "simple_color_vec3", """
             ${uniforms.shaderDeclarations}
 
             layout(location=0)out vec4 out_color;
@@ -114,7 +116,8 @@ class ReflectionProbeRenderExtension(
             {
                 out_color = vec4(${uniforms::color.name},1);
             }
-        """.trimIndent()), null, Defines(), uniforms
+        """.trimIndent()
+            ), null, Defines(), uniforms
         )
     }
 
@@ -141,14 +144,15 @@ class ReflectionProbeRenderExtension(
         config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/evaluate_reflection_probe_fragment.glsl").toCodeSource(),
         Uniforms.Empty,
- Defines()
+        Defines()
     )
 
     private var renderCounter = 0
     private val probesPerFrame = 1
 
     override fun extract(renderState: RenderState, world: World) {
-        val components = (renderState.componentExtracts[ReflectionProbe::class.java] as List<ReflectionProbe>?) ?: return
+        val components =
+            (renderState.componentExtracts[ReflectionProbe::class.java] as List<ReflectionProbe>?) ?: return
         val componentCount = components.size
         val targetState = renderState[reflectionProbeRenderState]
 
@@ -159,8 +163,20 @@ class ReflectionProbeRenderExtension(
         val probePositions = targetState.probePositions
         probePositions.clear()
         components.forEachIndexed { index, probe ->
-            probeMinMaxStructBuffer.typedBuffer.forIndex(2 * index) { it.set(Vector3f(probe.transformComponent.transform.position).sub(probe.halfExtents)) }
-            probeMinMaxStructBuffer.typedBuffer.forIndex(2 * index + 1) { it.set(Vector3f(probe.transformComponent.transform.position).add(probe.halfExtents)) }
+            probeMinMaxStructBuffer.typedBuffer.forIndex(2 * index) {
+                it.set(
+                    Vector3f(probe.transformComponent.transform.position).sub(
+                        probe.halfExtents
+                    )
+                )
+            }
+            probeMinMaxStructBuffer.typedBuffer.forIndex(2 * index + 1) {
+                it.set(
+                    Vector3f(probe.transformComponent.transform.position).add(
+                        probe.halfExtents
+                    )
+                )
+            }
             probePositions.add(Vector3f(probe.transformComponent.transform.position))
         }
 
@@ -171,22 +187,42 @@ class ReflectionProbeRenderExtension(
 
         if (config.debug.isEditorOverlay) {
             val linePoints = (0 until renderState[reflectionProbeRenderState].probeCount).flatMap {
-                val minWorld = renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it) { Vector3f(it.x, it.y, it.z) }
-                val maxWorld = renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it + 1) { Vector3f(it.x, it.y, it.z) }
+                val minWorld =
+                    renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it) {
+                        Vector3f(
+                            it.x,
+                            it.y,
+                            it.z
+                        )
+                    }
+                val maxWorld =
+                    renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it + 1) {
+                        Vector3f(
+                            it.x,
+                            it.y,
+                            it.z
+                        )
+                    }
                 mutableListOf<Vector3fc>().apply { addAABBLines(minWorld, maxWorld) }
             }
 
             deferredRenderingBuffer.finalBuffer.use(false)
             blend = false
 
-            drawLines(renderStateManager, programManager, linesProgram, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
+            drawLines(
+                programManager,
+                linesProgram,
+                lineVertices,
+                linePoints,
+                viewMatrix = renderState.camera.viewMatrixAsBuffer,
+                projectionMatrix = renderState.camera.projectionMatrixAsBuffer,
+                color = Vector3f(1f, 0f, 0f)
+            )
         }
 
     }
 
     override fun renderFirstPass(
-        backend: Backend,
-        firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {
         val entityAdded = renderState.entitiesState.entityAddedInCycle > renderedInCycle
@@ -216,7 +252,10 @@ class ReflectionProbeRenderExtension(
         bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
         bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
         bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
-        bindTexture(6, TextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+        bindTexture(
+            6,
+            TextureTarget.TEXTURE_2D,
+            renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
         bindTexture(7, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
         renderState.lightState.pointLightShadowMapStrategy.bindTextures()
 
@@ -313,6 +352,7 @@ class ReflectionProbeRenderExtension(
         }
     }
 }
+
 context(GpuContext)
 class ReflectionProbeRenderer(
     val config: Config,

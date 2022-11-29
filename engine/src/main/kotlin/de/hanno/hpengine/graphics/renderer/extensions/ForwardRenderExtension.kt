@@ -1,11 +1,8 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
-import de.hanno.hpengine.backend.Backend
-
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
-import de.hanno.hpengine.graphics.renderer.constants.Capability
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -45,7 +42,7 @@ class ForwardRenderExtension(
         Defines()
     )
 
-    override fun renderFirstPass(backend: Backend, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(renderState: RenderState) {
         deferredRenderingBuffer.forwardBuffer.use(false)
 
         GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f, 0f, 0f, 0f))

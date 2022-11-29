@@ -18,11 +18,11 @@ import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
-import de.hanno.hpengine.model.enlarge
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 
 // TODO: Autoadd Transform
 context(GpuContext)
@@ -64,6 +64,7 @@ class PointLightSystem(
     override fun extract(currentWriteState: RenderState) {
         currentWriteState.pointLightMovedInCycle = pointLightMovedInCycle
 
+        currentWriteState.lightState.pointLightBuffer.resize(gpuPointLights.sizeInBytes)
         gpuPointLights.buffer.copyTo(currentWriteState.lightState.pointLightBuffer.buffer)
         currentWriteState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
     }

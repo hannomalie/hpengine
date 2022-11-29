@@ -6,11 +6,9 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.state.SimpleRenderStateRecorder
-import de.hanno.hpengine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
 import de.hanno.hpengine.graphics.fps.FPSCounter
@@ -29,7 +27,7 @@ class RenderManager(
     val input: Input,
     val window: Window,
     val programManager: ProgramManager,
-    val renderStateManager: RenderStateManager,
+    val renderStateContext: RenderStateContext,
     val finalOutput: FinalOutput,
     val debugOutput: DebugOutput,
     val fpsCounter: FPSCounter,
@@ -57,14 +55,11 @@ class RenderManager(
         window.frontBuffer
     )
 
-    inline val renderState: TripleBuffer<RenderState>
-        get() = renderStateManager.renderState
-
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(input)
 
     fun finishCycle(deltaSeconds: Float) {
-        renderState.currentWriteState.deltaSeconds = deltaSeconds
-        renderState.swapStaging()
+        renderStateContext.renderState.currentWriteState.deltaSeconds = deltaSeconds
+        renderStateContext.renderState.swapStaging()
     }
 
     internal val rendering = AtomicBoolean(false)
@@ -73,16 +68,16 @@ class RenderManager(
             onGpu(block = {
                 rendering.getAndSet(true)
                 try {
-                    renderState.readLocked { currentReadState ->
+                    renderStateContext.renderState.readLocked { currentReadState ->
 
-                        val renderSystems = when(val renderMode = renderMode) {
+                        val renderSystems = when (val renderMode = renderMode) {
                             RenderMode.Normal -> {
                                 renderSystems.filter {
                                     renderSystemsConfig.run { it.enabled }
                                 }
                             }
                             is RenderMode.SingleFrame -> {
-                                if(renderMode.frameRequested.get()) {
+                                if (renderMode.frameRequested.get()) {
                                     renderSystems.filter {
                                         renderSystemsConfig.run { it.enabled }
                                     }
@@ -99,13 +94,14 @@ class RenderManager(
                             val drawResult = currentReadState.latestDrawResult.apply { reset() }
 
                             profiled("renderSystems") {
-                                renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
-                                    val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                    renderTarget?.use(clear)
-                                    renderSystems.forEach { renderSystem ->
-                                        renderSystem.render(drawResult, currentReadState)
+                                renderSystems.groupBy { it.sharedRenderTarget }
+                                    .forEach { (renderTarget, renderSystems) ->
+                                        val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
+                                        renderTarget?.use(clear)
+                                        renderSystems.forEach { renderSystem ->
+                                            renderSystem.render(drawResult, currentReadState)
+                                        }
                                     }
-                                }
 
                                 if (config.debug.isEditorOverlay) {
                                     renderSystems.forEach {

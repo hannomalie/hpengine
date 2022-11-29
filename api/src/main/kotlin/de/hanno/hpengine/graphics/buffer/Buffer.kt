@@ -1,5 +1,10 @@
 package de.hanno.hpengine.graphics.renderer.pipelines
 
+import de.hanno.hpengine.buffers.copyTo
+import org.lwjgl.BufferUtils
+import struktgen.api.Strukt
+import struktgen.api.StruktType
+import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
 
 interface Buffer {
@@ -21,4 +26,23 @@ interface GpuBuffer : Buffer {
 }
 interface IndexBuffer: GpuBuffer
 
-interface AtomicCounterBuffer: GpuBuffer
+interface AtomicCounterBuffer: GpuBuffer {
+    fun bindAsParameterBuffer()
+}
+
+interface TypedGpuBuffer<T: Strukt> : GpuBuffer {
+    val typedBuffer: TypedBuffer<T>
+}
+
+fun <T: Strukt> TypedBuffer<T>.enlarge(size: Int, copyContent: Boolean = true) = enlargeToBytes(
+    size * struktType.sizeInBytes,
+    copyContent
+)
+
+fun <T: Strukt> TypedBuffer<T>.enlargeToBytes(sizeInBytes: Int, copyContent: Boolean = true) = if(byteBuffer.capacity() < sizeInBytes) {
+    TypedBuffer(BufferUtils.createByteBuffer(sizeInBytes), struktType).apply {
+        if(copyContent) {
+            this@enlargeToBytes.byteBuffer.copyTo(this@apply.byteBuffer)
+        }
+    }
+} else this

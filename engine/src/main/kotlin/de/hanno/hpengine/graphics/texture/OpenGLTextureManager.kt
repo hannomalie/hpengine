@@ -3,55 +3,35 @@ package de.hanno.hpengine.graphics.texture
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.AbstractDirectory
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_3D
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_CUBE_MAP
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_CUBE_MAP_ARRAY
+import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.exitOnGLError
+import de.hanno.hpengine.graphics.renderer.constants.*
+import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.*
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.graphics.texture.DDSConverter.getFullPathAsDDS
+import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
-import de.hanno.hpengine.commandqueue.CommandQueue
-import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.exitOnGLError
-import de.hanno.hpengine.graphics.renderer.constants.*
-import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import jogl.DDSImage
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.ARBBindlessTexture
-import org.lwjgl.opengl.EXTTextureCompressionS3TC
-import org.lwjgl.opengl.EXTTextureSRGB
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL13
+import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL13.GL_RGBA8
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_RGBA16F
 import org.lwjgl.opengl.GL30.GL_RGBA32F
-import org.lwjgl.opengl.GL42
-import org.lwjgl.opengl.GL43
 import java.awt.Color
-import java.awt.image.BufferedImage
-import java.awt.image.DataBuffer
-import java.awt.image.DataBufferByte
-import java.awt.image.Raster
-import java.awt.image.WritableRaster
+import java.awt.image.*
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import java.util.Hashtable
-import java.util.LinkedHashMap
+import java.util.*
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
@@ -61,7 +41,6 @@ class OpenGLTextureManager(
     val config: Config,
     programManager: OpenGlProgramManager,
 ) : BaseSystem(), TextureManager {
-    val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
     val engineDir = config.directories.engineDir
 
@@ -86,12 +65,6 @@ class OpenGLTextureManager(
                 }
             }.start()
         }
-
-        object : TimeStepThread("TextureManager", 0.01f) {
-            override fun update(seconds: Float) {
-                commandQueue.executeCommands()
-            }
-        }.start()
     }
 
     override val lensFlareTexture = engineDir.getTexture("assets/textures/lens_flare_tex.jpg", true)

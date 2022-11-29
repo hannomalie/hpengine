@@ -24,11 +24,7 @@ inline var Vector3f.z
         z = value
     }
 
-inline val Vector4fc.x
-    get() = x()
-inline val Vector4fc.y
-    get() = y()
-inline val Vector4fc.z
-    get() = z()
-inline val Vector4fc.w
-    get() = w()
+inline val Vector4fc.x get() = x()
+inline val Vector4fc.y get() = y()
+inline val Vector4fc.z get() = z()
+inline val Vector4fc.w get() = w()

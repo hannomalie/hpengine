@@ -6,8 +6,8 @@ data class TextureFilterConfig(
 )
 
 enum class MinFilter(val isMipMapped: Boolean = false) {
-    NEAREST(),
-    LINEAR(),
+    NEAREST,
+    LINEAR,
     NEAREST_MIPMAP_NEAREST(true),
     LINEAR_MIPMAP_NEAREST(true),
     NEAREST_MIPMAP_LINEAR(true),

@@ -14,7 +14,7 @@ import com.artemis.World
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.RenderStateManager
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
@@ -41,12 +41,11 @@ import de.hanno.hpengine.scene.VertexStruktPacked
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL30
 
-context(GpuContext)
+context(GpuContext, RenderStateContext)
 class DirectionalLightShadowMapExtension(
     val config: Config,
     val programManager: ProgramManager,
     val textureManager: OpenGLTextureManager,
-    val renderStateManager: RenderStateManager,
 ) : DeferredRenderExtension {
 
     private var forceRerender = true
@@ -80,10 +79,10 @@ class DirectionalLightShadowMapExtension(
         Defines(Define("ANIMATED", true)),
     )
 
-    private val staticPipeline = renderStateManager.renderState.registerState {
+    private val staticPipeline = renderState.registerState {
         DirectionalShadowMapPipeline(staticDirectionalShadowPassProgram)
     }
-    private val animatedPipeline = renderStateManager.renderState.registerState {
+    private val animatedPipeline = renderState.registerState {
         DirectionalShadowMapPipeline(animatedDirectionalShadowPassProgram)
     }
 

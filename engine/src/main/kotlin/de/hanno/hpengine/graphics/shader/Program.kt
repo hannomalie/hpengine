@@ -88,7 +88,6 @@ class Program<T : Uniforms> constructor(
 
     private fun attach(shader: de.hanno.hpengine.graphics.shader.api.Shader) {
         glAttachShader(id, shader.id)
-        gpuContext.getExceptionOnError("Couldn't attach, maybe is already attached: shader.name")
 
     }
 
@@ -105,7 +104,6 @@ class Program<T : Uniforms> constructor(
         gpuContext.onGpu {
             shaders.forEach {
                 detach(it)
-                gpuContext.getExceptionOnError("Couldn't detach, maybe is already detached")
                 it.reload()
             }
 

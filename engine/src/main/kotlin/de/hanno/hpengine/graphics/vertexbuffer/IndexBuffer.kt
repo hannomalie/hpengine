@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.vertexbuffer
 
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.buffer.AbstractPersistentMappedBuffer
+import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.IndexBuffer
 import java.nio.IntBuffer
@@ -11,7 +11,7 @@ import java.nio.ByteBuffer
 
 context(GpuContext)
 fun IndexBuffer(): IndexBuffer {
-    val underlying = AbstractPersistentMappedBuffer(
+    val underlying = PersistentMappedBuffer(
         GL15.GL_ELEMENT_ARRAY_BUFFER
     )
     return object: IndexBuffer, GpuBuffer by underlying {}
@@ -66,5 +66,5 @@ fun IndexBuffer.put(index: Int, value: Int) {
 fun IndexBuffer.appendIndices(indexOffset: Int, indices: ByteBuffer) {
     buffer.rewind()
     ensureCapacityInBytes((indexOffset + (indices.capacity() / Integer.BYTES)) * Integer.BYTES)
-    indices.copyTo(buffer, true, indexOffset * Integer.BYTES)
+    indices.copyTo(buffer, indexOffset * Integer.BYTES)
 }

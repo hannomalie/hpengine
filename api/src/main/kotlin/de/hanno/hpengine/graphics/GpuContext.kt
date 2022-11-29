@@ -128,7 +128,6 @@ interface GpuContext {
         }
     }
 
-    fun getExceptionOnError(errorMessage: String = ""): RuntimeException?
     fun bindFrameBuffer(frameBuffer: IFrameBuffer)
     fun checkCommandSyncs()
 

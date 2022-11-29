@@ -153,7 +153,6 @@ class RenderTargetImpl<T : Texture>(
         }
 
         register(this)
-        getExceptionOnError("rendertarget creation failed $name")
     }
 
     override val renderedTexture: Int

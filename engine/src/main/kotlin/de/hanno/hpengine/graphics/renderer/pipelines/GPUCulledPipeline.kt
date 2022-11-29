@@ -9,8 +9,8 @@ import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.IndirectCulledDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
@@ -470,13 +470,13 @@ class CommandOrganizationGpuCulled() {
     val commandsCompacted = CommandBuffer(10000)
     val offsetsForCommand = IndexBuffer()
 
-    val drawCountsCompacted = AtomicCounterBuffer(1)
+    val drawCountsCompacted = AtomicCounterBuffer()
     val visibilities = IndexBuffer()
     val commandOffsets = IndexBuffer()
     val currentCompactedPointers = IndexBuffer()
     val offsetsCompacted = IndexBuffer()
     val entitiesCompacted = PersistentMappedBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
-    val entitiesCompactedCounter = AtomicCounterBuffer(1)
+    val entitiesCompactedCounter = AtomicCounterBuffer()
     val instanceCountForCommand = IndexBuffer()
 }
 

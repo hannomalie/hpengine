@@ -6,7 +6,7 @@ import Vector4fStruktImpl.Companion.type
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.RenderStateManager
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
@@ -23,10 +23,10 @@ import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.Vector4fStrukt
-import de.hanno.hpengine.model.enlarge
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.ressources.StringBasedCodeSource
@@ -40,7 +40,7 @@ import org.lwjgl.opengl.GL42
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
 
-interface BvhNodeGpu: Strukt {
+interface BvhNodeGpu : Strukt {
     context(ByteBuffer) val positionRadius: Vector4fStrukt
     context(ByteBuffer) val missPointer: IntStrukt
     context(ByteBuffer) val lightIndex: IntStrukt
@@ -51,34 +51,39 @@ interface BvhNodeGpu: Strukt {
 }
 typealias BoundingSphere = Vector4f
 typealias Bvh = BvhNode
+
 sealed class BvhNode(val boundingSphere: BoundingSphere) {
     var parent: BvhNode? = null
-    class Inner(boundingSphere: BoundingSphere): BvhNode(boundingSphere) {
+
+    class Inner(boundingSphere: BoundingSphere) : BvhNode(boundingSphere) {
         val children = mutableListOf<BvhNode>()
         fun add(child: BvhNode) {
             child.parent = this
             children.add(child)
         }
     }
-    class Leaf(boundingSphere: BoundingSphere, var lightIndex: Int): BvhNode(boundingSphere)
+
+    class Leaf(boundingSphere: BoundingSphere, var lightIndex: Int) : BvhNode(boundingSphere)
 }
 
 val BvhNode.nodes: List<BvhNode>
-    get() = when(this) {
+    get() = when (this) {
         is BvhNode.Inner -> mutableListOf(this) + children.flatMap { it.nodes }
         is BvhNode.Leaf -> mutableListOf(this)
     }
 val Bvh.nodeCount: Int
-    get() = when(this) {
+    get() = when (this) {
         is BvhNode.Inner -> 1 + children.sumBy { it.nodeCount }
         is BvhNode.Leaf -> 1
     }
+
 fun MutableList<out BvhNode>.clustersOfN(n: Int = 4): MutableList<BvhNode.Inner> {
     val result = mutableListOf<BvhNode.Inner>()
-    while(isNotEmpty()) {
+    while (isNotEmpty()) {
         val first = first()
         remove(first)
-        val nearest = asSequence().sortedBy { first.boundingSphere.xyz.distance(it.boundingSphere.xyz) }.take(n-1).toList()
+        val nearest =
+            asSequence().sortedBy { first.boundingSphere.xyz.distance(it.boundingSphere.xyz) }.take(n - 1).toList()
         removeAll(nearest)
         val nearestAndSelf = nearest + first
         val pointsPerSphere = 8
@@ -102,7 +107,8 @@ fun MutableList<out BvhNode>.clustersOfN(n: Int = 4): MutableList<BvhNode.Inner>
             val min = bvhNode.boundingSphere.xyz.sub(Vector3f(bvhNode.boundingSphere.w))
             val max = bvhNode.boundingSphere.xyz.add(Vector3f(bvhNode.boundingSphere.w))
             AABB(min, max)
-        }.getSurroundingAABB().let { Vector4f(it.center.x, it.center.y, it.center.z, it.halfExtents.get(it.halfExtents.maxComponent())) }
+        }.getSurroundingAABB()
+            .let { Vector4f(it.center.x, it.center.y, it.center.z, it.halfExtents.get(it.halfExtents.maxComponent())) }
 
         val innerNode = BvhNode.Inner(enclosingSphere).apply {
             nearestAndSelf.forEach {
@@ -116,7 +122,7 @@ fun MutableList<out BvhNode>.clustersOfN(n: Int = 4): MutableList<BvhNode.Inner>
 
 fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
     var candidates: MutableList<out BvhNode> = toMutableList()
-    while(candidates.any { it is BvhNode.Leaf } || candidates.size > 1) {
+    while (candidates.any { it is BvhNode.Leaf } || candidates.size > 1) {
         candidates = candidates.clustersOfN()
     }
     return candidates.first() as BvhNode.Inner
@@ -129,18 +135,20 @@ context(GpuContext)
 class BvHPointLightSecondPassExtension(
     val config: Config,
     val gpuContext: GpuContext,
-    val renderStateManager: RenderStateManager,
+    val renderStateContext: RenderStateContext,
     val programManager: ProgramManager,
     val deferredRenderingBuffer: DeferredRenderingBuffer
-): DeferredRenderExtension {
+) : DeferredRenderExtension {
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
-    private val secondPassPointBvhComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
+    private val secondPassPointBvhComputeProgram =
+        programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 
     private val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms()
         getProgram(
-            StringBasedCodeSource("mvp_vertex_vec4", """
+            StringBasedCodeSource(
+                "mvp_vertex_vec4", """
                 //include(globals_structs.glsl)
                 
                 ${uniforms.shaderDeclarations}
@@ -159,8 +167,10 @@ class BvHPointLightSecondPassExtension(
                 	pass_Position = ${uniforms::projectionMatrix.name} * ${uniforms::viewMatrix.name} * pass_WorldPosition;
                     gl_Position = pass_Position;
                 }
-            """.trimIndent()),
-            StringBasedCodeSource("simple_color_vec3", """
+            """.trimIndent()
+            ),
+            StringBasedCodeSource(
+                "simple_color_vec3", """
             ${uniforms.shaderDeclarations}
 
             layout(location=0)out vec4 out_color;
@@ -169,7 +179,8 @@ class BvHPointLightSecondPassExtension(
             {
                 out_color = vec4(${uniforms::color.name},1);
             }
-        """.trimIndent()), null, Defines(), uniforms
+        """.trimIndent()
+            ), null, Defines(), uniforms
         )
     }
 
@@ -183,6 +194,7 @@ class BvHPointLightSecondPassExtension(
         y = other.y
         z = other.z
     }
+
     private var bvhReconstructedInCycle = -1L
     var nodeCount = 0
     var tree: Bvh? = null
@@ -193,7 +205,7 @@ class BvHPointLightSecondPassExtension(
         var counter = 0
 
         fun BvhNode.putToBufferHelper() {
-            when(this) {
+            when (this) {
                 is BvhNode.Inner -> {
                     bvh.typedBuffer.forIndex(counter) {
                         it.positionRadius.set(boundingSphere)
@@ -220,7 +232,7 @@ class BvHPointLightSecondPassExtension(
             return
         }
         // TODO: Move this to update
-        if(bvhReconstructedInCycle < renderState.pointLightMovedInCycle) {
+        if (bvhReconstructedInCycle < renderState.pointLightMovedInCycle) {
 //             TODO: Reimplement this
 //            bvhReconstructedInCycle = renderState.cycle
 //            val leafNodes = renderState.lightState.pointLights.mapIndexed { index, light ->
@@ -247,7 +259,15 @@ class BvHPointLightSecondPassExtension(
             gpuContext.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             renderState.lightState.pointLightShadowMapStrategy.bindTextures()
             // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(4, deferredRenderingBuffer.lightAccumulationMapOneId, 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
+            GL42.glBindImageTexture(
+                4,
+                deferredRenderingBuffer.lightAccumulationMapOneId,
+                0,
+                false,
+                0,
+                GL15.GL_READ_WRITE,
+                GL30.GL_RGBA16F
+            )
             secondPassPointBvhComputeProgram.use()
             secondPassPointBvhComputeProgram.setUniform("nodeCount", nodeCount)
             secondPassPointBvhComputeProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
@@ -255,7 +275,10 @@ class BvHPointLightSecondPassExtension(
             secondPassPointBvhComputeProgram.setUniform("screenHeight", config.height.toFloat())
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
-            secondPassPointBvhComputeProgram.setUniform("maxPointLightShadowmaps", PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
+            secondPassPointBvhComputeProgram.setUniform(
+                "maxPointLightShadowmaps",
+                PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
+            )
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(3, bvh)
@@ -264,7 +287,7 @@ class BvHPointLightSecondPassExtension(
     }
 
     override fun renderEditor(renderState: RenderState, result: DrawResult) {
-        if(config.debug.drawBvhInnerNodes) {
+        if (config.debug.drawBvhInnerNodes) {
 
             val linePoints = mutableListOf<Vector3fc>().apply {
                 tree?.run {
@@ -283,7 +306,15 @@ class BvHPointLightSecondPassExtension(
             }
             deferredRenderingBuffer.finalBuffer.use(false)
             gpuContext.blend = false
-            drawLines(renderStateManager, programManager, linesProgram, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
+            drawLines(
+                programManager,
+                linesProgram,
+                lineVertices,
+                linePoints,
+                viewMatrix = renderState.camera.viewMatrixAsBuffer,
+                projectionMatrix = renderState.camera.projectionMatrixAsBuffer,
+                color = Vector3f(1f, 0f, 0f)
+            )
         }
 
     }

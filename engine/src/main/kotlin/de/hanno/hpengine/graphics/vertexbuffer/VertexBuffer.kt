@@ -22,8 +22,8 @@ class VertexBuffer(
 ) : GpuBuffer, IVertexBuffer {
 
     private val gpuBuffer = PersistentMappedBuffer(
-        values.size * java.lang.Float.BYTES,
         GL_ARRAY_BUFFER,
+        values.size * java.lang.Float.BYTES
     )
     override val buffer: ByteBuffer get() = gpuBuffer.buffer
     override val target = GL_ARRAY_BUFFER
@@ -141,7 +141,6 @@ fun GpuContext.createSixDebugBuffers(): List<IVertexBuffer> {
             }
         }
 
-        getExceptionOnError("setupBuffers")
         sixDebugBuffers
     }
 }

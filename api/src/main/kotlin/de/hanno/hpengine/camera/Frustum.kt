@@ -1,47 +1,35 @@
 package de.hanno.hpengine.camera
 
-import java.nio.FloatBuffer
 import de.hanno.hpengine.transform.AABB
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
-import java.io.IOException
-import java.lang.ClassNotFoundException
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
-import java.io.Serializable
+import java.nio.FloatBuffer
+import kotlin.math.max
 
-class Frustum : Serializable {
+class Frustum {
     /**
      * Pass side of the frustum and x,y,z,w selector to get value
      */
     var values = Array(6) { FloatArray(4) }
 
-    @Transient
     private var buffer = BufferUtils.createFloatBuffer(4 * 6)
     private val proj = FloatArray(16)
     private val modl = FloatArray(16)
     private val clip = FloatArray(16)
 
-    constructor(camera: Camera) {
-        calculate(camera)
-    }
-
-    @Transient
     private var buf = BufferUtils.createFloatBuffer(16)
     private val temp = Matrix4f()
     val frustumIntersection = FrustumIntersection()
 
-    constructor() {}
-
-    fun calculate(camera: Camera) {
+    fun calculate(projectionMatrix: Matrix4f, viewMatrix: Matrix4f) {
         buf.rewind()
-        camera.projectionMatrix[0, buf]
+        projectionMatrix[0, buf]
         buf.rewind()
         buf[proj]
         buf.rewind()
-        camera.viewMatrix[0, buf]
+        viewMatrix[0, buf]
         buf.rewind()
         buf[modl]
         clip[0] = modl[0] * proj[0] + modl[1] * proj[4] + modl[2] * proj[8] + modl[3] * proj[12]
@@ -118,7 +106,7 @@ class Frustum : Serializable {
 
         // Normalize the FRONT side
         normalizePlane(values, FRONT)
-        frustumIntersection.set(camera.projectionMatrix.mul(camera.viewMatrix, temp))
+        frustumIntersection.set(projectionMatrix.mul(viewMatrix, temp))
     }
 
     fun normalizePlane(frustum: Array<FloatArray>, side: Int) {
@@ -226,27 +214,10 @@ class Frustum : Serializable {
         return buffer
     }
 
-    fun boxInFrustum(aabb: AABB): Boolean {
-        return cubeInFrustum(
-            Vector3f(aabb.min).add(aabb.halfExtents),
-            Math.max(aabb.halfExtents.x, Math.max(aabb.halfExtents.y, aabb.halfExtents.z))
-        )
-        //		return sphereInFrustum(aabb.center.x, aabb.center.y, aabb.center.z, aabb.size/2);
-//		return (pointInFrustum(aabb.getBottomLeftBackCorner().x, aabb.getBottomLeftBackCorner().y, aabb.getBottomLeftBackCorner().z) ||
-//				pointInFrustum(aabb.getTopRightForeCorner().x, aabb.getTopRightForeCorner().y, aabb.getTopRightForeCorner().z));
-    }
-
-    @Throws(IOException::class, ClassNotFoundException::class)
-    private fun readObject(`in`: ObjectInputStream) {
-        `in`.defaultReadObject()
-        buffer = BufferUtils.createFloatBuffer(4 * 6)
-        buf = BufferUtils.createFloatBuffer(16)
-    }
-
-    @Throws(IOException::class)
-    private fun writeObject(oos: ObjectOutputStream) {
-        oos.defaultWriteObject()
-    }
+    fun boxInFrustum(aabb: AABB): Boolean = cubeInFrustum(
+        Vector3f(aabb.min).add(aabb.halfExtents),
+        max(aabb.halfExtents.x, max(aabb.halfExtents.y, aabb.halfExtents.z))
+    )
 
     companion object {
         private const val serialVersionUID: Long = 1

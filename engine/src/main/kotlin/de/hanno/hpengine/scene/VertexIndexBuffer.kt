@@ -29,9 +29,11 @@ class VertexIndexBuffer(indexBufferSizeInIntsCount: Int) {
     }
 
     var vertexStructArray = PersistentMappedBuffer(VertexStruktPacked.type.sizeInBytes).typed(
-        VertexStruktPacked.type)
+        VertexStruktPacked.type
+    )
     var animatedVertexStructArray = PersistentMappedBuffer(AnimatedVertexStruktPacked.type.sizeInBytes).typed(
-        AnimatedVertexStruktPacked.type)
+        AnimatedVertexStruktPacked.type
+    )
 
     data class VertexIndexOffsets(val vertexOffset: Int, val indexOffset: Int)
 }

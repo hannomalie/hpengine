@@ -2,7 +2,6 @@ package de.hanno.hpengine.graphics.shader
 
 import com.artemis.BaseSystem
 
-import de.hanno.hpengine.bus.EventBus
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.OpenGLContext
 import de.hanno.hpengine.graphics.shader.api.Shader
@@ -12,9 +11,9 @@ import de.hanno.hpengine.ressources.*
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-class OpenGlProgramManager(override val gpuContext: OpenGLContext,
-                           private val eventBus: EventBus,
-                           override val config: Config
+class OpenGlProgramManager(
+    override val gpuContext: OpenGLContext,
+    override val config: Config
 ) : BaseSystem(), ProgramManager {
 
     override fun List<UniformDelegate<*>>.toUniformDeclaration() = joinToString("\n") {
@@ -42,7 +41,6 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         return gpuContext.onGpu {
             val program = ComputeProgram(this, codeSource, defines)
             programsCache.add(program)
-            eventBus.register(program)
             program
         }
     }
@@ -76,7 +74,6 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                 uniforms = uniforms
             ).apply {
                 programsCache.add(this)
-                eventBus.register(this)
             }
         }
     }

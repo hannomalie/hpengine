@@ -10,7 +10,7 @@ import de.hanno.hpengine.artemis.OceanWaterComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.OpenGLContext.Companion.RED_BUFFER
-import de.hanno.hpengine.graphics.RenderStateManager
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
@@ -37,7 +37,7 @@ private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, M
 context(GpuContext)
 class OceanWaterRenderSystem(
     val config: Config,
-    val renderStateManager: RenderStateManager,
+    val renderStateContext: RenderStateContext,
     val programManager: ProgramManager,
     val textureManager: OpenGLTextureManager,
 ) : RenderSystem {

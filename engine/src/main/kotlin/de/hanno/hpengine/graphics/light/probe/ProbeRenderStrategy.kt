@@ -1,7 +1,6 @@
 package de.hanno.hpengine.graphics.light.probe
 
 import AmbientCubeImpl.Companion.sizeInBytes
-import de.hanno.hpengine.backend.Backend
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -97,7 +96,7 @@ class ProbeRenderStrategy(
 
 
     val probeGrid = PersistentMappedBuffer(
-        resolution * resolution * resolution * AmbientCube.sizeInBytes
+        GL43.GL_SHADER_STORAGE_BUFFER, capacityInBytes = resolution * resolution * resolution * AmbientCube.sizeInBytes
     )
     var x = 0
     var y = 0
@@ -181,7 +180,12 @@ class ProbeRenderStrategy(
                         GL11.GL_RGBA8
                     )
                     val distanceCubeMap = OpenGLCubeMap(dimension, filterConfig, GL_RG16F)
-                    AmbientCubeData(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
+                    AmbientCubeData(
+                        Vector3f(x.toFloat(), y.toFloat(), z.toFloat()),
+                        cubeMap,
+                        distanceCubeMap,
+                        cubeMapIndex
+                    )
                 }
 
                 glFinish()
@@ -252,8 +256,6 @@ class EvaluateProbeRenderExtension(
     )
 
     override fun renderFirstPass(
-        backend: Backend,
-        firstPassResult: FirstPassResult,
         renderState: RenderState
     ) {
         probeRenderStrategy.renderProbes(renderState)
