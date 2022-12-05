@@ -106,7 +106,7 @@ class RenderTargetImpl<T : Texture>(
     override var renderedTextures: IntArray = IntArray(textures.size)
     override var renderedTextureHandles: LongArray = LongArray(textures.size)
     override var drawBuffers: IntArray = IntArray(textures.size)
-    override var mipMapCount = Util.calculateMipMapCount(max(width, height))
+    override var mipMapCount = calculateMipMapCount(max(width, height))
 
     // TODO: This is probably not the nicest way to implement this but i am in a hurry :)
     override val factorsForDebugRendering = textures.map { 1f }.toMutableList()

@@ -31,6 +31,7 @@ import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.Util
 import org.jetbrains.kotlin.util.profile
@@ -200,7 +201,7 @@ open class GPUCulledPipeline(
         var lastHeight = config.height
         var currentWidth = lastWidth / 2
         var currentHeight = lastHeight / 2
-        val mipMapCount = Util.calculateMipMapCount(currentWidth, currentHeight)
+        val mipMapCount = calculateMipMapCount(currentWidth, currentHeight)
         for (mipmapTarget in 0 until mipMapCount) {
             highZProgram.setUniform("width", currentWidth)
             highZProgram.setUniform("height", currentHeight)

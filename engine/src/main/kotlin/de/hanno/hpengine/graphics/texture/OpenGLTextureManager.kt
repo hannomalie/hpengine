@@ -13,7 +13,6 @@ import de.hanno.hpengine.graphics.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.graphics.texture.DDSConverter.getFullPathAsDDS
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.threads.TimeStepThread
-import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import jogl.DDSImage
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils

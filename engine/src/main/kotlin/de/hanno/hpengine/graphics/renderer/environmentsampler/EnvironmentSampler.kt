@@ -20,6 +20,7 @@ import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer.invoke
@@ -343,4 +344,4 @@ class EnvironmentSampler(
 }
 
 private val RESOLUTION = 512
-private val CUBEMAP_MIPMAP_COUNT = Util.calculateMipMapCount(RESOLUTION)
+private val CUBEMAP_MIPMAP_COUNT = calculateMipMapCount(RESOLUTION)

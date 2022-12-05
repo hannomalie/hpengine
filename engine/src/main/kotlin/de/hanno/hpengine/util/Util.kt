@@ -17,20 +17,6 @@ object Util {
 
     fun mul(a: Vector3f?, b: Quaternionf?): Vector3f = Vector3f(a).rotate(b)
 
-    fun calculateMipMapCountPlusOne(width: Int, height: Int) = calculateMipMapCount(max(width, height)) + 1
-
-    fun calculateMipMapCount(width: Int, height: Int) = calculateMipMapCount(max(width, height))
-
-    fun calculateMipMapCount(size: Int): Int {
-        var maxLength = size
-        var count = 0
-        while (maxLength >= 1) {
-            count++
-            maxLength /= 2
-        }
-        return count
-    }
-
     fun IntBuffer.print(columns: Int, rows: Int): String {
         rewind()
         val builder = StringBuilder()

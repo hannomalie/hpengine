@@ -26,6 +26,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -228,7 +229,7 @@ class ProbeRenderStrategy(
         const val extent = 20f
 
         private const val resolution = 16
-        private val mipmapCount = Util.calculateMipMapCount(resolution)
+        private val mipmapCount = calculateMipMapCount(resolution)
     }
 }
 

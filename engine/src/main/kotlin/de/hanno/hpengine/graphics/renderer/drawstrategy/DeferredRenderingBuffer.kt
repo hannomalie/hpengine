@@ -9,11 +9,13 @@ import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL43
+import kotlin.math.max
 
 context(GpuContext)
 class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuffer<*>) {
@@ -86,7 +88,7 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
         name = "Half Screen"
     )
 
-    val fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(width, height))
+    val fullScreenMipmapCount = calculateMipMapCount(max(width, height))
     val exposureBuffer =
         PersistentMappedBuffer(GL43.GL_SHADER_STORAGE_BUFFER, capacityInBytes = 4 * Double.SIZE_BYTES).apply {
             buffer.rewind()
