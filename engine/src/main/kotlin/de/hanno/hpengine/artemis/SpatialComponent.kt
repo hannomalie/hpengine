@@ -4,8 +4,11 @@ import com.artemis.BaseEntitySystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
-import de.hanno.hpengine.transform.SimpleSpatial
-import de.hanno.hpengine.transform.TransformSpatial
+import de.hanno.hpengine.Transform
+import de.hanno.hpengine.model.StaticModel
+import de.hanno.hpengine.transform.*
+import org.joml.Matrix4f
+import org.joml.Vector3f
 
 class SpatialComponent: Component() {
     lateinit var spatial: SimpleSpatial
@@ -29,4 +32,15 @@ class SpatialComponentSystem: BaseEntitySystem() {
         )
     }
     override fun processSystem() { }
+}
+
+
+fun List<SpatialComponent>.calculateAABB(): AABBData {
+    val minResult = Vector3f(absoluteMaximum)
+    val maxResult = Vector3f(absoluteMinimum)
+    forEach {
+        minResult.min(it.spatial.boundingVolume.min)
+        maxResult.max(it.spatial.boundingVolume.max)
+    }
+    return AABBData(minResult, maxResult)
 }

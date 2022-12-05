@@ -33,7 +33,6 @@ import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.util.Util
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.lwjgl.opengl.*

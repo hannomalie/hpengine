@@ -20,9 +20,9 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
+import de.hanno.hpengine.math.createPerspective
 
 // TODO: Autoadd Transform
 context(GpuContext)
@@ -36,7 +36,7 @@ class PointLightSystem(
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
     var pointLightMovedInCycle: Long = 0
-    val camera = Camera(Transform(), Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
+    val camera = Camera(Transform(), createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
     val shadowMapStrategy = if (config.quality.isUseDpsm) {
             DualParaboloidShadowMapStrategy(

@@ -22,3 +22,8 @@ class StaticTransformSpatial(transform: Transform, val aabb: AABB) : TransformSp
     override fun update(deltaSeconds: Float) { }
     override fun getBoundingVolume(transform: Matrix4f): AABB = boundingVolume
 }
+
+class DynamicTransformSpatial(transform: Transform, val aabb: AABB) : TransformSpatial(transform, aabb) {
+    override fun update(deltaSeconds: Float) { recalculate(transform) }
+    override fun getBoundingVolume(transform: Matrix4f): AABB = boundingVolume
+}

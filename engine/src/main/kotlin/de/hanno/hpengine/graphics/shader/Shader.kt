@@ -2,7 +2,6 @@ package de.hanno.hpengine.graphics.shader
 
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.CodeSource
 import de.hanno.hpengine.ressources.Reloadable
 import org.lwjgl.opengl.GL11
@@ -88,7 +87,7 @@ sealed class Shader(private val programManager: ProgramManager,
             while (includeMatcher.find()) {
                 val filename = includeMatcher.group(1)
                 val fileToInclude = engineDir.resolve("shaders/$filename").readText()
-                currentNewLineCount += Util.countNewLines(fileToInclude)
+                currentNewLineCount += fileToInclude.countNewLines()
                 shaderFileAsText = shaderFileAsText.replace(String.format("//include\\(%s\\)", filename).toRegex(), fileToInclude)
             }
 
@@ -133,3 +132,10 @@ class FragmentShader(programManager: OpenGlProgramManager, shaderSource: CodeSou
 class ComputeShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines,
     ShaderType.ComputeShader
 )
+
+private  fun String.countNewLines(): Int {
+    return lines().size
+//    TODO: Figure out if the above is the same as the below code
+//    val findStr = "\n"
+//    return content.split(findStr).dropLastWhile { it.isEmpty() }.toTypedArray().size - 1
+}

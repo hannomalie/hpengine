@@ -5,7 +5,6 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.pipelines.CommandOrganizationGpuCulled
 import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.graphics.shader.IProgram
-import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.scene.VertexIndexBuffer
 

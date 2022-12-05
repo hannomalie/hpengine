@@ -23,7 +23,6 @@ import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.mipmapCount
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
@@ -33,6 +32,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
+import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
@@ -182,7 +182,7 @@ class ProbeRenderer(
                     )
                 }
                 gpuContext.bindTexture(8, skyBox)
-                val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(probePositions[probeIndex])
+                val viewProjectionMatrices = getCubeViewProjectionMatricesForPosition(probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
                 for (floatBufferIndex in 0..5) {

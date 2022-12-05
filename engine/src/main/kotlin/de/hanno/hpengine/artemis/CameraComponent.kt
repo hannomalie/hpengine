@@ -7,7 +7,8 @@ import com.artemis.managers.TagManager
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.graphics.imgui.editor.primaryCamera
-import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.math.createOrthogonal
+import de.hanno.hpengine.math.createPerspective
 import org.joml.Matrix4f
 
 class CameraComponent: Component() {
@@ -67,13 +68,13 @@ class CameraComponent: Component() {
             updateProjectionMatrix()
         }
 
-    var projectionMatrix: Matrix4f = Util.createPerspective(fov, ratio, near, far)
+    var projectionMatrix: Matrix4f = createPerspective(fov, ratio, near, far)
 
     private fun updateProjectionMatrix() {
         projectionMatrix = if (perspective) {
-            Util.createPerspective(fov, ratio, near, far)
+            createPerspective(fov, ratio, near, far)
         } else {
-            Util.createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
+            createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
         }
     }
 }

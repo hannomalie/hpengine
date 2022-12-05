@@ -7,11 +7,10 @@ import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.pipelines.GPUCulledPipeline
 import de.hanno.hpengine.stopwatch.GPUProfiler
-import de.hanno.hpengine.util.Util
-import de.hanno.hpengine.util.Util.print
 import imgui.ImGui
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.lwjgl.opengl.GL11
+import java.nio.IntBuffer
 
 context(Window, ImGuiEditor, RenderStateContext)
 fun TabBar.renderTab() {
@@ -82,4 +81,22 @@ fun TabBar.renderTab() {
                 }
             }
     }
+}
+
+private fun IntBuffer.print(columns: Int, rows: Int): String {
+    rewind()
+    val builder = StringBuilder()
+    var columnCounter = 1
+    var rowCounter = 0
+    while (columns > 0 && hasRemaining() && rowCounter < rows) {
+        builder.append(get())
+        builder.append(" ")
+        if (columnCounter % columns == 0) {
+            builder.append(System.lineSeparator())
+            rowCounter++
+        }
+        columnCounter++
+    }
+    rewind()
+    return builder.toString()
 }

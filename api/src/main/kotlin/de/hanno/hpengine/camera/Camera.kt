@@ -2,7 +2,8 @@ package de.hanno.hpengine.camera
 
 import de.hanno.hpengine.graphics.shader.safePut
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.math.createOrthogonal
+import de.hanno.hpengine.math.createPerspective
 import org.joml.*
 import org.lwjgl.BufferUtils
 
@@ -82,7 +83,7 @@ class Camera(
         }
 
     init {
-        init(Util.createPerspective(45f, ratio, this.near, this.far), this.near, this.far, 60f, ratio, 5f,
+        init(createPerspective(45f, ratio, this.near, this.far), this.near, this.far, 60f, ratio, 5f,
             Defaults.focalDepth,
             Defaults.focalLength,
             Defaults.fStop
@@ -90,7 +91,7 @@ class Camera(
     }
 
     constructor(transform: Transform, near: Float, far: Float, fov: Float, ratio: Float): this(transform) {
-        init(Util.createPerspective(fov, ratio, near, far), near, far, fov, ratio, 5f,
+        init(createPerspective(fov, ratio, near, far), near, far, fov, ratio, 5f,
             Defaults.focalDepth,
             Defaults.focalLength,
             Defaults.fStop
@@ -169,9 +170,9 @@ class Camera(
 
     private fun calculateProjectionMatrix() {
         projectionMatrix = if (perspective) {
-            Util.createPerspective(fov, ratio, near, far)
+            createPerspective(fov, ratio, near, far)
         } else {
-            Util.createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
+            createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
         }
     }
 

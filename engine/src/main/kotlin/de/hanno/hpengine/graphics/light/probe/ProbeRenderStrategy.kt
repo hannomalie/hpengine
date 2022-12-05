@@ -28,7 +28,7 @@ import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.graphics.vertexbuffer.draw
-import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -134,7 +134,7 @@ class ProbeRenderStrategy(
                 probeProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                 probeProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
                 probeProgram.setUniform("probePositionWorld", probePosition)
-                val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(probePosition)
+                val viewProjectionMatrices = getCubeViewProjectionMatricesForPosition(probePosition)
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
                 for (floatBufferIndex in 0..5) {
