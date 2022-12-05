@@ -8,6 +8,7 @@ import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.pipelines.GPUCulledPipeline
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.Util.print
 import imgui.ImGui
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.lwjgl.opengl.GL11
@@ -55,8 +56,8 @@ fun TabBar.renderTab() {
                         }
                         ImGui.text("Visible instances: $visibilityCount")
 
-                        val commandOffsetsCulled = Util.toString(
-                            indirectPipeline.commandOrganizationStatic.offsetsCompacted.buffer.asIntBuffer(),
+                        val commandOffsetsCulled =
+                            indirectPipeline.commandOrganizationStatic.offsetsCompacted.buffer.asIntBuffer().print(
                             commandCount,
                             1
                         ).take(15)
