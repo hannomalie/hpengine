@@ -86,6 +86,11 @@ class Engine(
         )
     }
     val entityLinkManager = EntityLinkManager()
+    val directionalLightSystem = gpuContext.run {
+        koin.get<RenderStateContext>().run {
+            DirectionalLightSystem(koin.get())
+        }
+    }
     val systems = listOf(
         entityLinkManager,
         WorldAABB(),
@@ -95,14 +100,16 @@ class Engine(
         SkyBoxSystem(),
         EditorCameraInputSystem(),
         CycleSystem(),
-        DirectionalLightSystem(),
+        directionalLightSystem,
         gpuContext.run {
-            PointLightSystem(config, koin.get()).apply {
-                renderManager.renderSystems.add(this)
+            koin.get<RenderStateContext>().run {
+                PointLightSystem(config, koin.get(), koin.get()).apply {
+                    renderManager.renderSystems.add(this)
+                }
             }
         },
         gpuContext.run {
-            AreaLightSystem(gpuContext, koin.get(), config).apply {
+            AreaLightSystem(gpuContext, koin.get(), config, koin.get()).apply {
                 renderManager.renderSystems.add(this)
             }
         },
@@ -118,7 +125,7 @@ class Engine(
             koin.get<RenderStateContext>().run {
                 PhysicsManager(config, koin.get())
             }
-       },
+        },
         ReflectionProbeManager(config),
         koin.get<KotlinComponentSystem>(),
         CameraSystem(),

@@ -15,6 +15,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
@@ -43,9 +45,10 @@ import org.lwjgl.opengl.GL30
 
 context(GpuContext, RenderStateContext)
 class DirectionalLightShadowMapExtension(
-    val config: Config,
-    val programManager: ProgramManager,
-    val textureManager: OpenGLTextureManager,
+    private val config: Config,
+    private val programManager: ProgramManager,
+    private val textureManager: OpenGLTextureManager,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
 ) : DeferredRenderExtension {
 
     private var forceRerender = true
@@ -101,7 +104,7 @@ class DirectionalLightShadowMapExtension(
             program.use()
             program.uniforms.apply {
                 materials = renderState.materialBuffer
-                directionalLightState = renderState.directionalLightState
+                directionalLightState = renderState[directionalLightStateHolder.lightState]
                 entities = renderState.entitiesBuffer
                 when (this) {
                     is StaticDirectionalShadowUniforms -> vertices = vertexIndexBuffer.vertexStructArray
@@ -142,7 +145,7 @@ class DirectionalLightShadowMapExtension(
     val shadowMapId = renderTarget.renderedTexture
 
     override fun extract(renderState: RenderState, world: World) {
-        renderState.directionalLightState.typedBuffer.forIndex(0) {
+        renderState[directionalLightStateHolder.lightState].typedBuffer.forIndex(0) {
             it.shadowMapHandle = renderTarget.renderedTextureHandles[0]
             it.shadowMapId = renderTarget.renderedTextures[0]
         }

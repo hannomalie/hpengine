@@ -5,6 +5,8 @@ import AmbientCubeImpl.Companion.sizeInBytes
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimension
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimensionHalf
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.extent
@@ -44,10 +46,11 @@ import java.nio.FloatBuffer
 
 context(GpuContext)
 class ProbeRenderStrategy(
-    val config: Config,
-    val gpuContext: GpuContext,
+    private val config: Config,
+    private val gpuContext: GpuContext,
     programManager: ProgramManager,
-    val textureManager: OpenGLTextureManager
+    private val textureManager: OpenGLTextureManager,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
 ) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
@@ -154,7 +157,7 @@ class ProbeRenderStrategy(
                         "projectionMatrices[$floatBufferIndex]",
                         projectionMatrices[floatBufferIndex]!!
                     )
-                    probeProgram.bindShaderStorageBuffer(5, renderState.directionalLightState)
+                    probeProgram.bindShaderStorageBuffer(5, renderState[directionalLightStateHolder.lightState])
                 }
 
                 profiled("Probe entity rendering") {
@@ -235,18 +238,20 @@ class ProbeRenderStrategy(
 
 context(GpuContext)
 class EvaluateProbeRenderExtension(
-    val gpuContext: GpuContext,
-    val programManager: ProgramManager,
+    private val gpuContext: GpuContext,
+    private val programManager: ProgramManager,
     textureManager: OpenGLTextureManager,
-    val config: Config,
-    val deferredRenderingBuffer: DeferredRenderingBuffer
+    private val config: Config,
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
 ): DeferredRenderExtension {
 
     private val probeRenderStrategy = ProbeRenderStrategy(
         config,
         gpuContext,
         programManager,
-        textureManager
+        textureManager,
+        directionalLightStateHolder
     )
 
     val evaluateProbeProgram = programManager.getProgram(

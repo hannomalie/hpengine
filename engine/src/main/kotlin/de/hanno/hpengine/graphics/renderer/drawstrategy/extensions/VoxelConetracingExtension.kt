@@ -26,6 +26,9 @@ import de.hanno.hpengine.graphics.texture.OpenGLTexture3D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -66,10 +69,12 @@ fun OpenGLTextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTrac
 }
 context(GpuContext, RenderStateContext)
 class VoxelConeTracingExtension(
-    val config: Config,
-    val programManager: ProgramManager,
-    val pointLightExtension: BvHPointLightSecondPassExtension,
-    val deferredRenderingBuffer: DeferredRenderingBuffer
+    private val config: Config,
+    programManager: ProgramManager,
+    private val pointLightExtension: BvHPointLightSecondPassExtension,
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val pointLightStateHolder: PointLightStateHolder,
 ) : DeferredRenderExtension {
 
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
@@ -258,14 +263,15 @@ class VoxelConeTracingExtension(
                             bindTexture(1, TEXTURE_3D, currentVoxelGrid.albedoGrid)
                             bindTexture(2, TEXTURE_3D, currentVoxelGrid.normalGrid)
                             bindTexture(3, TEXTURE_3D, currentVoxelGrid.indexGrid)
-                            if(renderState.directionalLightState.typedBuffer.size > 0) {
-                                bindTexture(6, TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+                            val directionalLightState = renderState[directionalLightStateHolder.lightState]
+                            if(directionalLightState.typedBuffer.size > 0) {
+                                bindTexture(6, TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
                             }
                             GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                            setUniform("pointLightCount", renderState.lightState.pointLights.size)
+                            setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLights.size)
                             bindShaderStorageBuffer(1, renderState.materialBuffer)
-                            bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-                            bindShaderStorageBuffer(3, renderState.directionalLightState)
+                            bindShaderStorageBuffer(2, renderState[pointLightStateHolder.lightState].pointLightBuffer)
+                            bindShaderStorageBuffer(3, directionalLightState)
                             bindShaderStorageBuffer(4, renderState.entitiesBuffer)
                             bindShaderStorageBuffer(5, voxelGrids)
                             bindShaderStorageBuffer(6, pointLightExtension.bvh)

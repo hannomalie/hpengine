@@ -18,6 +18,8 @@ import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
@@ -37,13 +39,14 @@ import java.util.HashSet
 
 context(GpuContext)
 class EnvironmentSampler(
-    val transform: Transform,
+    private val transform: Transform,
     probe: EnvironmentProbeComponent,
     width: Int, height: Int, probeIndex: Int,
     programManager: ProgramManager,
     config: Config,
     textureManager: OpenGLTextureManager,
-    cubeMapArrayRenderTarget: CubeMapArrayRenderTarget
+    cubeMapArrayRenderTarget: CubeMapArrayRenderTarget,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
 ) {
     val cubeMapProgram = config.run {
         programManager.getProgram(
@@ -166,7 +169,7 @@ class EnvironmentSampler(
         viewProjectionMatrixAsBuffer: FloatBuffer,
         program: Program<Uniforms>
     ) {
-        val light = renderState.directionalLightState
+        val light = renderState[directionalLightStateHolder.lightState]
 //        TODO: Reimplement
 //        program.setUniform("lightDirection", light!!.entity.transform.viewDirection)
 //        program.setUniform("lightDiffuse", light.color)

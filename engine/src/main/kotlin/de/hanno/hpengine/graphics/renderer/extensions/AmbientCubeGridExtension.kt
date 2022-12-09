@@ -30,8 +30,11 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
+import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -45,10 +48,12 @@ import java.nio.FloatBuffer
 
 context(GpuContext)
 class ProbeRenderer(
-    val gpuContext: GpuContext,
+    private val gpuContext: GpuContext,
     config: Config,
     programManager: ProgramManager,
-    val textureManager: OpenGLTextureManager
+    private val textureManager: OpenGLTextureManager,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val pointLightStateHolder: PointLightStateHolder,
 ) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
@@ -158,8 +163,10 @@ class ProbeRenderer(
 
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-                pointCubeShadowPassProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(2,
+                    renderState[pointLightStateHolder.lightState].pointLightBuffer)
+                pointCubeShadowPassProgram.setUniform("pointLightCount",
+                    renderState[pointLightStateHolder.lightState].pointLights.size)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", probePositions[probeIndex])
 //                pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
@@ -167,9 +174,10 @@ class ProbeRenderer(
                     "lightIndex",
                     0
                 ) // We don't use layered rendering with cubmap arrays anymore
+                val directionalLightState = renderState[directionalLightStateHolder.lightState]
                 pointCubeShadowPassProgram.setUniform("probeDimensions", probeDimensions)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(5, probeAmbientCubeValuesOld)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(6, renderState.directionalLightState)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(6, directionalLightState)
                 pointCubeShadowPassProgram.setUniform("probeDimensions", probeDimensions)
                 pointCubeShadowPassProgram.setUniform("sceneMin", sceneMin)
                 pointCubeShadowPassProgram.setUniform("probesPerDimension", probesPerDimensionFloat)
@@ -178,7 +186,7 @@ class ProbeRenderer(
                     gpuContext.bindTexture(
                         8,
                         TextureTarget.TEXTURE_2D,
-                        renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+                        directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
                 gpuContext.bindTexture(8, skyBox)

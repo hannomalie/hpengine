@@ -29,6 +29,7 @@ import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -133,11 +134,12 @@ val Vector4f.xyz: Vector3f
 
 context(GpuContext)
 class BvHPointLightSecondPassExtension(
-    val config: Config,
-    val gpuContext: GpuContext,
-    val renderStateContext: RenderStateContext,
-    val programManager: ProgramManager,
-    val deferredRenderingBuffer: DeferredRenderingBuffer
+    private val config: Config,
+    private val gpuContext: GpuContext,
+    private val renderStateContext: RenderStateContext,
+    private val programManager: ProgramManager,
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val pointLightStateHolder: PointLightStateHolder,
 ) : DeferredRenderExtension {
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
@@ -228,7 +230,7 @@ class BvHPointLightSecondPassExtension(
     }
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
-        if (renderState.lightState.pointLights.isEmpty()) {
+        if (renderState[pointLightStateHolder.lightState].pointLights.isEmpty()) {
             return
         }
         // TODO: Move this to update
@@ -257,7 +259,7 @@ class BvHPointLightSecondPassExtension(
             gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
             gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
             gpuContext.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-            renderState.lightState.pointLightShadowMapStrategy.bindTextures()
+            renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
             // TODO: Add glbindimagetexture to openglcontext class
             GL42.glBindImageTexture(
                 4,
@@ -270,7 +272,8 @@ class BvHPointLightSecondPassExtension(
             )
             secondPassPointBvhComputeProgram.use()
             secondPassPointBvhComputeProgram.setUniform("nodeCount", nodeCount)
-            secondPassPointBvhComputeProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
+            secondPassPointBvhComputeProgram.setUniform("pointLightCount",
+                renderState[pointLightStateHolder.lightState].pointLights.size)
             secondPassPointBvhComputeProgram.setUniform("screenWidth", config.width.toFloat())
             secondPassPointBvhComputeProgram.setUniform("screenHeight", config.height.toFloat())
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
@@ -280,7 +283,8 @@ class BvHPointLightSecondPassExtension(
                 PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
             )
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
-            secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
+            secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2,
+                renderState[pointLightStateHolder.lightState].pointLightBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(3, bvh)
             secondPassPointBvhComputeProgram.dispatchCompute(config.width / 16, config.height / 16, 1)
         }

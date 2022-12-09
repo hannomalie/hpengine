@@ -11,6 +11,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.graphics.renderer.constants.Capability
@@ -31,6 +33,7 @@ import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
+import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
@@ -71,14 +74,16 @@ class ReflectionProbeRenderState() {
 
 context(GpuContext, RenderStateContext)
 class ReflectionProbeRenderExtension(
-    val config: Config,
-    val deferredRenderingBuffer: DeferredRenderingBuffer,
-    val textureManager: TextureManager,
-    val programManager: ProgramManager
+    private val config: Config,
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val textureManager: TextureManager,
+    private val programManager: ProgramManager,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val pointLightStateHolder: PointLightStateHolder,
 ) : DeferredRenderExtension {
     override val renderPriority = 3000
 
-    val reflectionProbeRenderState = renderState.registerState {
+    private val reflectionProbeRenderState = renderState.registerState {
         ReflectionProbeRenderState()
     }
     private val linesProgram = programManager.run {
@@ -242,6 +247,7 @@ class ReflectionProbeRenderExtension(
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
 
         val currentReflectionProbeRenderState = renderState[reflectionProbeRenderState]
+        val directionalLightState = renderState[directionalLightStateHolder.lightState]
 
         val gBuffer = deferredRenderingBuffer
         disable(Capability.DEPTH_TEST)
@@ -255,9 +261,9 @@ class ReflectionProbeRenderExtension(
         bindTexture(
             6,
             TextureTarget.TEXTURE_2D,
-            renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+            directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
         bindTexture(7, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
-        renderState.lightState.pointLightShadowMapStrategy.bindTextures()
+        renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
 
         evaluateProbeProgram.setUniform("eyePosition", renderState.camera.getPosition())
         evaluateProbeProgram.setUniform("screenWidth", config.width.toFloat())
@@ -278,6 +284,8 @@ class ReflectionProbeRenderExtension(
         val currentReflectionProbeRenderState = renderState[reflectionProbeRenderState]
         if (currentReflectionProbeRenderState.probeCount == 0) return
 
+        val directionalLightState = renderState[directionalLightStateHolder.lightState]
+
         profiled("ReflectionProbes") {
 
             depthMask = true
@@ -295,8 +303,10 @@ class ReflectionProbeRenderExtension(
 
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-                pointCubeShadowPassProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(2,
+                    renderState[pointLightStateHolder.lightState].pointLightBuffer)
+                pointCubeShadowPassProgram.setUniform("pointLightCount",
+                    renderState[pointLightStateHolder.lightState].pointLights.size)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
                 pointCubeShadowPassProgram.setUniform(
                     "pointLightPositionWorld",
@@ -304,13 +314,13 @@ class ReflectionProbeRenderExtension(
                 )
 //                pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
 //                pointCubeShadowPassProgram.setUniform("lightIndex", probeIndex)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(6, renderState.directionalLightState)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(6, directionalLightState)
 
                 if (!isSupported(BindlessTextures)) {
                     bindTexture(
                         8,
                         TextureTarget.TEXTURE_2D,
-                        renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+                        directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
                 bindTexture(8, skyBox)

@@ -4,13 +4,14 @@ import PointLightStructImpl.Companion.sizeInBytes
 import PointLightStructImpl.Companion.type
 import de.hanno.hpengine.artemis.PointLightComponent
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.point.PointLightShadowMapStrategy
 import de.hanno.hpengine.graphics.light.point.PointLightStruct
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 
 context(GpuContext)
-class LightState {
+class PointLightState {
     var pointLights: List<PointLightComponent> = listOf()
     var pointLightBuffer = PersistentMappedBuffer(PointLightStruct.sizeInBytes).typed(PointLightStruct.type)
     var pointLightShadowMapStrategy: PointLightShadowMapStrategy = object: PointLightShadowMapStrategy {
@@ -18,4 +19,11 @@ class LightState {
         override fun bindTextures() {}
     }
     var areaLightDepthMaps: List<Int> = listOf()
+}
+
+context(GpuContext, RenderStateContext)
+class PointLightStateHolder {
+    val lightState = renderState.registerState {
+        PointLightState()
+    }
 }

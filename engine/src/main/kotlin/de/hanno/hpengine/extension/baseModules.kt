@@ -37,9 +37,12 @@ import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.imgui.editor.EntityClickListener
 import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.*
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.state.PointLightState
+import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureManager
 import org.koin.core.module.Module
 import org.koin.dsl.bind
@@ -207,10 +210,10 @@ val baseModule = module {
 
     renderExtension {
         get<GpuContext>().run {
-            ForwardRenderExtension(get(), get(), get())
+            ForwardRenderExtension(get(), get(), get(), get())
         }
     }
-    renderExtension { AOScatteringExtension(get(), get(), get(), get(), get()) }
+    renderExtension { AOScatteringExtension(get(), get(), get(), get(), get(), get(), get()) }
     renderExtension {
         get<GpuContext>().run {
             PixelPerfectPickingExtension(get(), get(), getAll())
@@ -218,13 +221,28 @@ val baseModule = module {
     }
 //    TODO: Fails because of shader code errors
 //    renderExtension { EvaluateProbeRenderExtension(get(), get(), get(), get(), get()) }
+
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                PointLightStateHolder()
+            }
+        }
+    }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                DirectionalLightStateHolder()
+            }
+        }
+    }
 }
 
 fun Module.addGIModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                VoxelConeTracingExtension(get(), get(), get(), get())
+                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get())
             }
         }
     }
@@ -233,7 +251,7 @@ fun Module.addGIModule() {
 fun Module.addPointLightModule() {
     renderExtension {
         get<GpuContext>().run {
-            BvHPointLightSecondPassExtension(get(), get(), get(), get(), get())
+            BvHPointLightSecondPassExtension(get(), get(), get(), get(), get(), get())
         }
     }
 }
@@ -242,11 +260,11 @@ fun Module.addDirectionalLightModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                DirectionalLightShadowMapExtension(get(), get(), get())
+                DirectionalLightShadowMapExtension(get(), get(), get(), get())
             }
         }
     }
-    renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get()) }
+    renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get(), get()) }
 }
 
 fun Module.addOceanWaterModule() {
@@ -261,7 +279,7 @@ fun Module.addReflectionProbeModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                ReflectionProbeRenderExtension(get(), get(), get(), get())
+                ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get())
             }
         }
     }

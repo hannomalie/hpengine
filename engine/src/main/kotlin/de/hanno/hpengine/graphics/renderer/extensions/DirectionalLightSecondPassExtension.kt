@@ -4,6 +4,8 @@ package de.hanno.hpengine.graphics.renderer.extensions
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
@@ -22,7 +24,8 @@ class DirectionalLightSecondPassExtension(
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
     private val gpuContext: GpuContext,
-    private val deferredRenderingBuffer: DeferredRenderingBuffer
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
 ) : DeferredRenderExtension {
     private val secondPassDirectionalProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_vertex.glsl")),
@@ -31,6 +34,8 @@ class DirectionalLightSecondPassExtension(
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         profiled("Directional light") {
+
+            val directionalLightState = renderState[directionalLightStateHolder.lightState]
 
             profiled("Set state") {
                 gpuContext.depthMask = false
@@ -43,18 +48,19 @@ class DirectionalLightSecondPassExtension(
             }
 
             profiled("Activate DeferredRenderingBuffer textures") {
+
                 gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
                 gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
                 gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
                 gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
                 gpuContext.bindTexture(4, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
-                gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+                gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
                 gpuContext.bindTexture(7, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
                 if (!gpuContext.isSupported(BindlessTextures)) {
                     gpuContext.bindTexture(
                         8,
                         TextureTarget.TEXTURE_2D,
-                        renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+                        directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
                 gpuContext.bindTexture(
@@ -91,7 +97,7 @@ class DirectionalLightSecondPassExtension(
                     "projectionMatrix",
                     renderState.camera.projectionMatrixAsBuffer
                 )
-                secondPassDirectionalProgram.bindShaderStorageBuffer(2, renderState.directionalLightState)
+                secondPassDirectionalProgram.bindShaderStorageBuffer(2, directionalLightState)
             }
             profiled("Draw fullscreen buffer") {
                 gpuContext.fullscreenBuffer.draw()

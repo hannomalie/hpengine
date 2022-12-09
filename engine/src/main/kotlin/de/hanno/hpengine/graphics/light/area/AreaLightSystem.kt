@@ -38,9 +38,11 @@ import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
+import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Matrix4f
@@ -57,9 +59,10 @@ import java.util.ArrayList
 context(GpuContext)
 @All(AreaLightComponent::class, TransformComponent::class)
 class AreaLightSystem(
-    val gpuContext: GpuContext,
+    private val gpuContext: GpuContext,
     programManager: ProgramManager,
-    config: Config
+    config: Config,
+    private val pointLightStateHolder: PointLightStateHolder,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
     private var gpuAreaLightArray =
@@ -205,7 +208,7 @@ class AreaLightSystem(
 //        gpuAreaLightArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
 //        gpuAreaLightArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
 
-        currentWriteState.lightState.areaLightDepthMaps = areaLightDepthMaps
+        currentWriteState[pointLightStateHolder.lightState].areaLightDepthMaps = areaLightDepthMaps
     }
 
     companion object {

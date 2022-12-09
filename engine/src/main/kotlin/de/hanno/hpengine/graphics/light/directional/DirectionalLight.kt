@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.light.directional
 
+import DirectionalLightStateImpl.Companion.type
 import com.artemis.*
 import com.artemis.annotations.All
 import com.artemis.annotations.Wire
@@ -10,6 +11,11 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
+import de.hanno.hpengine.graphics.state.DirectionalLightState
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -17,14 +23,19 @@ import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
 
 
+context(GpuContext, RenderStateContext)
 @All(DirectionalLightComponent::class, TransformComponent::class)
-class DirectionalLightSystem : BaseEntitySystem(), Extractor, WorldPopulator {
+class DirectionalLightSystem(
+    directionalLightStateHolder: DirectionalLightStateHolder,
+) : BaseEntitySystem(), Extractor, WorldPopulator {
     @Wire
     lateinit var input: Input
     lateinit var cycleSystem: CycleSystem
     lateinit var directionalLightComponentMapper: ComponentMapper<DirectionalLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var cameraComponentMapper: ComponentMapper<CameraComponent>
+
+    private val lightState = directionalLightStateHolder.lightState
 
     override fun processSystem() {
         val moveAmount = 100 * world.delta
@@ -70,7 +81,7 @@ class DirectionalLightSystem : BaseEntitySystem(), Extractor, WorldPopulator {
         val transform = transformComponentMapper.get(subscription.entities[0]).transform
         val camera = cameraComponentMapper.get(subscription.entities[0])
 
-        currentWriteState.directionalLightState.typedBuffer.forIndex(0) { directionalLightState ->
+        currentWriteState[lightState].typedBuffer.forIndex(0) { directionalLightState ->
             directionalLightState.color.set(light.color)
             directionalLightState.direction.set(transform.viewDirection)
             directionalLightState.scatterFactor = light.scatterFactor
@@ -86,6 +97,13 @@ class DirectionalLightSystem : BaseEntitySystem(), Extractor, WorldPopulator {
     }
 }
 
+
+context(GpuContext, RenderStateContext)
+class DirectionalLightStateHolder {
+    val lightState = renderState.registerState {
+        PersistentMappedBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type)
+    }
+}
 
 fun World.addDirectionalLight() {
     edit(create()).apply {

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.graphics.state
 
-import DirectionalLightStateImpl.Companion.type
 import com.artemis.Component
 import com.artemis.World
 import com.artemis.utils.Bag
@@ -12,15 +11,12 @@ import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.lifecycle.Updatable
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.buffers.copyTo
 import org.joml.Vector3f
 
 context(GpuContext)
@@ -34,10 +30,6 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
 
     var time = System.currentTimeMillis()
-
-    val directionalLightState = PersistentMappedBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type)
-
-    val lightState = LightState()
 
     val entitiesState: EntitiesState = EntitiesState()
 
@@ -72,37 +64,6 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
 
     var deltaSeconds: Float = 0.1f
 
-    context(GpuContext)
-    constructor(source: RenderState) : this() {
-        entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
-        entitiesState.vertexIndexBufferAnimated = source.entitiesState.vertexIndexBufferAnimated
-        camera.init(source.camera)
-        source.directionalLightState.buffer.copyTo(directionalLightState.buffer)
-        lightState.pointLights = source.lightState.pointLights
-        lightState.pointLightBuffer = source.lightState.pointLightBuffer
-        lightState.pointLightShadowMapStrategy = source.lightState.pointLightShadowMapStrategy
-        lightState.areaLightDepthMaps = source.lightState.areaLightDepthMaps
-        entitiesState.entityMovedInCycle = source.entitiesState.entityMovedInCycle
-        entitiesState.staticEntityMovedInCycle = source.entitiesState.staticEntityMovedInCycle
-        entitiesState.entityAddedInCycle = source.entitiesState.entityAddedInCycle
-        environmentProbesState.environmapsArray3Id = source.environmentProbesState.environmapsArray3Id
-        environmentProbesState.environmapsArray0Id = source.environmentProbesState.environmapsArray0Id
-        environmentProbesState.activeProbeCount = source.environmentProbesState.activeProbeCount
-        environmentProbesState.environmentMapMin = source.environmentProbesState.environmentMapMin
-        environmentProbesState.environmentMapMax = source.environmentProbesState.environmentMapMax
-        environmentProbesState.environmentMapWeights = source.environmentProbesState.environmentMapWeights
-        skyBoxMaterialIndex = source.skyBoxMaterialIndex
-        directionalLightHasMovedInCycle = source.directionalLightHasMovedInCycle
-        pointLightMovedInCycle = source.pointLightMovedInCycle
-        sceneMin = source.sceneMin
-        sceneMax = source.sceneMax
-        latestDrawResult.set(latestDrawResult)
-        entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
-        entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
-        componentExtracts = HashMap(source.componentExtracts)
-        componentsForEntities = HashMap(source.componentsForEntities)
-        entityIds = ArrayList(source.entityIds)
-    }
     val gpuHasFinishedUsingIt get() = gpuCommandSync.isSignaled
 
     fun addStatic(batch: RenderBatch) {

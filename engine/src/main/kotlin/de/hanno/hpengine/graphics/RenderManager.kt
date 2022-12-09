@@ -8,7 +8,6 @@ import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.graphics.state.RenderSystem
-import de.hanno.hpengine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
 import de.hanno.hpengine.graphics.fps.FPSCounter
@@ -55,8 +54,6 @@ class RenderManager(
         window.frontBuffer
     )
 
-    var recorder: RenderStateRecorder = SimpleRenderStateRecorder(input)
-
     fun finishCycle(deltaSeconds: Float) {
         renderStateContext.renderState.currentWriteState.deltaSeconds = deltaSeconds
         renderStateContext.renderState.swapStaging()
@@ -90,7 +87,6 @@ class RenderManager(
                         }
 
                         profiled("Frame") {
-                            recorder.add(currentReadState)
                             val drawResult = currentReadState.latestDrawResult.apply { reset() }
 
                             profiled("renderSystems") {

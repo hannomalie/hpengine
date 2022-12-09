@@ -2,6 +2,8 @@ package de.hanno.hpengine.graphics.renderer.extensions
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
@@ -26,9 +28,10 @@ import org.lwjgl.opengl.GL40.glBlendFunci
 
 context(GpuContext)
 class ForwardRenderExtension(
-    val config: Config,
-    val programManager: ProgramManager,
-    val deferredRenderingBuffer: DeferredRenderingBuffer
+    private val config: Config,
+    private val programManager: ProgramManager,
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
 ): DeferredRenderExtension {
     override val renderPriority = 2000
 
@@ -60,7 +63,7 @@ class ForwardRenderExtension(
             uniforms.vertices = renderState.entitiesState.vertexIndexBufferStatic.vertexStructArray
             uniforms.materials = renderState.materialBuffer
             uniforms.entities = renderState.entitiesBuffer
-            programStatic.bindShaderStorageBuffer(2, renderState.directionalLightState)
+            programStatic.bindShaderStorageBuffer(2, renderState[directionalLightStateHolder.lightState])
             uniforms.viewMatrix.safePut(renderState.camera.viewMatrixAsBuffer)
             uniforms.projectionMatrix.safePut(renderState.camera.projectionMatrixAsBuffer)
             uniforms.viewProjectionMatrix.safePut(renderState.camera.viewProjectionMatrixAsBuffer)

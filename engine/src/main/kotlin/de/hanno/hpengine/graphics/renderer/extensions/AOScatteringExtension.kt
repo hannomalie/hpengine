@@ -3,6 +3,8 @@ package de.hanno.hpengine.graphics.renderer.extensions
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.Capability
@@ -13,17 +15,20 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
 class AOScatteringExtension(
-    val config: Config,
-    val gpuContext: GpuContext,
-    val deferredRenderingBuffer: DeferredRenderingBuffer,
-    val programManager: ProgramManager,
-    val textureManager: OpenGLTextureManager
+    private val config: Config,
+    private val gpuContext: GpuContext,
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val programManager: ProgramManager,
+    private val textureManager: OpenGLTextureManager,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val pointLightStateHolder: PointLightStateHolder,
 ): DeferredRenderExtension {
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(
@@ -36,6 +41,7 @@ class AOScatteringExtension(
             if (!config.quality.isUseAmbientOcclusion && !config.effects.isScattering) {
                 return
             }
+            val directionalLightState = renderState[directionalLightStateHolder.lightState]
 
             gpuContext.disable(Capability.DEPTH_TEST)
             aoScatteringProgram.use()
@@ -44,8 +50,8 @@ class AOScatteringExtension(
             gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
             gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
             gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
-            gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
-            renderState.lightState.pointLightShadowMapStrategy.bindTextures()
+            gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+            renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
             if(renderState.environmentProbesState.environmapsArray3Id > 0) {
                 gpuContext.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, renderState.environmentProbesState.environmapsArray3Id)
             }
@@ -65,9 +71,10 @@ class AOScatteringExtension(
             //		}
 
             aoScatteringProgram.setUniform("maxPointLightShadowmaps", PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
-            aoScatteringProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
-            aoScatteringProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-            aoScatteringProgram.bindShaderStorageBuffer(3, renderState.directionalLightState)
+            aoScatteringProgram.setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLights.size)
+            aoScatteringProgram.bindShaderStorageBuffer(2,
+                renderState[pointLightStateHolder.lightState].pointLightBuffer)
+            aoScatteringProgram.bindShaderStorageBuffer(3, directionalLightState)
 
             gpuContext.fullscreenBuffer.draw()
             profiled("generate mipmaps") {
