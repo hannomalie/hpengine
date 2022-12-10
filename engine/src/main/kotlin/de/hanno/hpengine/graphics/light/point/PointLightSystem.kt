@@ -58,7 +58,7 @@ class PointLightSystem(
 
     override fun render(result: DrawResult, renderState: RenderState) {
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
-        val needsRerender = renderState.pointLightMovedInCycle > shadowMapsRenderedInCycle ||
+        val needsRerender = renderState[lightState].pointLightMovedInCycle > shadowMapsRenderedInCycle ||
                 entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||
                 entitiesState.entityAddedInCycle > shadowMapsRenderedInCycle ||
                 entitiesState.componentAddedInCycle > shadowMapsRenderedInCycle
@@ -69,7 +69,7 @@ class PointLightSystem(
     }
 
     override fun extract(currentWriteState: RenderState) {
-        currentWriteState.pointLightMovedInCycle = pointLightMovedInCycle
+        currentWriteState[lightState].pointLightMovedInCycle = pointLightMovedInCycle
 
         currentWriteState[lightState].pointLightBuffer.resize(gpuPointLights.sizeInBytes)
         gpuPointLights.buffer.copyTo(currentWriteState[lightState].pointLightBuffer.buffer)

@@ -32,7 +32,6 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
     var time = System.currentTimeMillis()
 
     var camera = Camera(Transform(), 1280f/720f)
-    var pointLightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
 
     var cycle: Long = 0

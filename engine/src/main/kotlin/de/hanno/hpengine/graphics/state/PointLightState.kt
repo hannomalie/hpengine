@@ -18,6 +18,8 @@ class PointLightState {
         override fun renderPointLightShadowMaps(renderState: RenderState) {}
         override fun bindTextures() {}
     }
+    var pointLightMovedInCycle: Long = 0
+    // TODO: Remove from here
     var areaLightDepthMaps: List<Int> = listOf()
 }
 

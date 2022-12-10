@@ -232,12 +232,13 @@ class BvHPointLightSecondPassExtension(
     }
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
-        if (renderState[pointLightStateHolder.lightState].pointLights.isEmpty()) {
+        val pointLightState = renderState[pointLightStateHolder.lightState]
+        if (pointLightState.pointLights.isEmpty()) {
             return
         }
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         // TODO: Move this to update
-        if (bvhReconstructedInCycle < renderState.pointLightMovedInCycle) {
+        if (bvhReconstructedInCycle < pointLightState.pointLightMovedInCycle) {
 //             TODO: Reimplement this
 //            bvhReconstructedInCycle = renderState.cycle
 //            val leafNodes = renderState.lightState.pointLights.mapIndexed { index, light ->
@@ -262,7 +263,7 @@ class BvHPointLightSecondPassExtension(
             gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
             gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
             gpuContext.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-            renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
+            pointLightState.pointLightShadowMapStrategy.bindTextures()
             // TODO: Add glbindimagetexture to openglcontext class
             GL42.glBindImageTexture(
                 4,
@@ -276,7 +277,7 @@ class BvHPointLightSecondPassExtension(
             secondPassPointBvhComputeProgram.use()
             secondPassPointBvhComputeProgram.setUniform("nodeCount", nodeCount)
             secondPassPointBvhComputeProgram.setUniform("pointLightCount",
-                renderState[pointLightStateHolder.lightState].pointLights.size)
+                pointLightState.pointLights.size)
             secondPassPointBvhComputeProgram.setUniform("screenWidth", config.width.toFloat())
             secondPassPointBvhComputeProgram.setUniform("screenHeight", config.height.toFloat())
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
@@ -287,7 +288,7 @@ class BvHPointLightSecondPassExtension(
             )
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2,
-                renderState[pointLightStateHolder.lightState].pointLightBuffer)
+                pointLightState.pointLightBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(3, bvh)
             secondPassPointBvhComputeProgram.dispatchCompute(config.width / 16, config.height / 16, 1)
         }

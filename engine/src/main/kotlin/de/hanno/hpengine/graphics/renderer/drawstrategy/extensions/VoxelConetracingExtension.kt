@@ -142,7 +142,7 @@ class VoxelConeTracingExtension(
 
     override fun renderFirstPass(renderState: RenderState) = profiled("VCT first pass") {
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
-        val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
+        val pointlightMoved = renderState[pointLightStateHolder.lightState].pointLightMovedInCycle > litInCycle
         val bounces = 1
 
         val entitiesToVoxelize = if(!sceneInitiallyDrawn || config.debug.isForceRevoxelization) {
