@@ -141,7 +141,7 @@ class VoxelConeTracingExtension(
     private var gridCache = mutableMapOf<Int, GIVolumeGrids>()
 
     override fun renderFirstPass(renderState: RenderState) = profiled("VCT first pass") {
-        val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
+        val directionalLightMoved = renderState[directionalLightStateHolder.directionalLightHasMovedInCycle] > litInCycle
         val pointlightMoved = renderState[pointLightStateHolder.lightState].pointLightMovedInCycle > litInCycle
         val bounces = 1
 

@@ -32,7 +32,6 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
     var time = System.currentTimeMillis()
 
     var camera = Camera(Transform(), 1280f/720f)
-    var directionalLightHasMovedInCycle: Long = 0
 
     var cycle: Long = 0
     override var gpuCommandSync: GpuCommandSync = createCommandSync()
@@ -43,7 +42,8 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
 
     fun add(state: Any) = customState.add(state)
 
-    operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef]
+    operator fun <T: Any> get(stateRef: StateRef<T>) = customState[stateRef]
+    fun <T: Any> set(ref: StateRef<T>, value: T) { customState.set(ref, value) }
 
     operator fun <T: Component> get(clazz: Class<T>): Bag<T> = componentExtracts[clazz] as Bag<T>
 
@@ -60,11 +60,13 @@ interface RenderSystem: Updatable {
 
 class CustomStates {
     private val states = mutableListOf<Any>()
+
     fun add(state: Any) {
         states.add(state)
     }
 
-    operator fun <T> get(ref: StateRef<T>) = states[ref.index] as T
+    operator fun <T: Any> get(ref: StateRef<T>) = states[ref.index] as T
+    fun <T: Any> set(ref: StateRef<T>, value: T) { states[ref.index] = value }
 
     fun clear() = states.clear()
 }

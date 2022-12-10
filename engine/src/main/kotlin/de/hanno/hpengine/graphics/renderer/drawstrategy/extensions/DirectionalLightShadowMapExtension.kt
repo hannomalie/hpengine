@@ -159,7 +159,7 @@ class DirectionalLightShadowMapExtension(
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         profiled("Directional shadowmap") {
             val needsRerender = forceRerender ||
-                    renderedInCycle < renderState.directionalLightHasMovedInCycle ||
+                    renderedInCycle < renderState[directionalLightStateHolder.directionalLightHasMovedInCycle] ||
                     renderedInCycle < entitiesState.anyEntityMovedInCycle ||
                     renderedInCycle < entitiesState.entityAddedInCycle ||
                     entitiesState.renderBatchesAnimated.isNotEmpty()

@@ -26,7 +26,7 @@ import org.lwjgl.glfw.GLFW
 context(GpuContext, RenderStateContext)
 @All(DirectionalLightComponent::class, TransformComponent::class)
 class DirectionalLightSystem(
-    directionalLightStateHolder: DirectionalLightStateHolder,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
 ) : BaseEntitySystem(), Extractor, WorldPopulator {
     @Wire
     lateinit var input: Input
@@ -73,7 +73,7 @@ class DirectionalLightSystem(
     }
 
     override fun extract(currentWriteState: RenderState) {
-        currentWriteState.directionalLightHasMovedInCycle = currentWriteState.cycle
+        currentWriteState.set(directionalLightStateHolder.directionalLightHasMovedInCycle, currentWriteState.cycle)
 
         if(!subscription.entities.isIndexWithinBounds(0)) return
 
@@ -103,6 +103,7 @@ class DirectionalLightStateHolder {
     val lightState = renderState.registerState {
         PersistentMappedBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type)
     }
+    val directionalLightHasMovedInCycle = renderState.registerState { 0L }
 }
 
 fun World.addDirectionalLight() {
