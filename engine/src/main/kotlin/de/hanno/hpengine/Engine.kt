@@ -98,7 +98,6 @@ class Engine(
         WorldAABB(koin.get()),
         renderManager,
         modelSystem,
-        ComponentExtractor(),
         SkyBoxSystem(),
         EditorCameraInputSystem(koin.get()),
         CycleSystem(koin.get()),
@@ -111,7 +110,7 @@ class Engine(
             }
         },
         gpuContext.run {
-            AreaLightSystem(gpuContext, koin.get(), config, koin.get(), koin.get()).apply {
+            AreaLightSystem(gpuContext, koin.get(), config, koin.get(), koin.get(), koin.get()).apply {
                 renderManager.renderSystems.add(this)
             }
         },

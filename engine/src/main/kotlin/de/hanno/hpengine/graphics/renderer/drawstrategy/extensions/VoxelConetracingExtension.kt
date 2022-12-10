@@ -28,6 +28,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
+import de.hanno.hpengine.extension.GiVolumeStateHolder
 import de.hanno.hpengine.extension.SkyBoxStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
@@ -81,6 +82,7 @@ class VoxelConeTracingExtension(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val skyBoxStateHolder: SkyBoxStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val giVolumeStateHolder: GiVolumeStateHolder,
 ) : DeferredRenderExtension {
 
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
@@ -399,9 +401,7 @@ class VoxelConeTracingExtension(
         extract(renderState)
     }
     fun extract(renderState: RenderState) {
-        val list = (
-            renderState.componentExtracts[GiVolumeComponent::class.java] ?: emptyList<GiVolumeComponent>()
-        ) as List<GiVolumeComponent>
+        val list = renderState[giVolumeStateHolder.giVolumesState].volumes
         if(list.isEmpty()) return
 
         val targetSize = list.size

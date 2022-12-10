@@ -39,6 +39,7 @@ import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
@@ -55,6 +56,7 @@ import org.lwjgl.opengl.GL30
 import struktgen.api.TypedBuffer
 import java.nio.FloatBuffer
 import java.util.ArrayList
+import kotlin.math.min
 
 // TODO: Implement autoadd for transform
 context(GpuContext)
@@ -65,11 +67,13 @@ class AreaLightSystem(
     config: Config,
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val areaLightStateHolder: AreaLightStateHolder,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
-    private var gpuAreaLightArray =
-        TypedBuffer(BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes), AreaLightStrukt.type)
-
+    private var gpuAreaLightArray = TypedBuffer(
+        BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes),
+        AreaLightStrukt.type,
+    )
 
     lateinit var areaLightComponentComponentMapper: ComponentMapper<AreaLightComponent>
 
@@ -131,8 +135,8 @@ class AreaLightSystem(
     }
 
     fun renderAreaLightShadowMaps(renderState: RenderState) {
-        val areaLights =
-            (renderState.componentExtracts[AreaLightComponent::class.java] as List<AreaLightComponent>?) ?: return
+        val lightState = renderState[areaLightStateHolder.lightState]
+        val areaLights = lightState.lights
         if (areaLights.isEmpty()) return
 
         profiled("Arealight shadowmaps") {
@@ -142,7 +146,7 @@ class AreaLightSystem(
             mapRenderTarget.use(true)
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
-            for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
+            for (i in 0 until min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
 
                 mapRenderTarget.setTargetTexture(areaLightDepthMaps[i], 0)
 
@@ -154,9 +158,9 @@ class AreaLightSystem(
                     uniforms.entitiesBuffer = entitiesState.entitiesBuffer
                     // TODO: Move buffer creation somewhere else or eliminate
                     val buffer = BufferUtils.createFloatBuffer(16)
-                    light.transform.transform.invert(Matrix4f()).get(buffer)
+                    light.transform.invert(Matrix4f()).get(buffer)
                     uniforms.viewMatrix.safePut(buffer)
-                    light.camera.projectionMatrix.get(buffer)
+                    light.projectionMatrix.get(buffer)
                     uniforms.projectionMatrix.safePut(buffer)
                 }
 
@@ -211,7 +215,7 @@ class AreaLightSystem(
 //        gpuAreaLightArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
 //        gpuAreaLightArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
 
-        currentWriteState[pointLightStateHolder.lightState].areaLightDepthMaps = areaLightDepthMaps
+        currentWriteState[areaLightStateHolder.lightState].areaLightDepthMaps = areaLightDepthMaps
     }
 
     companion object {
@@ -228,4 +232,19 @@ class AreaShadowPassUniforms : Uniforms() {
     var entitiesBuffer by SSBO("Entity", 3, PersistentMappedBuffer(1).typed(EntityStrukt.type))
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+}
+
+context(GpuContext, RenderStateContext)
+class AreaLightStateHolder {
+    val lightState = renderState.registerState {
+        AreaLightsState()
+    }
+}
+class AreaLightsState {
+    val lights: MutableList<AreaLightState> = mutableListOf()
+    var areaLightDepthMaps: List<Int> = listOf()
+}
+class AreaLightState {
+    val transform: Transform = Transform()
+    val projectionMatrix: Matrix4f = Matrix4f()
 }

@@ -21,7 +21,6 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.ProgramDescription
@@ -37,12 +36,12 @@ import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.imgui.editor.EntityClickListener
 import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
+import de.hanno.hpengine.graphics.light.area.AreaLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.*
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.state.EntitiesState
-import de.hanno.hpengine.graphics.state.EnvironmentProbesState
+import de.hanno.hpengine.graphics.state.*
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.scene.WorldAABBStateHolder
@@ -277,13 +276,34 @@ val baseModule = module {
             }
         }
     }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                AreaLightStateHolder()
+            }
+        }
+    }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                ReflectionProbesStateHolder()
+            }
+        }
+    }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                GiVolumeStateHolder()
+            }
+        }
+    }
 }
 
 fun Module.addGIModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get(), get(), get())
+                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
         }
     }
@@ -320,7 +340,7 @@ fun Module.addReflectionProbeModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get(), get(), get())
+                ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
         }
     }
@@ -371,6 +391,19 @@ class GiVolumeSystem(
     }
 
     override fun processSystem() {}
+
+    // TODO: Implement extraction to a GiVolumeStateHolder here
+}
+
+context(GpuContext, RenderStateContext)
+class GiVolumeStateHolder {
+    val giVolumesState = renderState.registerState {
+        GiVolumesState()
+    }
+}
+class GiVolumesState {
+    // Implement needed state here, like transform etc
+    val volumes = listOf<Unit>()
 }
 
 class SkyBoxComponent : Component()

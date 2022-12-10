@@ -5,6 +5,7 @@ import Vector4fStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.World
 import com.artemis.annotations.All
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 
@@ -14,7 +15,6 @@ import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.graphics.renderer.constants.Capability
@@ -40,6 +40,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.ressources.StringBasedCodeSource
+import org.apache.xalan.xsltc.runtime.output.TransletOutputHandlerFactory
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
@@ -64,8 +65,22 @@ class ReflectionProbeManager(val config: Config) : BaseEntitySystem() {
     }
 }
 
+context(GpuContext, RenderStateContext)
+class ReflectionProbesStateHolder {
+    val probesState = renderState.registerState {
+        ReflectionProbesState()
+    }
+}
+class ReflectionProbesState {
+    val transforms = mutableListOf<ReflectionProbeState>()
+}
+class ReflectionProbeState {
+    val transform = Transform()
+    val halfExtents = Vector3f()
+}
+
 context(GpuContext)
-class ReflectionProbeRenderState() {
+class ReflectionProbeRenderState {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
     val probeMinMaxStructBuffer = onGpu {
@@ -84,6 +99,7 @@ class ReflectionProbeRenderExtension(
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val reflectionProbesStateHolder: ReflectionProbesStateHolder,
 ) : DeferredRenderExtension {
     override val renderPriority = 3000
 
@@ -160,8 +176,8 @@ class ReflectionProbeRenderExtension(
     private val probesPerFrame = 1
 
     override fun extract(renderState: RenderState, world: World) {
-        val components =
-            (renderState.componentExtracts[ReflectionProbe::class.java] as List<ReflectionProbe>?) ?: return
+        // TODO: Implement extraction here, not sure whether this is currently doing the right thing
+        val components = renderState[reflectionProbesStateHolder.probesState].transforms
         val componentCount = components.size
         val targetState = renderState[reflectionProbeRenderState]
 
@@ -174,19 +190,19 @@ class ReflectionProbeRenderExtension(
         components.forEachIndexed { index, probe ->
             probeMinMaxStructBuffer.typedBuffer.forIndex(2 * index) {
                 it.set(
-                    Vector3f(probe.transformComponent.transform.position).sub(
+                    Vector3f(probe.transform.position).sub(
                         probe.halfExtents
                     )
                 )
             }
             probeMinMaxStructBuffer.typedBuffer.forIndex(2 * index + 1) {
                 it.set(
-                    Vector3f(probe.transformComponent.transform.position).add(
+                    Vector3f(probe.transform.position).add(
                         probe.halfExtents
                     )
                 )
             }
-            probePositions.add(Vector3f(probe.transformComponent.transform.position))
+            probePositions.add(Vector3f(probe.transform.position))
         }
 
     }

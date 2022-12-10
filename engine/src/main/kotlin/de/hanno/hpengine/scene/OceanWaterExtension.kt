@@ -180,11 +180,12 @@ class OceanWaterRenderSystem(
         textureManager.registerTextureForDebugOutput("[Ocean Water] Twiddle Indices", twiddleIndicesMap)
     }
     override fun extract(renderState: RenderState, world: World) {
-        val oceanWaterEntities = renderState.componentsForEntities.filter { it.value.any { it is OceanSurfaceComponent } }
+        // TODO: Implement extraction here
+        val oceanWaterEntities = listOf<Triple<OceanWaterComponent, MaterialComponent, OceanSurfaceComponent>>()
         if(oceanWaterEntities.isNotEmpty()) {
-            val components = oceanWaterEntities.entries.first().value
-            val materialComponent = components.firstIsInstance<MaterialComponent>()
-            val oceanSurfaceComponent = components.firstIsInstance<OceanSurfaceComponent>()
+            val components = oceanWaterEntities.first()
+            val materialComponent = components.second
+            val oceanSurfaceComponent = components.third
             if(!oceanSurfaceComponent.mapsSet) {
                 materialComponent.material.let {
                     it.maps.putIfAbsent(Material.MAP.DIFFUSE, albedoMap)
@@ -198,9 +199,9 @@ class OceanWaterRenderSystem(
 
     private var seconds = 0.0f
     override fun render(result: DrawResult, renderState: RenderState) {
-        val components = renderState.componentExtracts[OceanWaterComponent::class.java] ?: return
+        val components = listOf<OceanWaterComponent>()
         if(components.isEmpty()) return
-        val oceanWaterComponent = components.first() as OceanWaterComponent
+        val oceanWaterComponent = components.first()
         if(oceanWaterComponent.windspeed == 0f) { return }
 
         seconds += oceanWaterComponent.timeFactor * max(0.001f, renderState.deltaSeconds)
