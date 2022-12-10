@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.light.probe
 
 import AmbientCubeImpl.Companion.sizeInBytes
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -248,6 +249,7 @@ class EvaluateProbeRenderExtension(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
 
     private val probeRenderStrategy = ProbeRenderStrategy(
@@ -284,14 +286,15 @@ class EvaluateProbeRenderExtension(
         gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
         gpuContext.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
 
+        val camera = renderState[primaryCameraStateHolder.camera]
         evaluateProbeProgram.use()
         val camTranslation = Vector3f()
         evaluateProbeProgram.setUniform(
             "eyePosition",
-            renderState.camera.transform.getTranslation(camTranslation)
+            camera.transform.getTranslation(camTranslation)
         )
-        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderStrategy.probeGrid)
         evaluateProbeProgram.setUniform("screenWidth", config.width.toFloat())

@@ -5,6 +5,7 @@ import EntityStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
@@ -47,6 +48,7 @@ open class GPUCulledPipeline(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val useBackFaceCulling: Boolean = true,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) {
     // TODO: Fill these if possible
     private var verticesCount = 0
@@ -109,6 +111,7 @@ open class GPUCulledPipeline(
 
     fun prepare(renderState: RenderState) {
         if (config.debug.freezeCulling) return
+        val camera = renderState[primaryCameraStateHolder.camera]
 
         verticesCount = 0
         entitiesCount = 0
@@ -118,7 +121,7 @@ open class GPUCulledPipeline(
             filteredRenderBatches = batches
                 .filter {
                     val culled = if (config.debug.isUseCpuFrustumCulling) {
-                        it.isCulled(renderState.camera)
+                        it.isCulled(camera)
                     } else false
 
                     it.canBeRenderedInIndirectBatch && !culled
@@ -141,14 +144,16 @@ open class GPUCulledPipeline(
         profiled("Actual draw entities") {
             val mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Faces
 
+            val camera = renderState[primaryCameraStateHolder.camera]
+
             val drawDescriptionStatic = IndirectCulledDrawDescription(
                 renderState,
                 programStatic,
                 commandOrganizationStatic,
                 renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic,
                 mode,
-                renderState.camera,
-                renderState.camera
+                camera,
+                camera
             )
             val drawDescriptionAnimated = IndirectCulledDrawDescription(
                 renderState,
@@ -156,8 +161,8 @@ open class GPUCulledPipeline(
                 commandOrganizationAnimated,
                 renderState[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated,
                 mode,
-                renderState.camera,
-                renderState.camera
+                camera,
+                camera
             )
 
             cullAndRender(drawDescriptionStatic, drawDescriptionAnimated)

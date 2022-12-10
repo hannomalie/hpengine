@@ -69,7 +69,8 @@ val deferredRendererModule = module {
                     get(),
                     getAll<DeferredRenderExtension>().distinct(),
                     get(),
-                    get()
+                    get(),
+                    get(),
                 )
             }
         }
@@ -120,6 +121,7 @@ val imGuiEditorModule = module {
                     get(),
                     get(),
                     getAll<ImGuiEditorExtension>().distinct(),
+                    get(),
                     get(),
                 )
             }
@@ -214,10 +216,10 @@ val baseModule = module {
 
     renderExtension {
         get<GpuContext>().run {
-            ForwardRenderExtension(get(), get(), get(), get(), get())
+            ForwardRenderExtension(get(), get(), get(), get(), get(), get())
         }
     }
-    renderExtension { AOScatteringExtension(get(), get(), get(), get(), get(), get(), get(), get()) }
+    renderExtension { AOScatteringExtension(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     renderExtension {
         get<GpuContext>().run {
             PixelPerfectPickingExtension(get(), get(), getAll())
@@ -268,13 +270,20 @@ val baseModule = module {
             }
         }
     }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                PrimaryCameraStateHolder()
+            }
+        }
+    }
 }
 
 fun Module.addGIModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get(), get())
+                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
         }
     }
@@ -283,7 +292,7 @@ fun Module.addGIModule() {
 fun Module.addPointLightModule() {
     renderExtension {
         get<GpuContext>().run {
-            BvHPointLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get())
+            BvHPointLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get(), get())
         }
     }
 }
@@ -296,13 +305,13 @@ fun Module.addDirectionalLightModule() {
             }
         }
     }
-    renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get(), get()) }
+    renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get()) }
 }
 
 fun Module.addOceanWaterModule() {
     renderSystem {
         get<GpuContext>().run {
-            OceanWaterRenderSystem(get(), get(), get(), get())
+            OceanWaterRenderSystem(get(), get(), get(), get(), get())
         }
     }
 }
@@ -311,7 +320,7 @@ fun Module.addReflectionProbeModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get(), get())
+                ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get(), get(), get())
             }
         }
     }
@@ -321,7 +330,7 @@ fun Module.addCameraModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                CameraRenderExtension(get(), get())
+                CameraRenderExtension(get(), get(), get())
             }
         }
     }
@@ -331,7 +340,7 @@ fun Module.addSkyboxModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                SkyboxRenderExtension(get(), get(), get(), get(), get())
+                SkyboxRenderExtension(get(), get(), get(), get(), get(), get())
             }
         }
     }

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
@@ -34,6 +35,7 @@ class ForwardRenderExtension(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
     override val renderPriority = 2000
 
@@ -63,14 +65,15 @@ class ForwardRenderExtension(
 
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
+        val camera = renderState[primaryCameraStateHolder.camera]
         programStatic.useAndBind { uniforms ->
             uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
             uniforms.materials = entitiesState.materialBuffer
             uniforms.entities = entitiesState.entitiesBuffer
             programStatic.bindShaderStorageBuffer(2, renderState[directionalLightStateHolder.lightState])
-            uniforms.viewMatrix.safePut(renderState.camera.viewMatrixAsBuffer)
-            uniforms.projectionMatrix.safePut(renderState.camera.projectionMatrixAsBuffer)
-            uniforms.viewProjectionMatrix.safePut(renderState.camera.viewProjectionMatrixAsBuffer)
+            uniforms.viewMatrix.safePut(camera.viewMatrixAsBuffer)
+            uniforms.projectionMatrix.safePut(camera.projectionMatrixAsBuffer)
+            uniforms.viewProjectionMatrix.safePut(camera.viewProjectionMatrixAsBuffer)
         }
 
         entitiesState.vertexIndexBufferStatic.indexBuffer.bind()

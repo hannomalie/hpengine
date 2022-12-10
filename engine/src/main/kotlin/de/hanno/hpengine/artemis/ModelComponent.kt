@@ -84,6 +84,7 @@ class ModelSystem(
     private val programManager: ProgramManager,
     private val entityBuffer: EntityBuffer,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : BaseEntitySystem(), Extractor, LinkListener {
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
@@ -414,8 +415,10 @@ class ModelSystem(
         gpuJointsArray.byteBuffer.copyTo(currentWriteState[entitiesStateHolder.entitiesState].jointsBuffer.buffer)
         gpuEntitiesArray.byteBuffer.copyTo(currentWriteState[entitiesStateHolder.entitiesState].entitiesBuffer.buffer)
 
+        val camera = currentWriteState[primaryCameraStateHolder.camera]
+        
         extract(
-            currentWriteState.camera, currentWriteState, currentWriteState.camera.getPosition(),
+            camera, currentWriteState, camera.getPosition(),
             config.debug.isDrawLines, allocations, entityIndices,
         )
     }

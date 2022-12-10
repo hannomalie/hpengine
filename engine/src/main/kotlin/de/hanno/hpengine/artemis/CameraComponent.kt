@@ -4,9 +4,13 @@ import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.World
 import com.artemis.managers.TagManager
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.camera.Camera
+import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.editor.primaryCamera
+import de.hanno.hpengine.graphics.state.PointLightState
 import de.hanno.hpengine.math.createOrthogonal
 import de.hanno.hpengine.math.createPerspective
 import org.joml.Matrix4f
@@ -83,6 +87,13 @@ class CameraSystem: BaseSystem(), WorldPopulator {
     override fun processSystem() { }
     override fun World.populate() {
         addPrimaryCamera()
+    }
+}
+
+context(GpuContext, RenderStateContext)
+class PrimaryCameraStateHolder {
+    val camera = renderState.registerState {
+        Camera(Transform(), 1280f/720f)
     }
 }
 

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
 
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
@@ -14,11 +15,13 @@ import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 
-class PostProcessingExtension(private val config: Config,
-                              private val programManager: ProgramManager,
-                              private val textureManager: TextureManager,
-                              private val gpuContext: GpuContext,
-                              private val deferredRenderingBuffer: DeferredRenderingBuffer
+class PostProcessingExtension(
+    private val config: Config,
+    private val programManager: ProgramManager,
+    private val textureManager: TextureManager,
+    private val gpuContext: GpuContext,
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
 
     private val postProcessProgram = programManager.getProgram(
@@ -29,20 +32,21 @@ class PostProcessingExtension(private val config: Config,
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
 
         profiled("Post processing") {
+            val camera = renderState[primaryCameraStateHolder.camera]
             postProcessProgram.use()
             gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.finalBuffer.getRenderedTexture(0))
             postProcessProgram.setUniform("screenWidth", config.width.toFloat())
             postProcessProgram.setUniform("screenHeight", config.height.toFloat())
-            postProcessProgram.setUniform("worldExposure", renderState.camera.exposure)
+            postProcessProgram.setUniform("worldExposure", camera.exposure)
             postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", config.effects.isAutoExposureEnabled)
             postProcessProgram.setUniform("usePostProcessing", config.effects.isEnablePostprocessing)
-            postProcessProgram.setUniform("cameraRightDirection", renderState.camera.getRightDirection())
-            postProcessProgram.setUniform("cameraViewDirection", renderState.camera.getViewDirection())
-            postProcessProgram.setUniform("focalDepth", renderState.camera.focalDepth)
-            postProcessProgram.setUniform("focalLength", renderState.camera.focalLength)
-            postProcessProgram.setUniform("fstop", renderState.camera.fStop)
-            postProcessProgram.setUniform("znear", renderState.camera.near)
-            postProcessProgram.setUniform("zfar", renderState.camera.far)
+            postProcessProgram.setUniform("cameraRightDirection", camera.getRightDirection())
+            postProcessProgram.setUniform("cameraViewDirection", camera.getViewDirection())
+            postProcessProgram.setUniform("focalDepth", camera.focalDepth)
+            postProcessProgram.setUniform("focalLength", camera.focalLength)
+            postProcessProgram.setUniform("fstop", camera.fStop)
+            postProcessProgram.setUniform("znear", camera.near)
+            postProcessProgram.setUniform("zfar", camera.far)
 
             postProcessProgram.setUniform("seconds", renderState.deltaSeconds)
             postProcessProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)

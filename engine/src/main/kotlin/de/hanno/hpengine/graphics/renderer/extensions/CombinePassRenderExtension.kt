@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
@@ -24,6 +25,7 @@ class CombinePassRenderExtension(private val config: Config,
                                  private val gpuContext: GpuContext,
                                  private val deferredRenderingBuffer: DeferredRenderingBuffer,
                                  private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
+                                 private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
 
     private val combineProgram = programManager.getProgram(
@@ -34,8 +36,10 @@ class CombinePassRenderExtension(private val config: Config,
     )
 
     fun renderCombinePass(state: RenderState, renderTarget: BackBufferRenderTarget<OpenGLTexture2D> = deferredRenderingBuffer.finalBuffer) {
+        val camera = state[primaryCameraStateHolder.camera]
+
         if(!config.effects.isAutoExposureEnabled) {
-            deferredRenderingBuffer.exposureBuffer.buffer.putFloat(0, state.camera.exposure)
+            deferredRenderingBuffer.exposureBuffer.buffer.putFloat(0, camera.exposure)
         }
         profiled("Combine pass") {
             renderTarget.use(false)
@@ -43,14 +47,14 @@ class CombinePassRenderExtension(private val config: Config,
             textureManager.generateMipMaps(TextureTarget.TEXTURE_2D, renderTarget.getRenderedTexture(0))
 
             combineProgram.use()
-            combineProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-            combineProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+            combineProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
+            combineProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
             combineProgram.setUniform("screenWidth", config.width.toFloat())
             combineProgram.setUniform("screenHeight", config.height.toFloat())
-            combineProgram.setUniform("camPosition", state.camera.getPosition())
+            combineProgram.setUniform("camPosition", camera.getPosition())
             combineProgram.setUniform("ambientColor", config.effects.ambientLight)
             combineProgram.setUniform("useAmbientOcclusion", config.quality.isUseAmbientOcclusion)
-            combineProgram.setUniform("worldExposure", state.camera.exposure)
+            combineProgram.setUniform("worldExposure", camera.exposure)
             combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", config.effects.isAutoExposureEnabled)
             combineProgram.setUniform("fullScreenMipmapCount", deferredRenderingBuffer.fullScreenMipmapCount)
             combineProgram.setUniform("activeProbeCount", state[environmentProbesStateHolder.environmentProbesState].activeProbeCount)

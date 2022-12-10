@@ -5,6 +5,7 @@ import com.artemis.World
 import com.artemis.hackedOutComponents
 
 import de.hanno.hpengine.artemis.CameraComponent
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
@@ -23,8 +24,9 @@ import org.joml.Vector3fc
 
 context(GpuContext, RenderStateContext)
 class CameraRenderExtension(
-    val config: Config,
-    val programManager: ProgramManager
+    private val config: Config,
+    private val programManager: ProgramManager,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
 
     private val frustumLines = renderState.registerState { mutableListOf<Vector3fc>() }
@@ -73,13 +75,15 @@ class CameraRenderExtension(
         renderState: RenderState
     ) {
         if (config.debug.isDrawCameras) {
+            val camera = renderState[primaryCameraStateHolder.camera]
+
             drawLines(
                 programManager,
                 linesProgram,
                 lineVertices,
                 renderState[frustumLines],
-                viewMatrix = renderState.camera.viewMatrixAsBuffer,
-                projectionMatrix = renderState.camera.projectionMatrixAsBuffer,
+                viewMatrix = camera.viewMatrixAsBuffer,
+                projectionMatrix = camera.projectionMatrixAsBuffer,
                 color = Vector3f(1f, 0f, 0f)
             )
         }

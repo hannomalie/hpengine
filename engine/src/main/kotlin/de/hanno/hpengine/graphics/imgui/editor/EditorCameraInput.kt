@@ -6,6 +6,7 @@ import com.artemis.ComponentMapper
 import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.artemis.CameraComponent
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
@@ -45,7 +46,9 @@ class EditorCameraInputComponent: Component() {
 }
 
 const val primaryCamera = "PRIMARY_CAMERA"
-class EditorCameraInputSystem: BaseSystem(), Extractor {
+class EditorCameraInputSystem(
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+): BaseSystem(), Extractor {
 
     lateinit var editorCameraInputComponent: EditorCameraInputComponent
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
@@ -121,8 +124,9 @@ class EditorCameraInputSystem: BaseSystem(), Extractor {
         val entityId = tagManager.getEntity(primaryCamera)
         val transform = transformComponentMapper[entityId].transform
         val camera = cameraComponentMapper[entityId]
-        currentWriteState.camera.transform.set(transform)
-        currentWriteState.camera.init(
+        val cameraState = currentWriteState[primaryCameraStateHolder.camera]
+        cameraState.transform.set(transform)
+        cameraState.init(
             camera.projectionMatrix, camera.near, camera.far, camera.fov, camera.ratio,
             camera.exposure, camera.focalDepth, camera.focalLength, camera.fStop
         )

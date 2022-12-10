@@ -27,6 +27,7 @@ import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -142,6 +143,7 @@ class BvHPointLightSecondPassExtension(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
@@ -254,8 +256,10 @@ class BvHPointLightSecondPassExtension(
 
         profiled("Seconds pass PointLights BVH") {
 
-            val viewMatrix = renderState.camera.viewMatrixAsBuffer
-            val projectionMatrix = renderState.camera.projectionMatrixAsBuffer
+            val camera = renderState[primaryCameraStateHolder.camera]
+
+            val viewMatrix = camera.viewMatrixAsBuffer
+            val projectionMatrix = camera.projectionMatrixAsBuffer
 
             gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
             gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
@@ -314,13 +318,14 @@ class BvHPointLightSecondPassExtension(
             }
             deferredRenderingBuffer.finalBuffer.use(false)
             gpuContext.blend = false
+            val camera = renderState[primaryCameraStateHolder.camera]
             drawLines(
                 programManager,
                 linesProgram,
                 lineVertices,
                 linePoints,
-                viewMatrix = renderState.camera.viewMatrixAsBuffer,
-                projectionMatrix = renderState.camera.projectionMatrixAsBuffer,
+                viewMatrix = camera.viewMatrixAsBuffer,
+                projectionMatrix = camera.projectionMatrixAsBuffer,
                 color = Vector3f(1f, 0f, 0f)
             )
         }

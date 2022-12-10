@@ -2,6 +2,7 @@ package de.hanno.hpengine.extension
 
 import com.artemis.World
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -24,6 +25,7 @@ class SkyboxRenderExtension(
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
 
     init {
@@ -75,13 +77,14 @@ class SkyboxRenderExtension(
             GL15.GL_READ_WRITE,
             GL30.GL_RGBA16F
         )
+        val camera = renderState[primaryCameraStateHolder.camera]
         secondPassReflectionProgram.use()
         secondPassReflectionProgram.setUniform("screenWidth", config.width.toFloat())
         secondPassReflectionProgram.setUniform("screenHeight", config.height.toFloat())
-        secondPassReflectionProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
+        secondPassReflectionProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
         secondPassReflectionProgram.setUniformAsMatrix4(
             "projectionMatrix",
-            renderState.camera.projectionMatrixAsBuffer
+            camera.projectionMatrixAsBuffer
         )
         secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
         secondPassReflectionProgram.dispatchCompute(

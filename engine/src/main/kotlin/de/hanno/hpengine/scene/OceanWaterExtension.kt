@@ -7,6 +7,7 @@ import com.artemis.World
 import de.hanno.hpengine.artemis.MaterialComponent
 import de.hanno.hpengine.artemis.OceanSurfaceComponent
 import de.hanno.hpengine.artemis.OceanWaterComponent
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.OpenGLContext.Companion.RED_BUFFER
@@ -33,13 +34,13 @@ import kotlin.math.max
 
 private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
 
-
 context(GpuContext)
 class OceanWaterRenderSystem(
-    val config: Config,
-    val renderStateContext: RenderStateContext,
-    val programManager: ProgramManager,
-    val textureManager: OpenGLTextureManager,
+    private val config: Config,
+    private val renderStateContext: RenderStateContext,
+    private val programManager: ProgramManager,
+    private val textureManager: OpenGLTextureManager,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : RenderSystem {
     override lateinit var artemisWorld: World
     private val N = 512
@@ -269,13 +270,15 @@ class OceanWaterRenderSystem(
             GL11.glFinish()
         }
 
+        val camera = renderState[primaryCameraStateHolder.camera]
+
         mergeDisplacementMapsShader.use()
         mergeDisplacementMapsShader.setUniform("diffuseColor", oceanWaterComponent.albedo)
         mergeDisplacementMapsShader.setUniform("N", N)
         mergeDisplacementMapsShader.setUniform("L", oceanWaterComponent.L)
         mergeDisplacementMapsShader.setUniform("choppiness", oceanWaterComponent.choppiness)
         mergeDisplacementMapsShader.setUniform("waveHeight", oceanWaterComponent.waveHeight)
-        mergeDisplacementMapsShader.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
+        mergeDisplacementMapsShader.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
         GL42.glBindImageTexture(0, displacementMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, displacementMap.internalFormat)
         bindTexture(1, displacementMapX)
         bindTexture(2, displacementMapY)

@@ -22,6 +22,7 @@ import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
 import de.hanno.hpengine.artemis.PhysicsComponent
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
@@ -48,8 +49,9 @@ context(GpuContext, RenderStateContext)
 @All(PhysicsComponent::class)
 class PhysicsManager(
     private val config: Config,
-    val programManager: ProgramManager,
-    gravity: Vector3f = Vector3f(0f, -20f, 0f)
+    private val programManager: ProgramManager,
+    gravity: Vector3f = Vector3f(0f, -20f, 0f),
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : BaseEntitySystem(), RenderSystem {
     override lateinit var artemisWorld: World
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
@@ -177,14 +179,15 @@ class PhysicsManager(
 
     override fun render(result: DrawResult, renderState: RenderState) {
         if (config.debug.isDrawLines) {
+            val camera = renderState[primaryCameraStateHolder.camera]
             debugDrawWorld()
             drawLines(
                 programManager,
                 linesProgram,
                 lineVertices,
                 linePoints,
-                viewMatrix = renderState.camera.viewMatrixAsBuffer,
-                projectionMatrix = renderState.camera.projectionMatrixAsBuffer,
+                viewMatrix = camera.viewMatrixAsBuffer,
+                projectionMatrix = camera.projectionMatrixAsBuffer,
                 color = org.joml.Vector3f(1f, 1f, 0f)
             )
         }

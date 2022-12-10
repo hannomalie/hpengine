@@ -27,16 +27,11 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
     var componentsForEntities: MutableMap<Int, Bag<Component>> = mutableMapOf()
     val customState = CustomStates()
 
-    val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
-
-    var time = System.currentTimeMillis()
-
-    var camera = Camera(Transform(), 1280f/720f)
-
     var cycle: Long = 0
-    override var gpuCommandSync: GpuCommandSync = createCommandSync()
-
+    val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
+    var time = System.currentTimeMillis()
     var deltaSeconds: Float = 0.1f
+    override var gpuCommandSync: GpuCommandSync = createCommandSync()
 
     val gpuHasFinishedUsingIt get() = gpuCommandSync.isSignaled
 
@@ -44,9 +39,6 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
 
     operator fun <T: Any> get(stateRef: StateRef<T>) = customState[stateRef]
     fun <T: Any> set(ref: StateRef<T>, value: T) { customState.set(ref, value) }
-
-    operator fun <T: Component> get(clazz: Class<T>): Bag<T> = componentExtracts[clazz] as Bag<T>
-
 }
 interface RenderSystem: Updatable {
     val sharedRenderTarget: BackBufferRenderTarget<*>? get() = null

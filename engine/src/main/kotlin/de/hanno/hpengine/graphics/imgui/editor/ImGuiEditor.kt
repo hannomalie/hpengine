@@ -7,6 +7,7 @@ import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.artemis.ModelComponent
 import de.hanno.hpengine.artemis.ModelSystem
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.artemis.TransformComponent
 
 import de.hanno.hpengine.config.ConfigImpl
@@ -73,6 +74,7 @@ class ImGuiEditor(
     internal val fpsCounter: FPSCounter,
     internal val editorExtensions: List<ImGuiEditorExtension>,
     internal val entityClickListener: EntityClickListener,
+    internal val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     val formerFinalOutput = finalOutput.texture2D
@@ -186,12 +188,13 @@ class ImGuiEditor(
 
             (selection as? EntitySelection)?.let { entitySelection ->
                 artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
+                    val camera = renderState[primaryCameraStateHolder.camera]
                     showGizmo(
-                        viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer,
-                        projectionMatrixAsBuffer = renderState.camera.projectionMatrixAsBuffer,
-                        fovY = renderState.camera.fov,
-                        near = renderState.camera.near,
-                        far = renderState.camera.far,
+                        viewMatrixAsBuffer = camera.viewMatrixAsBuffer,
+                        projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer,
+                        fovY = camera.fov,
+                        near = camera.near,
+                        far = camera.far,
                         editorCameraInputSystem = artemisWorld.getSystem(EditorCameraInputSystem::class.java),
                         windowWidth = screenWidth,
                         windowHeight = screenHeight,

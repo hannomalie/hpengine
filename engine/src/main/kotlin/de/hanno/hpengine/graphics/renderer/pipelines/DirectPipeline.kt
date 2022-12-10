@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.renderer.pipelines
 
 
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -23,6 +24,7 @@ open class DirectFirstPassPipeline(
     private val config: Config,
     private val program: IProgram<out FirstPassUniforms>,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     // TODO: Use shouldBeSkipped
     protected val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
@@ -41,7 +43,7 @@ open class DirectFirstPassPipeline(
     }
 
     open fun RenderState.extractRenderBatches(): List<RenderBatch> = this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot {
-        it.shouldBeSkipped(camera)
+        it.shouldBeSkipped(this[primaryCameraStateHolder.camera])
     }
     open fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
 
@@ -55,6 +57,9 @@ open class DirectFirstPassPipeline(
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         val batchesWithOwnProgram: Map<Material, List<RenderBatch>> =
             renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
+
+        val camera = renderState[primaryCameraStateHolder.camera]
+
         for (groupedBatches in batchesWithOwnProgram) {
             for (batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
                 val program = batch.program!!
@@ -63,9 +68,9 @@ open class DirectFirstPassPipeline(
                 depthMask = batch.material.writesDepth
 
                 program.use()
-                val viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer
-                val projectionMatrixAsBuffer = renderState.camera.projectionMatrixAsBuffer
-                val viewProjectionMatrixAsBuffer = renderState.camera.viewProjectionMatrixAsBuffer
+                val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
+                val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
+                val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
                 program.useAndBind { uniforms ->
                     uniforms.apply {
                         materials = entitiesState.materialBuffer
@@ -86,9 +91,9 @@ open class DirectFirstPassPipeline(
                         projectionMatrix = projectionMatrixAsBuffer
                         viewProjectionMatrix = viewProjectionMatrixAsBuffer
 
-                        eyePosition = renderState.camera.getPosition()
-                        near = renderState.camera.near
-                        far = renderState.camera.far
+                        eyePosition = camera.getPosition()
+                        near = camera.near
+                        far = camera.far
                         time = renderState.time.toInt()
                         useParallax = config.quality.isUseParallax
                         useSteepParallax = config.quality.isUseSteepParallax
@@ -111,9 +116,9 @@ open class DirectFirstPassPipeline(
         }
 
         program.use()
-        val viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer
-        val projectionMatrixAsBuffer = renderState.camera.projectionMatrixAsBuffer
-        val viewProjectionMatrixAsBuffer = renderState.camera.viewProjectionMatrixAsBuffer
+        val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
+        val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
+        val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
         program.useAndBind { uniforms: FirstPassUniforms ->
             uniforms.apply {
                 materials = entitiesState.materialBuffer
@@ -133,9 +138,9 @@ open class DirectFirstPassPipeline(
                 projectionMatrix = projectionMatrixAsBuffer
                 viewProjectionMatrix = viewProjectionMatrixAsBuffer
 
-                eyePosition = renderState.camera.getPosition()
-                near = renderState.camera.near
-                far = renderState.camera.far
+                eyePosition = camera.getPosition()
+                near = camera.near
+                far = camera.far
                 time = renderState.time.toInt()
                 useParallax = config.quality.isUseParallax
                 useSteepParallax = config.quality.isUseSteepParallax

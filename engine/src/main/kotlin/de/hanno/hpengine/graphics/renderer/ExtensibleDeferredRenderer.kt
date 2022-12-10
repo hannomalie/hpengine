@@ -3,6 +3,7 @@ package de.hanno.hpengine.graphics.renderer
 import com.artemis.World
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
@@ -33,6 +34,7 @@ class ExtensibleDeferredRenderer(
     extensions: List<DeferredRenderExtension>,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : RenderSystem {
     override lateinit var artemisWorld: World
     private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
@@ -41,8 +43,8 @@ class ExtensibleDeferredRenderer(
 
     override val sharedRenderTarget = deferredRenderingBuffer.gBuffer
 
-    val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer, environmentProbesStateHolder)
-    val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer)
+    val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer, environmentProbesStateHolder, primaryCameraStateHolder)
+    val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer, primaryCameraStateHolder)
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
@@ -64,20 +66,28 @@ class ExtensibleDeferredRenderer(
         get() = config.performance.isIndirectRendering && isSupported(BindlessTextures)
 
     val indirectPipeline: StateRef<GPUCulledPipeline> = renderState.registerState {
-        GPUCulledPipeline(config, programManager, textureManager, deferredRenderingBuffer, true, entitiesStateHolder)
+        GPUCulledPipeline(config, programManager, textureManager, deferredRenderingBuffer, true, entitiesStateHolder, primaryCameraStateHolder)
     }
     private val staticDirectPipeline: StateRef<DirectFirstPassPipeline> = renderState.registerState {
-        object: DirectFirstPassPipeline(config, simpleColorProgramStatic, entitiesStateHolder) {
+        object: DirectFirstPassPipeline(config, simpleColorProgramStatic, entitiesStateHolder, primaryCameraStateHolder) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot { it.canBeRenderedInIndirectBatch }
-            } else this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot { it.shouldBeSkipped(camera) }
+            } else {
+                this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot {
+                    it.shouldBeSkipped(this[primaryCameraStateHolder.camera])
+                }
+            }
         }
     }
     private val animatedDirectPipeline: StateRef<DirectFirstPassPipeline> = renderState.registerState {
-        object: DirectFirstPassPipeline(config, simpleColorProgramAnimated,entitiesStateHolder) {
+        object: DirectFirstPassPipeline(config, simpleColorProgramAnimated,entitiesStateHolder, primaryCameraStateHolder) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 this[entitiesStateHolder.entitiesState].renderBatchesAnimated.filterNot { it.canBeRenderedInIndirectBatch }
-            } else this[entitiesStateHolder.entitiesState].renderBatchesAnimated.filterNot { it.shouldBeSkipped(camera) }
+            } else {
+                this[entitiesStateHolder.entitiesState].renderBatchesAnimated.filterNot {
+                    it.shouldBeSkipped(this[primaryCameraStateHolder.camera])
+                }
+            }
 
             override fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated
         }

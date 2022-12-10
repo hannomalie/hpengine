@@ -27,6 +27,7 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.extension.SkyBoxStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
@@ -79,6 +80,7 @@ class VoxelConeTracingExtension(
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val skyBoxStateHolder: SkyBoxStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
 
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
@@ -127,8 +129,8 @@ class VoxelConeTracingExtension(
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val staticPipeline = DirectFirstPassPipeline(config, voxelizerStatic, entitiesStateHolder)
-    private val animatedPipeline = DirectFirstPassPipeline(config, voxelizerAnimated, entitiesStateHolder)
+    private val staticPipeline = DirectFirstPassPipeline(config, voxelizerStatic, entitiesStateHolder, primaryCameraStateHolder)
+    private val animatedPipeline = DirectFirstPassPipeline(config, voxelizerAnimated, entitiesStateHolder, primaryCameraStateHolder)
     private val firstPassResult = FirstPassResult()
     private val useIndirectDrawing = false
 
@@ -364,12 +366,14 @@ class VoxelConeTracingExtension(
                     bindTexture(12, TEXTURE_3D, currentVoxelGrid.albedoGrid)
                     bindTexture(13, TEXTURE_3D, currentVoxelGrid.normalGrid)
 
+                    val camera = renderState[primaryCameraStateHolder.camera]
+
                     voxelConeTraceProgram.use()
                     val camTranslation = Vector3f()
                     voxelConeTraceProgram.setUniform("voxelGridIndex", voxelGridIndex)
-                    voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.transform.getTranslation(camTranslation))
-                    voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-                    voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+                    voxelConeTraceProgram.setUniform("eyePosition", camera.transform.getTranslation(camTranslation))
+                    voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+                    voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
                     voxelConeTraceProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
                     voxelConeTraceProgram.bindShaderStorageBuffer(5, voxelGrids)
                     voxelConeTraceProgram.setUniform("voxelGridCount", voxelGrids.typedBuffer.size)

@@ -6,6 +6,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.World
 import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.config.Config
@@ -82,6 +83,7 @@ class ReflectionProbeRenderExtension(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
     override val renderPriority = 3000
 
@@ -216,13 +218,14 @@ class ReflectionProbeRenderExtension(
             deferredRenderingBuffer.finalBuffer.use(false)
             blend = false
 
+            val camera = renderState[primaryCameraStateHolder.camera]
             drawLines(
                 programManager,
                 linesProgram,
                 lineVertices,
                 linePoints,
-                viewMatrix = renderState.camera.viewMatrixAsBuffer,
-                projectionMatrix = renderState.camera.projectionMatrixAsBuffer,
+                viewMatrix = camera.viewMatrixAsBuffer,
+                projectionMatrix = camera.projectionMatrixAsBuffer,
                 color = Vector3f(1f, 0f, 0f)
             )
         }
@@ -268,11 +271,12 @@ class ReflectionProbeRenderExtension(
         bindTexture(7, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
         renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
 
-        evaluateProbeProgram.setUniform("eyePosition", renderState.camera.getPosition())
+        val camera = renderState[primaryCameraStateHolder.camera]
+        evaluateProbeProgram.setUniform("eyePosition", camera.getPosition())
         evaluateProbeProgram.setUniform("screenWidth", config.width.toFloat())
         evaluateProbeProgram.setUniform("screenHeight", config.height.toFloat())
-        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
         evaluateProbeProgram.setUniform("time", renderState.time.toInt())
 
         evaluateProbeProgram.setUniform("probeCount", currentReflectionProbeRenderState.probeCount)

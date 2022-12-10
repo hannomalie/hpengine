@@ -84,6 +84,7 @@ class Engine(
             koin.get(),
             EntityBuffer(),
             koin.get(),
+            koin.get(),
         )
     }
     val entityLinkManager = EntityLinkManager()
@@ -99,7 +100,7 @@ class Engine(
         modelSystem,
         ComponentExtractor(),
         SkyBoxSystem(),
-        EditorCameraInputSystem(),
+        EditorCameraInputSystem(koin.get()),
         CycleSystem(koin.get()),
         directionalLightSystem,
         gpuContext.run {
@@ -124,7 +125,7 @@ class Engine(
         GiVolumeSystem(koin.get()),
         gpuContext.run {
             koin.get<RenderStateContext>().run {
-                PhysicsManager(config, koin.get())
+                PhysicsManager(config, koin.get(), primaryCameraStateHolder = koin.get())
             }
         },
         ReflectionProbeManager(config),

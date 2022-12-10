@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
 
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
@@ -26,6 +27,7 @@ class DirectionalLightSecondPassExtension(
     private val gpuContext: GpuContext,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
     private val secondPassDirectionalProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_vertex.glsl")),
@@ -76,11 +78,12 @@ class DirectionalLightSecondPassExtension(
             }
 
             profiled("set shader input") {
+                val camera = renderState[primaryCameraStateHolder.camera]
                 secondPassDirectionalProgram.use()
                 val camTranslation = Vector3f()
                 secondPassDirectionalProgram.setUniform(
                     "eyePosition",
-                    renderState.camera.getTranslation(camTranslation)
+                    camera.getTranslation(camTranslation)
                 )
                 secondPassDirectionalProgram.setUniform(
                     "ambientOcclusionRadius",
@@ -92,10 +95,10 @@ class DirectionalLightSecondPassExtension(
                 )
                 secondPassDirectionalProgram.setUniform("screenWidth", config.width.toFloat())
                 secondPassDirectionalProgram.setUniform("screenHeight", config.height.toFloat())
-                secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
+                secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
                 secondPassDirectionalProgram.setUniformAsMatrix4(
                     "projectionMatrix",
-                    renderState.camera.projectionMatrixAsBuffer
+                    camera.projectionMatrixAsBuffer
                 )
                 secondPassDirectionalProgram.bindShaderStorageBuffer(2, directionalLightState)
             }

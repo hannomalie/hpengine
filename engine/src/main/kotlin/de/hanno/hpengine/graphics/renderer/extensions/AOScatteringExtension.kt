@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 
 
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
+import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
@@ -30,6 +31,7 @@ class AOScatteringExtension(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(
@@ -58,14 +60,16 @@ class AOScatteringExtension(
                 gpuContext.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, environmentProbesState.environmapsArray3Id)
             }
 
-            aoScatteringProgram.setUniform("eyePosition", renderState.camera.getPosition())
+            val camera = renderState[primaryCameraStateHolder.camera]
+
+            aoScatteringProgram.setUniform("eyePosition", camera.getPosition())
             aoScatteringProgram.setUniform("useAmbientOcclusion", config.quality.isUseAmbientOcclusion)
             aoScatteringProgram.setUniform("ambientOcclusionRadius", config.effects.ambientocclusionRadius)
             aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", config.effects.ambientocclusionTotalStrength)
             aoScatteringProgram.setUniform("screenWidth", config.width.toFloat() / 2f)
             aoScatteringProgram.setUniform("screenHeight", config.height.toFloat() / 2f)
-            aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-            aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+            aoScatteringProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+            aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             aoScatteringProgram.setUniform("time", renderState.time.toInt())
             //		aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
             //		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
