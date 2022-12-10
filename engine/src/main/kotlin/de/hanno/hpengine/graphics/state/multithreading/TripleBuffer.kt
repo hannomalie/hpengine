@@ -7,24 +7,29 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.concurrent.withLock
 
-class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
-                                                private val instanceB: T,
-                                                private val instanceC: T,
-                                                private val preventSwap: (T, T) -> Boolean = { _,_ -> false }) {
+class TripleBuffer constructor(
+    private val instanceA: RenderState,
+    private val instanceB: RenderState,
+    private val instanceC: RenderState,
+    private val preventSwap: (RenderState, RenderState) -> Boolean = { _, _ -> false }
+) {
 
-    constructor(factory: () -> T, preventSwap: (T, T) -> Boolean = { _,_ -> false }): this(factory(), factory(), factory(), preventSwap)
+    constructor(
+        factory: () -> RenderState,
+        preventSwap: (RenderState, RenderState) -> Boolean = { _, _ -> false }
+    ) : this(factory(), factory(), factory(), preventSwap)
 
     private val swapLock = ReentrantLock()
     private val stagingLock = ReentrantLock()
 
-    var currentReadState: T = instanceA
+    var currentReadState: RenderState = instanceA
         private set
-    var currentWriteState: T = instanceB
+    var currentWriteState: RenderState = instanceB
         private set
-    private var currentStagingState: T = instanceC
+    private var currentStagingState: RenderState = instanceC
 
-    private var tempA: T? = null
-    private var tempB: T? = null
+    private var tempA: RenderState? = null
+    private var tempB: RenderState? = null
 
     private fun swap(): Boolean = swapLock.withLock {
         stagingLock.withLock {
@@ -54,17 +59,9 @@ class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
         return StateRef(newIndex)
     }
 
-    fun readLocked(block: (T) -> Unit) = swapLock.withLock {
+    fun readLocked(block: (RenderState) -> Unit) = swapLock.withLock {
         block(currentReadState)
         swap()
-    }
-
-    fun logState() {
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.fine("Read  $currentReadStateIndex")
-            LOGGER.fine("Stage $currentStagingStateIndex")
-            LOGGER.fine("Write $currentWriteStateIndex")
-        }
     }
 
     fun printState() {
@@ -78,9 +75,5 @@ class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
     val currentWriteStateIndex get() = if (currentWriteState === instanceA) 0 else if (currentWriteState === instanceB) 1 else 2
 
     val currentStateIndices get() = Triple(currentReadStateIndex, currentStagingStateIndex, currentWriteStateIndex)
-
-    companion object {
-        private val LOGGER = Logger.getLogger(TripleBuffer::class.java.name)
-    }
 
 }

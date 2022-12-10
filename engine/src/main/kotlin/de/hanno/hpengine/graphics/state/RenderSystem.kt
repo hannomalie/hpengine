@@ -1,7 +1,6 @@
 package de.hanno.hpengine.graphics.state
 
 import com.artemis.World
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.lifecycle.Updatable
 

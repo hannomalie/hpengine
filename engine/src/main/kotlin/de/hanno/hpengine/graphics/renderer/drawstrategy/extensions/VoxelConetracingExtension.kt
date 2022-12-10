@@ -131,7 +131,6 @@ class VoxelConeTracingExtension(
 
     private val staticPipeline = DirectFirstPassPipeline(config, voxelizerStatic, entitiesStateHolder, primaryCameraStateHolder)
     private val animatedPipeline = DirectFirstPassPipeline(config, voxelizerAnimated, entitiesStateHolder, primaryCameraStateHolder)
-    private val firstPassResult = FirstPassResult()
     private val useIndirectDrawing = false
 
     private var litInCycle: Long = -1
