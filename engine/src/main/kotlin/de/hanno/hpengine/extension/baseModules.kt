@@ -41,7 +41,7 @@ import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.*
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.state.PointLightState
+import de.hanno.hpengine.graphics.state.EnvironmentProbesState
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureManager
 import org.koin.core.module.Module
@@ -67,6 +67,7 @@ val deferredRendererModule = module {
                     get(),
                     getAll<DeferredRenderExtension>().distinct(),
                     get(),
+                    get()
                 )
             }
         }
@@ -214,7 +215,7 @@ val baseModule = module {
             ForwardRenderExtension(get(), get(), get(), get(), get())
         }
     }
-    renderExtension { AOScatteringExtension(get(), get(), get(), get(), get(), get(), get()) }
+    renderExtension { AOScatteringExtension(get(), get(), get(), get(), get(), get(), get(), get()) }
     renderExtension {
         get<GpuContext>().run {
             PixelPerfectPickingExtension(get(), get(), getAll())
@@ -241,6 +242,13 @@ val baseModule = module {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
                 EntitiesStateHolder()
+            }
+        }
+    }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                EnvironmentProbesStateHolder()
             }
         }
     }

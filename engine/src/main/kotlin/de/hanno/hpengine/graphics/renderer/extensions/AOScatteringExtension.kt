@@ -1,10 +1,10 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
 
+import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.Capability
@@ -29,6 +29,7 @@ class AOScatteringExtension(
     private val textureManager: OpenGLTextureManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
+    private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
 ): DeferredRenderExtension {
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(
@@ -52,8 +53,9 @@ class AOScatteringExtension(
             gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
             gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
             renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
-            if(renderState.environmentProbesState.environmapsArray3Id > 0) {
-                gpuContext.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, renderState.environmentProbesState.environmapsArray3Id)
+            val environmentProbesState = renderState[environmentProbesStateHolder.environmentProbesState]
+            if(environmentProbesState.environmapsArray3Id > 0) {
+                gpuContext.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, environmentProbesState.environmapsArray3Id)
             }
 
             aoScatteringProgram.setUniform("eyePosition", renderState.camera.getPosition())

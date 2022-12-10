@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.renderer
 
 import com.artemis.World
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
@@ -31,6 +32,7 @@ class ExtensibleDeferredRenderer(
     private val textureManager: TextureManager,
     extensions: List<DeferredRenderExtension>,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
 ) : RenderSystem {
     override lateinit var artemisWorld: World
     private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
@@ -39,7 +41,7 @@ class ExtensibleDeferredRenderer(
 
     override val sharedRenderTarget = deferredRenderingBuffer.gBuffer
 
-    val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer)
+    val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer, environmentProbesStateHolder)
     val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer)
 
     val simpleColorProgramStatic = programManager.getProgram(

@@ -4,6 +4,9 @@ import com.artemis.Component
 import de.hanno.hpengine.graphics.renderer.environmentsampler.EnvironmentSampler
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.EnvironmentProbesState
 import de.hanno.hpengine.transform.TransformSpatial
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -24,6 +27,13 @@ class EnvironmentProbeComponent: Component() {
 
     fun contains(min: Vector3fc?, max: Vector3fc?) = box.contains(min!!) && box.contains(max!!)
     operator fun contains(minMaxWorld: AABB) = contains(minMaxWorld.min, minMaxWorld.max)
+}
+
+context(GpuContext, RenderStateContext)
+class EnvironmentProbesStateHolder {
+    val environmentProbesState = renderState.registerState {
+        EnvironmentProbesState()
+    }
 }
 
 // TODO: Reimplement

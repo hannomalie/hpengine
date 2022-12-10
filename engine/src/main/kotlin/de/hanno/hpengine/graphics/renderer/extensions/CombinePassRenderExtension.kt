@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
+import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
@@ -21,7 +22,8 @@ class CombinePassRenderExtension(private val config: Config,
                                  private val programManager: ProgramManager,
                                  private val textureManager: TextureManager,
                                  private val gpuContext: GpuContext,
-                                 private val deferredRenderingBuffer: DeferredRenderingBuffer
+                                 private val deferredRenderingBuffer: DeferredRenderingBuffer,
+                                 private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
 ): DeferredRenderExtension {
 
     private val combineProgram = programManager.getProgram(
@@ -51,7 +53,7 @@ class CombinePassRenderExtension(private val config: Config,
             combineProgram.setUniform("worldExposure", state.camera.exposure)
             combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", config.effects.isAutoExposureEnabled)
             combineProgram.setUniform("fullScreenMipmapCount", deferredRenderingBuffer.fullScreenMipmapCount)
-            combineProgram.setUniform("activeProbeCount", state.environmentProbesState.activeProbeCount)
+            combineProgram.setUniform("activeProbeCount", state[environmentProbesStateHolder.environmentProbesState].activeProbeCount)
             combineProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
 
             gpuContext.disable(Capability.DEPTH_TEST)
