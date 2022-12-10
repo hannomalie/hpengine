@@ -23,7 +23,7 @@ import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.texture.TextureManager
 
-context(GpuContext, RenderStateContext)
+context(GpuContext, de.hanno.hpengine.graphics.RenderStateContext)
 class ExtensibleDeferredRenderer(
     private val window: Window,
     private val config: Config,
