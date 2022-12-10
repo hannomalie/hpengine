@@ -2,12 +2,11 @@ package de.hanno.hpengine.graphics.fps
 
 import com.artemis.BaseSystem
 import com.artemis.World
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 
 class FPSCounterSystem(val fpsCounter: FPSCounter = FPSCounter()): RenderSystem {
-    override fun render(result: DrawResult, renderState: RenderState) {
+    override fun render(renderState: RenderState) {
         fpsCounter.update()
     }
     override lateinit var artemisWorld: World

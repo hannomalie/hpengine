@@ -140,7 +140,6 @@ open class GPUCulledPipeline(
         programStatic: IProgram<StaticFirstPassUniforms>,
         programAnimated: IProgram<AnimatedFirstPassUniforms>
     ) {
-        val firstPassResult = renderState.latestDrawResult.firstPassResult
         profiled("Actual draw entities") {
             val mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Faces
 
@@ -170,9 +169,6 @@ open class GPUCulledPipeline(
 //            redundant, because it's done above as long as i skip phase two of culling
 //            drawDescriptionStatic.draw()
 //            drawDescriptionAnimated.draw()
-
-            firstPassResult.verticesDrawn += verticesCount
-            firstPassResult.entitiesDrawn += entitiesCount
         }
     }
 

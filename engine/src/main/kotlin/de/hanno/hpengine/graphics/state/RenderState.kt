@@ -2,9 +2,6 @@ package de.hanno.hpengine.graphics.state
 
 import de.hanno.hpengine.graphics.GpuCommandSync
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 
 context(GpuContext)
 class RenderState(
@@ -14,7 +11,6 @@ class RenderState(
     val customState = CustomStates()
 
     var cycle: Long = 0
-    val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
     var time = System.currentTimeMillis()
     var deltaSeconds: Float = 0.1f
     override var gpuCommandSync: GpuCommandSync = createCommandSync()

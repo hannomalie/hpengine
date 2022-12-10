@@ -6,7 +6,6 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.Capability
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.graphics.shader.IProgram
@@ -16,7 +15,6 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.createView
 import de.hanno.hpengine.graphics.vertexbuffer.draw
@@ -44,7 +42,7 @@ open class SimpleTextureRenderer(
 
     open var finalImage = texture.id
 
-    override fun render(result: DrawResult, renderState: RenderState) {
+    override fun render(renderState: RenderState) {
         drawToQuad(texture = finalImage)
     }
 

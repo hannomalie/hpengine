@@ -8,7 +8,6 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimension
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimensionHalf
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.extent
@@ -275,7 +274,7 @@ class EvaluateProbeRenderExtension(
 
     }
 
-    override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+    override fun renderSecondPassFullScreen(renderState: RenderState) {
 
         val deferredRenderingBuffer = deferredRenderingBuffer
         deferredRenderingBuffer.lightAccumulationBuffer.use(false)

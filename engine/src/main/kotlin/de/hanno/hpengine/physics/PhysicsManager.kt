@@ -28,7 +28,6 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.addLine
 import de.hanno.hpengine.graphics.renderer.drawLines
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
@@ -177,7 +176,7 @@ class PhysicsManager(
         dynamicsWorld!!.debugDrawWorld()
     }
 
-    override fun render(result: DrawResult, renderState: RenderState) {
+    override fun render(renderState: RenderState) {
         if (config.debug.isDrawLines) {
             val camera = renderState[primaryCameraStateHolder.camera]
             debugDrawWorld()

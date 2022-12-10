@@ -14,7 +14,6 @@ import de.hanno.hpengine.config.ConfigImpl
 import de.hanno.hpengine.extension.SharedDepthBuffer
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
@@ -141,7 +140,7 @@ class ImGuiEditor(
         }
     }
 
-    override fun renderEditor(result: DrawResult, renderState: RenderState) {
+    override fun renderEditor(renderState: RenderState) {
         if (!config.debug.isEditorOverlay) return
 
         val screenWidth = ImGui.getIO().displaySizeX

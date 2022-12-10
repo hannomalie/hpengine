@@ -8,7 +8,6 @@ import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.PostProcessingExtension
@@ -113,11 +112,11 @@ class ExtensibleDeferredRenderer(
         extensions.forEach { it.extract(renderState, world) }
     }
 
-    override fun render(result: DrawResult, renderState: RenderState): Unit = profiled("DeferredRendering") {
-        actualRender(renderState, result)
+    override fun render(renderState: RenderState): Unit = profiled("DeferredRendering") {
+        actualRender(renderState)
     }
 
-    private fun actualRender(renderState: RenderState, result: DrawResult) {
+    private fun actualRender(renderState: RenderState) {
 
         for (extension in extensions) {
             profiled(extension.javaClass.simpleName) {
@@ -162,7 +161,7 @@ class ExtensibleDeferredRenderer(
                     deferredRenderingBuffer.halfScreenBuffer.use(true)
                 }
                 for (extension in extensions) {
-                    extension.renderSecondPassHalfScreen(renderState, result.secondPassResult)
+                    extension.renderSecondPassHalfScreen(renderState)
                 }
             }
 
@@ -172,7 +171,7 @@ class ExtensibleDeferredRenderer(
                 }
                 for (extension in extensions) {
                     profiled(extension.javaClass.simpleName) {
-                        extension.renderSecondPassFullScreen(renderState, result.secondPassResult)
+                        extension.renderSecondPassFullScreen(renderState)
                     }
                 }
             }
@@ -188,7 +187,7 @@ class ExtensibleDeferredRenderer(
                 // it is written to the final texture somehow
                 profiled("PostProcessing") {
                     throw IllegalStateException("Render me to final map")
-                    postProcessingExtension.renderSecondPassFullScreen(renderState, result.secondPassResult)
+                    postProcessingExtension.renderSecondPassFullScreen(renderState)
                 }
             } else {
     //                textureRenderer.drawToQuad(deferredRenderingBuffer.finalBuffer, deferredRenderingBuffer.lightAccumulationMapOneId)
@@ -198,8 +197,8 @@ class ExtensibleDeferredRenderer(
         }
     }
 
-    override fun renderEditor(result: DrawResult, renderState: RenderState) {
-        extensions.forEach { it.renderEditor(renderState, result) }
+    override fun renderEditor(renderState: RenderState) {
+        extensions.forEach { it.renderEditor(renderState) }
     }
 
 }

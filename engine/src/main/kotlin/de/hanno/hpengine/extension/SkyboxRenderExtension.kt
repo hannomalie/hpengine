@@ -9,7 +9,6 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
@@ -48,7 +47,7 @@ class SkyboxRenderExtension(
 //        renderState[skyBoxTexture].value = it.id
     }
 
-    override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+    override fun renderSecondPassFullScreen(renderState: RenderState) {
         bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
         bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
         bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)

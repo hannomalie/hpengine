@@ -128,9 +128,6 @@ class DirectionalLightShadowMapExtension(
                 verticesCount += batch.vertexCount
                 entitiesCount += 1
             }
-
-            renderState.latestDrawResult.firstPassResult.verticesDrawn += verticesCount
-            renderState.latestDrawResult.firstPassResult.entitiesDrawn += entitiesCount
         }
 
         private fun EntitiesState.getRenderBatches(uniforms: DirectionalShadowUniforms) = when (uniforms) {

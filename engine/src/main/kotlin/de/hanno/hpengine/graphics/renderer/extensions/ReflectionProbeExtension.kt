@@ -40,7 +40,6 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.ressources.StringBasedCodeSource
-import org.apache.xalan.xsltc.runtime.output.TransletOutputHandlerFactory
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
@@ -208,7 +207,7 @@ class ReflectionProbeRenderExtension(
     }
 
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
-    override fun renderEditor(renderState: RenderState, result: DrawResult) {
+    override fun renderEditor(renderState: RenderState) {
 
         if (config.debug.isEditorOverlay) {
             val linePoints = (0 until renderState[reflectionProbeRenderState].probeCount).flatMap {
@@ -266,7 +265,7 @@ class ReflectionProbeRenderExtension(
         }
     }
 
-    override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+    override fun renderSecondPassFullScreen(renderState: RenderState) {
 
         val currentReflectionProbeRenderState = renderState[reflectionProbeRenderState]
         val directionalLightState = renderState[directionalLightStateHolder.lightState]

@@ -18,7 +18,6 @@ import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.input.Input
@@ -166,7 +165,7 @@ val textureRendererModule = module {
                 override val sharedRenderTarget = renderTarget
                 override val requiresClearSharedRenderTarget = true
 
-                override fun render(result: DrawResult, renderState: RenderState) {
+                override fun render(renderState: RenderState) {
                     gpuContext.clearColor(1f, 0f, 0f, 1f)
                     drawToQuad(texture = texture)
                 }

@@ -11,7 +11,6 @@ import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.Capability
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
@@ -39,7 +38,7 @@ class AOScatteringExtension(
         config.engineDir.resolve("shaders/scattering_ao_fragment.glsl").toCodeSource(), Uniforms.Empty, Defines()
     )
 
-    override fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+    override fun renderSecondPassHalfScreen(renderState: RenderState) {
         profiled("Scattering and AO") {
             if (!config.quality.isUseAmbientOcclusion && !config.effects.isScattering) {
                 return

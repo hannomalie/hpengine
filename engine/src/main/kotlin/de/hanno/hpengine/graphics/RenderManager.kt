@@ -6,7 +6,6 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
@@ -87,21 +86,19 @@ class RenderManager(
                         }
 
                         profiled("Frame") {
-                            val drawResult = currentReadState.latestDrawResult.apply { reset() }
-
                             profiled("renderSystems") {
                                 renderSystems.groupBy { it.sharedRenderTarget }
                                     .forEach { (renderTarget, renderSystems) ->
                                         val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
                                         renderTarget?.use(clear)
                                         renderSystems.forEach { renderSystem ->
-                                            renderSystem.render(drawResult, currentReadState)
+                                            renderSystem.render(currentReadState)
                                         }
                                     }
 
                                 if (config.debug.isEditorOverlay) {
                                     renderSystems.forEach {
-                                        it.renderEditor(drawResult, currentReadState)
+                                        it.renderEditor(currentReadState)
                                     }
                                 }
                             }

@@ -169,9 +169,6 @@ open class DirectFirstPassPipeline(
         }
 
         depthMask = true // TODO: Resetting defaults here should not be necessary
-
-        renderState.latestDrawResult.firstPassResult.verticesDrawn += verticesCount
-        renderState.latestDrawResult.firstPassResult.entitiesDrawn += entitiesCount
     }
 }
 

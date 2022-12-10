@@ -12,7 +12,6 @@ import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -56,7 +55,7 @@ class PointLightSystem(
 
     private var shadowMapsRenderedInCycle: Long = -1
 
-    override fun render(result: DrawResult, renderState: RenderState) {
+    override fun render(renderState: RenderState) {
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         val needsRerender = renderState[lightState].pointLightMovedInCycle > shadowMapsRenderedInCycle ||
                 entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||

@@ -16,7 +16,6 @@ import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
@@ -26,7 +25,6 @@ import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import kotlin.math.ln
@@ -198,7 +196,7 @@ class OceanWaterRenderSystem(
     }
 
     private var seconds = 0.0f
-    override fun render(result: DrawResult, renderState: RenderState) {
+    override fun render(renderState: RenderState) {
         val components = listOf<OceanWaterComponent>()
         if(components.isEmpty()) return
         val oceanWaterComponent = components.first()

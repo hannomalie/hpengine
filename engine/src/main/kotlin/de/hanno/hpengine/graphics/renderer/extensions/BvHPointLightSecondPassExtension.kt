@@ -14,8 +14,6 @@ import de.hanno.hpengine.graphics.renderer.addLine
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
@@ -233,7 +231,7 @@ class BvHPointLightSecondPassExtension(
         putToBufferHelper()
     }
 
-    override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+    override fun renderSecondPassFullScreen(renderState: RenderState) {
         val pointLightState = renderState[pointLightStateHolder.lightState]
         if (pointLightState.pointLights.isEmpty()) {
             return
@@ -298,7 +296,7 @@ class BvHPointLightSecondPassExtension(
         }
     }
 
-    override fun renderEditor(renderState: RenderState, result: DrawResult) {
+    override fun renderEditor(renderState: RenderState) {
         if (config.debug.drawBvhInnerNodes) {
 
             val linePoints = mutableListOf<Vector3fc>().apply {

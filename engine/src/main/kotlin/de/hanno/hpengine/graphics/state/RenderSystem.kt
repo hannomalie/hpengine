@@ -9,8 +9,8 @@ interface RenderSystem: Updatable {
     val sharedRenderTarget: BackBufferRenderTarget<*>? get() = null
     val requiresClearSharedRenderTarget: Boolean get() = false
     var artemisWorld: World
-    fun render(result: DrawResult, renderState: RenderState) { }
-    fun renderEditor(result: DrawResult, renderState: RenderState) { }
+    fun render(renderState: RenderState) { }
+    fun renderEditor(renderState: RenderState) { }
     fun afterFrameFinished() { }
     fun extract(renderState: RenderState, world: World) { }
 }

@@ -3,7 +3,6 @@ package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 import Vector4fStruktImpl.Companion.type
 import VoxelGridImpl.Companion.type
 import com.artemis.World
-import de.hanno.hpengine.artemis.GiVolumeComponent
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -31,7 +30,6 @@ import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.extension.GiVolumeStateHolder
 import de.hanno.hpengine.extension.SkyBoxStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
@@ -345,7 +343,7 @@ class VoxelConeTracingExtension(
         }
     }
 
-    override fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+    override fun renderSecondPassHalfScreen(renderState: RenderState) {
         depthTest = false
         val voxelGrids = renderState[this.voxelGrids]
         profiled("VCT second pass") {
@@ -426,7 +424,7 @@ class VoxelConeTracingExtension(
 //        }
     }
 
-    override fun renderEditor(renderState: RenderState, result: DrawResult) {
+    override fun renderEditor(renderState: RenderState) {
         val grids = renderState[voxelGrids]
 
 //             TODO: Reimplement
