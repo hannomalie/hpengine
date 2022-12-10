@@ -31,8 +31,6 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
 
     var time = System.currentTimeMillis()
 
-    var skyBoxMaterialIndex = -1
-
     var camera = Camera(Transform(), 1280f/720f)
     var pointLightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0

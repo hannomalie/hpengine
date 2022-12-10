@@ -41,6 +41,7 @@ import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.*
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.EnvironmentProbesState
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureManager
@@ -252,13 +253,20 @@ val baseModule = module {
             }
         }
     }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                SkyBoxStateHolder()
+            }
+        }
+    }
 }
 
 fun Module.addGIModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get())
+                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get(), get())
             }
         }
     }
@@ -378,6 +386,12 @@ class SkyBoxSystem : BaseEntitySystem(), WorldPopulator {
     override fun World.populate() {
         addSkyBox(config)
     }
+}
+
+context(GpuContext, RenderStateContext)
+class SkyBoxStateHolder {
+    // TODO: Actually write this
+    val skyBoxMaterialIndex = renderState.registerState { -1 }
 }
 
 fun World.addSkyBox(config: Config) {

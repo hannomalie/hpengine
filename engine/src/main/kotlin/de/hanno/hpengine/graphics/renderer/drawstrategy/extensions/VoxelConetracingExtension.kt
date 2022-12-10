@@ -27,6 +27,7 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.extension.SkyBoxStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
@@ -77,6 +78,7 @@ class VoxelConeTracingExtension(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val skyBoxStateHolder: SkyBoxStateHolder,
 ) : DeferredRenderExtension {
 
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
@@ -374,7 +376,7 @@ class VoxelConeTracingExtension(
                     voxelConeTraceProgram.setUniform("useAmbientOcclusion", config.quality.isUseAmbientOcclusion)
                     voxelConeTraceProgram.setUniform("screenWidth", config.width.toFloat() / 2f)
                     voxelConeTraceProgram.setUniform("screenHeight", config.height.toFloat() / 2f)
-                    voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", renderState.skyBoxMaterialIndex)
+                    voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", renderState[skyBoxStateHolder.skyBoxMaterialIndex])
                     voxelConeTraceProgram.setUniform("debugVoxels", config.debug.isDebugVoxels)
                     fullscreenBuffer.draw()
                     //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;
