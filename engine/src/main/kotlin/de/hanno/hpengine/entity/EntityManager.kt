@@ -2,11 +2,14 @@ package de.hanno.hpengine.entity
 
 import com.artemis.BaseEntitySystem
 import com.artemis.annotations.All
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor
 
 @All
-class CycleSystem: BaseEntitySystem(), Extractor {
+class CycleSystem(
+    private val entitiesStateHolder: EntitiesStateHolder,
+): BaseEntitySystem(), Extractor {
     var cycle = 0L
     override fun processSystem() {
         cycle += 1
@@ -24,9 +27,10 @@ class CycleSystem: BaseEntitySystem(), Extractor {
         componentAddedInCycle = cycle
     }
     override fun extract(currentWriteState: RenderState) {
-        currentWriteState.entitiesState.entityMovedInCycle = entityMovedInCycle
-        currentWriteState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
-        currentWriteState.entitiesState.entityAddedInCycle = entityAddedInCycle
-        currentWriteState.entitiesState.componentAddedInCycle = componentAddedInCycle
+        val entitiesState = currentWriteState[entitiesStateHolder.entitiesState]
+        entitiesState.entityMovedInCycle = entityMovedInCycle
+        entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
+        entitiesState.entityAddedInCycle = entityAddedInCycle
+        entitiesState.componentAddedInCycle = componentAddedInCycle
     }
 }

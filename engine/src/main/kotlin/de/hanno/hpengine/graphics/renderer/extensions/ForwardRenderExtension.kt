@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
@@ -32,6 +33,7 @@ class ForwardRenderExtension(
     private val programManager: ProgramManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ): DeferredRenderExtension {
     override val renderPriority = 2000
 
@@ -59,20 +61,22 @@ class ForwardRenderExtension(
         glBlendFunci(0, GL_ONE, GL_ONE)
         glBlendFuncSeparatei(1, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
 
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
+
         programStatic.useAndBind { uniforms ->
-            uniforms.vertices = renderState.entitiesState.vertexIndexBufferStatic.vertexStructArray
-            uniforms.materials = renderState.materialBuffer
-            uniforms.entities = renderState.entitiesBuffer
+            uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
+            uniforms.materials = entitiesState.materialBuffer
+            uniforms.entities = entitiesState.entitiesBuffer
             programStatic.bindShaderStorageBuffer(2, renderState[directionalLightStateHolder.lightState])
             uniforms.viewMatrix.safePut(renderState.camera.viewMatrixAsBuffer)
             uniforms.projectionMatrix.safePut(renderState.camera.projectionMatrixAsBuffer)
             uniforms.viewProjectionMatrix.safePut(renderState.camera.viewProjectionMatrixAsBuffer)
         }
 
-        renderState.vertexIndexBufferStatic.indexBuffer.bind()
-        for (batch in renderState.renderBatchesStatic.filter { it.material.transparencyType.needsForwardRendering }) {
+        entitiesState.vertexIndexBufferStatic.indexBuffer.bind()
+        for (batch in entitiesState.renderBatchesStatic.filter { it.material.transparencyType.needsForwardRendering }) {
             programStatic.setTextureUniforms(batch.material.maps)
-            renderState.vertexIndexBufferStatic.indexBuffer.draw(
+            entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
                 primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Faces
             )

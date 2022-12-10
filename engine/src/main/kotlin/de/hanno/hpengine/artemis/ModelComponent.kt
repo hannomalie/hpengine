@@ -41,8 +41,10 @@ import de.hanno.hpengine.transform.SimpleSpatial
 import de.hanno.hpengine.transform.StaticTransformSpatial
 import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
+import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.vertexbuffer.appendIndices
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
@@ -76,11 +78,12 @@ context(GpuContext)
 //    InstanceComponent::class,
 )
 class ModelSystem(
-    val config: Config,
-    val textureManager: OpenGLTextureManager,
-    val materialManager: MaterialManager,
-    val programManager: ProgramManager,
-    val entityBuffer: EntityBuffer,
+    private val config: Config,
+    private val textureManager: OpenGLTextureManager,
+    private val materialManager: MaterialManager,
+    private val programManager: ProgramManager,
+    private val entityBuffer: EntityBuffer,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) : BaseEntitySystem(), Extractor, LinkListener {
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
@@ -403,13 +406,13 @@ class ModelSystem(
 
     override fun extract(currentWriteState: RenderState) {
         cacheEntityIndices() // TODO: Don't do this here, on insert/remove should be sufficient
-        currentWriteState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
-        currentWriteState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
+        currentWriteState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic = vertexIndexBufferStatic
+        currentWriteState[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated = vertexIndexBufferAnimated
 
-        currentWriteState.entitiesState.jointsBuffer.ensureCapacityInBytes(gpuJointsArray.byteBuffer.capacity())
-        currentWriteState.entitiesState.entitiesBuffer.ensureCapacityInBytes(gpuEntitiesArray.byteBuffer.capacity())
-        gpuJointsArray.byteBuffer.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
-        gpuEntitiesArray.byteBuffer.copyTo(currentWriteState.entitiesBuffer.buffer)
+        currentWriteState[entitiesStateHolder.entitiesState].jointsBuffer.ensureCapacityInBytes(gpuJointsArray.byteBuffer.capacity())
+        currentWriteState[entitiesStateHolder.entitiesState].entitiesBuffer.ensureCapacityInBytes(gpuEntitiesArray.byteBuffer.capacity())
+        gpuJointsArray.byteBuffer.copyTo(currentWriteState[entitiesStateHolder.entitiesState].jointsBuffer.buffer)
+        gpuEntitiesArray.byteBuffer.copyTo(currentWriteState[entitiesStateHolder.entitiesState].entitiesBuffer.buffer)
 
         extract(
             currentWriteState.camera, currentWriteState, currentWriteState.camera.getPosition(),
@@ -423,8 +426,8 @@ class ModelSystem(
         entityIndices: MutableMap<Int, Int>
     ) {
 
-        currentWriteState.entitiesState.renderBatchesStatic.clear()
-        currentWriteState.entitiesState.renderBatchesAnimated.clear()
+        currentWriteState[entitiesStateHolder.entitiesState].renderBatchesStatic.clear()
+        currentWriteState[entitiesStateHolder.entitiesState].renderBatchesAnimated.clear()
 
         var batchIndex = 0
         forEachEntity { parentEntityId ->
@@ -464,7 +467,7 @@ class ModelSystem(
                     val meshBufferIndex = entityIndexOf + meshIndex //* entity.instanceCount
 
                     val batch =
-                        (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, entityIndexOf, -1)) { (_, _) -> RenderBatch() }
+                        (currentWriteState[entitiesStateHolder.entitiesState].cash).computeIfAbsent(BatchKey(mesh, entityIndexOf, -1)) { (_, _) -> RenderBatch() }
                     with(batch) {
                         entityBufferIndex = meshBufferIndex
                         this.movedInCycle = currentWriteState.cycle// entity.movedInCycle TODO: reimplement
@@ -494,9 +497,9 @@ class ModelSystem(
                     }
 
                     if (batch.isStatic) {
-                        currentWriteState.addStatic(batch)
+                        currentWriteState[entitiesStateHolder.entitiesState].renderBatchesStatic.add(batch)
                     } else {
-                        currentWriteState.addAnimated(batch)
+                        currentWriteState[entitiesStateHolder.entitiesState].renderBatchesAnimated.add(batch)
                     }
                 }
             }
@@ -536,6 +539,13 @@ class ModelSystem(
     override fun onTargetChanged(sourceId: Int, targetId: Int, oldTargetId: Int) {
         instancesComponentMapper[oldTargetId].instances.remove(sourceId)
         onLinkEstablished(sourceId, targetId)
+    }
+}
+
+context(GpuContext, RenderStateContext)
+class EntitiesStateHolder {
+    val entitiesState = renderState.registerState {
+        EntitiesState()
     }
 }
 

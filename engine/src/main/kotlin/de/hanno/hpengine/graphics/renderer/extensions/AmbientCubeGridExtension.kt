@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
@@ -54,6 +55,7 @@ class ProbeRenderer(
     private val textureManager: OpenGLTextureManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
@@ -155,6 +157,7 @@ class ProbeRenderer(
             cubeMapRenderTarget.use(true)
 //            gpuContext.clearDepthAndColorBuffer()
             gpuContext.viewPort(0, 0, probeResolution, probeResolution)
+            val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
             for (probeIndex in probeStartIndex until (probeStartIndex + probesPerFrame)) {
                 gpuContext.clearDepthBuffer()
@@ -162,12 +165,12 @@ class ProbeRenderer(
                 val skyBox = textureManager.cubeMap
 
                 pointCubeShadowPassProgram.use()
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(2,
                     renderState[pointLightStateHolder.lightState].pointLightBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightCount",
                     renderState[pointLightStateHolder.lightState].pointLights.size)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", probePositions[probeIndex])
 //                pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
                 pointCubeShadowPassProgram.setUniform(
@@ -213,9 +216,9 @@ class ProbeRenderer(
                 }
 
                 profiled("Probe entity rendering") {
-                    for (batch in renderState.renderBatchesStatic) {
+                    for (batch in entitiesState.renderBatchesStatic) {
                         pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                        entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
                         )
                     }

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.extension
 
 import com.artemis.World
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -18,10 +19,11 @@ import org.lwjgl.opengl.GL42
 
 context(GpuContext, RenderStateContext)
 class SkyboxRenderExtension(
-    val config: Config,
-    val deferredRenderingBuffer: DeferredRenderingBuffer,
-    val programManager: ProgramManager,
-    val textureManager: OpenGLTextureManager
+    private val config: Config,
+    private val deferredRenderingBuffer: DeferredRenderingBuffer,
+    private val programManager: ProgramManager,
+    private val textureManager: OpenGLTextureManager,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) : DeferredRenderExtension {
 
     init {
@@ -81,7 +83,7 @@ class SkyboxRenderExtension(
             "projectionMatrix",
             renderState.camera.projectionMatrixAsBuffer
         )
-        secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
+        secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
         secondPassReflectionProgram.dispatchCompute(
             config.width / 16,
             config.height / 16,

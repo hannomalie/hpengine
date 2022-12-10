@@ -26,6 +26,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -140,6 +141,7 @@ class BvHPointLightSecondPassExtension(
     private val programManager: ProgramManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val pointLightStateHolder: PointLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) : DeferredRenderExtension {
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
@@ -233,6 +235,7 @@ class BvHPointLightSecondPassExtension(
         if (renderState[pointLightStateHolder.lightState].pointLights.isEmpty()) {
             return
         }
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
         // TODO: Move this to update
         if (bvhReconstructedInCycle < renderState.pointLightMovedInCycle) {
 //             TODO: Reimplement this
@@ -282,7 +285,7 @@ class BvHPointLightSecondPassExtension(
                 "maxPointLightShadowmaps",
                 PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
             )
-            secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
+            secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2,
                 renderState[pointLightStateHolder.lightState].pointLightBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(3, bvh)

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.pipelines
 
 
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -21,6 +22,8 @@ context(GpuContext)
 open class DirectFirstPassPipeline(
     private val config: Config,
     private val program: IProgram<out FirstPassUniforms>,
+    private val entitiesStateHolder: EntitiesStateHolder,
+    // TODO: Use shouldBeSkipped
     protected val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
     }
@@ -37,10 +40,10 @@ open class DirectFirstPassPipeline(
         renderBatches = renderState.extractRenderBatches()
     }
 
-    open fun RenderState.extractRenderBatches(): List<RenderBatch> = renderBatchesStatic.filterNot {
+    open fun RenderState.extractRenderBatches(): List<RenderBatch> = this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot {
         it.shouldBeSkipped(camera)
     }
-    open fun RenderState.selectVertexIndexBuffer() = vertexIndexBufferStatic
+    open fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
 
     fun draw(renderState: RenderState) = profiled("Actual draw entities") {
 
@@ -49,6 +52,7 @@ open class DirectFirstPassPipeline(
 
         vertexIndexBuffer.indexBuffer.bind()
 
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
         val batchesWithOwnProgram: Map<Material, List<RenderBatch>> =
             renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
         for (groupedBatches in batchesWithOwnProgram) {
@@ -64,15 +68,15 @@ open class DirectFirstPassPipeline(
                 val viewProjectionMatrixAsBuffer = renderState.camera.viewProjectionMatrixAsBuffer
                 program.useAndBind { uniforms ->
                     uniforms.apply {
-                        materials = renderState.materialBuffer
-                        entities = renderState.entitiesBuffer
+                        materials = entitiesState.materialBuffer
+                        entities = entitiesState.entitiesBuffer
                         program.uniforms.indirect = false
                         when (val uniforms = program.uniforms) {
                             is StaticFirstPassUniforms -> uniforms.vertices =
-                                renderState.vertexIndexBufferStatic.vertexStructArray
+                                entitiesState.vertexIndexBufferStatic.vertexStructArray
                             is AnimatedFirstPassUniforms -> {
-                                uniforms.joints = renderState.entitiesState.jointsBuffer
-                                uniforms.vertices = renderState.vertexIndexBufferAnimated.animatedVertexStructArray
+                                uniforms.joints = entitiesState.jointsBuffer
+                                uniforms.vertices = entitiesState.vertexIndexBufferAnimated.animatedVertexStructArray
                             }
                         }
                         useRainEffect = config.effects.rainEffect != 0.0f
@@ -112,14 +116,14 @@ open class DirectFirstPassPipeline(
         val viewProjectionMatrixAsBuffer = renderState.camera.viewProjectionMatrixAsBuffer
         program.useAndBind { uniforms: FirstPassUniforms ->
             uniforms.apply {
-                materials = renderState.materialBuffer
-                entities = renderState.entitiesBuffer
+                materials = entitiesState.materialBuffer
+                entities = entitiesState.entitiesBuffer
                 uniforms.indirect = false
                 when (val uniforms = uniforms) {
-                    is StaticFirstPassUniforms -> uniforms.vertices = renderState.vertexIndexBufferStatic.vertexStructArray
+                    is StaticFirstPassUniforms -> uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
                     is AnimatedFirstPassUniforms -> {
-                        uniforms.joints = renderState.entitiesState.jointsBuffer
-                        uniforms.vertices = renderState.vertexIndexBufferAnimated.animatedVertexStructArray
+                        uniforms.joints = entitiesState.jointsBuffer
+                        uniforms.vertices = entitiesState.vertexIndexBufferAnimated.animatedVertexStructArray
                     }
                 }
                 useRainEffect = config.effects.rainEffect != 0.0f

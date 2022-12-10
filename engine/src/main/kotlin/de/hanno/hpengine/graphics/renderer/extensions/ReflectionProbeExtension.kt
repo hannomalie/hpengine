@@ -5,6 +5,7 @@ import Vector4fStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.World
 import com.artemis.annotations.All
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.config.Config
@@ -80,6 +81,7 @@ class ReflectionProbeRenderExtension(
     private val programManager: ProgramManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) : DeferredRenderExtension {
     override val renderPriority = 3000
 
@@ -230,7 +232,8 @@ class ReflectionProbeRenderExtension(
     override fun renderFirstPass(
         renderState: RenderState
     ) {
-        val entityAdded = renderState.entitiesState.entityAddedInCycle > renderedInCycle
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
+        val entityAdded = entitiesState.entityAddedInCycle > renderedInCycle
         val reRender = renderState[reflectionProbeRenderState].reRenderProbesInCycle > renderedInCycle
         val needsRerender = reRender || entityAdded
         if (needsRerender) {
@@ -285,6 +288,8 @@ class ReflectionProbeRenderExtension(
         if (currentReflectionProbeRenderState.probeCount == 0) return
 
         val directionalLightState = renderState[directionalLightStateHolder.lightState]
+        val pointLightState = renderState[pointLightStateHolder.lightState]
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
         profiled("ReflectionProbes") {
 
@@ -302,12 +307,10 @@ class ReflectionProbeRenderExtension(
                 val skyBox = textureManager.cubeMap
 
                 pointCubeShadowPassProgram.use()
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(2,
-                    renderState[pointLightStateHolder.lightState].pointLightBuffer)
-                pointCubeShadowPassProgram.setUniform("pointLightCount",
-                    renderState[pointLightStateHolder.lightState].pointLights.size)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(2, pointLightState.pointLightBuffer)
+                pointCubeShadowPassProgram.setUniform("pointLightCount", pointLightState.pointLights.size)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
                 pointCubeShadowPassProgram.setUniform(
                     "pointLightPositionWorld",
                     currentReflectionProbeRenderState.probePositions[probeIndex]
@@ -348,9 +351,9 @@ class ReflectionProbeRenderExtension(
                 }
 
                 profiled("ReflectionProbe entity rendering") {
-                    for (batch in renderState.renderBatchesStatic) {
+                    for (batch in entitiesState.renderBatchesStatic) {
                         pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                        entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch
                                 .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
                         )

@@ -38,6 +38,7 @@ import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
@@ -63,6 +64,7 @@ class AreaLightSystem(
     programManager: ProgramManager,
     config: Config,
     private val pointLightStateHolder: PointLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
     private var gpuAreaLightArray =
@@ -138,6 +140,7 @@ class AreaLightSystem(
             gpuContext.enable(Capability.DEPTH_TEST)
             gpuContext.disable(Capability.CULL_FACE)
             mapRenderTarget.use(true)
+            val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
             for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
 
@@ -148,7 +151,7 @@ class AreaLightSystem(
                 val light = areaLights[i]
 
                 areaShadowPassProgram.useAndBind { uniforms ->
-                    uniforms.entitiesBuffer = renderState.entitiesBuffer
+                    uniforms.entitiesBuffer = entitiesState.entitiesBuffer
                     // TODO: Move buffer creation somewhere else or eliminate
                     val buffer = BufferUtils.createFloatBuffer(16)
                     light.transform.transform.invert(Matrix4f()).get(buffer)
@@ -157,8 +160,8 @@ class AreaLightSystem(
                     uniforms.projectionMatrix.safePut(buffer)
                 }
 
-                for (e in renderState.renderBatchesStatic) {
-                    renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                for (e in entitiesState.renderBatchesStatic) {
+                    entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                         e.drawElementsIndirectCommand,
                         true,
                         PrimitiveType.Triangles,

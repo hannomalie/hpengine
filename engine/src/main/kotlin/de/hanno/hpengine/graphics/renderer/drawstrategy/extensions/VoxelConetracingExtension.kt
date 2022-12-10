@@ -26,6 +26,7 @@ import de.hanno.hpengine.graphics.texture.OpenGLTexture3D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
@@ -75,6 +76,7 @@ class VoxelConeTracingExtension(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) : DeferredRenderExtension {
 
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
@@ -123,8 +125,8 @@ class VoxelConeTracingExtension(
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val staticPipeline = DirectFirstPassPipeline(config, voxelizerStatic)
-    private val animatedPipeline = DirectFirstPassPipeline(config, voxelizerAnimated)
+    private val staticPipeline = DirectFirstPassPipeline(config, voxelizerStatic, entitiesStateHolder)
+    private val animatedPipeline = DirectFirstPassPipeline(config, voxelizerAnimated, entitiesStateHolder)
     private val firstPassResult = FirstPassResult()
     private val useIndirectDrawing = false
 
@@ -142,9 +144,9 @@ class VoxelConeTracingExtension(
         val bounces = 1
 
         val entitiesToVoxelize = if(!sceneInitiallyDrawn || config.debug.isForceRevoxelization) {
-            renderState.renderBatchesStatic
+            renderState[entitiesStateHolder.entitiesState].renderBatchesStatic
         } else {
-            renderState.renderBatchesStatic.filter { batch ->
+            renderState[entitiesStateHolder.entitiesState].renderBatchesStatic.filter { batch ->
                 val entityVoxelizationCycle = entityVoxelizedInCycle[batch.entityName]
                 val voxelizeBecauseItIsDynamic = voxelizeDynamicEntites && batch.update == Update.DYNAMIC
                 val preventVoxelization = !batch.contributesToGi || if(voxelizeDynamicEntites) false else batch.update == Update.DYNAMIC
@@ -210,10 +212,10 @@ class VoxelConeTracingExtension(
 
                 voxelizerStatic.setUniform("voxelGridIndex", voxelGridIndex)
                 voxelizerStatic.setUniform("voxelGridCount", voxelGrids.typedBuffer.size)
-                voxelizerStatic.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
-                voxelizerStatic.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+                voxelizerStatic.bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
+                voxelizerStatic.bindShaderStorageBuffer(3, renderState[entitiesStateHolder.entitiesState].entitiesBuffer)
                 voxelizerStatic.bindShaderStorageBuffer(5, voxelGrids)
-                voxelizerStatic.bindShaderStorageBuffer(7, renderState.vertexIndexBufferStatic.vertexStructArray)
+                voxelizerStatic.bindShaderStorageBuffer(7, renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.vertexStructArray)
 
                 voxelizerStatic.setUniform("writeVoxels", true)
                 depthMask = false
@@ -222,10 +224,10 @@ class VoxelConeTracingExtension(
                 disable(CULL_FACE)
                 GL11.glColorMask(false, false, false, false)
 
-                renderState.vertexIndexBufferStatic.indexBuffer.bind()
+                renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.bind()
                 for (entity in batches) {
                     voxelizerStatic.setTextureUniforms(entity.material.maps)
-                    renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                    renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.draw(
                         entity.drawElementsIndirectCommand,
                         bindIndexBuffer = false,
                         primitiveType = PrimitiveType.Triangles,
@@ -269,10 +271,10 @@ class VoxelConeTracingExtension(
                             }
                             GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                             setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLights.size)
-                            bindShaderStorageBuffer(1, renderState.materialBuffer)
+                            bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
                             bindShaderStorageBuffer(2, renderState[pointLightStateHolder.lightState].pointLightBuffer)
                             bindShaderStorageBuffer(3, directionalLightState)
-                            bindShaderStorageBuffer(4, renderState.entitiesBuffer)
+                            bindShaderStorageBuffer(4, renderState[entitiesStateHolder.entitiesState].entitiesBuffer)
                             bindShaderStorageBuffer(5, voxelGrids)
                             bindShaderStorageBuffer(6, pointLightExtension.bvh)
                             setUniform("nodeCount", pointLightExtension.nodeCount)

@@ -65,7 +65,8 @@ val deferredRendererModule = module {
                     get(),
                     get(),
                     get(),
-                    getAll<DeferredRenderExtension>().distinct()
+                    getAll<DeferredRenderExtension>().distinct(),
+                    get(),
                 )
             }
         }
@@ -210,7 +211,7 @@ val baseModule = module {
 
     renderExtension {
         get<GpuContext>().run {
-            ForwardRenderExtension(get(), get(), get(), get())
+            ForwardRenderExtension(get(), get(), get(), get(), get())
         }
     }
     renderExtension { AOScatteringExtension(get(), get(), get(), get(), get(), get(), get()) }
@@ -236,13 +237,20 @@ val baseModule = module {
             }
         }
     }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                EntitiesStateHolder()
+            }
+        }
+    }
 }
 
 fun Module.addGIModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get())
+                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get())
             }
         }
     }
@@ -251,7 +259,7 @@ fun Module.addGIModule() {
 fun Module.addPointLightModule() {
     renderExtension {
         get<GpuContext>().run {
-            BvHPointLightSecondPassExtension(get(), get(), get(), get(), get(), get())
+            BvHPointLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get())
         }
     }
 }
@@ -260,7 +268,7 @@ fun Module.addDirectionalLightModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                DirectionalLightShadowMapExtension(get(), get(), get(), get())
+                DirectionalLightShadowMapExtension(get(), get(), get(), get(), get())
             }
         }
     }
@@ -279,7 +287,7 @@ fun Module.addReflectionProbeModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get())
+                ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get(), get())
             }
         }
     }
@@ -299,7 +307,7 @@ fun Module.addSkyboxModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                SkyboxRenderExtension(get(), get(), get(), get())
+                SkyboxRenderExtension(get(), get(), get(), get(), get())
             }
         }
     }

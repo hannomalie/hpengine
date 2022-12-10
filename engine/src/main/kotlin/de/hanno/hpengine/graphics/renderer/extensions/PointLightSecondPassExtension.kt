@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
 
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
@@ -22,6 +23,7 @@ class PointLightSecondPassExtension(
     private val config: Config,
     programManager: ProgramManager,
     private val pointLightStateHolder: PointLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) : DeferredRenderExtension {
 
     private val secondPassPointComputeProgram =
@@ -31,6 +33,7 @@ class PointLightSecondPassExtension(
         if (renderState[pointLightStateHolder.lightState].pointLights.isEmpty()) {
             return
         }
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
         profiled("Seconds pass PointLights") {
 
             val viewMatrix = renderState.camera.viewMatrixAsBuffer
@@ -64,7 +67,7 @@ class PointLightSecondPassExtension(
                 "maxPointLightShadowmaps",
                 PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
             )
-            secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
+            secondPassPointComputeProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
             secondPassPointComputeProgram.bindShaderStorageBuffer(2,
                 renderState[pointLightStateHolder.lightState].pointLightBuffer)
             secondPassPointComputeProgram.dispatchCompute(

@@ -18,6 +18,7 @@ import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
@@ -47,6 +48,7 @@ class EnvironmentSampler(
     textureManager: OpenGLTextureManager,
     cubeMapArrayRenderTarget: CubeMapArrayRenderTarget,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) {
     val cubeMapProgram = config.run {
         programManager.getProgram(
@@ -141,6 +143,7 @@ class EnvironmentSampler(
         viewMatrixAsBuffer: FloatBuffer, projectionMatrixAsBuffer: FloatBuffer,
         viewProjectionMatrixAsBuffer: FloatBuffer
     ) {
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
         program.use()
         bindShaderSpecificsPerCubeMapSide(
             renderState,
@@ -149,11 +152,11 @@ class EnvironmentSampler(
             viewProjectionMatrixAsBuffer,
             program
         )
-        for (e in renderState.renderBatchesStatic) {
+        for (e in entitiesState.renderBatchesStatic) {
             if (!isInFrustum(camera.frustum, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
 //				continue;
             }
-            renderState.vertexIndexBufferStatic.indexBuffer.draw(
+            entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                 e.drawElementsIndirectCommand,
                 true,
                 PrimitiveType.Triangles,

@@ -5,6 +5,7 @@ import MaterialStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.MaterialComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.state.RenderState
@@ -24,9 +25,10 @@ import de.hanno.hpengine.artemis.ModelComponent
     MaterialComponent::class,
 )
 class MaterialManager(
-    val config: Config,
-    val textureManager: OpenGLTextureManager,
-    val singleThreadContext: AddResourceContext
+    private val config: Config,
+    private val textureManager: OpenGLTextureManager,
+    private val singleThreadContext: AddResourceContext,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) : BaseEntitySystem(), Clearable, Extractor {
 
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
@@ -93,12 +95,12 @@ class MaterialManager(
 
     override fun extract(currentWriteState: RenderState) {
 //        TODO: Remove most of this
-        currentWriteState.entitiesState.materialBuffer.ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
-        currentWriteState.entitiesState.materialBuffer.buffer.rewind()
+        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
+        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.buffer.rewind()
         materialsBuffer = materialsBuffer.resize(sizeInBytes = materials.size * MaterialStrukt.sizeInBytes)
-        currentWriteState.entitiesState.materialBuffer.resize(materialsBuffer.size)
+        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.resize(materialsBuffer.size)
 
-        currentWriteState.entitiesState.materialBuffer.typedBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
+        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.typedBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
             val material = materials[index]
 
             it.run {
@@ -129,7 +131,7 @@ class MaterialManager(
                 }
             }
         }
-//        materialsBuffer.byteBuffer.copyTo(currentWriteState.entitiesState.materialBuffer.buffer, true)
+//        materialsBuffer.byteBuffer.copyTo(currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.buffer, true)
     }
 
 

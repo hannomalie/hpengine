@@ -31,8 +31,6 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
 
     var time = System.currentTimeMillis()
 
-    val entitiesState: EntitiesState = EntitiesState()
-
     val environmentProbesState = EnvironmentProbeState()
 
     var skyBoxMaterialIndex = -1
@@ -46,33 +44,9 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
     var cycle: Long = 0
     override var gpuCommandSync: GpuCommandSync = createCommandSync()
 
-    val renderBatchesStatic: List<RenderBatch>
-        get() = entitiesState.renderBatchesStatic
-    val renderBatchesAnimated: List<RenderBatch>
-        get() = entitiesState.renderBatchesAnimated
-
-    val vertexIndexBufferStatic: VertexIndexBuffer
-        get() = entitiesState.vertexIndexBufferStatic
-    val vertexIndexBufferAnimated: VertexIndexBuffer
-        get() = entitiesState.vertexIndexBufferAnimated
-
-    val entitiesBuffer: PersistentTypedBuffer<EntityStrukt>
-        get() = entitiesState.entitiesBuffer
-
-    val materialBuffer: PersistentTypedBuffer<MaterialStrukt>
-        get() = entitiesState.materialBuffer
-
     var deltaSeconds: Float = 0.1f
 
     val gpuHasFinishedUsingIt get() = gpuCommandSync.isSignaled
-
-    fun addStatic(batch: RenderBatch) {
-        entitiesState.renderBatchesStatic.add(batch)
-    }
-
-    fun addAnimated(batch: RenderBatch) {
-        entitiesState.renderBatchesAnimated.add(batch)
-    }
 
     fun add(state: Any) = customState.add(state)
 

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.light.probe
 
 import AmbientCubeImpl.Companion.sizeInBytes
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -51,6 +52,7 @@ class ProbeRenderStrategy(
     programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
@@ -115,6 +117,7 @@ class ProbeRenderStrategy(
             gpuContext.depthMask = true
             gpuContext.enable(Capability.DEPTH_TEST)
             gpuContext.enable(Capability.CULL_FACE)
+            val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
             var counter = 0
             while (counter < 1) {
@@ -134,8 +137,8 @@ class ProbeRenderStrategy(
                     Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).sub(Vector3f(dimensionHalf.toFloat())).mul(extent)
 
                 probeProgram.use()
-                probeProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
-                probeProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+                probeProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
+                probeProgram.bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
                 probeProgram.setUniform("probePositionWorld", probePosition)
                 val viewProjectionMatrices = getCubeViewProjectionMatricesForPosition(probePosition)
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
@@ -161,8 +164,8 @@ class ProbeRenderStrategy(
                 }
 
                 profiled("Probe entity rendering") {
-                    for (e in renderState.renderBatchesStatic) {
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(
+                    for (e in entitiesState.renderBatchesStatic) {
+                        entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             e.drawElementsIndirectCommand,
                             true,
                             PrimitiveType.Triangles,
@@ -244,6 +247,7 @@ class EvaluateProbeRenderExtension(
     private val config: Config,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ): DeferredRenderExtension {
 
     private val probeRenderStrategy = ProbeRenderStrategy(
@@ -251,7 +255,8 @@ class EvaluateProbeRenderExtension(
         gpuContext,
         programManager,
         textureManager,
-        directionalLightStateHolder
+        directionalLightStateHolder,
+        entitiesStateHolder,
     )
 
     val evaluateProbeProgram = programManager.getProgram(

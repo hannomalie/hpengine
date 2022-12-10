@@ -18,6 +18,7 @@ import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
@@ -31,6 +32,7 @@ class PointLightSystem(
     config: Config,
     programManager: ProgramManager,
     pointLightStateHolder: PointLightStateHolder,
+    private val entitiesStateHolder: EntitiesStateHolder,
 ): BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
     private var gpuPointLights = PersistentMappedBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
@@ -55,10 +57,11 @@ class PointLightSystem(
     private var shadowMapsRenderedInCycle: Long = -1
 
     override fun render(result: DrawResult, renderState: RenderState) {
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
         val needsRerender = renderState.pointLightMovedInCycle > shadowMapsRenderedInCycle ||
-                renderState.entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||
-                renderState.entitiesState.entityAddedInCycle > shadowMapsRenderedInCycle ||
-                renderState.entitiesState.componentAddedInCycle > shadowMapsRenderedInCycle
+                entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||
+                entitiesState.entityAddedInCycle > shadowMapsRenderedInCycle ||
+                entitiesState.componentAddedInCycle > shadowMapsRenderedInCycle
         if(needsRerender) {
             shadowMapStrategy.renderPointLightShadowMaps(renderState)
             shadowMapsRenderedInCycle = renderState.cycle

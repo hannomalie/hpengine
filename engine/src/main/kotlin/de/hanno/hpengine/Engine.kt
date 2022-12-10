@@ -80,9 +80,10 @@ class Engine(
         ModelSystem(
             config,
             koin.get(),
-            MaterialManager(config, koin.get(), koin.get()),
+            MaterialManager(config, koin.get(), koin.get(), koin.get()),
             koin.get(),
             EntityBuffer(),
+            koin.get(),
         )
     }
     val entityLinkManager = EntityLinkManager()
@@ -99,21 +100,21 @@ class Engine(
         ComponentExtractor(),
         SkyBoxSystem(),
         EditorCameraInputSystem(),
-        CycleSystem(),
+        CycleSystem(koin.get()),
         directionalLightSystem,
         gpuContext.run {
             koin.get<RenderStateContext>().run {
-                PointLightSystem(config, koin.get(), koin.get()).apply {
+                PointLightSystem(config, koin.get(), koin.get(), koin.get()).apply {
                     renderManager.renderSystems.add(this)
                 }
             }
         },
         gpuContext.run {
-            AreaLightSystem(gpuContext, koin.get(), config, koin.get()).apply {
+            AreaLightSystem(gpuContext, koin.get(), config, koin.get(), koin.get()).apply {
                 renderManager.renderSystems.add(this)
             }
         },
-        MaterialManager(config, koin.get(), koin.get()),
+        MaterialManager(config, koin.get(), koin.get(), koin.get()),
         openGlProgramManager,
         textureManager,
         TagManager(),
