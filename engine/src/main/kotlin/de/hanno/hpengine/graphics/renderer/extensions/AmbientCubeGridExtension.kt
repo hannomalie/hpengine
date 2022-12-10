@@ -37,6 +37,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
+import de.hanno.hpengine.scene.WorldAABBStateHolder
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
@@ -56,6 +57,7 @@ class ProbeRenderer(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val worldAABBStateHolder: WorldAABBStateHolder,
 ) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
@@ -140,9 +142,10 @@ class ProbeRenderer(
     )
 
     fun renderProbes(renderState: RenderState, probeStartIndex: Int, probesPerFrame: Int) {
-        if (sceneMin != renderState.sceneMin || sceneMax != renderState.sceneMax) {
-            sceneMin.set(renderState.sceneMin)
-            sceneMax.set(renderState.sceneMax)
+        val worldAABBState = renderState[worldAABBStateHolder.worldAABBState]
+        if (sceneMin != worldAABBState.sceneMin || sceneMax != worldAABBState.sceneMax) {
+            sceneMin.set(worldAABBState.sceneMin)
+            sceneMax.set(worldAABBState.sceneMax)
             initProbePositions()
         }
         probeAmbientCubeValues.buffer.copyTo(probeAmbientCubeValuesOld.buffer)

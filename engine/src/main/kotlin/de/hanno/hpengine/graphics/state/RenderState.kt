@@ -34,8 +34,6 @@ class RenderState(private val dummy: Unit = Unit) : IRenderState {
     var camera = Camera(Transform(), 1280f/720f)
     var pointLightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
-    var sceneMin = Vector3f()
-    var sceneMax = Vector3f()
 
     var cycle: Long = 0
     override var gpuCommandSync: GpuCommandSync = createCommandSync()

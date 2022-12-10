@@ -94,7 +94,7 @@ class Engine(
     }
     val systems = listOf(
         entityLinkManager,
-        WorldAABB(),
+        WorldAABB(koin.get()),
         renderManager,
         modelSystem,
         ComponentExtractor(),

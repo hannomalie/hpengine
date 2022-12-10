@@ -45,6 +45,7 @@ import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.EnvironmentProbesState
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.scene.WorldAABBStateHolder
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
@@ -257,6 +258,13 @@ val baseModule = module {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
                 SkyBoxStateHolder()
+            }
+        }
+    }
+    single {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                WorldAABBStateHolder()
             }
         }
     }
