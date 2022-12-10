@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.imgui.editor
 
+import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.ComponentManager
 import com.artemis.World
@@ -74,7 +75,7 @@ class ImGuiEditor(
     internal val editorExtensions: List<ImGuiEditorExtension>,
     internal val entityClickListener: EntityClickListener,
     internal val primaryCameraStateHolder: PrimaryCameraStateHolder,
-) : RenderSystem {
+) : BaseSystem(), RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     val formerFinalOutput = finalOutput.texture2D
 
@@ -117,7 +118,7 @@ class ImGuiEditor(
 
     val fillBag = Bag<Component>()
 
-    override lateinit var artemisWorld: World
+    lateinit var artemisWorld: World
 
     init {
         onGpu {
@@ -140,6 +141,7 @@ class ImGuiEditor(
         }
     }
 
+    override fun processSystem() { }
     override fun renderEditor(renderState: RenderState) {
         if (!config.debug.isEditorOverlay) return
 

@@ -44,7 +44,6 @@ class EnvironmentProbesStateHolder {
 //    renderStateManager: RenderStateManager,
 //    val gpuContext: GpuContext
 //) : SimpleComponentSystem<EnvironmentProbe>(EnvironmentProbe::class.java), RenderSystem {
-//    override lateinit var artemisWorld: World
 //    private val renderProbeCommandQueue = RenderProbeCommandQueue()
 //    val environmentMapsArray: CubeMapArray
 //    private val environmentMapsArray1: CubeMapArray

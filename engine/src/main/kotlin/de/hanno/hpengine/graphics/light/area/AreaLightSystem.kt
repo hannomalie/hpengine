@@ -67,7 +67,6 @@ class AreaLightSystem(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val areaLightStateHolder: AreaLightStateHolder,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
-    override lateinit var artemisWorld: World
     private var gpuAreaLightArray = TypedBuffer(
         BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes),
         AreaLightStrukt.type,

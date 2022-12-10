@@ -28,7 +28,6 @@ open class SimpleTextureRenderer(
     private val programManager: ProgramManager,
     private val frontBuffer: FrontBufferTarget,
 ) : RenderSystem {
-    override lateinit var artemisWorld: World
 
     private val renderToQuadProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/fullscreen_quad_vertex.glsl")),

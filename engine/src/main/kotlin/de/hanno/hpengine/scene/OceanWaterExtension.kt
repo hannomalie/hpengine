@@ -2,7 +2,6 @@ package de.hanno.hpengine.scene
 
 import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
-import com.artemis.World
 
 import de.hanno.hpengine.artemis.MaterialComponent
 import de.hanno.hpengine.artemis.OceanSurfaceComponent
@@ -40,7 +39,6 @@ class OceanWaterRenderSystem(
     private val textureManager: OpenGLTextureManager,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : RenderSystem {
-    override lateinit var artemisWorld: World
     private val N = 512
 
     private val dimension = TextureDimension2D(N, N)
@@ -177,7 +175,7 @@ class OceanWaterRenderSystem(
         textureManager.registerTextureForDebugOutput("[Ocean Water] ~hktdz", tildeHktDzMap)
         textureManager.registerTextureForDebugOutput("[Ocean Water] Twiddle Indices", twiddleIndicesMap)
     }
-    override fun extract(renderState: RenderState, world: World) {
+    override fun extract(renderState: RenderState) {
         // TODO: Implement extraction here
         val oceanWaterEntities = listOf<Triple<OceanWaterComponent, MaterialComponent, OceanSurfaceComponent>>()
         if(oceanWaterEntities.isNotEmpty()) {

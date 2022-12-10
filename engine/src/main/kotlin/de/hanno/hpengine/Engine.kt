@@ -34,6 +34,8 @@ import de.hanno.hpengine.transform.AABBData
 import de.hanno.hpengine.extension.*
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
+import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
@@ -54,7 +56,7 @@ import kotlin.math.min
 
 class Engine(
     config: ConfigImpl,
-    useEditor: Boolean = false,
+    useEditor: Boolean = false, // TODO: Remove and pass module into here
     afterInit: Engine.() -> Unit = { world.loadDemoScene() })
 {
     private val configModule = module {
@@ -152,7 +154,12 @@ class Engine(
             .register(input)
             .register(config)
     ).apply {
-        renderManager.renderSystems.forEach { it.artemisWorld = this }
+        if(useEditor) {
+            // TODO: Remove and make ImGuiEditor initialized as a normal BaseSystem
+            koin.get<ImGuiEditor>().artemisWorld = this
+        }
+        // TODO: Remove and make ExtensibleDeferredRenderer initialized as a normal BaseSystem
+        koin.getAll<ExtensibleDeferredRenderer>().forEach { it.world = this }
         getSystem(EntityLinkManager::class.java).apply {
             register(InstanceComponent::class.java, modelSystem)
         }
@@ -206,7 +213,7 @@ class Engine(
         currentWriteState.cycle = updateCycle.get()
         currentWriteState.time = System.currentTimeMillis()
 
-        koin.getAll<RenderSystem>().distinct().forEach { it.extract(currentWriteState, world) }
+        koin.getAll<RenderSystem>().distinct().forEach { it.extract(currentWriteState) }
 
         extractors.forEach { it.extract(currentWriteState) }
 

@@ -52,7 +52,6 @@ class PhysicsManager(
     gravity: Vector3f = Vector3f(0f, -20f, 0f),
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : BaseEntitySystem(), RenderSystem {
-    override lateinit var artemisWorld: World
     private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms()

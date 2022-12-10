@@ -33,7 +33,6 @@ class PointLightSystem(
     pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
 ): BaseEntitySystem(), RenderSystem, Extractor {
-    override lateinit var artemisWorld: World
     private var gpuPointLights = PersistentMappedBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
