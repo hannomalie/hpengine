@@ -3,6 +3,8 @@ package de.hanno.hpengine.transform
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.Transform.Companion.IDENTITY
 import de.hanno.hpengine.camera.Frustum
+import de.hanno.hpengine.model.CompiledFace
+import de.hanno.hpengine.model.IndexedFace
 import de.hanno.hpengine.model.Instance
 import org.joml.*
 
@@ -323,6 +325,88 @@ private fun largestDistance(points: List<Vector3fc>, pivot: Vector3f): Float {
     }
     return length
 }
+
+fun calculateAABB(
+    modelMatrix: Matrix4f?,
+    positions: List<Vector3fc>,
+    faces: Collection<IndexedFace>
+): AABBData {
+    val min = Vector3f(absoluteMaximum)
+    val max = Vector3f(absoluteMinimum)
+
+    for (face in faces) {
+        val vertices = listOf(positions[face.a], positions[face.b], positions[face.c])
+
+        for (j in 0..2) {
+            val positionV3 = vertices[j]
+            val position = Vector4f(positionV3.x(), positionV3.y(), positionV3.z(), 1f)
+            if (modelMatrix != null) {
+                position.mul(modelMatrix)
+            }
+
+            min.x = if (position.x < min.x) position.x else min.x
+            min.y = if (position.y < min.y) position.y else min.y
+            min.z = if (position.z < min.z) position.z else min.z
+
+            max.x = if (position.x > max.x) position.x else max.x
+            max.y = if (position.y > max.y) position.y else max.y
+            max.z = if (position.z > max.z) position.z else max.z
+        }
+    }
+
+    return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
+}
+
+fun calculateAABB(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f, faces: List<CompiledFace>) {
+    min.set(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
+    max.set(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
+
+    for (i in faces.indices) {
+        val face = faces[i]
+
+        val vertices = face.vertices
+
+        for (j in 0..2) {
+            val positionV3 = vertices[j].position
+            val position = Vector4f(positionV3.x, positionV3.y, positionV3.z, 1f)
+            if (modelMatrix != null) {
+                position.mul(modelMatrix)
+            }
+
+            min.x = if (position.x < min.x) position.x else min.x
+            min.y = if (position.y < min.y) position.y else min.y
+            min.z = if (position.z < min.z) position.z else min.z
+
+            max.x = if (position.x > max.x) position.x else max.x
+            max.y = if (position.y > max.y) position.y else max.y
+            max.z = if (position.z > max.z) position.z else max.z
+        }
+    }
+
+}
+
+fun calculateAABB(currentMin: Vector3fc, currentMax: Vector3fc, candidate: AABBData): AABBData {
+    val newMin = Vector3f(currentMin).min(candidate.min)
+    val newMax = Vector3f(currentMax).max(candidate.max)
+    return AABBData(newMin, newMax)
+}
+
+fun calculateMin(old: Vector3f, candidate: Vector3f) {
+    old.x = if (candidate.x < old.x) candidate.x else old.x
+    old.y = if (candidate.y < old.y) candidate.y else old.y
+    old.z = if (candidate.z < old.z) candidate.z else old.z
+}
+
+fun calculateMax(old: Vector3f, candidate: Vector3f) {
+    old.x = if (candidate.x > old.x) candidate.x else old.x
+    old.y = if (candidate.y > old.y) candidate.y else old.y
+    old.z = if (candidate.z > old.z) candidate.z else old.z
+}
+
+fun getBoundingSphereRadius(target: Vector3f, min: Vector3f, max: Vector3f) = target.set(max).sub(min).mul(0.5f).length()
+
+fun getBoundingSphereRadius(target: Vector3f, min: Vector4f, max: Vector4f) =
+    getBoundingSphereRadius(target, Vector3f(min.x, min.y, min.z), Vector3f(max.x, max.y, max.z))
 
 val absoluteMaximum = Vector3f(Float.MAX_VALUE).toImmutable()
 val absoluteMinimum = Vector3f(-Float.MAX_VALUE).toImmutable()
