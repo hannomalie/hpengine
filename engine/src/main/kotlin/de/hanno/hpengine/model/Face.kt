@@ -3,7 +3,7 @@ package de.hanno.hpengine.model
 import org.joml.Vector3f
 import java.io.Serializable
 
-class Face : Serializable {
+class Face {
     val vertices = intArrayOf(-1, -1, -1)
     val normalIndices = intArrayOf(-1, -1, -1)
     val textureCoordinateIndices = intArrayOf(-1, -1, -1)

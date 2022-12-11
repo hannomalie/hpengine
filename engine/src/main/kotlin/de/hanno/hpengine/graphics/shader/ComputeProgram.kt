@@ -141,20 +141,20 @@ class ComputeProgram(
 
     override fun setUniform(name: String, x: Float, y: Float, z: Float) {
         createBindingIfMissing(name)
-        uniformBindings[name]!!.set(x, y, z)
+        uniformBindings[name]!![x, y] = z
     }
 
     override fun setUniform(name: String, vec: Vector3f) {
         createBindingIfMissing(name)
-        uniformBindings[name]!!.set(vec.x, vec.y, vec.z)
+        uniformBindings[name]!![vec.x, vec.y] = vec.z
     }
     override fun setUniform(name: String, vec: Vector3fc) {
         createBindingIfMissing(name)
-        uniformBindings[name]!!.set(vec.x, vec.y, vec.z)
+        uniformBindings[name]!![vec.x, vec.y] = vec.z
     }
     override fun setUniform(name: String, vec: Vector2f) {
         createBindingIfMissing(name)
-        uniformBindings[name]!!.set(vec.x, vec.y)
+        uniformBindings[name]!![vec.x] = vec.y
     }
 
     override fun setUniformVector3ArrayAsFloatBuffer(name: String, values: FloatBuffer) {

@@ -32,7 +32,6 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
@@ -144,9 +143,9 @@ class ProbeRenderer(
 
     fun renderProbes(renderState: RenderState, probeStartIndex: Int, probesPerFrame: Int) {
         val worldAABBState = renderState[worldAABBStateHolder.worldAABBState]
-        if (sceneMin != worldAABBState.sceneMin || sceneMax != worldAABBState.sceneMax) {
-            sceneMin.set(worldAABBState.sceneMin)
-            sceneMax.set(worldAABBState.sceneMax)
+        if (sceneMin != worldAABBState.min || sceneMax != worldAABBState.max) {
+            sceneMin.set(worldAABBState.min)
+            sceneMax.set(worldAABBState.max)
             initProbePositions()
         }
         probeAmbientCubeValues.buffer.copyTo(probeAmbientCubeValuesOld.buffer)

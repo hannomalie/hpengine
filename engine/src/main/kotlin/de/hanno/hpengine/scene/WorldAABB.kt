@@ -6,7 +6,6 @@ import de.hanno.hpengine.artemis.SpatialComponent
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
-import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABB
@@ -24,8 +23,8 @@ class WorldAABB(
     }
 
     override fun extract(currentWriteState: RenderState) {
-        currentWriteState[worldAABBStateHolder.worldAABBState].sceneMin.set(aabb.min)
-        currentWriteState[worldAABBStateHolder.worldAABBState].sceneMax.set(aabb.max)
+        currentWriteState[worldAABBStateHolder.worldAABBState].min.set(aabb.min)
+        currentWriteState[worldAABBStateHolder.worldAABBState].max.set(aabb.max)
     }
     override fun processSystem() { }
 }
@@ -33,7 +32,6 @@ class WorldAABB(
 context(GpuContext, RenderStateContext)
 class WorldAABBStateHolder {
     val worldAABBState = renderState.registerState {
-        MinMax(sceneMin = Vector3f(), sceneMax = Vector3f())
+        MinMax(min = Vector3f(), max = Vector3f())
     }
 }
-data class MinMax(val sceneMin: Vector3f, val sceneMax: Vector3f)
