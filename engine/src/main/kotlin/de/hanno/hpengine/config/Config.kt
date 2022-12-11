@@ -3,14 +3,9 @@ package de.hanno.hpengine.config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.Directories.Companion.ENGINEDIR_NAME
 import de.hanno.hpengine.directory.Directories.Companion.GAMEDIR_NAME
-import de.hanno.hpengine.directory.EngineAsset
 import de.hanno.hpengine.directory.EngineDirectory
-import de.hanno.hpengine.directory.GameAsset
 import de.hanno.hpengine.directory.GameDirectory
-import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
-import kotlin.reflect.KMutableProperty0
-import kotlin.reflect.KProperty
 
 @Target(AnnotationTarget.PROPERTY)
 annotation class Button
@@ -62,6 +57,7 @@ data class DebugConfig(
     override var isForceRevoxelization: Boolean = false,
     override var freezeCulling: Boolean = false,
     override var forceSingleThreadedRendering: Boolean = false,
+    override var profiling: Boolean = false,
 ) : IDebugConfig
 
 data class EffectsConfig(

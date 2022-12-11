@@ -8,11 +8,12 @@ import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.TextureAllocationData
 import de.hanno.hpengine.graphics.texture.UploadInfo
+import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.stopwatch.ProfilingTask
 import org.joml.Vector4f
 import java.nio.IntBuffer
 
 interface GpuContext {
-
     val window: Window
 
     val isError: Boolean

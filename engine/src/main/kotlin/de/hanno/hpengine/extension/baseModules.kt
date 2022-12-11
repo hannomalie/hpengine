@@ -44,6 +44,8 @@ import de.hanno.hpengine.graphics.state.*
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.scene.WorldAABBStateHolder
+import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
@@ -58,18 +60,20 @@ val deferredRendererModule = module {
     renderSystem {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                ExtensibleDeferredRenderer(
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    getAll<DeferredRenderExtension>().distinct(),
-                    get(),
-                    get(),
-                    get(),
-                )
+                get<GPUProfiler>().run {
+                    ExtensibleDeferredRenderer(
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        getAll<DeferredRenderExtension>().distinct(),
+                        get(),
+                        get(),
+                        get(),
+                    )
+                }
             }
         }
     }
@@ -119,6 +123,7 @@ val imGuiEditorModule = module {
                     get(),
                     get(),
                     getAll<ImGuiEditorExtension>().distinct(),
+                    get(),
                     get(),
                     get(),
                 )
@@ -180,7 +185,7 @@ val baseModule = module {
     }
     single {
         get<GpuContext>().run {
-            RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll())
+            RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll(), get())
         }
     }
     single { OpenGlProgramManager(get(), get()) } binds arrayOf(
@@ -217,7 +222,11 @@ val baseModule = module {
             ForwardRenderExtension(get(), get(), get(), get(), get(), get())
         }
     }
-    renderExtension { AOScatteringExtension(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    renderExtension {
+        get<GPUProfiler>().run {
+            AOScatteringExtension(get(), get(), get(), get(), get(), get(), get(), get(), get())
+        }
+    }
     renderExtension {
         get<GpuContext>().run {
             PixelPerfectPickingExtension(get(), get(), getAll())
@@ -302,7 +311,9 @@ fun Module.addGIModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+                get<GPUProfiler>().run {
+                    VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+                }
             }
         }
     }
@@ -311,7 +322,9 @@ fun Module.addGIModule() {
 fun Module.addPointLightModule() {
     renderExtension {
         get<GpuContext>().run {
-            BvHPointLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get(), get())
+            get<GPUProfiler>().run {
+                BvHPointLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get(), get())
+            }
         }
     }
 }
@@ -320,11 +333,17 @@ fun Module.addDirectionalLightModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                DirectionalLightShadowMapExtension(get(), get(), get(), get(), get())
+                get<GPUProfiler>().run {
+                    DirectionalLightShadowMapExtension(get(), get(), get(), get(), get())
+                }
             }
         }
     }
-    renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get()) }
+    renderExtension {
+        get<GPUProfiler>().run {
+            DirectionalLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get())
+        }
+    }
 }
 
 fun Module.addOceanWaterModule() {
@@ -339,7 +358,9 @@ fun Module.addReflectionProbeModule() {
     renderExtension {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
-                ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get(), get(), get(), get())
+                get<GPUProfiler>().run {
+                    ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get(), get(), get(), get())
+                }
             }
         }
     }
@@ -366,7 +387,8 @@ fun Module.addSkyboxModule() {
 }
 fun Module.addBackendModule() {
     single { AddResourceContext() }
-    single { OpenGLContext(get()) } bind GpuContext::class
+    single { OpenGLGPUProfiler(get()) } binds arrayOf(GPUProfiler::class, OpenGLGPUProfiler::class)
+    single { OpenGLContext(get(), get()) } bind GpuContext::class
     single { Input(get()) }
     single { RenderSystemsConfig(getAll()) }
     single {

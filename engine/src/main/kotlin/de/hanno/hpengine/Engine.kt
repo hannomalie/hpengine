@@ -39,6 +39,7 @@ import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import net.mostlyoriginal.api.SingletonPlugin
@@ -69,8 +70,10 @@ class Engine(
         }
     }
     private val koin = application.koin
-    val gpuContext: GpuContext = koin.get()
-    val config = koin.get<Config>()
+    private val gpuContext: GpuContext = koin.get()
+    private val profiler: GPUProfiler = koin.get()
+    private val renderStateContext = koin.get<RenderStateContext>()
+    private val config = koin.get<Config>()
     private val addResourceContext = koin.get<AddResourceContext>()
     private val window = koin.get<Window>()
     private val input = koin.get<Input>()
@@ -91,7 +94,7 @@ class Engine(
     }
     val entityLinkManager = EntityLinkManager()
     val directionalLightSystem = gpuContext.run {
-        koin.get<RenderStateContext>().run {
+        renderStateContext.run {
             DirectionalLightSystem(koin.get())
         }
     }
@@ -105,15 +108,17 @@ class Engine(
         CycleSystem(koin.get()),
         directionalLightSystem,
         gpuContext.run {
-            koin.get<RenderStateContext>().run {
+            renderStateContext.run {
                 PointLightSystem(config, koin.get(), koin.get(), koin.get()).apply {
                     renderManager.renderSystems.add(this)
                 }
             }
         },
         gpuContext.run {
-            AreaLightSystem(gpuContext, koin.get(), config, koin.get(), koin.get(), koin.get()).apply {
-                renderManager.renderSystems.add(this)
+            profiler.run {
+                AreaLightSystem(gpuContext, koin.get(), config, koin.get(), koin.get(), koin.get(), koin.get()).apply {
+                    renderManager.renderSystems.add(this)
+                }
             }
         },
         MaterialManager(config, koin.get(), koin.get(), koin.get()),
@@ -125,7 +130,7 @@ class Engine(
         InvisibleComponentSystem(),
         GiVolumeSystem(koin.get()),
         gpuContext.run {
-            koin.get<RenderStateContext>().run {
+            renderStateContext.run {
                 PhysicsManager(config, koin.get(), primaryCameraStateHolder = koin.get())
             }
         },
@@ -209,7 +214,7 @@ class Engine(
     }
 
     private fun extract(deltaSeconds: Float): Long {
-        val currentWriteState = renderManager.renderStateContext.renderState.currentWriteState
+        val currentWriteState = renderStateContext.renderState.currentWriteState
         currentWriteState.cycle = updateCycle.get()
         currentWriteState.time = System.currentTimeMillis()
 

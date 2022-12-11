@@ -38,6 +38,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.scene.WorldAABBStateHolder
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
@@ -48,7 +49,7 @@ import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GL45
 import java.nio.FloatBuffer
 
-context(GpuContext)
+context(GpuContext, GPUProfiler)
 class ProbeRenderer(
     private val gpuContext: GpuContext,
     config: Config,

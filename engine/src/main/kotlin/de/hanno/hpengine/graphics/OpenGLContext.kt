@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics
 
-import de.hanno.hpengine.graphics.renderer.GLU
+import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
@@ -15,6 +15,8 @@ import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer.invoke
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer.getPositionsAndTexCoords
 import de.hanno.hpengine.scene.VertexIndexBuffer
+import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import kotlinx.coroutines.*
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -30,9 +32,10 @@ import java.util.*
 import java.util.concurrent.Executors
 import javax.vecmath.Vector2f
 
+context(GPUProfiler)
 class OpenGLContext private constructor(
     override val window: Window,
-    val debug: Boolean = false
+    private val debug: Boolean = false,
 ) : GpuContext, GpuExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
@@ -379,13 +382,16 @@ class OpenGLContext private constructor(
 
         private var openGLContextSingleton: OpenGLContext? = null
 
-        @JvmStatic
-        @JvmName("create")
-        operator fun invoke(window: Window): OpenGLContext = if (openGLContextSingleton != null) {
+        operator fun invoke(
+            profiler: OpenGLGPUProfiler,
+            window: Window
+        ): OpenGLContext = if (openGLContextSingleton != null) {
             throw IllegalStateException("Can only instantiate one OpenGLContext!")
         } else {
-            OpenGLContext(window).apply {
-                openGLContextSingleton = this
+            profiler.run {
+                OpenGLContext(window).apply {
+                    openGLContextSingleton = this
+                }
             }
         }
     }

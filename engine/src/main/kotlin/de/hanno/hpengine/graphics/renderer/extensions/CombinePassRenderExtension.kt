@@ -18,7 +18,9 @@ import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 
+context(GPUProfiler)
 class CombinePassRenderExtension(private val config: Config,
                                  private val programManager: ProgramManager,
                                  private val textureManager: TextureManager,

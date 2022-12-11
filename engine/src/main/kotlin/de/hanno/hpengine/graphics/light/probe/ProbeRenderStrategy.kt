@@ -33,6 +33,7 @@ import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
@@ -45,7 +46,7 @@ import org.lwjgl.opengl.GL30.glFinish
 import org.lwjgl.opengl.GL43
 import java.nio.FloatBuffer
 
-context(GpuContext)
+context(GpuContext, GPUProfiler)
 class ProbeRenderStrategy(
     private val config: Config,
     private val gpuContext: GpuContext,
@@ -239,7 +240,7 @@ class ProbeRenderStrategy(
     }
 }
 
-context(GpuContext)
+context(GpuContext, GPUProfiler)
 class EvaluateProbeRenderExtension(
     private val gpuContext: GpuContext,
     private val programManager: ProgramManager,

@@ -20,7 +20,9 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 
+context(GPUProfiler)
 class AOScatteringExtension(
     private val config: Config,
     private val gpuContext: GpuContext,

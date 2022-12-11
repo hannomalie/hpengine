@@ -5,7 +5,6 @@ import AreaLightStruktImpl.Companion.type
 import EntityStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
-import com.artemis.World
 import com.artemis.annotations.All
 
 import de.hanno.hpengine.artemis.AreaLightComponent
@@ -45,6 +44,7 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
@@ -66,6 +66,7 @@ class AreaLightSystem(
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val areaLightStateHolder: AreaLightStateHolder,
+    private val gpuProfiler: GPUProfiler,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     private var gpuAreaLightArray = TypedBuffer(
         BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes),
@@ -131,7 +132,7 @@ class AreaLightSystem(
         }
     }
 
-    fun renderAreaLightShadowMaps(renderState: RenderState) {
+    fun renderAreaLightShadowMaps(renderState: RenderState) = gpuProfiler.run {
         val lightState = renderState[areaLightStateHolder.lightState]
         val areaLights = lightState.lights
         if (areaLights.isEmpty()) return

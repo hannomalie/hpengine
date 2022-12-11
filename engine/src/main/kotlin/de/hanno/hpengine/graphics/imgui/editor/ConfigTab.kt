@@ -38,8 +38,8 @@ fun TabBar.configTab(config: ConfigImpl, window: Window) {
         if (ImGui.checkbox("Editor", config.debug.isEditorOverlay)) {
             config.debug.isEditorOverlay = !config.debug.isEditorOverlay
         }
-        if (ImGui.checkbox("GPU Profiling", de.hanno.hpengine.stopwatch.GPUProfiler.profiling)) {
-            de.hanno.hpengine.stopwatch.GPUProfiler.profiling = !de.hanno.hpengine.stopwatch.GPUProfiler.profiling
+        if (ImGui.checkbox("GPU Profiling", config.debug.profiling)) {
+            config.debug.profiling = !config.debug.profiling
         }
         if (ImGui.checkbox("VSync", window.vSync)) {
             window.vSync = !window.vSync

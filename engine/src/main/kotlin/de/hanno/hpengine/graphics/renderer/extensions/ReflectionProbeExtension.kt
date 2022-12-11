@@ -40,6 +40,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.ressources.StringBasedCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
@@ -88,7 +89,7 @@ class ReflectionProbeRenderState {
     val probePositions = mutableListOf<Vector3f>()
 }
 
-context(GpuContext, RenderStateContext)
+context(GpuContext, RenderStateContext, GPUProfiler)
 class ReflectionProbeRenderExtension(
     private val config: Config,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,

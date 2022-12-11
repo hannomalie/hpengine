@@ -21,16 +21,17 @@ data class DebugOutput(var texture2D: Texture2D? = null, var mipmapLevel: Int = 
 
 context(GpuContext)
 class RenderManager(
-    val config: Config,
-    val input: Input,
-    val window: Window,
-    val programManager: ProgramManager,
-    val renderStateContext: RenderStateContext,
-    val finalOutput: FinalOutput,
-    val debugOutput: DebugOutput,
-    val fpsCounter: FPSCounter,
-    val renderSystemsConfig: RenderSystemsConfig,
+    private val config: Config,
+    private val input: Input,
+    private val window: Window,
+    programManager: ProgramManager,
+    private val renderStateContext: RenderStateContext,
+    private val finalOutput: FinalOutput,
+    private val debugOutput: DebugOutput,
+    private val fpsCounter: FPSCounter,
+    private val renderSystemsConfig: RenderSystemsConfig,
     _renderSystems: List<RenderSystem>,
+    private val gpuProfiler: GPUProfiler,
 ) : BaseSystem() {
 
     private val drawToQuadProgram = programManager.getProgram(
@@ -63,87 +64,89 @@ class RenderManager(
         launchEndlessRenderLoop { deltaSeconds ->
             onGpu(block = {
                 rendering.getAndSet(true)
-                try {
-                    renderStateContext.renderState.readLocked { currentReadState ->
+                gpuProfiler.run {
+                    try {
+                        renderStateContext.renderState.readLocked { currentReadState ->
 
-                        val renderSystems = when (val renderMode = renderMode) {
-                            RenderMode.Normal -> {
-                                renderSystems.filter {
-                                    renderSystemsConfig.run { it.enabled }
-                                }
-                            }
-                            is RenderMode.SingleFrame -> {
-                                if (renderMode.frameRequested.get()) {
+                            val renderSystems = when (val renderMode = renderMode) {
+                                RenderMode.Normal -> {
                                     renderSystems.filter {
                                         renderSystemsConfig.run { it.enabled }
                                     }
-                                } else {
-                                    renderSystems.filterIsInstance<ImGuiEditor>()
-                                }.apply {
-                                    renderMode.frameRequested.getAndSet(false)
+                                }
+                                is RenderMode.SingleFrame -> {
+                                    if (renderMode.frameRequested.get()) {
+                                        renderSystems.filter {
+                                            renderSystemsConfig.run { it.enabled }
+                                        }
+                                    } else {
+                                        renderSystems.filterIsInstance<ImGuiEditor>()
+                                    }.apply {
+                                        renderMode.frameRequested.getAndSet(false)
+                                    }
                                 }
                             }
-                        }
 
-                        profiled("Frame") {
-                            profiled("renderSystems") {
-                                renderSystems.groupBy { it.sharedRenderTarget }
-                                    .forEach { (renderTarget, renderSystems) ->
-                                        val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                        renderTarget?.use(clear)
-                                        renderSystems.forEach { renderSystem ->
-                                            renderSystem.render(currentReadState)
+                            profiled("Frame") {
+                                profiled("renderSystems") {
+                                    renderSystems.groupBy { it.sharedRenderTarget }
+                                        .forEach { (renderTarget, renderSystems) ->
+                                            val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
+                                            renderTarget?.use(clear)
+                                            renderSystems.forEach { renderSystem ->
+                                                renderSystem.render(currentReadState)
+                                            }
+                                        }
+
+                                    if (config.debug.isEditorOverlay) {
+                                        renderSystems.forEach {
+                                            it.renderEditor(currentReadState)
                                         }
                                     }
+                                }
 
-                                if (config.debug.isEditorOverlay) {
-                                    renderSystems.forEach {
-                                        it.renderEditor(currentReadState)
+                                profiled("present") {
+                                    window.frontBuffer.use(true)
+                                    textureRenderer.drawToQuad(finalOutput.texture2D, mipMapLevel = finalOutput.mipmapLevel)
+                                    debugOutput.texture2D?.let { debugOutputTexture ->
+                                        textureRenderer.drawToQuad(
+                                            debugOutputTexture,
+                                            buffer = debugBuffer,
+                                            program = drawToDebugQuadProgram,
+                                            mipMapLevel = debugOutput.mipmapLevel
+                                        )
                                     }
                                 }
-                            }
 
-                            profiled("present") {
-                                window.frontBuffer.use(true)
-                                textureRenderer.drawToQuad(finalOutput.texture2D, mipMapLevel = finalOutput.mipmapLevel)
-                                debugOutput.texture2D?.let { debugOutputTexture ->
-                                    textureRenderer.drawToQuad(
-                                        debugOutputTexture,
-                                        buffer = debugBuffer,
-                                        program = drawToDebugQuadProgram,
-                                        mipMapLevel = debugOutput.mipmapLevel
-                                    )
+                                profiled("checkCommandSyncs") {
+                                    checkCommandSyncs()
                                 }
-                            }
 
-                            profiled("checkCommandSyncs") {
-                                checkCommandSyncs()
-                            }
-
-                            val oldFenceSync = currentReadState.gpuCommandSync
-                            profiled("finishFrame") {
-                                finishFrame(currentReadState)
-                                renderSystems.forEach {
-                                    it.afterFrameFinished()
+                                val oldFenceSync = currentReadState.gpuCommandSync
+                                profiled("finishFrame") {
+                                    finishFrame(currentReadState)
+                                    renderSystems.forEach {
+                                        it.afterFrameFinished()
+                                    }
                                 }
-                            }
-                            profiled("finish") {
-                                GL11.glFinish()
-                            }
-                            profiled("swapBuffers") {
-                                window.swapBuffers()
-                            }
+                                profiled("finish") {
+                                    GL11.glFinish()
+                                }
+                                profiled("swapBuffers") {
+                                    window.swapBuffers()
+                                }
 //                            require(oldFenceSync.isSignaled) {
 //                                "GPU has not finished all actions using resources of read state, can't swap"
 //                            }
+                            }
+                            gpuProfiler.dump()
                         }
-                        GPUProfiler.dump()
-                    }
 
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                } finally {
-                    rendering.getAndSet(false)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    } finally {
+                        rendering.getAndSet(false)
+                    }
                 }
             })
         }
@@ -169,8 +172,9 @@ class RenderSystemsConfig(renderSystems: List<RenderSystem>) {
         }
 }
 
+context(GPUProfiler)
 inline fun <T> profiled(name: String, action: () -> T): T {
-    val task = GPUProfiler.start(name)
+    val task = start(name)
     try {
         return action()
     } finally {

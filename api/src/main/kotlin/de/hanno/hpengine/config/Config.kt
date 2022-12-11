@@ -70,6 +70,7 @@ interface IDebugConfig {
     var isForceRevoxelization: Boolean
     var freezeCulling: Boolean
     var forceSingleThreadedRendering: Boolean
+    var profiling: Boolean
 }
 
 interface IEffectsConfig {

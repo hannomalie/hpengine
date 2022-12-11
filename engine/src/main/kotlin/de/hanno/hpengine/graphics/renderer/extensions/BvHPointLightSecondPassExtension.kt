@@ -31,6 +31,7 @@ import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.ressources.StringBasedCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
@@ -132,7 +133,7 @@ fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
 val Vector4f.xyz: Vector3f
     get() = Vector3f(x, y, z)
 
-context(GpuContext)
+context(GpuContext, GPUProfiler)
 class BvHPointLightSecondPassExtension(
     private val config: Config,
     private val gpuContext: GpuContext,

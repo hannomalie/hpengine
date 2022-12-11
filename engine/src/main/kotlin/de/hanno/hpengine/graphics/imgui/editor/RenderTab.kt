@@ -13,10 +13,10 @@ import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 
 context(Window, ImGuiEditor, RenderStateContext)
-fun TabBar.renderTab() {
+fun TabBar.renderTab(gpuProfiler: GPUProfiler) {
     tab("Render") {
         text("FPS: ${fpsCounter.fps}") {}
-        text(GPUProfiler.currentTimings)
+        text(gpuProfiler.currentTimings)
 
         val renderManager = artemisWorld.getSystem(de.hanno.hpengine.graphics.RenderManager::class.java)!!
         val renderMode = renderManager.renderMode

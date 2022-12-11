@@ -42,10 +42,11 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL30
 
-context(GpuContext, RenderStateContext)
+context(GpuContext, RenderStateContext, GPUProfiler)
 class DirectionalLightShadowMapExtension(
     private val config: Config,
     private val programManager: ProgramManager,

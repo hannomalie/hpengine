@@ -13,7 +13,9 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 
+context(GPUProfiler)
 class PostProcessingExtension(
     private val config: Config,
     private val programManager: ProgramManager,

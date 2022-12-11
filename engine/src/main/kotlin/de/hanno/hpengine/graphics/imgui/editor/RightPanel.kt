@@ -126,7 +126,7 @@ fun ImGuiEditor.rightPanel(
                     }
                 }
                 configTab(config, window)
-                renderTab()
+                renderTab(gpuProfiler)
                 tab("Editor") {
                     if (ImGui.beginCombo("Selection Mode", editorConfig.selectionMode.toString())) {
                         SelectionMode.values().forEach {

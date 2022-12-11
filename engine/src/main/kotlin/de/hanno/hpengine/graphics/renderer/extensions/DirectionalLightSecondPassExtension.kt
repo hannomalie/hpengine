@@ -16,8 +16,10 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 
+context(GPUProfiler)
 class DirectionalLightSecondPassExtension(
     private val config: Config,
     private val programManager: ProgramManager,

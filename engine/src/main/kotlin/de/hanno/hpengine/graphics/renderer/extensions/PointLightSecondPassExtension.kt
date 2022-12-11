@@ -13,10 +13,12 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
+context(GPUProfiler)
 class PointLightSecondPassExtension(
     private val gpuContext: GpuContext,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,

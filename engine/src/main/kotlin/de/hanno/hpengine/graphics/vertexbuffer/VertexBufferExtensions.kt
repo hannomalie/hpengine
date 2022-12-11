@@ -5,6 +5,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.scene.VertexIndexBuffer
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.lwjgl.opengl.ARBIndirectParameters.*
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL31
@@ -219,6 +220,7 @@ fun drawInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: In
     return instanceCount * (indexCount / 3)
 }
 
+context(GPUProfiler)
 fun multiDrawElementsIndirectCount(
     indexBuffer: GpuBuffer,
     commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
@@ -243,6 +245,7 @@ fun multiDrawElementsIndirectCount(
     indexBuffer.unbind()
 }
 
+context(GPUProfiler)
 fun VertexIndexBuffer.multiDrawElementsIndirectCount(
     commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,

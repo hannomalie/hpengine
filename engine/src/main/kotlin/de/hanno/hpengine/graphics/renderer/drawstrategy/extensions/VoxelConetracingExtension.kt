@@ -31,6 +31,7 @@ import de.hanno.hpengine.extension.GiVolumeStateHolder
 import de.hanno.hpengine.extension.SkyBoxStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -69,7 +70,7 @@ fun OpenGLTextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTrac
         )
     )
 }
-context(GpuContext, RenderStateContext)
+context(GpuContext, RenderStateContext, GPUProfiler)
 class VoxelConeTracingExtension(
     private val config: Config,
     programManager: ProgramManager,

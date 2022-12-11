@@ -24,6 +24,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.Indices
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.OnClickListener
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.texture.Texture2D
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import imgui.ImGui
 import imgui.flag.*
 import imgui.flag.ImGuiWindowFlags.*
@@ -75,6 +76,7 @@ class ImGuiEditor(
     internal val editorExtensions: List<ImGuiEditorExtension>,
     internal val entityClickListener: EntityClickListener,
     internal val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    internal val gpuProfiler: GPUProfiler,
 ) : BaseSystem(), RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     val formerFinalOutput = finalOutput.texture2D

@@ -16,10 +16,11 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
-context(GpuContext)
+context(GpuContext, GPUProfiler)
 open class DirectFirstPassPipeline(
     private val config: Config,
     private val program: IProgram<out FirstPassUniforms>,

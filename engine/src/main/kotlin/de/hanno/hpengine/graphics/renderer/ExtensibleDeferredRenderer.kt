@@ -1,29 +1,28 @@
 package de.hanno.hpengine.graphics.renderer
 
-import com.artemis.BaseSystem
 import com.artemis.World
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
-
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.PostProcessingExtension
+import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.state.StateRef
-import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.graphics.*
-import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.stopwatch.GPUProfiler
 
-context(GpuContext, de.hanno.hpengine.graphics.RenderStateContext)
+context(GpuContext, RenderStateContext, GPUProfiler)
 class ExtensibleDeferredRenderer(
     private val window: Window,
     private val config: Config,
