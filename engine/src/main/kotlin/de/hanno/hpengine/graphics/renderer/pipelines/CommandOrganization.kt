@@ -10,6 +10,6 @@ class CommandOrganization {
     var filteredRenderBatches: List<RenderBatch> = emptyList()
     val commandBuffer = CommandBuffer(10000)
 
-    val entityOffsetBuffer = IndexBuffer(10000)
+    val entityOffsetBuffer = OpenGLIndexBuffer(10000)
     val drawCountBuffer = AtomicCounterBuffer()
 }

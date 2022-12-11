@@ -92,7 +92,7 @@ interface IntStrukt : Strukt {
 }
 
 context(GpuContext)
-fun IndexBuffer(size: Int = 1000) = PersistentMappedBuffer(
+fun OpenGLIndexBuffer(size: Int = 1000) = PersistentMappedBuffer(
     size * IntStrukt.sizeInBytes, GL40.GL_ELEMENT_ARRAY_BUFFER
 ).typed(IntStrukt.type)
 

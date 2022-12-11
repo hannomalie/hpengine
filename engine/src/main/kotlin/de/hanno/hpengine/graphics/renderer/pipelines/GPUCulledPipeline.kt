@@ -475,15 +475,15 @@ class CommandOrganizationGpuCulled {
     var filteredRenderBatches: List<RenderBatch> = emptyList()
     val commands = CommandBuffer(10000)
     val commandsCompacted = CommandBuffer(10000)
-    val offsetsForCommand = IndexBuffer()
+    val offsetsForCommand = OpenGLIndexBuffer()
 
     val drawCountsCompacted = AtomicCounterBuffer()
-    val visibilities = IndexBuffer()
-    val commandOffsets = IndexBuffer()
-    val currentCompactedPointers = IndexBuffer()
-    val offsetsCompacted = IndexBuffer()
+    val visibilities = OpenGLIndexBuffer()
+    val commandOffsets = OpenGLIndexBuffer()
+    val currentCompactedPointers = OpenGLIndexBuffer()
+    val offsetsCompacted = OpenGLIndexBuffer()
     val entitiesCompacted = PersistentMappedBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
     val entitiesCompactedCounter = AtomicCounterBuffer()
-    val instanceCountForCommand = IndexBuffer()
+    val instanceCountForCommand = OpenGLIndexBuffer()
 }
 

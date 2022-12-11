@@ -6,13 +6,13 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.pipelines.IndexBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
-import de.hanno.hpengine.graphics.vertexbuffer.IndexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.OpenGLIndexBuffer
 import org.lwjgl.BufferUtils
 
 context(GpuContext)
 class VertexIndexBuffer(indexBufferSizeInIntsCount: Int) {
 
-    var indexBuffer: IndexBuffer = IndexBuffer(BufferUtils.createIntBuffer(indexBufferSizeInIntsCount))
+    var indexBuffer: IndexBuffer = OpenGLIndexBuffer(BufferUtils.createIntBuffer(indexBufferSizeInIntsCount))
     private var currentBaseVertex = 0
     private var currentIndexOffset = 0
 

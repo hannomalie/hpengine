@@ -7,16 +7,13 @@ import java.util.*
 
 
 context(GpuContext)
-class VertexArrayObject private constructor(channels: EnumSet<DataChannels>) {
+class VertexArrayObject(
+    private val channels: EnumSet<DataChannels>
+) {
 
-    private val channels: EnumSet<DataChannels> = channels.clone()
     var id = onGpu { GL30.glGenVertexArrays() }
     init {
         setUpAttributes()
-    }
-
-    fun bind() = onGpu {
-        GL30.glBindVertexArray(id)
     }
 
     private fun setUpAttributes() = onGpu {
@@ -28,6 +25,10 @@ class VertexArrayObject private constructor(channels: EnumSet<DataChannels>) {
 
             currentOffset += channel.size * 4
         }
+    }
+
+    fun bind() = onGpu {
+        GL30.glBindVertexArray(id)
     }
 
     fun delete() = GL30.glDeleteVertexArrays(id)

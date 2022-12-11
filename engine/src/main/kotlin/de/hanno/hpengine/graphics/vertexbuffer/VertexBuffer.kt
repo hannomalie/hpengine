@@ -96,7 +96,7 @@ class VertexBuffer(
     }
 
     override fun unbind() {
-        TODO("Not yet implemented")
+        gpuBuffer.unbind()
     }
 
     companion object {
@@ -121,26 +121,22 @@ class VertexBuffer(
     }
 }
 
-fun GpuContext.createSixDebugBuffers(): List<IVertexBuffer> {
-    return onGpu {
-        val sixDebugBuffers = object : ArrayList<IVertexBuffer>() {
-            init {
-                val height = -2f / 3f
-                val width = 2f
-                val widthDiv = width / 6f
-                for (i in 0..5) {
-                    val quadVertexBuffer = invoke(
-                        QuadVertexBuffer.getPositionsAndTexCoords(
-                            Vector2f(-1f + i * widthDiv, -1f),
-                            Vector2f(-1 + (i + 1) * widthDiv, height)
-                        )
+fun GpuContext.createSixDebugBuffers() = onGpu {
+    object : ArrayList<IVertexBuffer>() {
+        init {
+            val height = -2f / 3f
+            val width = 2f
+            val widthDiv = width / 6f
+            for (i in 0..5) {
+                val quadVertexBuffer = QuadVertexBuffer(
+                    QuadVertexBuffer.getPositionsAndTexCoords(
+                        Vector2f(-1f + i * widthDiv, -1f),
+                        Vector2f(-1 + (i + 1) * widthDiv, height)
                     )
-                    add(quadVertexBuffer)
-                    quadVertexBuffer.upload()
-                }
+                )
+                add(quadVertexBuffer)
+                quadVertexBuffer.upload()
             }
         }
-
-        sixDebugBuffers
     }
 }
