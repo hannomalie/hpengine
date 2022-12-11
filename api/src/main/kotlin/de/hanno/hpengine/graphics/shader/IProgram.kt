@@ -4,8 +4,8 @@ import de.hanno.hpengine.graphics.renderer.pipelines.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
 import de.hanno.hpengine.graphics.shader.api.Shader
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.ressources.OnFileChangeListener
 import de.hanno.hpengine.ressources.Reloadable
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -55,7 +55,7 @@ abstract class AbstractProgram<T : Uniforms>(
     abstract override var shaders: List<Shader>
         protected set
 
-    val fileListeners: MutableList<OnFileChangeListener> = ArrayList()
+    val fileListeners: MutableList<FileAlterationListenerAdaptor> = ArrayList()
 
     protected val uniformBindings = HashMap<String, UniformBinding>()
 

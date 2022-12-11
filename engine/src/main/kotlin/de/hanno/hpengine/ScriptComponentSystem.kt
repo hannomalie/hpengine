@@ -8,7 +8,9 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileMonitor
 
 @All(KotlinComponent::class)
-class ScriptComponentSystem : BaseEntitySystem(){
+class ScriptComponentSystem(
+    private val fileMonitor: FileMonitor,
+) : BaseEntitySystem(){
 
     lateinit var kotlinComponentComponentMapper: ComponentMapper<KotlinComponent>
     override fun processSystem() {
@@ -18,7 +20,7 @@ class ScriptComponentSystem : BaseEntitySystem(){
     override fun inserted(entityId: Int) {
         val codeSource = kotlinComponentComponentMapper[entityId].codeSource
         if (codeSource is FileBasedCodeSource) {
-            FileMonitor.addOnFileChangeListener(codeSource.file) {
+            fileMonitor.addOnFileChangeListener(codeSource.file) {
                 codeSource.reload()
             }
         }

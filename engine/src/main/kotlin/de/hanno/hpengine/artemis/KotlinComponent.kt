@@ -22,7 +22,9 @@ class KotlinComponent : Component() {
     lateinit var codeSource: CodeSource
 }
 @All(KotlinComponent::class)
-class KotlinComponentSystem : BaseEntitySystem(), ImGuiEditorExtension {
+class KotlinComponentSystem(
+    private val fileMonitor: FileMonitor,
+) : BaseEntitySystem(), ImGuiEditorExtension {
     lateinit var kotlinComponentMapper: ComponentMapper<KotlinComponent>
 
     // TODO: Abstract over extension points maybe?
@@ -42,7 +44,7 @@ class KotlinComponentSystem : BaseEntitySystem(), ImGuiEditorExtension {
         val className = codeSource.name
 
         if (codeSource is FileBasedCodeSource) {
-            FileMonitor.addOnFileChangeListener(codeSource.file) {
+            fileMonitor.addOnFileChangeListener(codeSource.file) {
                 codeSource.reload()
                 compileAndCreateInstance(className, entityId, codeSource)
             }

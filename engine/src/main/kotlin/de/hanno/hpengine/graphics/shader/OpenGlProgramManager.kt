@@ -11,6 +11,7 @@ import de.hanno.hpengine.ressources.*
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
+context(FileMonitor)
 class OpenGlProgramManager(
     override val gpuContext: OpenGLContext,
     override val config: Config

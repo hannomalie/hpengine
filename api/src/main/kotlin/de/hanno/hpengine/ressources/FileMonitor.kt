@@ -1,17 +1,22 @@
 package de.hanno.hpengine.ressources
 
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import org.apache.commons.io.monitor.FileAlterationMonitor
 import org.apache.commons.io.monitor.FileAlterationObserver
 import java.io.File
 
 
-object FileMonitor {
+class FileMonitor {
     private val directoryObservers = mutableMapOf<File, FileAlterationObserver>()
-    val monitor: FileAlterationMonitor = FileAlterationMonitor(500).apply {
+    val monitor = FileAlterationMonitor(500).apply {
         start()
     }
 
-    fun addOnFileChangeListener(file: File, overwriteShouldReload: (File) -> Boolean = { false }, action: (File) -> Unit): OnFileChangeListener {
+    fun addOnFileChangeListener(
+        file: File,
+        overwriteShouldReload: (File) -> Boolean = { false },
+        action: (File) -> Unit
+    ): FileAlterationListenerAdaptor {
         val fileObserver = directoryObservers.getOrPut(file.parentFile) {
             FileAlterationObserver(file.parent).apply {
                 initialize()
@@ -19,13 +24,13 @@ object FileMonitor {
             }
         }
 
-        val listener: OnFileChangeListener = object: OnFileChangeListener() {
+        val listener = object : FileAlterationListenerAdaptor() {
             fun shouldReload(changedFile: File): Boolean {
                 return "${file.name}.${file.extension}".startsWith("${changedFile.name}.${changedFile.extension}")
             }
 
-            override fun onFileChangeAction(arg0: File) {
-                if(overwriteShouldReload(arg0) || shouldReload(arg0)) {
+            override fun onFileChange(arg0: File) {
+                if (overwriteShouldReload(arg0) || shouldReload(arg0)) {
                     action(arg0)
                 }
             }

@@ -8,7 +8,6 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileMonitor
-import de.hanno.hpengine.ressources.OnFileChangeListener
 import de.hanno.hpengine.ressources.Reloadable
 import de.hanno.hpengine.ressources.WrappedCodeSource
 import de.hanno.hpengine.transform.x
@@ -36,6 +35,7 @@ import java.nio.LongBuffer
 import java.util.EnumSet
 import java.util.StringJoiner
 
+context(FileMonitor)
 class Program<T : Uniforms> constructor(
     programManager: OpenGlProgramManager,
     val vertexShader: VertexShader,
@@ -312,13 +312,15 @@ inline fun <T: Uniforms> IProgram<T>.useAndBind(block: (T) -> Unit) {
     bind()
 }
 
+context(FileMonitor)
 fun AbstractProgram<*>.replaceOldListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
     removeOldListeners()
     fileListeners.addAll(sources.registerFileChangeListeners(reloadable))
 }
 
+context(FileMonitor)
 fun AbstractProgram<*>.removeOldListeners() {
-    FileMonitor.monitor.observers.forEach { observer ->
+    monitor.observers.forEach { observer ->
         fileListeners.forEach { listener ->
             observer.removeListener(listener)
         }
@@ -326,6 +328,7 @@ fun AbstractProgram<*>.removeOldListeners() {
     fileListeners.clear()
 }
 
+context(FileMonitor)
 fun Program<*>.createFileListeners() {
     val sources = listOfNotNull(
         fragmentShader?.source,
@@ -339,16 +342,19 @@ fun Program<*>.createFileListeners() {
     replaceOldListeners(fileBasedSources, this)
 }
 
+context(FileMonitor)
 fun ComputeProgram.createFileListeners() {
     val sources: List<FileBasedCodeSource> = listOf(computeShader.source).filterIsInstance<FileBasedCodeSource>()
     replaceOldListeners(sources, this)
 }
 
-fun List<FileBasedCodeSource>.registerFileChangeListeners(reloadable: Reloadable): List<OnFileChangeListener> {
-    return map { it.registerFileChangeListener(reloadable) }
+context(FileMonitor)
+fun List<FileBasedCodeSource>.registerFileChangeListeners(reloadable: Reloadable) = map {
+    it.registerFileChangeListener(reloadable)
 }
 
-fun FileBasedCodeSource.registerFileChangeListener(reloadable: Reloadable) = FileMonitor.addOnFileChangeListener(
+context(FileMonitor)
+fun FileBasedCodeSource.registerFileChangeListener(reloadable: Reloadable) = addOnFileChangeListener(
     file,
     { file ->
         file.name.startsWith("globals")

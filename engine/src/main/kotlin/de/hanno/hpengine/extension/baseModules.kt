@@ -43,6 +43,7 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.state.*
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.scene.WorldAABBStateHolder
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
@@ -188,7 +189,11 @@ val baseModule = module {
             RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll(), get())
         }
     }
-    single { OpenGlProgramManager(get(), get()) } binds arrayOf(
+    single {
+        get<FileMonitor>().run {
+            OpenGlProgramManager(get(), get())
+        }
+    } binds arrayOf(
         ProgramManager::class,
         OpenGlProgramManager::class,
     )
@@ -201,6 +206,8 @@ val baseModule = module {
         OpenGLTextureManager::class,
     )
 
+    single { FileMonitor() }
+
     single { GlfwWindow(get()) } bind Window::class
 
     addBackendModule()
@@ -212,7 +219,7 @@ val baseModule = module {
     addOceanWaterModule()
     addDirectionalLightModule()
 
-    single { KotlinComponentSystem() } binds arrayOf(
+    single { KotlinComponentSystem(get()) } binds arrayOf(
         KotlinComponentSystem::class,
         ImGuiEditorExtension::class
     )

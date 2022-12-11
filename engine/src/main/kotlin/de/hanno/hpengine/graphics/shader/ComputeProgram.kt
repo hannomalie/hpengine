@@ -4,6 +4,7 @@ import de.hanno.hpengine.graphics.renderer.pipelines.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.ressources.FileBasedCodeSource
+import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.transform.x
 import de.hanno.hpengine.transform.y
 import de.hanno.hpengine.transform.z
@@ -19,6 +20,7 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.LongBuffer
 
+context(FileMonitor)
 class ComputeProgram(
     programManager: OpenGlProgramManager,
     val computeShader: ComputeShader,
