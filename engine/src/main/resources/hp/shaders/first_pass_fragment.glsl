@@ -168,7 +168,8 @@ void main(void) {
 //	This is for reusability, remove this somewhen with a better
 //	mechanism for color output channel options
 #ifdef COLOR_OUTPUT_0
-	out_positionRoughness.rgb = vec3(1.0f,0.1f,0.1f);
+	out_positionRoughness.rgb = color.rgb;
+//	out_positionRoughness.rgb = 0.01f * vec3(gl_FragCoord.z / gl_FragCoord.w);
 	out_positionRoughness.a = 1;
 #endif
 

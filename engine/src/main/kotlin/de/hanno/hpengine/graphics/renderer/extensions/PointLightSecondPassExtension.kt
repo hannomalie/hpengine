@@ -4,6 +4,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
@@ -14,11 +15,8 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.stopwatch.GPUProfiler
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL42
 
-context(GPUProfiler)
+context(GPUProfiler, de.hanno.hpengine.graphics.GpuContext)
 class PointLightSecondPassExtension(
     private val gpuContext: GpuContext,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -50,15 +48,13 @@ class PointLightSecondPassExtension(
             gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
             gpuContext.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
-            // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(
+            gpuContext.bindImageTexture(
                 4,
-                deferredRenderingBuffer.lightAccumulationMapOneId,
+                deferredRenderingBuffer.laBuffer.textures[0],
                 0,
                 false,
                 0,
-                GL15.GL_READ_WRITE,
-                GL30.GL_RGBA16F
+                Access.ReadWrite,
             )
             secondPassPointComputeProgram.use()
             secondPassPointComputeProgram.setUniform("pointLightCount",

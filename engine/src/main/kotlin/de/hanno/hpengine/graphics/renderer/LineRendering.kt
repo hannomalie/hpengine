@@ -1,19 +1,23 @@
 package de.hanno.hpengine.graphics.renderer
 
 
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
+import Vector4fStruktImpl.Companion.type
+import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.renderer.pipelines.TypedGpuBuffer
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.vertexbuffer.drawLines
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.identityMatrix4fBuffer
 import org.joml.Vector3fc
+import struktgen.api.forIndex
 import java.nio.FloatBuffer
 import kotlin.math.min
 
+context(GpuContext)
 fun drawLines(
     programManager: ProgramManager,
     linesProgram: IProgram<LinesProgramUniforms>,
-    vertices: PersistentTypedBuffer<Vector4fStrukt>,
+    vertices: TypedGpuBuffer<Vector4fStrukt>,
     linePoints: List<Vector3fc>,
     lineWidth: Float = 5f,
     modelMatrix: FloatBuffer = identityMatrix4fBuffer,
@@ -27,7 +31,6 @@ fun drawLines(
     vertices.putLinesPoints(linePoints)
 
     drawLines(
-        programManager,
         linesProgram,
         vertices,
         lineWidth,
@@ -39,18 +42,18 @@ fun drawLines(
     )
 }
 
-fun PersistentTypedBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector3fc>) {
-    ensureCapacityInBytes(linePoints.size * type.sizeInBytes)
+fun TypedGpuBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector3fc>) {
+    ensureCapacityInBytes(linePoints.size * Vector4fStrukt.type.sizeInBytes)
 
     for (i in linePoints.indices) {
-        this.typedBuffer.forIndex(i) { it.set(linePoints[i]) }
+        forIndex(i) { it.set(linePoints[i]) }
     }
 }
 
+context(GpuContext)
 fun drawLines(
-    programManager: ProgramManager,
     linesProgram: IProgram<LinesProgramUniforms>,
-    vertices: PersistentTypedBuffer<Vector4fStrukt>,
+    vertices: TypedGpuBuffer<Vector4fStrukt>,
     lineWidth: Float = 5f,
     verticesCount: Int,
     modelMatrix: FloatBuffer = identityMatrix4fBuffer,
@@ -68,6 +71,6 @@ fun drawLines(
         uniforms.color.set(color)
         uniforms.vertices = vertices
     }
-    drawLines(min(lineWidth, programManager.gpuContext.maxLineWidth), verticesCount)
+    drawLines(min(lineWidth, maxLineWidth), verticesCount)
 }
 

@@ -17,15 +17,11 @@ import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
-import de.hanno.hpengine.graphics.renderer.constants.Capability
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.renderer.constants.MinFilter
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
@@ -38,17 +34,14 @@ import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.graphics.texture.*
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.glEnable
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
+import struktgen.api.forIndex
 import java.nio.FloatBuffer
 
 class ReflectionProbe(val extents: Vector3f = Vector3f(100f)) : com.artemis.Component() {
@@ -84,7 +77,7 @@ class ReflectionProbeRenderState {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
     val probeMinMaxStructBuffer = onGpu {
-        PersistentMappedBuffer(Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+        PersistentShaderStorageBuffer(Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
     val probePositions = mutableListOf<Vector3f>()
 }
@@ -101,6 +94,7 @@ class ReflectionProbeRenderExtension(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val reflectionProbesStateHolder: ReflectionProbesStateHolder,
 ) : DeferredRenderExtension {
+    private val fullscreenBuffer = QuadVertexBuffer()
     override val renderPriority = 3000
 
     private val reflectionProbeRenderState = renderState.registerState {
@@ -151,7 +145,7 @@ class ReflectionProbeRenderExtension(
     val cubeMapArray = listOf(
         ColorAttachmentDefinition(
             "ReflectionProbe",
-            GL30.GL_RGBA16F,
+            InternalTextureFormat.RGBA16F,
             TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR)
         )
     ).toCubeMapArrays(
@@ -162,7 +156,7 @@ class ReflectionProbeRenderExtension(
 
     private var renderedInCycle: Long = -1
     val probeRenderers = (0 until cubeMapArray.dimension.depth).map {
-        ReflectionProbeRenderer(config, programManager, cubeMapArray.createView(it), it)
+        ReflectionProbeRenderer(config, programManager, createView(cubeMapArray, it), it)
     }
 
     val evaluateProbeProgram = programManager.getProgram(
@@ -184,7 +178,7 @@ class ReflectionProbeRenderExtension(
         targetState.reRenderProbesInCycle = if (config.debug.reRenderProbes) renderState.cycle else 0L
         targetState.probeCount = componentCount
         val probeMinMaxStructBuffer = targetState.probeMinMaxStructBuffer
-        probeMinMaxStructBuffer.resize(componentCount * 2)
+        probeMinMaxStructBuffer.ensureCapacityInBytes(Vector4fStrukt.sizeInBytes * componentCount * 2)
         val probePositions = targetState.probePositions
         probePositions.clear()
         components.forEachIndexed { index, probe ->
@@ -207,7 +201,7 @@ class ReflectionProbeRenderExtension(
 
     }
 
-    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices = PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     override fun renderEditor(renderState: RenderState) {
 
         if (config.debug.isEditorOverlay) {
@@ -375,12 +369,11 @@ class ReflectionProbeRenderExtension(
                         pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch
-                                .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
+                                .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill
                         )
                     }
                 }
-                val cubeMapArray = cubeMapRenderTarget.textures.first()
-                textureManager.generateMipMaps(TextureTarget.TEXTURE_CUBE_MAP, cubeMapArray.id)
+                generateMipMaps(cubeMapRenderTarget.textures.first())
             }
         }
     }
@@ -393,12 +386,6 @@ class ReflectionProbeRenderer(
     val cubeMap: CubeMap,
     val indexInCubeMapArray: Int
 ) {
-
-    init {
-        onGpu {
-            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
-        }
-    }
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
     var pointCubeShadowPassProgram = programManager.getProgram(
@@ -415,8 +402,8 @@ class ReflectionProbeRenderer(
                 OpenGLCubeMap(
                     TextureDimension(cubeMap.dimension.width, cubeMap.dimension.height),
                     TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
-                    GL14.GL_DEPTH_COMPONENT24,
-                    GL11.GL_REPEAT
+                    InternalTextureFormat.DEPTH_COMPONENT24,
+                    WrapMode.Repeat
                 )
             )
         ),

@@ -4,24 +4,22 @@ import DrawElementsIndirectCommandStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
+import InternalTextureFormat.*
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.IndirectCulledDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.renderer.constants.MagFilter
-import de.hanno.hpengine.graphics.renderer.constants.MinFilter
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.ZERO_BUFFER
 import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.shader.IProgram
@@ -31,15 +29,15 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.TextureDimension
-import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
+import de.hanno.hpengine.graphics.vertexbuffer.drawElementsIndirectCount
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
-import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL15.GL_WRITE_ONLY
+import struktgen.api.forIndex
+import struktgen.api.get
 
 context(GpuContext, GPUProfiler)
 open class GPUCulledPipeline(
@@ -72,17 +70,20 @@ open class GPUCulledPipeline(
     }
 
     private val baseDepthTexture = OpenGLTexture2D(
-        info = Texture2DUploadInfo(TextureDimension(config.width, config.height), internalFormat = GL30.GL_RGBA16F),
+        info = Texture2DUploadInfo(TextureDimension(config.width, config.height), internalFormat = RGBA16F),
         textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
-        wrapMode = GL12.GL_CLAMP_TO_EDGE,
+        wrapMode = WrapMode.ClampToEdge,
     ).apply {
         textureManager.registerTextureForDebugOutput("High Z base depth", this)
     }
 
     private val debugMinMaxTexture = OpenGLTexture2D(
-        info = Texture2DUploadInfo(TextureDimension(config.width / 2, config.height / 2), internalFormat = GL30.GL_RGBA16F),
+        info = Texture2DUploadInfo(
+            TextureDimension(config.width / 2, config.height / 2),
+            internalFormat = RGBA16F
+        ),
         textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
-        wrapMode = GL12.GL_CLAMP_TO_EDGE,
+        wrapMode = WrapMode.ClampToEdge,
     ).apply {
         textureManager.registerTextureForDebugOutput("Min Max Debug", this)
     }
@@ -93,9 +94,12 @@ open class GPUCulledPipeline(
         height = config.height / 2,
         textures = listOf(
             OpenGLTexture2D(
-                info = Texture2DUploadInfo(TextureDimension(config.width / 2, config.height / 2), internalFormat = GL30.GL_RGBA16F),
+                info = Texture2DUploadInfo(
+                    TextureDimension(config.width / 2, config.height / 2),
+                    internalFormat = RGBA16F
+                ),
                 textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
-                wrapMode = GL12.GL_CLAMP_TO_EDGE,
+                wrapMode = WrapMode.ClampToEdge,
             )
         ), name = "High Z"
     ).apply {
@@ -103,9 +107,9 @@ open class GPUCulledPipeline(
     }
 
     fun copyDepthTexture() {
-        GL43.glCopyImageSubData(
-            deferredRenderingBuffer.depthAndIndicesMap.id, GL13.GL_TEXTURE_2D, 0, 0, 0, 0,
-            baseDepthTexture.id, GL13.GL_TEXTURE_2D, 0, 0, 0, 0,
+        copyImageSubData(
+            deferredRenderingBuffer.depthAndIndicesMap, 0, 0, 0, 0,
+            baseDepthTexture, 0, 0, 0, 0,
             baseDepthTexture.dimension.width, baseDepthTexture.dimension.height, 1
         )
     }
@@ -142,7 +146,7 @@ open class GPUCulledPipeline(
         programAnimated: IProgram<AnimatedFirstPassUniforms>
     ) {
         profiled("Actual draw entities") {
-            val mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Faces
+            val mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill
 
             val camera = renderState[primaryCameraStateHolder.camera]
 
@@ -177,12 +181,11 @@ open class GPUCulledPipeline(
         drawDescriptionStatic: IndirectCulledDrawDescription<StaticFirstPassUniforms>,
         drawDescriptionAnimated: IndirectCulledDrawDescription<AnimatedFirstPassUniforms>
     ) {
-        ARBClearTexture.glClearTexImage(
-            highZBuffer.renderedTexture,
+        clearTexImage(
+            highZBuffer.textures[0],
+            Format.RGBA,
             0,
-            GL11.GL_RGBA,
-            GL11.GL_UNSIGNED_BYTE,
-            ZERO_BUFFER
+            TexelComponentType.UnsignedByte,
         )
         profiled("Cull&Render Phase1") {
             drawDescriptionStatic.cullAndRender(CoarseCullingPhase.ONE.staticPhase)
@@ -222,7 +225,7 @@ open class GPUCulledPipeline(
                 mipmapTarget,
                 false,
                 0,
-                GL15.GL_READ_WRITE,
+                Access.ReadWrite,
                 HIGHZ_FORMAT
             )
             bindTexture(2, TextureTarget.TEXTURE_2D, baseDepthTexture.id)
@@ -233,8 +236,7 @@ open class GPUCulledPipeline(
             lastHeight = currentHeight
             currentWidth /= 2
             currentHeight /= 2
-            GL42.glMemoryBarrier(GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
-            //            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            memoryBarrier(Barrier.ShaderImageAccess)
         }
     }
 
@@ -243,7 +245,7 @@ open class GPUCulledPipeline(
         commandOrganization: CommandOrganizationGpuCulled,
         phase: CullingPhase, cullCam: Camera
     ) = profiled("Visibility detection") {
-        ARBClearTexture.glClearTexImage(debugMinMaxTexture.id, 0, GL11.GL_RGBA, GL11.GL_FLOAT, ZERO_BUFFER)
+        clearTexImage(debugMinMaxTexture, Format.RGBA, 0, TexelComponentType.Float)
 
         val occlusionCullingPhase =
             if (phase.coarsePhase == CoarseCullingPhase.ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
@@ -278,17 +280,17 @@ open class GPUCulledPipeline(
                 0,
                 false,
                 0,
-                GL_WRITE_ONLY,
+                Access.WriteOnly,
                 debugMinMaxTexture.internalFormat
             )
-            GL31.glDrawArraysInstanced(
-                GL11.GL_TRIANGLES,
+            drawArraysInstanced(
+                PrimitiveType.Triangles,
                 0,
                 ((commandOrganization.commandCount + 2) / 3) * 3,
                 invocationsPerCommand
             )
-            GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT)
-            GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
+//            memoryBarrier(Barrier.ShaderImageAccess)
+            memoryBarrier()
         }
     }
 
@@ -309,10 +311,10 @@ open class GPUCulledPipeline(
                 val instanceCount = commandOrganization.filteredRenderBatches.sumByLong {
                         it.drawElementsIndirectCommand.instanceCount.toLong()
                     }.toInt()
-                visibilities.resize(instanceCount)
+                visibilities.ensureCapacityInBytes(instanceCount * IntStrukt.sizeInBytes)
                 commandOrganization.entitiesCompacted.ensureCapacityInBytes(instanceCount * EntityStrukt.sizeInBytes)
                 val entitiesCountersToUse = instanceCountForCommand
-                entitiesCountersToUse.resize(commandCount)
+                entitiesCountersToUse.ensureCapacityInBytes(commandCount * IntStrukt.sizeInBytes)
                 with(appendProgram) {
                     use()
                     bindShaderStorageBuffer(1, instanceCountForCommand)
@@ -332,22 +334,22 @@ open class GPUCulledPipeline(
                         0,
                         false,
                         0,
-                        GL_WRITE_ONLY,
+                        Access.WriteOnly,
                         debugMinMaxTexture.internalFormat
                     )
                     if (config.debug.isUseComputeShaderDrawCommandAppend) {
                         appendDrawCommandsComputeProgram.dispatchCompute(commandCount, 1, 1)
                     } else {
                         val invocationsPerCommand = 4096
-                        GL31.glDrawArraysInstanced(
-                            GL11.GL_TRIANGLES,
+                        drawArraysInstanced(
+                            PrimitiveType.Triangles,
                             0,
                             ((invocationsPerCommand + 2) / 3) * 3,
                             commandCount
                         )
                     }
-                    GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT or GL42.GL_TEXTURE_FETCH_BARRIER_BIT or GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT or GL42.GL_COMMAND_BARRIER_BIT)
-                    GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
+//                    memoryBarrier(Barrier.ShaderImageAccess)
+                    memoryBarrier()
                 }
             }
         }
@@ -405,7 +407,7 @@ open class GPUCulledPipeline(
                 }
 
                 program.bind()
-                vertexIndexBuffer.multiDrawElementsIndirectCount(
+                vertexIndexBuffer.drawElementsIndirectCount(
                     commandOrganization.commands,
                     commandOrganization.drawCountsCompacted,
                     0,
@@ -423,14 +425,14 @@ val RenderBatch.canBeRenderedInIndirectBatch
 
 fun addCommands(
     renderBatches: List<RenderBatch>,
-    commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
-    entityOffsetBuffer: PersistentTypedBuffer<IntStrukt>
+    commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
+    entityOffsetBuffer: TypedGpuBuffer<IntStrukt>
 ) {
     val resultingCommandCount = renderBatches.size
-    entityOffsetBuffer.resize(resultingCommandCount * IntStrukt.sizeInBytes)
+    entityOffsetBuffer.ensureCapacityInBytes(resultingCommandCount * IntStrukt.sizeInBytes)
     entityOffsetBuffer.buffer.rewind()
-    commandBuffer.persistentMappedBuffer.enlarge(resultingCommandCount * DrawElementsIndirectCommandStrukt.sizeInBytes)
-    commandBuffer.persistentMappedBuffer.buffer.rewind()
+    commandBuffer.ensureCapacityInBytes(resultingCommandCount * DrawElementsIndirectCommandStrukt.sizeInBytes)
+    commandBuffer.byteBuffer.rewind()
 
     commandBuffer.typedBuffer.byteBuffer.run {
         for ((index, batch) in renderBatches.withIndex()) {
@@ -449,7 +451,7 @@ fun addCommands(
     commandBuffer.typedBuffer.byteBuffer.rewind()
 }
 
-private const val HIGHZ_FORMAT = GL30.GL_R32F
+private val HIGHZ_FORMAT = InternalTextureFormat.R32F
 
 enum class CoarseCullingPhase {
     ONE,
@@ -482,7 +484,7 @@ class CommandOrganizationGpuCulled {
     val commandOffsets = OpenGLIndexBuffer()
     val currentCompactedPointers = OpenGLIndexBuffer()
     val offsetsCompacted = OpenGLIndexBuffer()
-    val entitiesCompacted = PersistentMappedBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
+    val entitiesCompacted = PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
     val entitiesCompactedCounter = AtomicCounterBuffer()
     val instanceCountForCommand = OpenGLIndexBuffer()
 }

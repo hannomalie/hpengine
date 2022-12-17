@@ -16,7 +16,6 @@ import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
@@ -26,6 +25,7 @@ import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -36,10 +36,8 @@ import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL42
 import struktgen.api.Strukt
+import struktgen.api.forIndex
 import java.nio.ByteBuffer
 
 interface BvhNodeGpu : Strukt {
@@ -144,7 +142,7 @@ class BvHPointLightSecondPassExtension(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
-    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices = PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
     private val secondPassPointBvhComputeProgram =
         programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
@@ -192,7 +190,7 @@ class BvHPointLightSecondPassExtension(
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    val bvh = PersistentMappedBuffer(BvhNodeGpu.type.sizeInBytes).typed(BvhNodeGpu.type)
+    val bvh = PersistentShaderStorageBuffer(BvhNodeGpu.type.sizeInBytes).typed(BvhNodeGpu.type)
 
     fun Vector4f.set(other: Vector3f) {
         x = other.x
@@ -267,15 +265,14 @@ class BvHPointLightSecondPassExtension(
             gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
             gpuContext.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             pointLightState.pointLightShadowMapStrategy.bindTextures()
-            // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(
+            gpuContext.bindImageTexture(
                 4,
                 deferredRenderingBuffer.lightAccumulationMapOneId,
                 0,
                 false,
                 0,
-                GL15.GL_READ_WRITE,
-                GL30.GL_RGBA16F
+                Access.ReadWrite,
+                InternalTextureFormat.RGBA16F
             )
             secondPassPointBvhComputeProgram.use()
             secondPassPointBvhComputeProgram.setUniform("nodeCount", nodeCount)

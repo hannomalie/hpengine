@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.texture
 
+import InternalTextureFormat
 import java.nio.ByteBuffer
 
 enum class UploadState {
@@ -14,7 +15,7 @@ sealed class UploadInfo {
         val data: ByteBuffer? = null,
         val dataCompressed: Boolean = false,
         val srgba: Boolean = false,
-        val internalFormat: Int,
+        val internalFormat: InternalTextureFormat,
     ) : UploadInfo() {
         init {
             require(dimension.width > 0) { "Illegal width $dimension" }
@@ -22,8 +23,9 @@ sealed class UploadInfo {
         }
     }
 
-    data class Texture3DUploadInfo(val dimension: TextureDimension3D,
-                                   val internalFormat: Int,) : UploadInfo() {
+    data class Texture3DUploadInfo(
+        val dimension: TextureDimension3D,
+        val internalFormat: InternalTextureFormat,) : UploadInfo() {
         init {
             require(dimension.width > 0) { "Illegal width $dimension" }
             require(dimension.height > 0) { "Illegal height $dimension" }
@@ -34,15 +36,16 @@ sealed class UploadInfo {
     data class CubeMapUploadInfo(
         val dimension: TextureDimension2D,
         val buffers: List<ByteBuffer> = emptyList(),
-        val internalFormat: Int,
+        val internalFormat: InternalTextureFormat,
     ) : UploadInfo() {
         init {
             require(dimension.width > 0) { "Illegal width $dimension" }
             require(dimension.height > 0) { "Illegal height $dimension" }
         }
     }
-    data class CubeMapArrayUploadInfo(val dimension: TextureDimension3D,
-                                      val internalFormat: Int,) : UploadInfo() {
+    data class CubeMapArrayUploadInfo(
+        val dimension: TextureDimension3D,
+        val internalFormat: InternalTextureFormat,) : UploadInfo() {
         init {
             require(dimension.width > 0) { "Illegal width $dimension" }
             require(dimension.height > 0) { "Illegal height $dimension" }

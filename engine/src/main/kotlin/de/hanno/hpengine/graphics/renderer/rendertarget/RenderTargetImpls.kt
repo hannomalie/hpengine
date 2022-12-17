@@ -1,18 +1,11 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
 
-import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.constants.MagFilter
-import de.hanno.hpengine.graphics.renderer.constants.MinFilter
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.WrapMode
 import de.hanno.hpengine.graphics.texture.*
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL30.*
-import java.util.logging.Logger
 import kotlin.math.max
 
 val borderColorBuffer = BufferUtils.createFloatBuffer(4).apply {
@@ -88,6 +81,30 @@ internal fun <T : Texture> RenderTarget(
 )
 
 context(GpuContext)
+internal fun <T : Texture2D> RenderTarget2D(
+    frameBuffer: OpenGLFrameBuffer,
+    width: Int = 1280,
+    height: Int = 720,
+    textures: List<T> = emptyList(),
+    name: String,
+    clear: Vector4f = Vector4f(
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f
+    )
+) = RenderTarget2D(
+    RenderTargetImpl(
+        frameBuffer,
+        width,
+        height,
+        textures,
+        name,
+        clear,
+    )
+)
+
+context(GpuContext)
 class RenderTargetImpl<T : Texture>(
     override val frameBuffer: OpenGLFrameBuffer,
     override val width: Int = 1280,
@@ -114,25 +131,22 @@ class RenderTargetImpl<T : Texture>(
         onGpu {
             bindFrameBuffer(frameBuffer)
 
-//            TODO: Is this needed anymore?
-//            configureBorderColor()
-
             if (textures.first() is OpenGLCubeMapArray) {
                 textures.forEachIndexed { index, it ->
-                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, 0, 0, 0)
+                    framebufferTextureLayer(index, it, 0, 0)
                 }
             } else {
                 textures.forEachIndexed { index, it ->
-                    GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, it.id, 0)
-                    drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index
+                    framebufferTexture(index, it, 0)
+                    drawBuffers[index] = index
                     renderedTextureHandles[index] = it.handle
                     renderedTextures[index] = it.id // TODO: Remove me and the line above me
                 }
             }
 
-            GL20.glDrawBuffers(drawBuffers)
+            drawBuffers(drawBuffers)
 
-            validateFrameBufferState()
+            validateFrameBufferState(this@RenderTargetImpl)
 
             clearColor(clear.x, clear.y, clear.z, clear.w)
         }
@@ -185,7 +199,7 @@ class RenderTargetImpl<T : Texture>(
     }
 
     override fun setTargetTexture(textureID: Int, index: Int, mipMapLevel: Int) {
-        GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureID, mipMapLevel)
+        framebufferTexture(index, textureID, mipMapLevel)
     }
 
     /**
@@ -195,10 +209,9 @@ class RenderTargetImpl<T : Texture>(
      * @param mipmap          the mipmap level that should be bound
      */
     override fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int) {
-        glFramebufferTexture2D(
-            GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0 + attachmentIndex,
-            GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index,
+        framebufferTexture(
+            attachmentIndex,
+            index,
             textureId,
             mipmap
         )
@@ -216,49 +229,8 @@ class RenderTargetImpl<T : Texture>(
         this.renderedTextures[index] = renderedTexture
     }
 
-    override fun setTargetTextureArrayIndex(textureArray: Int, textureIndex: Int) {
-        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureArray, 0, textureIndex)
-    }
-
-    companion object {
-
-        val LOGGER = Logger.getLogger(BackBufferRenderTarget::class.java.name)
-
-        fun RenderTargetImpl<*>.validateFrameBufferState() {
-            val frameBufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)
-            if (frameBufferStatus != GL_FRAMEBUFFER_COMPLETE) {
-                LOGGER.severe("RenderTarget fucked up")
-                when (frameBufferStatus) {
-                    GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT")
-                    GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT")
-                    GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER")
-                    GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER")
-                    GL_FRAMEBUFFER_UNSUPPORTED -> LOGGER.severe("GL_FRAMEBUFFER_UNSUPPORTED")
-                    GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE")
-                    GL_FRAMEBUFFER_UNDEFINED -> LOGGER.severe("GL_FRAMEBUFFER_UNDEFINED")
-                }
-                throw RuntimeException("Rendertarget $name fucked up")
-            }
-        }
-
-        fun configureBorderColor() {
-            GL11.glTexParameterfv(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer)
-        }
-
-        fun generateTextureHandle(gpuContext: GpuContext, textureId: Int): Long = if (gpuContext.isSupported(
-                BindlessTextures
-            )
-        ) {
-            val handle = ARBBindlessTexture.glGetTextureHandleARB(textureId)
-            ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
-            handle
-        } else -1
-
-        fun getComponentsForFormat(internalFormat: Int): Int = when (internalFormat) {
-            GL11.GL_RGBA8, GL_RGBA16F, GL_RGBA32F -> GL11.GL_RGBA
-            GL_R32F -> GL11.GL_RED
-            else -> throw IllegalArgumentException("Component identifier missing for internalFormat $internalFormat")
-        }
+    override fun setTargetTextureArrayIndex(textureId: Int, layer: Int) {
+        framebufferTextureLayer(0, textureId, 0, layer)
     }
 }
 
@@ -268,20 +240,23 @@ fun List<ColorAttachmentDefinition>.toTextures(
     height: Int
 ): List<OpenGLTexture2D> = map {
     OpenGLTexture2D(
-        info = UploadInfo.Texture2DUploadInfo(dimension = TextureDimension(width, height), internalFormat = it.internalFormat),
+        info = UploadInfo.Texture2DUploadInfo(
+            dimension = TextureDimension(width, height),
+            internalFormat = it.internalFormat
+        ),
         textureFilterConfig = it.textureFilter
     )
 }
 
 context(GpuContext)
 fun List<ColorAttachmentDefinition>.toCubeMaps(width: Int, height: Int): List<OpenGLCubeMap> = map {
-        OpenGLCubeMap(
-            dimension = TextureDimension(width, height),
-            filterConfig = it.textureFilter,
-            internalFormat = it.internalFormat,
-            wrapMode = GL_REPEAT,
-        )
-    }
+    OpenGLCubeMap(
+        dimension = TextureDimension(width, height),
+        filterConfig = it.textureFilter,
+        internalFormat = it.internalFormat,
+        wrapMode = WrapMode.Repeat,
+    )
+}
 
 context(GpuContext)
 fun List<ColorAttachmentDefinition>.toCubeMapArrays(
@@ -293,56 +268,6 @@ fun List<ColorAttachmentDefinition>.toCubeMapArrays(
         TextureDimension(width, height, depth),
         it.textureFilter,
         it.internalFormat,
-        GL_REPEAT
+        WrapMode.Repeat,
     )
-}
-
-context(GpuContext)
-class DepthBuffer<T : Texture>(val texture: T) {
-
-    companion object {
-        context(GpuContext)
-        operator fun invoke(width: Int, height: Int): DepthBuffer<OpenGLTexture2D> {
-            val dimension = TextureDimension(width, height)
-            val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
-            val textureTarget = TextureTarget.TEXTURE_2D
-            val internalFormat = GL14.GL_DEPTH_COMPONENT24
-            val (textureId, handle, wrapMode) = allocateTexture(
-                UploadInfo.Texture2DUploadInfo(dimension, internalFormat = internalFormat),
-                textureTarget,
-                filterConfig,
-                GL_REPEAT,
-            )
-
-            return DepthBuffer(
-                OpenGLTexture2D(
-                    dimension,
-                    textureId,
-                    textureTarget,
-                    internalFormat,
-                    handle,
-                    filterConfig,
-                    wrapMode,
-                    UploadState.UPLOADED
-                )
-            )
-        }
-    }
-}
-
-class RenderBuffer private constructor(val renderBuffer: Int, val width: Int, val height: Int) {
-    fun bind(gpuContext: GpuContext) = gpuContext.onGpu {
-        glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)
-    }
-
-    companion object {
-        operator fun invoke(gpuContext: GpuContext, width: Int, height: Int): RenderBuffer {
-            val renderBuffer = gpuContext.onGpu {
-                val renderBuffer = glGenRenderbuffers()
-                glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)
-                renderBuffer
-            }
-            return RenderBuffer(renderBuffer, width, height)
-        }
-    }
 }

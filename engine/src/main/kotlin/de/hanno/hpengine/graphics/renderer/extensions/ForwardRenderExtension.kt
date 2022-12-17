@@ -5,8 +5,8 @@ import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
+import de.hanno.hpengine.graphics.renderer.constants.BlendMode.Factor.*
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -19,14 +19,6 @@ import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL32
-import org.lwjgl.opengl.GL40.GL_ONE
-import org.lwjgl.opengl.GL40.GL_ONE_MINUS_SRC_ALPHA
-import org.lwjgl.opengl.GL40.GL_ZERO
-import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
-import org.lwjgl.opengl.GL40.glBlendFunci
 
 context(GpuContext)
 class ForwardRenderExtension(
@@ -52,16 +44,16 @@ class ForwardRenderExtension(
     override fun renderFirstPass(renderState: RenderState) {
         deferredRenderingBuffer.forwardBuffer.use(false)
 
-        GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f, 0f, 0f, 0f))
-        GL30.glClearBufferfv(GL11.GL_COLOR, 1, floatArrayOf(1f, 1f, 1f, 1f))
+        clearColorBuffer(0, floatArrayOf(0f, 0f, 0f, 0f))
+        clearColorBuffer(1, floatArrayOf(1f, 1f, 1f, 1f))
 //        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
-        GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, deferredRenderingBuffer.depthBufferTexture, 0)
+        framebufferDepthTexture(deferredRenderingBuffer.depthBufferTexture, 0)
         depthMask = false
         depthFunc = DepthFunc.LEQUAL
         blend = true
         blendEquation = BlendMode.FUNC_ADD
-        glBlendFunci(0, GL_ONE, GL_ONE)
-        glBlendFuncSeparatei(1, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
+        blendFunction(0, ONE, ONE)
+        blendFunctionRGBAlpha(1, ZERO, ONE_MINUS_SRC_ALPHA, ONE, ONE)
 
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
@@ -81,7 +73,7 @@ class ForwardRenderExtension(
             programStatic.setTextureUniforms(batch.material.maps)
             entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
-                primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Faces
+                primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Fill
             )
         }
         blend = false

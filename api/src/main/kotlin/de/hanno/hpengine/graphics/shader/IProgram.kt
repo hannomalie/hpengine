@@ -1,28 +1,20 @@
 package de.hanno.hpengine.graphics.shader
 
-import de.hanno.hpengine.graphics.renderer.pipelines.AtomicCounterBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
-import de.hanno.hpengine.graphics.shader.api.Shader
-import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.ressources.Reloadable
-import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.LongBuffer
-import java.util.ArrayList
-import java.util.HashMap
 
 interface IComputeProgram<T: Uniforms>: IProgram<T> {
     fun dispatchCompute(num_groups_x: Int, num_groups_y: Int, num_groups_z: Int)
 }
 
 interface IProgram<T: Uniforms> {
+    val id: Int
     val uniforms: T
     val shaders: List<Shader>
-    fun use()
     fun setUniform(name: String, value: Int)
     fun setUniform(name: String, value: Boolean)
     fun setUniform(name: String, value: Float)
@@ -38,35 +30,16 @@ interface IProgram<T: Uniforms> {
     fun setUniform(name: String, vec: Vector2f)
     fun setUniformVector3ArrayAsFloatBuffer(name: String, values: FloatBuffer)
     fun setUniformFloatArrayAsFloatBuffer(name: String, values: FloatBuffer)
-    fun getUniformLocation(name: String): Int
-    fun bindShaderStorageBuffer(index: Int, block: GpuBuffer)
-    fun bindAtomicCounterBufferBuffer(index: Int, block: AtomicCounterBuffer)
-    fun getShaderStorageBlockIndex(name: String): Int
-    fun getShaderStorageBlockBinding(name: String, bindingIndex: Int)
-    fun UniformDelegate<*>.bind()
-    fun bind()
+    val uniformBindings: HashMap<String, UniformBinding>
 }
 
-abstract class AbstractProgram<T : Uniforms>(
-    val id: Int,
-    val defines: Defines = Defines(),
-    override val uniforms: T
-) : IProgram<T>, Reloadable {
-    abstract override var shaders: List<Shader>
-        protected set
-
-    val fileListeners: MutableList<FileAlterationListenerAdaptor> = ArrayList()
-
-    protected val uniformBindings = HashMap<String, UniformBinding>()
-
-    protected fun clearUniforms() {
-        uniformBindings.clear()
+val Map.Entry<String, Any>.defineText: String
+    get() = when (value) {
+        is Boolean -> "const bool $key = $value;\n"
+        is Int -> "const int $key = $value;\n"
+        is Float -> "const float $key = $value;\n"
+        else -> throw java.lang.IllegalStateException("Local define not supported type for $key - $value")
     }
-
-    override fun bind() = uniforms.registeredUniforms.forEach {
-        it.bind()
-    }
-}
 
 fun FloatBuffer.safePut(matrix: FloatBuffer) {
     rewind()

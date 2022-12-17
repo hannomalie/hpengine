@@ -4,6 +4,7 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
 
 
 interface Window: GpuExecutor {
+    val handle: Long
     var title: String
 
     var width: Int

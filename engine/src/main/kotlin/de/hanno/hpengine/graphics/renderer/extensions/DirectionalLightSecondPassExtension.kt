@@ -14,12 +14,14 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
+import struktgen.api.forIndex
 
-context(GPUProfiler)
+context(GPUProfiler, GpuContext)
 class DirectionalLightSecondPassExtension(
     private val config: Config,
     private val programManager: ProgramManager,
@@ -29,6 +31,8 @@ class DirectionalLightSecondPassExtension(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
+    // TODO: Remove all the creations of fullscreenbuffer, so that it is shared and bound once?
+    private val fullscreenBuffer = gpuContext.run { QuadVertexBuffer() }
     private val secondPassDirectionalProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_fragment.glsl"))
@@ -103,9 +107,8 @@ class DirectionalLightSecondPassExtension(
                 secondPassDirectionalProgram.bindShaderStorageBuffer(2, directionalLightState)
             }
             profiled("Draw fullscreen buffer") {
-                gpuContext.fullscreenBuffer.draw()
+                fullscreenBuffer.draw()
             }
-
         }
     }
 }

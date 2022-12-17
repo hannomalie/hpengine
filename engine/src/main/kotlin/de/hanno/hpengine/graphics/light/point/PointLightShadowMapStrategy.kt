@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.light.point
 
 
+import InternalTextureFormat.*
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
@@ -10,24 +11,18 @@ import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_CUBE_
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.renderer.constants.WrapMode.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.OpenGLCubeMapArray
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
-import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL42
 import java.io.File
 
 interface PointLightShadowMapStrategy {
@@ -52,8 +47,8 @@ class CubeShadowMapStrategy(
     val cubeMapArray = OpenGLCubeMapArray(
         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
         TextureFilterConfig(MinFilter.NEAREST),
-        GL30.GL_RGBA16F,
-        GL_REPEAT
+        RGBA16F,
+        Repeat
     )
     val pointLightDepthMapsArrayCube = cubeMapArray.id
     var cubemapArrayRenderTarget: CubeMapArrayRenderTarget = CubeMapArrayRenderTarget(
@@ -172,7 +167,7 @@ class DualParaboloidShadowMapStrategy(
                         AREALIGHT_SHADOWMAP_RESOLUTION,
                         AREALIGHT_SHADOWMAP_RESOLUTION
                     ),
-                    internalFormat = GL_RGBA8
+                    internalFormat = RGBA8
                 ),
                 textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
             )
@@ -181,35 +176,27 @@ class DualParaboloidShadowMapStrategy(
     )
 
     init {
-        pointLightDepthMapsArrayFront = GL11.glGenTextures()
-        bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
-        GL42.glTexStorage3D(
-            GL30.GL_TEXTURE_2D_ARRAY,
-            1,
-            GL30.GL_RGBA16F,
-            AREALIGHT_SHADOWMAP_RESOLUTION,
-            AREALIGHT_SHADOWMAP_RESOLUTION,
-            MAX_POINTLIGHT_SHADOWMAPS
+        val texture3DUploadInfo = UploadInfo.Texture3DUploadInfo(
+            TextureDimension3D(
+                AREALIGHT_SHADOWMAP_RESOLUTION,
+                AREALIGHT_SHADOWMAP_RESOLUTION,
+                MAX_POINTLIGHT_SHADOWMAPS,
+            ),
+            RGBA16F
         )
-        GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
-        GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-        GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-        GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
+        pointLightDepthMapsArrayFront = allocateTexture(
+            texture3DUploadInfo,
+            TEXTURE_2D_ARRAY,
+            TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR),
+            ClampToEdge
+        ).textureId
 
-        pointLightDepthMapsArrayBack = GL11.glGenTextures()
-        bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
-        GL42.glTexStorage3D(
-            GL30.GL_TEXTURE_2D_ARRAY,
-            1,
-            GL30.GL_RGBA16F,
-            AREALIGHT_SHADOWMAP_RESOLUTION,
-            AREALIGHT_SHADOWMAP_RESOLUTION,
-            MAX_POINTLIGHT_SHADOWMAPS
-        )
-        GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
-        GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-        GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-        GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
+        pointLightDepthMapsArrayBack = allocateTexture(
+            texture3DUploadInfo,
+            TEXTURE_2D_ARRAY,
+            TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR),
+            ClampToEdge
+        ).textureId
     }
 
     override fun bindTextures() {

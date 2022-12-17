@@ -1,10 +1,11 @@
 package de.hanno.hpengine.extension
 
+import InternalTextureFormat.RGBA16F
 import com.artemis.World
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
-
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.Access.ReadWrite
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
@@ -13,9 +14,6 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL42
 
 context(GpuContext, RenderStateContext)
 class SkyboxRenderExtension(
@@ -58,23 +56,23 @@ class SkyboxRenderExtension(
         bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture])
         bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
         // TODO: Add glbindimagetexture to openglcontext class
-        GL42.glBindImageTexture(
+        bindImageTexture(
             4,
             deferredRenderingBuffer.reflectionBuffer.renderedTextures[0],
             0,
             false,
             0,
-            GL15.GL_READ_WRITE,
-            GL30.GL_RGBA16F
+            ReadWrite,
+            RGBA16F
         )
-        GL42.glBindImageTexture(
+        bindImageTexture(
             7,
             deferredRenderingBuffer.reflectionBuffer.renderedTextures[1],
             0,
             false,
             0,
-            GL15.GL_READ_WRITE,
-            GL30.GL_RGBA16F
+            ReadWrite,
+            RGBA16F
         )
         val camera = renderState[primaryCameraStateHolder.camera]
         secondPassReflectionProgram.use()

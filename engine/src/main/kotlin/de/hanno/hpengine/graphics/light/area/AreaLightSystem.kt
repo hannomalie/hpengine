@@ -3,6 +3,7 @@ package de.hanno.hpengine.graphics.light.area
 import AreaLightStruktImpl.Companion.sizeInBytes
 import AreaLightStruktImpl.Companion.type
 import EntityStruktImpl.Companion.type
+import InternalTextureFormat.RGBA32F
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
@@ -14,13 +15,6 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.Capability
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.renderer.constants.MagFilter
-import de.hanno.hpengine.graphics.renderer.constants.MinFilter
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.Mat4
@@ -32,27 +26,23 @@ import de.hanno.hpengine.graphics.shader.safePut
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
-import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.system.Extractor
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.renderer.constants.*
+import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
-import de.hanno.hpengine.graphics.texture.TextureDimension
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL30
 import struktgen.api.TypedBuffer
-import java.nio.FloatBuffer
+import struktgen.api.get
 import java.util.ArrayList
 import kotlin.math.min
 
@@ -82,8 +72,8 @@ class AreaLightSystem(
                     OpenGLCubeMap(
                         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
                         TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
-                        GL14.GL_DEPTH_COMPONENT24,
-                        GL11.GL_REPEAT
+                        InternalTextureFormat.DEPTH_COMPONENT24,
+                        WrapMode.Repeat
                     )
                 )
             ),
@@ -92,7 +82,7 @@ class AreaLightSystem(
             listOf(
                 ColorAttachmentDefinition(
                     "Shadow",
-                    GL30.GL_RGBA32F,
+                    RGBA32F,
                     TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
                 )
             ).toCubeMaps(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
@@ -110,24 +100,29 @@ class AreaLightSystem(
     private val areaLightDepthMaps = ArrayList<Int>().apply {
         gpuContext.onGpu {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
-                val renderedTextureTemp = gpuContext.genTextures()
-                gpuContext.bindTexture(TextureTarget.TEXTURE_2D, renderedTextureTemp)
-                GL11.glTexImage2D(
-                    GL11.GL_TEXTURE_2D,
-                    0,
-                    GL11.GL_RGBA16,
-                    AREALIGHT_SHADOWMAP_RESOLUTION,
-                    AREALIGHT_SHADOWMAP_RESOLUTION,
-                    0,
-                    GL11.GL_RGB,
-                    GL11.GL_UNSIGNED_BYTE,
-                    null as FloatBuffer?
+                val internalFormat = InternalTextureFormat.RGBA16F // TODO: Use F for float or not?
+                val filterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
+                val wrapMode = WrapMode.ClampToEdge
+                val dimension = TextureDimension2D(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
+
+                val allocation = allocateTexture(
+                    UploadInfo.Texture2DUploadInfo(
+                        dimension = dimension,
+                        internalFormat = internalFormat,
+                    ),
+                    TextureTarget.TEXTURE_2D,
+                    filterConfig,
+                    wrapMode,
                 )
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
-                add(renderedTextureTemp)
+                gpuContext.Texture2D(
+                    dimension,
+                    TextureTarget.TEXTURE_2D,
+                    internalFormat,
+                    filterConfig,
+                    wrapMode,
+                    UploadState.UPLOADED
+                )
+                add(allocation.textureId)
             }
         }
     }
@@ -167,7 +162,7 @@ class AreaLightSystem(
                         e.drawElementsIndirectCommand,
                         true,
                         PrimitiveType.Triangles,
-                        RenderingMode.Faces
+                        RenderingMode.Fill
                     )
                 }
             }
@@ -227,7 +222,7 @@ class AreaLightSystem(
 
 context(GpuContext)
 class AreaShadowPassUniforms : Uniforms() {
-    var entitiesBuffer by SSBO("Entity", 3, PersistentMappedBuffer(1).typed(EntityStrukt.type))
+    var entitiesBuffer by SSBO("Entity", 3, PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 }

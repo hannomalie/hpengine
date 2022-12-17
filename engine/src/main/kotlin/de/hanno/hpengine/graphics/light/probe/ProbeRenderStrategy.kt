@@ -1,35 +1,31 @@
 package de.hanno.hpengine.graphics.light.probe
 
 import AmbientCubeImpl.Companion.sizeInBytes
+import InternalTextureFormat.*
+import PrimitiveType
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
-
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimension
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimensionHalf
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.extent
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.Capability
+import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_CUBE_MAP
-import de.hanno.hpengine.graphics.renderer.constants.MagFilter
-import de.hanno.hpengine.graphics.renderer.constants.MinFilter
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
-import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -37,13 +33,6 @@ import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL30.GL_RG16F
-import org.lwjgl.opengl.GL30.GL_RGBA16F
-import org.lwjgl.opengl.GL30.glFinish
-import org.lwjgl.opengl.GL43
 import java.nio.FloatBuffer
 
 context(GpuContext, GPUProfiler)
@@ -55,8 +44,8 @@ class ProbeRenderStrategy(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
 ) {
-    val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
-    val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
+    private val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
+    private val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
     private val cubeMapRenderTarget = RenderTargetImpl(
         frameBuffer = OpenGLFrameBuffer(
@@ -64,8 +53,8 @@ class ProbeRenderStrategy(
                 OpenGLCubeMap(
                     TextureDimension(resolution, resolution),
                     TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
-                    GL14.GL_DEPTH_COMPONENT24,
-                    GL11.GL_REPEAT
+                    DEPTH_COMPONENT24,
+                    WrapMode.Repeat
                 )
             )
         ),
@@ -74,12 +63,12 @@ class ProbeRenderStrategy(
         textures = listOf(
             ColorAttachmentDefinition(
                 "Diffuse",
-                GL_RGBA16F,
+                RGBA16F,
                 TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
             ),
             ColorAttachmentDefinition(
                 "Radial Distance",
-                GL_RG16F,
+                RG16F,
                 TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
             )
         ).toCubeMaps(resolution, resolution),
@@ -102,8 +91,8 @@ class ProbeRenderStrategy(
     private val ambientCubeCache = HashMap<Vector3i, AmbientCubeData>()
 
 
-    val probeGrid = PersistentMappedBuffer(
-        GL43.GL_SHADER_STORAGE_BUFFER, capacityInBytes = resolution * resolution * resolution * AmbientCube.sizeInBytes
+    val probeGrid = PersistentShaderStorageBuffer(
+        capacityInBytes = resolution * resolution * resolution * AmbientCube.sizeInBytes
     )
     var x = 0
     var y = 0
@@ -170,14 +159,11 @@ class ProbeRenderStrategy(
                             e.drawElementsIndirectCommand,
                             true,
                             PrimitiveType.Triangles,
-                            RenderingMode.Faces
+                            RenderingMode.Fill
                         )
                     }
                 }
-                textureManager.generateMipMaps(
-                    TEXTURE_CUBE_MAP,
-                    cubeMapRenderTarget.renderedTexture
-                )
+                generateMipMaps(cubeMapRenderTarget.textures[0])
 
                 val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x, y, z)) {
                     val dimension = TextureDimension(resolution, resolution)
@@ -185,9 +171,9 @@ class ProbeRenderStrategy(
                     val cubeMap = OpenGLCubeMap.invoke(
                         dimension,
                         filterConfig,
-                        GL11.GL_RGBA8
+                        RGBA8
                     )
-                    val distanceCubeMap = OpenGLCubeMap(dimension, filterConfig, GL_RG16F)
+                    val distanceCubeMap = OpenGLCubeMap(dimension, filterConfig, RG16F)
                     AmbientCubeData(
                         Vector3f(x.toFloat(), y.toFloat(), z.toFloat()),
                         cubeMap,
@@ -196,18 +182,16 @@ class ProbeRenderStrategy(
                     )
                 }
 
-                glFinish()
-                GL43.glCopyImageSubData(
-                    cubeMapRenderTarget.renderedTexture, GL13.GL_TEXTURE_CUBE_MAP, mipmapCount - 1, 0, 0, 0,
-                    ambientCube.cubeMap.id, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, 1, 1, 6
+                finish()
+                gpuContext.copyImageSubData(
+                    cubeMapRenderTarget.textures[0], mipmapCount - 1, 0, 0, 0, ambientCube.cubeMap,
+                    0, 0, 0, 0, 1, 1, 6
                 )
-                GL43.glCopyImageSubData(
-                    cubeMapRenderTarget.getRenderedTexture(1), GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-                    ambientCube.distanceMap.id, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, resolution, resolution, 6
+                copyImageSubData(
+                    cubeMapRenderTarget.textures[1], 0, 0, 0, 0, ambientCube.distanceMap,
+                    0, 0, 0, 0, resolution, resolution, 6
                 )
-//            GL44.glClearTexSubImage(ambientCube.cubeMap.textureId, 0, 0, 0, 0, 1, 1, 6, GL_RGBA, GL11.GL_FLOAT, blackBuffer)
-
-                glFinish()
+                finish()
 
                 counter++
                 z++
@@ -251,6 +235,8 @@ class EvaluateProbeRenderExtension(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
+
+    private val fullscreenBuffer = QuadVertexBuffer()
 
     private val probeRenderStrategy = ProbeRenderStrategy(
         config,
@@ -302,6 +288,6 @@ class EvaluateProbeRenderExtension(
         evaluateProbeProgram.setUniform("extent", extent)
         evaluateProbeProgram.setUniform("dimension", dimension)
         evaluateProbeProgram.setUniform("dimensionHalf", dimensionHalf)
-        gpuContext.fullscreenBuffer.draw()
+        fullscreenBuffer.draw()
     }
 }

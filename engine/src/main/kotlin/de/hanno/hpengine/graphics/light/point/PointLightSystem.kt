@@ -3,7 +3,6 @@ package de.hanno.hpengine.graphics.light.point
 import PointLightStructImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
-import com.artemis.World
 import com.artemis.annotations.All
 
 import de.hanno.hpengine.camera.Camera
@@ -12,7 +11,6 @@ import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.system.Extractor
@@ -23,6 +21,7 @@ import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.state.*
 import de.hanno.hpengine.math.createPerspective
+import struktgen.api.forIndex
 
 // TODO: Autoadd Transform
 context(GpuContext, RenderStateContext)
@@ -33,7 +32,7 @@ class PointLightSystem(
     pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
 ): BaseEntitySystem(), RenderSystem, Extractor {
-    private var gpuPointLights = PersistentMappedBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
+    private var gpuPointLights = PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
@@ -69,7 +68,7 @@ class PointLightSystem(
     override fun extract(currentWriteState: RenderState) {
         currentWriteState[lightState].pointLightMovedInCycle = pointLightMovedInCycle
 
-        currentWriteState[lightState].pointLightBuffer.resize(gpuPointLights.sizeInBytes)
+        currentWriteState[lightState].pointLightBuffer.ensureCapacityInBytes(gpuPointLights.sizeInBytes)
         gpuPointLights.buffer.copyTo(currentWriteState[lightState].pointLightBuffer.buffer)
         currentWriteState[lightState].pointLightShadowMapStrategy = shadowMapStrategy
     }

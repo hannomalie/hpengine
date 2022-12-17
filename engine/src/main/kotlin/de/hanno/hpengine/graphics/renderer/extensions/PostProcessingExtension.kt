@@ -12,10 +12,11 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 
-context(GPUProfiler)
+context(GPUProfiler, de.hanno.hpengine.graphics.GpuContext)
 class PostProcessingExtension(
     private val config: Config,
     private val programManager: ProgramManager,
@@ -25,6 +26,7 @@ class PostProcessingExtension(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
 
+    private val fullscreenBuffer = gpuContext.run { QuadVertexBuffer() }
     private val postProcessProgram = programManager.getProgram(
             FileBasedCodeSource(config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),
             FileBasedCodeSource(config.engineDir.resolve("shaders/" + "postprocess_fragment.glsl"))
@@ -56,7 +58,7 @@ class PostProcessingExtension(
             gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
             gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
             gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, textureManager.lensFlareTexture.id)
-            gpuContext.fullscreenBuffer.draw()
+            fullscreenBuffer.draw()
         }
     }
 }

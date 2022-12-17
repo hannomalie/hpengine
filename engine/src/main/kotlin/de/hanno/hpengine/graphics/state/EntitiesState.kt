@@ -7,7 +7,6 @@ import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.RenderBatches
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBufferAllocator
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.math.Matrix4fStrukt
@@ -32,8 +31,8 @@ class EntitiesState {
     var vertexIndexBufferStatic = VertexIndexBuffer(10)
     var vertexIndexBufferAnimated = VertexIndexBuffer(10)
 
-    var entitiesBuffer = PersistentMappedBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
-    var jointsBuffer = PersistentMappedBuffer(Matrix4fStrukt.type.sizeInBytes).typed(Matrix4fStrukt.type)
-    val materialBuffer = PersistentMappedBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
+    var entitiesBuffer = PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
+    var jointsBuffer = PersistentShaderStorageBuffer(Matrix4fStrukt.type.sizeInBytes).typed(Matrix4fStrukt.type)
+    val materialBuffer = PersistentShaderStorageBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
 
 }

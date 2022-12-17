@@ -1,19 +1,16 @@
 package de.hanno.hpengine.graphics.shader
 
 import com.artemis.BaseSystem
-
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.OpenGLContext
-import de.hanno.hpengine.graphics.shader.api.Shader
+import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.ressources.*
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-context(FileMonitor)
+context(FileMonitor, GpuContext)
 class OpenGlProgramManager(
-    override val gpuContext: OpenGLContext,
     override val config: Config
 ) : BaseSystem(), ProgramManager {
 
@@ -38,12 +35,12 @@ class OpenGlProgramManager(
 
     override val heightMappingFirstPassProgramDescription = getFirstPassHeightMappingProgramDescription()
 
-    override fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines, uniforms: Uniforms?): ComputeProgram {
-        return gpuContext.onGpu {
-            val program = ComputeProgram(this, codeSource, defines)
-            programsCache.add(program)
-            program
-        }
+    override fun getComputeProgram(
+        codeSource: FileBasedCodeSource,
+        defines: Defines,
+        uniforms: Uniforms?
+    ): ComputeProgram = ComputeProgram(ComputeShader(this@GpuContext, codeSource, defines), this@GpuContext).apply {
+        programsCache.add(this)
     }
 
     override fun <T : Uniforms> getProgram(vertexShaderSource: CodeSource,
@@ -55,31 +52,33 @@ class OpenGlProgramManager(
         return getProgram(vertexShaderSource, fragmentShaderSource, geometryShaderSource, null, null, defines, uniforms)
     }
 
-    override fun <T : Uniforms> getProgram(vertexShaderSource: CodeSource,
-                                           fragmentShaderSource: CodeSource?,
-                                           geometryShaderSource: CodeSource?,
-                                           tesselationControlShaderSource: CodeSource?,
-                                           tesselationEvaluationShaderSource: CodeSource?,
-                                           defines: Defines,
-                                           uniforms: T): Program<T> {
-
-        return gpuContext.onGpu {
-            Program(
-                programManager = this,
-                vertexShader = VertexShader(this, vertexShaderSource, defines),
-                tesselationControlShader = tesselationControlShaderSource?.let { TesselationControlShader(this, it, defines) },
-                tesselationEvaluationShader = tesselationEvaluationShaderSource?.let { TesselationEvaluationShader(this, it, defines) },
-                geometryShader = geometryShaderSource?.let { GeometryShader(this, it, defines) },
-                fragmentShader = fragmentShaderSource?.let { FragmentShader(this, it, defines) },
-                defines = defines,
-                uniforms = uniforms
-            ).apply {
-                programsCache.add(this)
-            }
+    override fun <T : Uniforms> getProgram(
+        vertexShaderSource: CodeSource,
+        fragmentShaderSource: CodeSource?,
+        geometryShaderSource: CodeSource?,
+        tesselationControlShaderSource: CodeSource?,
+        tesselationEvaluationShaderSource: CodeSource?,
+        defines: Defines,
+        uniforms: T): Program<T> = Program(
+            vertexShader = VertexShader(this@GpuContext, vertexShaderSource, defines),
+            fragmentShader = fragmentShaderSource?.let { FragmentShader(this@GpuContext, it, defines) },
+            geometryShader = geometryShaderSource?.let { GeometryShader(this@GpuContext, it, defines) },
+            tesselationControlShader = tesselationControlShaderSource?.let { TesselationControlShader(this@GpuContext, it, defines) },
+            tesselationEvaluationShader = tesselationEvaluationShaderSource?.let { TesselationEvaluationShader(this@GpuContext, it, defines) },
+            defines = defines,
+            uniforms = uniforms,
+            gpuContext = this@GpuContext,
+        ).apply {
+            load()
+            programsCache.add(this)
         }
-    }
 
-    override fun getComputeProgram(codeSource: CodeSource) = gpuContext.onGpu { ComputeProgram(this, ComputeShader(this, codeSource)) }
+    override fun getComputeProgram(codeSource: CodeSource): ComputeProgram {
+        val defines = Defines()
+        return ComputeProgram(
+            ComputeShader(this@GpuContext, codeSource, defines), this@GpuContext
+        )
+    }
 
     var programsSourceCache: WeakHashMap<Shader, Int> = WeakHashMap()
     override fun update(deltaSeconds: Float) {
@@ -100,14 +99,6 @@ class OpenGlProgramManager(
                 }
             }
         }
-    }
-
-    override fun CodeSource.toResultingShaderSource(defines: Defines): String {
-        return gpuContext.getOpenGlVersionsDefine() +
-                gpuContext.getOpenGlExtensionsDefine() +
-                defines.joinToString { it.defineString + "\n" } +
-                ShaderDefine.getGlobalDefinesString(config) +
-                de.hanno.hpengine.graphics.shader.Shader.replaceIncludes(config.directories.engineDir, source, 0).first
     }
 
     override fun processSystem() {

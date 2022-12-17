@@ -19,6 +19,8 @@ import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
 import de.hanno.hpengine.artemis.ModelComponent
+import struktgen.api.forEachIndexed
+import struktgen.api.size
 
 @One(
     ModelComponent::class,
@@ -98,9 +100,8 @@ class MaterialManager(
         currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
         currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.buffer.rewind()
         materialsBuffer = materialsBuffer.resize(sizeInBytes = materials.size * MaterialStrukt.sizeInBytes)
-        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.resize(materialsBuffer.size)
 
-        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.typedBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
+        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
             val material = materials[index]
 
             it.run {

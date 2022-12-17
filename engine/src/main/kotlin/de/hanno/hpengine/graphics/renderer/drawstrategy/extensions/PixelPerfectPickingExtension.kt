@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.renderer.constants.Format
 
 import java.nio.FloatBuffer
 import de.hanno.hpengine.graphics.state.RenderState
@@ -10,7 +11,6 @@ import de.hanno.hpengine.input.MouseClickListener
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
 import java.lang.Exception
 
 data class Indices(
@@ -48,7 +48,7 @@ class PixelPerfectPickingExtension(
             )
             val adjustedX = (input.getMouseX() * ratio.x).toInt()
             val adjustedY = (input.getMouseY() * ratio.y).toInt()
-            GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
+            readPixels(adjustedX, adjustedY, 1, 1, Format.RGBA, floatBuffer)
             try {
                 val entityId = floatBuffer[0].toInt()
                 val entityBufferIndex = floatBuffer[1].toInt()

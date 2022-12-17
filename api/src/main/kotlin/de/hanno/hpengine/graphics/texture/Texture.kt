@@ -1,7 +1,9 @@
 package de.hanno.hpengine.graphics.texture
 
+import InternalTextureFormat
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
+import de.hanno.hpengine.graphics.renderer.constants.WrapMode
 import kotlin.math.log2
 import kotlin.math.nextUp
 
@@ -9,10 +11,10 @@ sealed interface Texture {
     val dimension: TextureDimension
     val id: Int
     val target: TextureTarget
-    val internalFormat: Int
+    val internalFormat: InternalTextureFormat
     var handle: Long
     val textureFilterConfig: TextureFilterConfig
-    val wrapMode: Int
+    val wrapMode: WrapMode
     var uploadState: UploadState
     fun unload() {}
 

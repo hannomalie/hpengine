@@ -1,5 +1,4 @@
 import org.gradle.internal.os.OperatingSystem
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
     repositories {
@@ -50,6 +49,8 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
 
     api(project(":api"))
+    implementation(project(":opengl"))
+    implementation(project(":glfw")) // TODO: Can I remove this somehow? currently doesn't expose a koin module
 
     api("javax.inject:javax.inject:1")
 
@@ -67,14 +68,11 @@ dependencies {
     api("org.lwjgl:lwjgl-jemalloc:$lwjgl_version")
     api("org.lwjgl:lwjgl-nanovg:$lwjgl_version")
     api("org.lwjgl:lwjgl-opencl:$lwjgl_version")
-    api("org.lwjgl:lwjgl-opengl:$lwjgl_version")
     api("org.lwjgl:lwjgl-assimp:$lwjgl_version")
 
     api("org.lwjgl", "lwjgl", lwjgl_version, classifier = lwjgl_natives)
-    api("org.lwjgl", "lwjgl-glfw", lwjgl_version, classifier = lwjgl_natives)
     api("org.lwjgl", "lwjgl-jemalloc", lwjgl_version, classifier = lwjgl_natives)
     api("org.lwjgl", "lwjgl-nanovg", lwjgl_version, classifier = lwjgl_natives)
-    api("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
     api("org.lwjgl", "lwjgl-assimp", lwjgl_version, classifier = lwjgl_natives)
 
     api("org.joml:joml:1.9.3")

@@ -8,6 +8,7 @@ import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
+import struktgen.api.forIndex
 import java.io.File
 
 class StaticModel(
@@ -27,10 +28,10 @@ class StaticModel(
             var counter = 0
             for(mesh in meshes) {
                 for (vertex in mesh.vertices) {
-                    this@apply[counter].run {
-                        position.run { set(vertex.position) }
-                        texCoord.run { set(vertex.texCoord) }
-                        normal.run {set(vertex.normal) }
+                    this@apply.forIndex(counter) {
+                        it.position.set(vertex.position)
+                        it.texCoord.set(vertex.texCoord)
+                        it.normal.set(vertex.normal)
                     }
                     counter++
                 }

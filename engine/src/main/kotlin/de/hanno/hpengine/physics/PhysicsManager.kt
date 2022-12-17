@@ -3,7 +3,6 @@ package de.hanno.hpengine.physics
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
-import com.artemis.World
 import com.artemis.annotations.All
 import com.bulletphysics.collision.broadphase.DbvtBroadphase
 import com.bulletphysics.collision.dispatch.CollisionDispatcher
@@ -28,7 +27,6 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.addLine
 import de.hanno.hpengine.graphics.renderer.drawLines
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -52,7 +50,7 @@ class PhysicsManager(
     gravity: Vector3f = Vector3f(0f, -20f, 0f),
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : BaseEntitySystem(), RenderSystem {
-    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices = PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms()
         getProgram(
