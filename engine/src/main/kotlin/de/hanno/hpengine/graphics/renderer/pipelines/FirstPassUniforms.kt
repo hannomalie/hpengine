@@ -23,9 +23,9 @@ import org.lwjgl.BufferUtils.createFloatBuffer
 
 context(GpuContext)
 sealed class FirstPassUniforms: Uniforms() {
-    var materials by SSBO("Material", 1, PersistentMappedBuffer(1).typed(MaterialStrukt.type))
-    var entities by SSBO("Entity", 3, PersistentMappedBuffer(1).typed(EntityStrukt.type))
-    var entityOffsets by SSBO("int", 4, PersistentMappedBuffer(1).typed(IntStrukt.type))
+    var materials by SSBO("Material", 1, PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
+    var entities by SSBO("Entity", 3, PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
+    var entityOffsets by SSBO("int", 4, PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
     var useRainEffect by BooleanType(false)
     var rainEffect by FloatType(0f)
     var viewMatrix by Mat4(createTransformBuffer())
@@ -48,12 +48,12 @@ fun createTransformBuffer() = createFloatBuffer(16).apply { Transform().get(this
 
 context(GpuContext)
 open class StaticFirstPassUniforms: FirstPassUniforms() {
-    var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1).typed(VertexStruktPacked.type))
+    var vertices by SSBO("VertexPacked", 7, PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
 }
 context(GpuContext)
 open class AnimatedFirstPassUniforms: FirstPassUniforms() {
-    var joints by SSBO("mat4", 6, PersistentMappedBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type))
-    var vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedBuffer(AnimatedVertexStruktPacked.sizeInBytes).typed(
+    var joints by SSBO("mat4", 6, PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type))
+    var vertices by SSBO("VertexAnimatedPacked", 7, PersistentShaderStorageBuffer(AnimatedVertexStruktPacked.sizeInBytes).typed(
         AnimatedVertexStruktPacked.type))
 }
 

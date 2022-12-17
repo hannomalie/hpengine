@@ -2,6 +2,7 @@ package de.hanno.hpengine.model
 
 import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
 import AnimatedVertexStruktPackedImpl.Companion.type
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.model.animation.Animation
 import de.hanno.hpengine.model.animation.AnimationController
 import de.hanno.hpengine.model.material.Material
@@ -18,6 +19,7 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
+import struktgen.api.forIndex
 import java.io.File
 import java.nio.ByteBuffer
 
@@ -98,16 +100,17 @@ class AnimatedModel(
     override val verticesPacked = TypedBuffer(
         BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes),
         AnimatedVertexStruktPacked.type).apply {
+
         byteBuffer.run {
             var counter = 0
             for (mesh in meshes) {
                 for (vertex in mesh.vertices) {
-                    this@apply[counter].run {
-                        position.run { set(vertex.position) }
-                        texCoord.run { set(vertex.texCoord) }
-                        normal.run { set(vertex.normal) }
-                        weights.run { set(vertex.weights) }
-                        jointIndices.run { set(vertex.jointIndices) }
+                    this@apply.forIndex(counter) {
+                        it.position.set(vertex.position)
+                        it.texCoord.set(vertex.texCoord)
+                        it.normal.set(vertex.normal)
+                        it.weights.set(vertex.weights)
+                        it.jointIndices.set(vertex.jointIndices)
                     }
                     counter++
                 }

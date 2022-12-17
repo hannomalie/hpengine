@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.pipelines
 
 
+import PrimitiveType
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.camera.Camera
@@ -9,8 +10,8 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Faces
+import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
+import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Fill
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Lines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.shader.*
@@ -50,7 +51,7 @@ open class DirectFirstPassPipeline(
 
     fun draw(renderState: RenderState) = profiled("Actual draw entities") {
 
-        val mode = if (config.debug.isDrawLines) Lines else Faces
+        val mode = if (config.debug.isDrawLines) Lines else Fill
         val vertexIndexBuffer = renderState.selectVertexIndexBuffer()
 
         vertexIndexBuffer.indexBuffer.bind()
@@ -168,8 +169,6 @@ open class DirectFirstPassPipeline(
             verticesCount += batch.vertexCount
             entitiesCount += 1
         }
-
-        depthMask = true // TODO: Resetting defaults here should not be necessary
     }
 }
 

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
+import InternalTextureFormat.RGBA16F
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
 import de.hanno.hpengine.artemis.EntitiesStateHolder
@@ -8,12 +9,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.Capability
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.renderer.constants.MinFilter
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -23,7 +19,6 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.texture.mipmapCount
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
@@ -32,7 +27,7 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
+import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
@@ -41,11 +36,7 @@ import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
-import org.lwjgl.opengl.GL45
+import struktgen.api.forIndex
 import java.nio.FloatBuffer
 
 context(GpuContext, GPUProfiler)
@@ -78,19 +69,16 @@ class ProbeRenderer(
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
     val probePositionsStructBuffer = gpuContext.window.invoke {
-        PersistentMappedBuffer(probeCount * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+        PersistentShaderStorageBuffer(probeCount * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
     val probeAmbientCubeValues = gpuContext.window.invoke {
-        PersistentMappedBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+        PersistentShaderStorageBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
     val probeAmbientCubeValuesOld = gpuContext.window.invoke {
-        PersistentMappedBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+        PersistentShaderStorageBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
 
     init {
-        gpuContext.window.invoke {
-            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
-        }
         initProbePositions()
     }
 
@@ -128,15 +116,15 @@ class ProbeRenderer(
                 OpenGLCubeMap(
                     TextureDimension(probeResolution, probeResolution),
                     TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
-                    GL14.GL_DEPTH_COMPONENT24,
-                    GL_REPEAT
+                    InternalTextureFormat.DEPTH_COMPONENT24,
+                    WrapMode.Repeat
                 )
             )
         ),
         width = probeResolution,
         height = probeResolution,
         textures = listOf(
-            ColorAttachmentDefinition("Probes", GL30.GL_RGBA16F, TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR))
+            ColorAttachmentDefinition("Probes", RGBA16F, TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR))
         ).toCubeMaps(probeResolution, probeResolution),
         name = "Probes"
     )
@@ -222,17 +210,13 @@ class ProbeRenderer(
                     for (batch in entitiesState.renderBatchesStatic) {
                         pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
-                            batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Faces
+                            batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill
                         )
                     }
                 }
                 val cubeMap = cubeMapRenderTarget.textures.first() as OpenGLCubeMap
-                textureManager.generateMipMaps(TextureTarget.TEXTURE_CUBE_MAP, cubeMap.id)
-                val floatArrayOf = (0 until 6 * 4).map { 0f }.toFloatArray()
-                GL45.glGetTextureSubImage(
-                    cubeMap.id, cubeMap.mipmapCount - 1,
-                    0, 0, 0, 1, 1, 6, GL_RGBA, GL_FLOAT, floatArrayOf
-                )
+                gpuContext.generateMipMaps(cubeMap)
+                val floatArrayOf = getTextureSubImage(cubeMap)
                 val ambientCubeValues = floatArrayOf.toList().windowed(4, 4) {
                     Vector3f(it[0], it[1], it[2])
                 }

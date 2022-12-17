@@ -27,10 +27,6 @@ import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
-import de.hanno.hpengine.scene.BatchKey
-import de.hanno.hpengine.scene.VertexIndexBuffer
-import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.ModelComponentDescription
@@ -46,10 +42,12 @@ import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.vertexbuffer.appendIndices
+import de.hanno.hpengine.scene.*
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
+import struktgen.api.get
 import struktgen.api.typed
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -248,7 +246,8 @@ class ModelSystem(
                     val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(instanceComponent!!.targetEntity)
                     val transform = transformComponent!!.transform
 
-                    val allocation = modelCacheComponent.allocation//allocations[modelComponent.modelComponentDescription]!!
+                    // TODO: Take a look if allocation from cache component could be used?
+                    val allocation = allocations[modelComponent.modelComponentDescription]!!
 
                     val meshes = model.meshes
 
@@ -360,12 +359,12 @@ class ModelSystem(
         this.allocations.putAll(allocations)
     }
 
-    fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexBuffer.VertexIndexOffsets {
+    fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {
         val model = modelCache[modelComponent.modelComponentDescription]!!
         return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
     }
 
-    fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets): List<VertexIndexBuffer.VertexIndexOffsets> {
+    fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
         var currentIndexOffset = vertexIndexOffsets.indexOffset
         var currentVertexOffset = vertexIndexOffsets.vertexOffset
 
@@ -373,7 +372,7 @@ class ModelSystem(
 
         return model.meshes.indices.map { i ->
             val mesh = model.meshes[i] as Mesh<*>
-            VertexIndexBuffer.VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
+            VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
                 currentIndexOffset += mesh.indexBufferValues.capacity() / Integer.BYTES
                 currentVertexOffset += mesh.vertices.size
             }
@@ -382,8 +381,8 @@ class ModelSystem(
 
     fun ModelComponent.putToBuffer(
         indexBuffer: VertexIndexBuffer,
-        vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets
-    ): List<VertexIndexBuffer.VertexIndexOffsets> {
+        vertexIndexOffsets: VertexIndexOffsets
+    ): List<VertexIndexOffsets> {
 
         synchronized(indexBuffer) {
             val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
@@ -560,7 +559,7 @@ fun Model<*>.resolveMaterial(
     materialOrNull: Material?
 ): Material = materialOrNull ?: materials.first()
 
-sealed class Allocation(val forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) {
+sealed class Allocation(val forMeshes: List<VertexIndexOffsets>) {
     init {
         require(forMeshes.isNotEmpty())
     }
@@ -568,8 +567,8 @@ sealed class Allocation(val forMeshes: List<VertexIndexBuffer.VertexIndexOffsets
     val indexOffset = forMeshes.first().indexOffset
     val vertexOffset = forMeshes.first().vertexOffset
 
-    class Static(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) : Allocation(forMeshes)
-    class Animated(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>, val jointsOffset: Int) :
+    class Static(forMeshes: List<VertexIndexOffsets>) : Allocation(forMeshes)
+    class Animated(forMeshes: List<VertexIndexOffsets>, val jointsOffset: Int) :
         Allocation(forMeshes)
 }
 

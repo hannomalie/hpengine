@@ -17,6 +17,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 
@@ -30,6 +31,7 @@ class CombinePassRenderExtension(private val config: Config,
                                  private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
 
+    private val fullscreenBuffer = gpuContext.run { QuadVertexBuffer() }
     private val combineProgram = programManager.getProgram(
         config.EngineAsset("shaders/combine_pass_vertex.glsl").toCodeSource(),
         config.EngineAsset("shaders/combine_pass_fragment.glsl").toCodeSource(),
@@ -37,7 +39,10 @@ class CombinePassRenderExtension(private val config: Config,
         Defines()
     )
 
-    fun renderCombinePass(state: RenderState, renderTarget: BackBufferRenderTarget<OpenGLTexture2D> = deferredRenderingBuffer.finalBuffer) {
+    fun renderCombinePass(
+        state: RenderState,
+        renderTarget: BackBufferRenderTarget<OpenGLTexture2D> = deferredRenderingBuffer.finalBuffer
+    ) = gpuContext.run {
         val camera = state[primaryCameraStateHolder.camera]
 
         if(!config.effects.isAutoExposureEnabled) {
@@ -46,7 +51,7 @@ class CombinePassRenderExtension(private val config: Config,
         profiled("Combine pass") {
             renderTarget.use(false)
 
-            textureManager.generateMipMaps(TextureTarget.TEXTURE_2D, renderTarget.getRenderedTexture(0))
+            generateMipMaps(renderTarget.textures[0])
 
             combineProgram.use()
             combineProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
@@ -62,27 +67,27 @@ class CombinePassRenderExtension(private val config: Config,
             combineProgram.setUniform("activeProbeCount", state[environmentProbesStateHolder.environmentProbesState].activeProbeCount)
             combineProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
 
-            gpuContext.disable(Capability.DEPTH_TEST)
-            gpuContext.disable(Capability.BLEND)
-            gpuContext.depthMask = false
-            gpuContext.disable(Capability.CULL_FACE)
+            disable(Capability.DEPTH_TEST)
+            disable(Capability.BLEND)
+            depthMask = false
+            disable(Capability.CULL_FACE)
 
-            gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-            gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
-            gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationBuffer.getRenderedTexture(1))
-            gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
-            gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
-            gpuContext.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
-            gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.forwardBuffer.getRenderedTexture(0))
-            gpuContext.bindTexture(7, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.forwardBuffer.getRenderedTexture(1))
+            bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+            bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
+            bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationBuffer.getRenderedTexture(1))
+            bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
+            bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
+            bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
+            bindTexture(6, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.forwardBuffer.getRenderedTexture(0))
+            bindTexture(7, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.forwardBuffer.getRenderedTexture(1))
             //			getGpuContext().bindTexture(7, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray0Id());
-            gpuContext.bindTexture(8, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.reflectionMap)
-            gpuContext.bindTexture(9, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.refractedMap)
-            gpuContext.bindTexture(11, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.ambientOcclusionScatteringMap)
-            gpuContext.bindTexture(14, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
-            gpuContext.bindTexture(15, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.halfScreenBuffer.renderedTextures[1])
+            bindTexture(8, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.reflectionMap)
+            bindTexture(9, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.refractedMap)
+            bindTexture(11, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.ambientOcclusionScatteringMap)
+            bindTexture(14, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
+            bindTexture(15, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.halfScreenBuffer.renderedTextures[1])
 
-            gpuContext.fullscreenBuffer.draw()
+            fullscreenBuffer.draw()
 
         }
     }

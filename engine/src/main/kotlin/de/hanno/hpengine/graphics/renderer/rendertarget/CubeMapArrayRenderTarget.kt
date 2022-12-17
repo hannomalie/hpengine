@@ -5,11 +5,9 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.renderer.constants.WrapMode
 import de.hanno.hpengine.graphics.texture.*
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL30
 
 context(GpuContext)
 class CubeMapArrayRenderTarget(
@@ -17,24 +15,20 @@ class CubeMapArrayRenderTarget(
 ) : BackBufferRenderTarget<OpenGLCubeMapArray> by renderTarget {
 
     val cubeMapViews = ArrayList<CubeMap>()
-    val cubeMapFaceViews = ArrayList<OpenGLTexture2D>()
-    fun setCubeMapFace(attachmentIndex: Int, cubeMapIndex: Int, faceIndex: Int) {
-        setCubeMapFace(attachmentIndex, attachmentIndex, cubeMapIndex, faceIndex)
-    }
+    val cubeMapFaceViews = ArrayList<Texture2D>()
 
-    override fun setCubeMapFace(cubeMapArrayListIndex: Int, attachmentIndex: Int, cubeMapIndex: Int, faceIndex: Int) {
-        GL30.glFramebufferTextureLayer(
-            GL30.GL_FRAMEBUFFER,
-            GL30.GL_COLOR_ATTACHMENT0 + attachmentIndex,
-            textures[cubeMapArrayListIndex].id,
-            0,
-            6 * cubeMapIndex + faceIndex
+    override fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int) {
+        framebufferTextureLayer(
+            attachmentIndex,
+            textureId,
+            mipmap,
+            6 * index
         )
     }
 
     fun resetAttachments() {
         for (i in textures.indices) {
-            GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, 0, 0, 0)
+            framebufferTextureLayer(i, 0, 0, 0)
         }
     }
 
@@ -51,10 +45,10 @@ class CubeMapArrayRenderTarget(
             onGpu {
                 bindTexture(cma)
                 for (cubeMapIndex in 0 until cma.dimension.depth) {
-                    val cubeMapView = cma.createView(cubeMapIndex)
+                    val cubeMapView = createView(cma, cubeMapIndex)
                     cubeMapViews.add(cubeMapView)
                     for (faceIndex in 0..5) {
-                        cubeMapFaceViews.add(cma.createView(cubeMapIndex, faceIndex))
+                        cubeMapFaceViews.add(createView(cma, cubeMapIndex, faceIndex))
                     }
                 }
             }
@@ -92,8 +86,8 @@ class CubeMapArrayRenderTarget(
                 OpenGLCubeMapArray(
                     dimension,
                     filterConfig,
-                    GL14.GL_DEPTH_COMPONENT24,
-                    GL11.GL_REPEAT
+                    InternalTextureFormat.DEPTH_COMPONENT24,
+                    WrapMode.Repeat
                 )
             )
         }

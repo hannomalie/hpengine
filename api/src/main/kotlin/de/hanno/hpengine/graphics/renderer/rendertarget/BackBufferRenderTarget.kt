@@ -35,7 +35,7 @@ interface BackBufferRenderTarget<T : Texture> : RenderTarget {
     fun unUse()
     fun getRenderedTexture(index: Int): Int
     fun setRenderedTexture(renderedTexture: Int, index: Int)
-    fun setTargetTextureArrayIndex(textureArray: Int, textureIndex: Int)
+    fun setTargetTextureArrayIndex(textureId: Int, layer: Int)
 
     companion object
 

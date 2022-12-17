@@ -1,5 +1,6 @@
 package de.hanno.hpengine.extension
 
+import InternalTextureFormat.RGBA8
 import com.artemis.BaseEntitySystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
@@ -37,6 +38,7 @@ import de.hanno.hpengine.graphics.imgui.editor.EntityClickListener
 import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
 import de.hanno.hpengine.graphics.light.area.AreaLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.renderer.SimpleForwardRenderer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.*
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
@@ -51,7 +53,6 @@ import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
-import org.lwjgl.opengl.GL30
 import kotlin.collections.set
 
 data class IdTexture(val texture: OpenGLTexture2D) // TODO: Move to a proper place
@@ -107,6 +108,54 @@ val deferredRendererModule = module {
     single { DeferredRenderExtensionConfig(getAll<DeferredRenderExtension>().distinct()) }
 }
 
+val simpleForwardRendererModule = module {
+
+    single {
+        val config: Config = get()
+        get<GpuContext>().run {
+            SharedDepthBuffer(DepthBuffer(config.width, config.height))
+        }
+    }
+    single {
+        val config = get<Config>()
+
+        get<GpuContext>().run {
+            RenderTarget2D(
+                OpenGLFrameBuffer(
+                    depthBuffer = DepthBuffer(config.width, config.height)
+                ),
+                width = config.width,
+                height = config.height,
+                textures = listOf(
+                    ColorAttachmentDefinition("Color", RGBA8)
+                ).toTextures(
+                    config.width, config.height
+                ),
+                name = "Final Image"
+            )
+        }
+    }
+    single {
+        val textureManager: OpenGLTextureManager = get()
+        IdTexture(textureManager.defaultTexture.backingTexture)
+    }
+    single {
+        val renderTarget: RenderTarget2D = get()
+        FinalOutput(renderTarget.textures.first())
+    }
+    single { DebugOutput(null, 0) }
+    renderSystem {
+        get<GpuContext>().run {
+            get<RenderStateContext>().run {
+                get<GPUProfiler>().run {
+                    SimpleForwardRenderer(get(), get(), get(), get(), get())
+                }
+            }
+        }
+    }
+
+}
+
 val imGuiEditorModule = module {
     renderSystem {
         val finalOutput: FinalOutput = get()
@@ -140,14 +189,14 @@ val textureRendererModule = module {
         val config: Config = get()
 
         get<GpuContext>().run {
-            RenderTarget(
+            RenderTarget2D(
                 OpenGLFrameBuffer(
                     depthBuffer = DepthBuffer(config.width, config.height)
                 ),
                 width = config.width,
                 height = config.height,
                 textures = listOf(
-                    ColorAttachmentDefinition("Color", GL30.GL_RGBA8)
+                    ColorAttachmentDefinition("Color", RGBA8)
                 ).toTextures(
                     config.width, config.height
                 ),
@@ -191,7 +240,9 @@ val baseModule = module {
     }
     single {
         get<FileMonitor>().run {
-            OpenGlProgramManager(get(), get())
+            get<GpuContext>().run {
+                OpenGlProgramManager(get())
+            }
         }
     } binds arrayOf(
         ProgramManager::class,
@@ -348,7 +399,9 @@ fun Module.addDirectionalLightModule() {
     }
     renderExtension {
         get<GPUProfiler>().run {
-            DirectionalLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get())
+            get<GpuContext>().run {
+                DirectionalLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get())
+            }
         }
     }
 }
@@ -395,7 +448,7 @@ fun Module.addSkyboxModule() {
 fun Module.addBackendModule() {
     single { AddResourceContext() }
     single { OpenGLGPUProfiler(get()) } binds arrayOf(GPUProfiler::class, OpenGLGPUProfiler::class)
-    single { OpenGLContext(get(), get()) } bind GpuContext::class
+    single { OpenGLContext(get(), get(), get()) } bind GpuContext::class
     single { Input(get()) }
     single { RenderSystemsConfig(getAll()) }
     single {

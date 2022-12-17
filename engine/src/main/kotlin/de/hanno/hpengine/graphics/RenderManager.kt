@@ -11,9 +11,9 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
 import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.texture.Texture2D
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
-import org.lwjgl.opengl.GL11
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class FinalOutput(var texture2D: Texture2D, var mipmapLevel: Int = 0)
@@ -33,6 +33,8 @@ class RenderManager(
     _renderSystems: List<RenderSystem>,
     private val gpuProfiler: GPUProfiler,
 ) : BaseSystem() {
+
+    private val debugBuffer = QuadVertexBuffer(QuadVertexBuffer.quarterScreenVertices)
 
     private val drawToQuadProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/fullscreen_quad_vertex.glsl")),
@@ -130,7 +132,7 @@ class RenderManager(
                                     }
                                 }
                                 profiled("finish") {
-                                    GL11.glFinish()
+                                    finish()
                                 }
                                 profiled("swapBuffers") {
                                     window.swapBuffers()
@@ -170,14 +172,4 @@ class RenderSystemsConfig(renderSystems: List<RenderSystem>) {
         set(value) {
             renderSystemsEnabled[this] = value
         }
-}
-
-context(GPUProfiler)
-inline fun <T> profiled(name: String, action: () -> T): T {
-    val task = start(name)
-    try {
-        return action()
-    } finally {
-        task?.end()
-    }
 }

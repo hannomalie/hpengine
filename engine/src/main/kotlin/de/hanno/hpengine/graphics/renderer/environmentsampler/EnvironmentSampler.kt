@@ -6,8 +6,6 @@ import de.hanno.hpengine.artemis.CameraComponent
 import de.hanno.hpengine.artemis.EnvironmentProbeComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer.Companion.invoke
 import de.hanno.hpengine.graphics.shader.Program
@@ -20,7 +18,7 @@ import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
@@ -31,9 +29,6 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL43
 import java.nio.FloatBuffer
 import java.util.HashSet
 
@@ -122,7 +117,7 @@ class EnvironmentSampler(
     val renderTarget: BackBufferRenderTarget<OpenGLTexture2D>
     val camera: Camera
 
-    var gpuContext: GpuContext
+    var gpuContext = this@GpuContext
     val config: Config
     val textureManager: OpenGLTextureManager
 
@@ -160,7 +155,7 @@ class EnvironmentSampler(
                 e.drawElementsIndirectCommand,
                 true,
                 PrimitiveType.Triangles,
-                RenderingMode.Faces
+                RenderingMode.Fill
             )
         }
     }
@@ -241,7 +236,6 @@ class EnvironmentSampler(
     }
 
     init {
-        gpuContext = programManager.gpuContext
         this.config = config
         this.textureManager = textureManager
         val camera = Camera(transform, near = 0.1f, far = 5000f, fov = 90f, ratio = 1f)
@@ -252,88 +246,17 @@ class EnvironmentSampler(
         val cubeMapCamInitialOrientation = Quaternionf().identity()
         transform.rotate(cubeMapCamInitialOrientation)
 
-        val cubeMapArrayRenderTarget = cubeMapArrayRenderTarget
-        cubeMapView = GL11.glGenTextures()
-        cubeMapView1 = GL11.glGenTextures()
-        cubeMapView2 = GL11.glGenTextures()
+        cubeMapView = createView(cubeMapArrayRenderTarget.getCubeMapArray(0), probeIndex).id
+        cubeMapView1 = createView(cubeMapArrayRenderTarget.getCubeMapArray(1), probeIndex).id
+        cubeMapView2 = createView(cubeMapArrayRenderTarget.getCubeMapArray(2), probeIndex).id
+
         val diffuseInternalFormat = cubeMapArrayRenderTarget.getCubeMapArray(3).internalFormat
-        for (z in 0..5) {
-            cubeMapFaceViews[0][z] = GL11.glGenTextures()
-            cubeMapFaceViews[1][z] = GL11.glGenTextures()
-            cubeMapFaceViews[2][z] = GL11.glGenTextures()
-            cubeMapFaceViews[3][z] = GL11.glGenTextures()
-            //GL43.glTextureView(cubeMapFaceViews[i][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(i).getTextureId(), cubeMapArrayRenderTarget.getCubeMapArray(i).getInternalFormat(), 0, 1, 6 * probe.getIndex() + z, 1);
-            GL43.glTextureView(
-                cubeMapFaceViews[0][z],
-                GL11.GL_TEXTURE_2D,
-                cubeMapArrayRenderTarget.getCubeMapArray(0).id,
-                cubeMapArrayRenderTarget.getCubeMapArray(0).internalFormat,
-                0,
-                1,
-                6 * probeIndex + z,
-                1
-            )
-            GL43.glTextureView(
-                cubeMapFaceViews[1][z],
-                GL11.GL_TEXTURE_2D,
-                cubeMapArrayRenderTarget.getCubeMapArray(1).id,
-                cubeMapArrayRenderTarget.getCubeMapArray(1).internalFormat,
-                0,
-                1,
-                6 * probeIndex + z,
-                1
-            )
-            GL43.glTextureView(
-                cubeMapFaceViews[2][z],
-                GL11.GL_TEXTURE_2D,
-                cubeMapArrayRenderTarget.getCubeMapArray(2).id,
-                cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat,
-                0,
-                1,
-                6 * probeIndex + z,
-                1
-            )
-            GL43.glTextureView(
-                cubeMapFaceViews[3][z],
-                GL11.GL_TEXTURE_2D,
-                cubeMapArrayRenderTarget.getCubeMapArray(3).id,
-                diffuseInternalFormat,
-                0,
-                1,
-                6 * probeIndex + z,
-                1
-            )
+        for (faceIndex in 0..5) {
+            cubeMapFaceViews[0][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(0), probeIndex, faceIndex).id
+            cubeMapFaceViews[1][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(1), probeIndex, faceIndex).id
+            cubeMapFaceViews[2][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(2), probeIndex, faceIndex).id
+            cubeMapFaceViews[3][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(3), probeIndex, faceIndex).id
         }
-        GL43.glTextureView(
-            cubeMapView,
-            GL13.GL_TEXTURE_CUBE_MAP,
-            cubeMapArrayRenderTarget.getCubeMapArray(0).id,
-            cubeMapArrayRenderTarget.getCubeMapArray(0).internalFormat,
-            0,
-            CUBEMAP_MIPMAP_COUNT,
-            6 * probeIndex,
-            6
-        )
-        GL43.glTextureView(
-            cubeMapView1,
-            GL13.GL_TEXTURE_CUBE_MAP,
-            cubeMapArrayRenderTarget.getCubeMapArray(1).id,
-            cubeMapArrayRenderTarget.getCubeMapArray(1).internalFormat,
-            0,
-            CUBEMAP_MIPMAP_COUNT,
-            6 * probeIndex,
-            6
-        )
-        GL43.glTextureView(
-            cubeMapView2,
-            GL13.GL_TEXTURE_CUBE_MAP,
-            cubeMapArrayRenderTarget.getCubeMapArray(2).id,
-            cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat,
-            0,
-            CUBEMAP_MIPMAP_COUNT,
-            6 * probeIndex,
-            6
-        )
         renderTarget = RenderTarget(
             OpenGLFrameBuffer(DepthBuffer(RESOLUTION, RESOLUTION)),
             RESOLUTION, RESOLUTION,

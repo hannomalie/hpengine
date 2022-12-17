@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.imgui.editor
 
+import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderMode
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.TabBar
@@ -9,10 +10,11 @@ import de.hanno.hpengine.graphics.renderer.pipelines.GPUCulledPipeline
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import imgui.ImGui
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
-import org.lwjgl.opengl.GL11
+import struktgen.api.forEach
+import struktgen.api.forIndex
 import java.nio.IntBuffer
 
-context(Window, ImGuiEditor, RenderStateContext)
+context(Window, ImGuiEditor, RenderStateContext, GpuContext)
 fun TabBar.renderTab(gpuProfiler: GPUProfiler) {
     tab("Render") {
         text("FPS: ${fpsCounter.fps}") {}
@@ -38,7 +40,7 @@ fun TabBar.renderTab(gpuProfiler: GPUProfiler) {
                 var counter = 0
                 when (val indirectPipeline = currentReadState[indirectPipeline]) {
                     is GPUCulledPipeline -> {
-                        GL11.glFinish()
+                        finish()
                         val commandOrganization = indirectPipeline.commandOrganizationStatic
                         val batchCount = commandOrganization.filteredRenderBatches.size
                         val commandCount = commandOrganization.drawCountsCompacted.buffer.getInt(0)

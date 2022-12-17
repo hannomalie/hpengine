@@ -1,0 +1,25 @@
+package de.hanno.hpengine.graphics.renderer.constants
+
+enum class Format {
+    RED,
+    GREEN,
+    BLUE,
+    ALPHA,
+    RG,
+    RGB,
+    RGBA,
+    BGR,
+    BGRA,
+    RED_INTEGER,
+    GREEN_INTEGER,
+    BLUE_INTEGER,
+    ALPHA_INTEGER,
+    RG_INTEGER,
+    RGB_INTEGER,
+    RGBA_INTEGER,
+    BGR_INTEGER,
+    BGRA_INTEGER,
+    STENCIL_INDEX,
+    DEPTH_COMPONENT,
+    DEPTH_STENCIL,
+}

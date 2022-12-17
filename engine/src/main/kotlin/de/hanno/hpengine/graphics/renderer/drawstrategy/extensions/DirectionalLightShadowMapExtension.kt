@@ -17,11 +17,8 @@ import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
-import de.hanno.hpengine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.*
@@ -44,7 +41,7 @@ import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL30
+import struktgen.api.forIndex
 
 context(GpuContext, RenderStateContext, GPUProfiler)
 class DirectionalLightShadowMapExtension(
@@ -63,7 +60,7 @@ class DirectionalLightShadowMapExtension(
         SHADOWMAP_RESOLUTION,
         //                Reflective shadowmaps?
         //                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
-        listOf(ColorAttachmentDefinition("Shadow", GL30.GL_RGBA16F)).toTextures(
+        listOf(ColorAttachmentDefinition("Shadow", InternalTextureFormat.RGBA16F)).toTextures(
             SHADOWMAP_RESOLUTION,
             SHADOWMAP_RESOLUTION
         ),
@@ -125,7 +122,7 @@ class DirectionalLightShadowMapExtension(
             for (batch in entitiesState.getRenderBatches(program.uniforms).filter { it.isShadowCasting }) {
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
-                vertexIndexBuffer.indexBuffer.draw(batch.drawElementsIndirectCommand, false, PrimitiveType.Triangles, RenderingMode.Faces)
+                vertexIndexBuffer.indexBuffer.draw(batch.drawElementsIndirectCommand, false, PrimitiveType.Triangles, RenderingMode.Fill)
                 verticesCount += batch.vertexCount
                 entitiesCount += 1
             }
@@ -179,7 +176,7 @@ class DirectionalLightShadowMapExtension(
         renderState[staticPipeline].draw(renderState)
         renderState[animatedPipeline].draw(renderState)
 
-        textureManager.generateMipMaps(TEXTURE_2D, shadowMapId)
+        generateMipMaps(renderTarget.textures[0])
 
         renderedInCycle = renderState.cycle
         forceRerender = false
@@ -192,12 +189,12 @@ class DirectionalLightShadowMapExtension(
 
 context(GpuContext)
 sealed class DirectionalShadowUniforms() : Uniforms() {
-    var materials by SSBO("Material", 1, PersistentMappedBuffer(1).typed(MaterialStrukt.type))
+    var materials by SSBO("Material", 1, PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
     var directionalLightState by SSBO(
-        "DirectionalLightState", 2, PersistentMappedBuffer(1).typed(DirectionalLightState.type)
+        "DirectionalLightState", 2, PersistentShaderStorageBuffer(1).typed(DirectionalLightState.type)
     )
-    var entities by SSBO("Entity", 3, PersistentMappedBuffer(1).typed(EntityStrukt.type))
-    var entityOffsets by SSBO("int", 4, PersistentMappedBuffer(1).typed(IntStrukt.type))
+    var entities by SSBO("Entity", 3, PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
+    var entityOffsets by SSBO("int", 4, PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
 
     var indirect by BooleanType(true)
     var entityIndex by IntType(0)
@@ -209,10 +206,10 @@ class AnimatedDirectionalShadowUniforms : DirectionalShadowUniforms() {
     var joints by SSBO(
         "mat4",
         6,
-        PersistentMappedBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
+        PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
     )
     var vertices by SSBO(
-        "VertexAnimatedPacked", 7, PersistentMappedBuffer(
+        "VertexAnimatedPacked", 7, PersistentShaderStorageBuffer(
             AnimatedVertexStruktPacked.sizeInBytes
         ).typed(AnimatedVertexStruktPacked.type)
     )
@@ -220,5 +217,5 @@ class AnimatedDirectionalShadowUniforms : DirectionalShadowUniforms() {
 
 context(GpuContext)
 class StaticDirectionalShadowUniforms : DirectionalShadowUniforms() {
-    var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1).typed(VertexStruktPacked.type))
+    var vertices by SSBO("VertexPacked", 7, PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
 }

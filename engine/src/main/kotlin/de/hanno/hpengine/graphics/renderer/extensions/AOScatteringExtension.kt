@@ -18,9 +18,11 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
+import struktgen.api.forIndex
 
 context(GPUProfiler)
 class AOScatteringExtension(
@@ -34,27 +36,28 @@ class AOScatteringExtension(
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
+    private val fullscreenBuffer = gpuContext.run { QuadVertexBuffer() }
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(
         config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/scattering_ao_fragment.glsl").toCodeSource(), Uniforms.Empty, Defines()
     )
 
-    override fun renderSecondPassHalfScreen(renderState: RenderState) {
+    override fun renderSecondPassHalfScreen(renderState: RenderState) = gpuContext.run {
         profiled("Scattering and AO") {
             if (!config.quality.isUseAmbientOcclusion && !config.effects.isScattering) {
                 return
             }
             val directionalLightState = renderState[directionalLightStateHolder.lightState]
 
-            gpuContext.disable(Capability.DEPTH_TEST)
+            disable(Capability.DEPTH_TEST)
             aoScatteringProgram.use()
 
-            gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, gBuffer.positionMap)
-            gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
-            gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
-            gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
-            gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+            bindTexture(0, TextureTarget.TEXTURE_2D, gBuffer.positionMap)
+            bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
+            bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
+            bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
+            bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
             renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
             val environmentProbesState = renderState[environmentProbesStateHolder.environmentProbesState]
             if(environmentProbesState.environmapsArray3Id > 0) {
@@ -83,10 +86,10 @@ class AOScatteringExtension(
                 renderState[pointLightStateHolder.lightState].pointLightBuffer)
             aoScatteringProgram.bindShaderStorageBuffer(3, directionalLightState)
 
-            gpuContext.fullscreenBuffer.draw()
+            fullscreenBuffer.draw()
             profiled("generate mipmaps") {
                 gpuContext.enable(Capability.DEPTH_TEST)
-                textureManager.generateMipMaps(TextureTarget.TEXTURE_2D, gBuffer.halfScreenBuffer.renderedTexture)
+                gpuContext.generateMipMaps(gBuffer.halfScreenBuffer.textures[0])
                 textureManager.blur2DTextureRGBA16F(gBuffer.halfScreenBuffer.renderedTexture, config.width / 2, config.height / 2, 0, 0)
             }
         }

@@ -435,4 +435,5 @@ void main(void) {
 	    out_color.rgb = out_color.rgb * whiteScale;
     }
 	out_color.a = 1;
+
 }

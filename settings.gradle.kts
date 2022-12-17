@@ -10,3 +10,5 @@ include("newsimplegame")
 
 includeBuild("../StruktGen")
 include("api")
+include("opengl")
+include("glfw")

@@ -11,7 +11,6 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
 interface ProgramManager {
     val config: Config
-    val gpuContext: GpuContext
 
     fun update(deltaSeconds: Float)
     fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: Uniforms? = null): IComputeProgram<Uniforms>
@@ -52,7 +51,6 @@ interface ProgramManager {
     val heightMappingFirstPassProgramDescription: ProgramDescription
     fun List<UniformDelegate<*>>.toUniformDeclaration(): String
     val Uniforms.shaderDeclarations: String
-    fun CodeSource.toResultingShaderSource(defines: Defines): String
     // TODO: Make capable of animated uniforms stuff
     fun getFirstPassProgram(programDescription: ProgramDescription, uniforms: Uniforms): IProgram<Uniforms> = programDescription.run {
         getProgram(

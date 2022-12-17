@@ -11,7 +11,7 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.TypedGpuBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -30,7 +30,7 @@ class CameraRenderExtension(
 ) : DeferredRenderExtension {
 
     private val frustumLines = renderState.registerState { mutableListOf<Vector3fc>() }
-    private val lineVertices = PersistentMappedBuffer(24 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices: TypedGpuBuffer<Vector4fStrukt> = PersistentShaderStorageBuffer(24 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms()
         getProgram(

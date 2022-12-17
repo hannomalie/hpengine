@@ -8,6 +8,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
+import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.PostProcessingExtension
@@ -157,6 +158,8 @@ class ExtensibleDeferredRenderer(
                 }
             }
         }
+
+        polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
         profiled("SecondPass") {
             profiled("HalfResolution") {
                 profiled("Use rendertarget") {

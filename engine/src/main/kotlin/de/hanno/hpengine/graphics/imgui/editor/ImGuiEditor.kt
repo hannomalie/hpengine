@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.imgui.editor
 
+import InternalTextureFormat.RGBA32F
 import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.ComponentManager
@@ -10,23 +11,24 @@ import de.hanno.hpengine.artemis.ModelComponent
 import de.hanno.hpengine.artemis.ModelSystem
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.artemis.TransformComponent
-
 import de.hanno.hpengine.config.ConfigImpl
 import de.hanno.hpengine.extension.SharedDepthBuffer
 import de.hanno.hpengine.graphics.*
-import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
-import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderSystem
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.fps.FPSCounter
+import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
+import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.Indices
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.OnClickListener
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.Texture2D
+import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import imgui.ImGui
-import imgui.flag.*
+import imgui.flag.ImGuiConfigFlags
+import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
@@ -34,8 +36,6 @@ import imgui.type.ImInt
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Vector2i
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL30
 
 interface ImGuiEditorExtension {
     fun render(imGuiEditor: ImGuiEditor)
@@ -64,7 +64,7 @@ enum class SelectionMode { Entity, Mesh; }
 data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
 context(GpuContext, RenderStateContext)
 class ImGuiEditor(
-    internal val window: GlfwWindow,
+    internal val window: Window,
     internal val textureManager: OpenGLTextureManager,
     internal val finalOutput: FinalOutput,
     internal val debugOutput: DebugOutput,
@@ -89,7 +89,7 @@ class ImGuiEditor(
             config.width,
             config.height,
             listOf(
-                ColorAttachmentDefinition("Color", GL30.GL_RGBA32F)
+                ColorAttachmentDefinition("Color", RGBA32F)
             ).toTextures(config.width, config.height),
             "Final Editor Image",
         )
@@ -181,7 +181,7 @@ class ImGuiEditor(
                 }
             }
         }
-        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
+        polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
         renderTarget.use(true)
         imGuiImplGlfw.newFrame()
         ImGui.getIO().setDisplaySize(renderTarget.width.toFloat(), renderTarget.height.toFloat())

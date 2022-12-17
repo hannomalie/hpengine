@@ -64,7 +64,7 @@ class Engine(
         single { config } binds arrayOf(Config::class, ConfigImpl::class)
     }
     val application = startKoin {
-        modules(configModule, baseModule, deferredRendererModule)
+        modules(configModule, baseModule, simpleForwardRendererModule)//deferredRendererModule)
         if(useEditor) {
             modules(imGuiEditorModule)
         }

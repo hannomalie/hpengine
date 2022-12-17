@@ -13,7 +13,6 @@ import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.state.DirectionalLightState
 import org.joml.AxisAngle4f
@@ -21,6 +20,7 @@ import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
+import struktgen.api.forIndex
 
 
 context(GpuContext, RenderStateContext)
@@ -101,7 +101,7 @@ class DirectionalLightSystem(
 context(GpuContext, RenderStateContext)
 class DirectionalLightStateHolder {
     val lightState = renderState.registerState {
-        PersistentMappedBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type)
+        PersistentShaderStorageBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type)
     }
     val directionalLightHasMovedInCycle = renderState.registerState { 0L }
 }
