@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer
 
-import PrimitiveType
+import de.hanno.hpengine.graphics.constants.PrimitiveType
 import org.lwjgl.opengl.ARBTessellationShader.GL_PATCHES
 import org.lwjgl.opengl.GL11.GL_LINES
 import org.lwjgl.opengl.GL11.GL_TRIANGLES

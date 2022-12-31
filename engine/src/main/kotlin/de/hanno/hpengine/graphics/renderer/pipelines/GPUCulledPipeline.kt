@@ -6,7 +6,7 @@ import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
 import InternalTextureFormat.*
 import de.hanno.hpengine.artemis.EntitiesStateHolder
-import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
@@ -14,14 +14,14 @@ import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
+import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.IndirectCulledDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.constants.*
+import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
-import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.shader.IProgram
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines

@@ -5,7 +5,6 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
@@ -94,12 +93,6 @@ class RenderManager(
                                                 renderSystem.render(currentReadState)
                                             }
                                         }
-
-                                    if (config.debug.isEditorOverlay) {
-                                        renderSystems.forEach {
-                                            it.renderEditor(currentReadState)
-                                        }
-                                    }
                                 }
 
                                 profiled("present") {

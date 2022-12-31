@@ -1,9 +1,12 @@
 package de.hanno.hpengine.graphics.vertexbuffer
 
-import PrimitiveType
+import de.hanno.hpengine.graphics.constants.PrimitiveType
+import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
+import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import de.hanno.hpengine.graphics.buffer.IndexBuffer
+import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.GlFlag
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
+import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.glValue
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.scene.IVertexIndexBuffer

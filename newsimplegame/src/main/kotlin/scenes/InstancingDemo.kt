@@ -1,8 +1,8 @@
 package scenes
 
 import de.hanno.hpengine.artemis.InstanceComponent
-import de.hanno.hpengine.artemis.NameComponent
-import de.hanno.hpengine.artemis.TransformComponent
+import de.hanno.hpengine.component.NameComponent
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.addStaticModelEntity
 import de.hanno.hpengine.artemis.MaterialComponent

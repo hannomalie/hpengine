@@ -4,10 +4,8 @@ import com.artemis.BaseEntitySystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
-import de.hanno.hpengine.Transform
-import de.hanno.hpengine.model.StaticModel
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.transform.*
-import org.joml.Matrix4f
 import org.joml.Vector3f
 
 class SpatialComponent: Component() {

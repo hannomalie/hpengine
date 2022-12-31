@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.renderer
 
 import Vector4fStruktImpl.Companion.type
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.pipelines.TypedGpuBuffer
+import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.vertexbuffer.drawLines
 import de.hanno.hpengine.math.Vector4fStrukt

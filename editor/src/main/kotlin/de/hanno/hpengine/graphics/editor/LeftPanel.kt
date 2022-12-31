@@ -4,6 +4,9 @@ import com.artemis.Aspect
 import com.artemis.ComponentManager
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.artemis.*
+import de.hanno.hpengine.component.CameraComponent
+import de.hanno.hpengine.component.NameComponent
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.model.material.MaterialManager
 import imgui.ImGui

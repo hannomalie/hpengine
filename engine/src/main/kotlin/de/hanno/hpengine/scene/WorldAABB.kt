@@ -3,7 +3,7 @@ package de.hanno.hpengine.scene
 import com.artemis.BaseEntitySystem
 import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.SpatialComponent
-import de.hanno.hpengine.artemis.TransformComponent
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor

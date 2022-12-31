@@ -2,7 +2,7 @@ package scenes
 
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.artemis.KotlinComponent
-import de.hanno.hpengine.artemis.NameComponent
+import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory

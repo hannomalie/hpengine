@@ -1,10 +1,10 @@
 package de.hanno.hpengine.graphics.editor
 
 import com.artemis.Component
-import de.hanno.hpengine.artemis.CameraComponent
+import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.artemis.GiVolumeComponent
 import de.hanno.hpengine.artemis.OceanWaterComponent
-import de.hanno.hpengine.artemis.TransformComponent
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.renderer.extensions.ReflectionProbe
 import de.hanno.hpengine.model.Mesh
 import de.hanno.hpengine.model.Model

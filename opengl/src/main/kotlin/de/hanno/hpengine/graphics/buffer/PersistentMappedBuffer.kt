@@ -1,9 +1,8 @@
 package de.hanno.hpengine.graphics.buffer
 
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
-import de.hanno.hpengine.graphics.renderer.constants.glValue
-import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
+import de.hanno.hpengine.graphics.constants.BufferTarget
+import de.hanno.hpengine.graphics.constants.glValue
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT
 import org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT

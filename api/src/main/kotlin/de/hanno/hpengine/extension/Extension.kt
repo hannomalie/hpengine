@@ -1,6 +1,6 @@
 package de.hanno.hpengine.extension
 
-import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.RenderSystem
 import org.koin.core.definition.Definition
 import org.koin.core.instance.InstanceFactory
 import org.koin.core.module.Module

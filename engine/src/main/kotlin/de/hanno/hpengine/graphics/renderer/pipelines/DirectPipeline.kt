@@ -1,17 +1,17 @@
 package de.hanno.hpengine.graphics.renderer.pipelines
 
 
-import PrimitiveType
+import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.artemis.EntitiesStateHolder
-import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Fill
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Lines
+import de.hanno.hpengine.graphics.constants.RenderingMode.Fill
+import de.hanno.hpengine.graphics.constants.RenderingMode.Lines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.RenderState

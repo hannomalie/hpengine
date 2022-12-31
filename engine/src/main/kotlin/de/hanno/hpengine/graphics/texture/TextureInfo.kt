@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.texture
 
-import de.hanno.hpengine.graphics.renderer.constants.Format
+import de.hanno.hpengine.graphics.constants.Format
 import java.util.concurrent.Future
 
 data class TextureInfo(

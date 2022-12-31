@@ -11,9 +11,12 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.component.CameraComponent
+import de.hanno.hpengine.component.NameComponent
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
-import de.hanno.hpengine.graphics.renderer.pipelines.typed
+import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.state.DirectionalLightState
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f

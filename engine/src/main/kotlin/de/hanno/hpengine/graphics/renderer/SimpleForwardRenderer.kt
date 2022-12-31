@@ -1,19 +1,19 @@
 package de.hanno.hpengine.graphics.renderer
 
 import de.hanno.hpengine.artemis.EntitiesStateHolder
-import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
-import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
+import de.hanno.hpengine.graphics.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.pipelines.AnimatedFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectFirstPassPipeline
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget2D
+import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 

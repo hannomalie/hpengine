@@ -1,7 +1,7 @@
 package de.hanno.hpengine.scene
 
-import de.hanno.hpengine.graphics.renderer.pipelines.IndexBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.TypedGpuBuffer
+import de.hanno.hpengine.graphics.buffer.IndexBuffer
+import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import struktgen.api.Strukt
 
 interface IVertexIndexBuffer<SV: Strukt, AV: Strukt> {

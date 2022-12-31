@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.shader
 
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
+import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer

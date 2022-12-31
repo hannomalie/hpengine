@@ -1,9 +1,9 @@
 package de.hanno.hpengine.graphics.vertexbuffer
 
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
-import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.IndexBuffer
+import de.hanno.hpengine.graphics.constants.BufferTarget
+import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import java.nio.IntBuffer
 
 context(GraphicsApi)

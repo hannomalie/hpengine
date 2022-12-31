@@ -1,9 +1,7 @@
 package de.hanno.hpengine.graphics.buffer
 
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
-import de.hanno.hpengine.graphics.renderer.pipelines.AtomicCounterBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
+import de.hanno.hpengine.graphics.constants.BufferTarget
 import org.lwjgl.opengl.ARBIndirectParameters
 import org.lwjgl.opengl.GL15
 

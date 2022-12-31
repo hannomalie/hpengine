@@ -6,8 +6,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.constants.*
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.*
+import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.constants.TextureTarget.*
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines

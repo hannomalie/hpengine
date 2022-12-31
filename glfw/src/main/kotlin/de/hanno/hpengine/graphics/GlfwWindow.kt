@@ -3,8 +3,8 @@ package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.renderer.GLU
-import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
+import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
+import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback

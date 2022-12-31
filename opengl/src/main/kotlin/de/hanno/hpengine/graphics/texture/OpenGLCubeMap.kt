@@ -2,9 +2,9 @@ package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.renderer.constants.WrapMode
+import de.hanno.hpengine.graphics.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.constants.TextureTarget
+import de.hanno.hpengine.graphics.constants.WrapMode
 
 data class OpenGLCubeMap(
     override val dimension: TextureDimension2D,

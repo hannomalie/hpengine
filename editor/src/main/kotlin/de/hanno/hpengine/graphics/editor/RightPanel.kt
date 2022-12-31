@@ -4,6 +4,9 @@ import com.artemis.Component
 import com.artemis.World
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.artemis.*
+import de.hanno.hpengine.component.NameComponent
+import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.engine.graphics.imgui.float2Input
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.graphics.GraphicsApi

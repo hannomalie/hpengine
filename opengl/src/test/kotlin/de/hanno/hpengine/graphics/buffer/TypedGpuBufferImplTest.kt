@@ -5,8 +5,7 @@ import de.hanno.hpengine.Float3
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GlfwWindow
 import de.hanno.hpengine.graphics.OpenGLContext
-import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
-import de.hanno.hpengine.graphics.renderer.pipelines.typed
+import de.hanno.hpengine.graphics.constants.BufferTarget
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe

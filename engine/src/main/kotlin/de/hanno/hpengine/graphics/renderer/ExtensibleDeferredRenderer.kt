@@ -3,12 +3,12 @@ package de.hanno.hpengine.graphics.renderer
 import com.artemis.World
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
-import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
-import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
+import de.hanno.hpengine.graphics.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
+import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.PostProcessingExtension
@@ -17,7 +17,8 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -202,11 +203,6 @@ class ExtensibleDeferredRenderer(
             it.printStackTrace()
         }
     }
-
-    override fun renderEditor(renderState: RenderState) {
-        extensions.forEach { it.renderEditor(renderState) }
-    }
-
 }
 
 class DeferredRenderExtensionConfig(val renderExtensions: List<DeferredRenderExtension>) {

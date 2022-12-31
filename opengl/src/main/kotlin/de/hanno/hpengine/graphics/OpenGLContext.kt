@@ -1,16 +1,16 @@
 package de.hanno.hpengine.graphics
 
-import Facing
+import de.hanno.hpengine.graphics.constants.Facing
 import InternalTextureFormat
-import PrimitiveType
+import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.renderer.constants.*
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
+import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.glValue
-import de.hanno.hpengine.graphics.renderer.pipelines.AtomicCounterBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
+import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState

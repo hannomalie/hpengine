@@ -5,8 +5,11 @@ import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
+import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
+import de.hanno.hpengine.graphics.buffer.TypedGpuBufferImpl
+import de.hanno.hpengine.graphics.constants.BufferTarget
 import org.lwjgl.opengl.*
 import struktgen.api.*
 import java.nio.ByteBuffer

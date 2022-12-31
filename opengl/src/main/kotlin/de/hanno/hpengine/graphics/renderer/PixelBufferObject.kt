@@ -1,8 +1,8 @@
 package de.hanno.hpengine.graphics.renderer
 
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.renderer.constants.glValue
+import de.hanno.hpengine.graphics.constants.TextureTarget
+import de.hanno.hpengine.graphics.constants.glValue
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import java.nio.ByteBuffer

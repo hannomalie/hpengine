@@ -1,6 +1,8 @@
 package de.hanno.hpengine.artemis
 
 import com.artemis.Component
+import de.hanno.hpengine.component.CameraComponent
+import de.hanno.hpengine.component.TransformComponent
 import org.joml.Vector3f
 
 class AreaLightComponent: Component() {

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.vertexbuffer
 
 import de.hanno.hpengine.buffers.copyTo
-import de.hanno.hpengine.graphics.renderer.pipelines.IndexBuffer
+import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import java.nio.ByteBuffer
 
 fun IndexBuffer.put(offset: Int = 0, values: IntArray) {

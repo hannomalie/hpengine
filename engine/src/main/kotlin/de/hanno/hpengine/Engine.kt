@@ -6,6 +6,9 @@ import com.artemis.managers.TagManager
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import de.hanno.hpengine.artemis.*
+import de.hanno.hpengine.component.CameraSystem
+import de.hanno.hpengine.component.NameComponent
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
@@ -22,7 +25,7 @@ import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.extensions.ReflectionProbeManager
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
-import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.EntityBuffer

@@ -2,16 +2,17 @@ package de.hanno.hpengine.graphics.renderer
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.constants.Capability
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
-import de.hanno.hpengine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
+import de.hanno.hpengine.graphics.constants.Capability
+import de.hanno.hpengine.graphics.constants.TextureTarget
+import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.rendertarget.CubeMapArrayRenderTarget
+import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.graphics.shader.IProgram
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer

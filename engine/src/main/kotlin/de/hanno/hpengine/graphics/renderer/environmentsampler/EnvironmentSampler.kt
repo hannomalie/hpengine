@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.renderer.environmentsampler
 
 
 import de.hanno.hpengine.camera.Camera
-import de.hanno.hpengine.artemis.CameraComponent
+import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.artemis.EnvironmentProbeComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -15,9 +15,10 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
-import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer

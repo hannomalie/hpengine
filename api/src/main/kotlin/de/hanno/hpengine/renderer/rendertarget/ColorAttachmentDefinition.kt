@@ -1,7 +1,7 @@
-package de.hanno.hpengine.graphics.renderer.rendertarget
+package de.hanno.hpengine.graphics.rendertarget
 
 import InternalTextureFormat
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 
 data class ColorAttachmentDefinition(
     val name: String,

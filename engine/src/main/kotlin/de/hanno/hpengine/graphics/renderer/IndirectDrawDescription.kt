@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer
 
 import de.hanno.hpengine.camera.Camera
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
+import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.pipelines.CommandOrganizationGpuCulled
 import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.graphics.shader.IProgram

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics.renderer.constants
+package de.hanno.hpengine.graphics.constants
 
 data class TextureFilterConfig(
     val minFilter: MinFilter = MinFilter.LINEAR_MIPMAP_LINEAR,

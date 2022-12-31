@@ -1,9 +1,8 @@
 package de.hanno.hpengine.graphics.fps
 
 import com.artemis.BaseSystem
-import com.artemis.World
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.RenderSystem
 
 class FPSCounterSystem(val fpsCounter: FPSCounter = FPSCounter()): RenderSystem {
     override fun render(renderState: RenderState) {

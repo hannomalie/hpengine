@@ -1,7 +1,6 @@
 package de.hanno.hpengine.graphics.editor
 
 import InternalTextureFormat.RGBA16F
-import InternalTextureFormat.RGBA32F
 import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.ComponentManager
@@ -9,18 +8,22 @@ import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.artemis.*
+import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.extension.SharedDepthBuffer
+import de.hanno.hpengine.graphics.SharedDepthBuffer
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.fps.FPSCounter
-import de.hanno.hpengine.graphics.renderer.constants.MinFilter
-import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.Indices
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.OnClickListener
-import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.constants.MinFilter
+import de.hanno.hpengine.graphics.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.renderer.picking.Indices
+import de.hanno.hpengine.graphics.renderer.picking.OnClickListener
+import de.hanno.hpengine.graphics.rendertarget.*
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.scene.AddResourceContext
@@ -144,7 +147,7 @@ class ImGuiEditor(
     }
 
     override fun processSystem() { }
-    override fun renderEditor(renderState: RenderState) {
+    override fun render(renderState: RenderState) {
         if (!config.debug.isEditorOverlay) return
 
         val screenWidth = ImGui.getIO().displaySizeX

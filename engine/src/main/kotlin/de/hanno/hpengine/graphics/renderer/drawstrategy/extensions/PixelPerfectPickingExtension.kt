@@ -2,7 +2,9 @@ package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.constants.Format
+import de.hanno.hpengine.graphics.constants.Format
+import de.hanno.hpengine.graphics.renderer.picking.Indices
+import de.hanno.hpengine.graphics.renderer.picking.OnClickListener
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.input.MouseClickListener

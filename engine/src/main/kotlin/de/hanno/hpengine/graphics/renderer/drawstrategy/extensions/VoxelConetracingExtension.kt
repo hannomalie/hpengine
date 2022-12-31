@@ -1,13 +1,13 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
 import InternalTextureFormat
-import PrimitiveType
+import de.hanno.hpengine.graphics.constants.PrimitiveType
 import Vector4fStruktImpl.Companion.type
 import VoxelGridImpl.Companion.type
 import com.artemis.World
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
-import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.extension.GiVolumeStateHolder
 import de.hanno.hpengine.extension.SkyBoxStateHolder
@@ -17,14 +17,14 @@ import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.constants.Capability.*
-import de.hanno.hpengine.graphics.renderer.constants.Format
-import de.hanno.hpengine.graphics.renderer.constants.TexelComponentType
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_3D
-import de.hanno.hpengine.graphics.renderer.constants.WrapMode
+import de.hanno.hpengine.graphics.constants.Capability.*
+import de.hanno.hpengine.graphics.constants.Format
+import de.hanno.hpengine.graphics.constants.TexelComponentType
+import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_2D
+import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_3D
+import de.hanno.hpengine.graphics.constants.WrapMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
+import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.*
@@ -53,29 +53,29 @@ fun OpenGLTextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTrac
         getTexture3D(
             gridSize,
             VoxelConeTracingExtension.gridTextureFormatSized,
-            de.hanno.hpengine.graphics.renderer.constants.MinFilter.LINEAR_MIPMAP_LINEAR,
-            de.hanno.hpengine.graphics.renderer.constants.MagFilter.LINEAR,
+            de.hanno.hpengine.graphics.constants.MinFilter.LINEAR_MIPMAP_LINEAR,
+            de.hanno.hpengine.graphics.constants.MagFilter.LINEAR,
             WrapMode.ClampToEdge
         ),
         getTexture3D(
             gridSize,
             VoxelConeTracingExtension.indexGridTextureFormatSized,
-            de.hanno.hpengine.graphics.renderer.constants.MinFilter.NEAREST,
-            de.hanno.hpengine.graphics.renderer.constants.MagFilter.NEAREST,
+            de.hanno.hpengine.graphics.constants.MinFilter.NEAREST,
+            de.hanno.hpengine.graphics.constants.MagFilter.NEAREST,
             WrapMode.ClampToEdge
         ),
         getTexture3D(
             gridSize,
             VoxelConeTracingExtension.gridTextureFormatSized,
-            de.hanno.hpengine.graphics.renderer.constants.MinFilter.LINEAR_MIPMAP_LINEAR,
-            de.hanno.hpengine.graphics.renderer.constants.MagFilter.LINEAR,
+            de.hanno.hpengine.graphics.constants.MinFilter.LINEAR_MIPMAP_LINEAR,
+            de.hanno.hpengine.graphics.constants.MagFilter.LINEAR,
             WrapMode.ClampToEdge
         ),
         getTexture3D(
             gridSize,
             VoxelConeTracingExtension.gridTextureFormatSized,
-            de.hanno.hpengine.graphics.renderer.constants.MinFilter.LINEAR_MIPMAP_LINEAR,
-            de.hanno.hpengine.graphics.renderer.constants.MagFilter.LINEAR,
+            de.hanno.hpengine.graphics.constants.MinFilter.LINEAR_MIPMAP_LINEAR,
+            de.hanno.hpengine.graphics.constants.MagFilter.LINEAR,
             WrapMode.ClampToEdge
         )
     )

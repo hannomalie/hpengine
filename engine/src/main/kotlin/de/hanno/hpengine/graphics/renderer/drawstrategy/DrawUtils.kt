@@ -1,9 +1,10 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy
 
-import PrimitiveType
+import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.pipelines.DrawElementsIndirectCommand
-import de.hanno.hpengine.graphics.renderer.pipelines.IndexBuffer
+import de.hanno.hpengine.graphics.buffer.IndexBuffer
+import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.vertexbuffer.TriangleCount
 import de.hanno.hpengine.graphics.vertexbuffer.drawInstancedBaseVertex
 import de.hanno.hpengine.scene.VertexIndexBuffer

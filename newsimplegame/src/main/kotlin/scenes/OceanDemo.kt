@@ -3,6 +3,8 @@ package scenes
 import com.artemis.World
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.artemis.*
+import de.hanno.hpengine.component.NameComponent
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory

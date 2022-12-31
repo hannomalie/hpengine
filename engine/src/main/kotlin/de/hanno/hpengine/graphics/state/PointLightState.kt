@@ -7,7 +7,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.point.PointLightShadowMapStrategy
 import de.hanno.hpengine.graphics.light.point.PointLightStruct
-import de.hanno.hpengine.graphics.renderer.pipelines.typed
+import de.hanno.hpengine.graphics.buffer.typed
 
 context(GraphicsApi)
 class PointLightState {

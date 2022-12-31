@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics
 
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrontBufferTarget
+import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 
 
 interface Window: GpuExecutor {

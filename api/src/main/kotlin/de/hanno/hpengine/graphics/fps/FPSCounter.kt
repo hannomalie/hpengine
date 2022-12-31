@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.fps
 
 class CPSCounter: FPSCounter()
+
 open class FPSCounter {
     val stack = longArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     var currentIndex = 0
@@ -18,7 +19,7 @@ open class FPSCounter {
     var msPerFrame = 0f
         private set
 
-    fun push(value: Long) {
+    private fun push(value: Long) {
         stack[currentIndex] = value
         currentIndex = nextIndex
     }

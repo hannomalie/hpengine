@@ -37,10 +37,12 @@ import de.hanno.hpengine.transform.SimpleSpatial
 import de.hanno.hpengine.transform.StaticTransformSpatial
 import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.buffers.enlarge
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.state.EntitiesState
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.vertexbuffer.appendIndices
 import de.hanno.hpengine.scene.*
 import org.joml.FrustumIntersection

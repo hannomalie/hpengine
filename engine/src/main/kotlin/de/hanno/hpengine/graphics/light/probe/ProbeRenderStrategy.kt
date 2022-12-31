@@ -2,9 +2,9 @@ package de.hanno.hpengine.graphics.light.probe
 
 import AmbientCubeImpl.Companion.sizeInBytes
 import InternalTextureFormat.*
-import PrimitiveType
+import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.artemis.EntitiesStateHolder
-import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
@@ -12,11 +12,11 @@ import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dime
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimensionHalf
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.extent
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.constants.*
-import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D
+import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines

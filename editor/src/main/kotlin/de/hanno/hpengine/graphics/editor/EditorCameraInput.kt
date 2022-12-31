@@ -5,10 +5,10 @@ import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
-import de.hanno.hpengine.artemis.CameraComponent
-import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
-import de.hanno.hpengine.artemis.TransformComponent
-import de.hanno.hpengine.artemis.primaryCameraTag
+import de.hanno.hpengine.component.CameraComponent
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
+import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor

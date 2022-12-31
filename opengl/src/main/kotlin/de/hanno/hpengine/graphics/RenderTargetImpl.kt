@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics
 
-import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.graphics.rendertarget.BackBufferRenderTarget
+import de.hanno.hpengine.graphics.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMapArray
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount

@@ -4,8 +4,8 @@ package de.hanno.hpengine.graphics.vertexbuffer
 import de.hanno.hpengine.graphics.DataChannels
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
-import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
+import de.hanno.hpengine.graphics.constants.BufferTarget
+import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import org.joml.Vector2f
 import org.lwjgl.opengl.GL15
 import java.nio.ByteBuffer
