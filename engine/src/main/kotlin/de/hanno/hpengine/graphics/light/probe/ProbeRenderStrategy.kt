@@ -6,7 +6,7 @@ import PrimitiveType
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimension
 import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimensionHalf
@@ -36,10 +36,10 @@ import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 
-context(GpuContext, GPUProfiler)
+context(GraphicsApi, GPUProfiler)
 class ProbeRenderStrategy(
     private val config: Config,
-    private val gpuContext: GpuContext,
+    private val graphicsApi: GraphicsApi,
     programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
@@ -102,13 +102,11 @@ class ProbeRenderStrategy(
     var z = 0
 
     fun renderProbes(renderState: RenderState) {
-        val gpuContext = gpuContext
-
         profiled("PointLight shadowmaps") {
 
-            gpuContext.depthMask = true
-            gpuContext.enable(Capability.DEPTH_TEST)
-            gpuContext.enable(Capability.CULL_FACE)
+            graphicsApi.depthMask = true
+            graphicsApi.enable(Capability.DEPTH_TEST)
+            graphicsApi.enable(Capability.CULL_FACE)
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
             var counter = 0
@@ -116,14 +114,14 @@ class ProbeRenderStrategy(
 
                 val cubeMapIndex = getCubeMapIndex(x, y, z)
 
-                gpuContext.enable(Capability.DEPTH_TEST)
+                graphicsApi.enable(Capability.DEPTH_TEST)
 //            gpuContext.cullFace(CullMode.BACK)
 //            gpuContext.enable(GlCap.CULL_FACE)
-                gpuContext.disable(Capability.CULL_FACE)
-                gpuContext.depthMask = true
-                gpuContext.clearColor(0f, 0f, 0f, 0f)
+                graphicsApi.disable(Capability.CULL_FACE)
+                graphicsApi.depthMask = true
+                graphicsApi.clearColor(0f, 0f, 0f, 0f)
                 cubeMapRenderTarget.use(true)
-                gpuContext.viewPort(0, 0, resolution, resolution)
+                graphicsApi.viewPort(0, 0, resolution, resolution)
 
                 val probePosition =
                     Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).sub(Vector3f(dimensionHalf.toFloat())).mul(extent)
@@ -185,7 +183,7 @@ class ProbeRenderStrategy(
                 }
 
                 finish()
-                gpuContext.copyImageSubData(
+                graphicsApi.copyImageSubData(
                     cubeMapRenderTarget.textures[0], mipmapCount - 1, 0, 0, 0, ambientCube.cubeMap,
                     0, 0, 0, 0, 1, 1, 6
                 )
@@ -226,9 +224,9 @@ class ProbeRenderStrategy(
     }
 }
 
-context(GpuContext, GPUProfiler)
+context(GraphicsApi, GPUProfiler)
 class EvaluateProbeRenderExtension(
-    private val gpuContext: GpuContext,
+    private val graphicsApi: GraphicsApi,
     private val programManager: ProgramManager,
     textureManager: OpenGLTextureManager,
     private val config: Config,
@@ -242,7 +240,7 @@ class EvaluateProbeRenderExtension(
 
     private val probeRenderStrategy = ProbeRenderStrategy(
         config,
-        gpuContext,
+        graphicsApi,
         programManager,
         textureManager,
         directionalLightStateHolder,
@@ -268,11 +266,11 @@ class EvaluateProbeRenderExtension(
         val deferredRenderingBuffer = deferredRenderingBuffer
         deferredRenderingBuffer.lightAccumulationBuffer.use(false)
 
-        gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
-        gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
-        gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-        gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
-        gpuContext.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
+        graphicsApi.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
+        graphicsApi.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
+        graphicsApi.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+        graphicsApi.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
+        graphicsApi.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
 
         val camera = renderState[primaryCameraStateHolder.camera]
         evaluateProbeProgram.use()

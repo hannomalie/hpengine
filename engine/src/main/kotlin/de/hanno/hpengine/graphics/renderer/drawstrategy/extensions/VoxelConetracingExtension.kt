@@ -12,7 +12,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.extension.GiVolumeStateHolder
 import de.hanno.hpengine.extension.SkyBoxStateHolder
 import de.hanno.hpengine.graphics.Access
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
@@ -80,7 +80,7 @@ fun OpenGLTextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTrac
         )
     )
 }
-context(GpuContext, RenderStateContext, GPUProfiler)
+context(GraphicsApi, RenderStateContext, GPUProfiler)
 class VoxelConeTracingExtension(
     private val config: Config,
     programManager: ProgramManager,
@@ -461,14 +461,14 @@ class VoxelConeTracingExtension(
         val indexGridTextureFormatSized = InternalTextureFormat.R16I//GL30.GL_R32UI;
     }
 }
-context(GpuContext)
+context(GraphicsApi)
 class VoxelizerUniformsStatic : StaticFirstPassUniforms() {
     val voxelGridIndex by IntType()
     val voxelGridCount by IntType()
     val voxelGrids by SSBO("VoxelGrid", 5, PersistentShaderStorageBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type))
     val writeVoxels by BooleanType(true)
 }
-context(GpuContext)
+context(GraphicsApi)
 class VoxelizerUniformsAnimated() : AnimatedFirstPassUniforms() {
     val voxelGridIndex by IntType()
     val voxelGridCount by IntType()

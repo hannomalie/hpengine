@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.editor
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderMode
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.TabBar
@@ -14,7 +14,7 @@ import struktgen.api.forEach
 import struktgen.api.forIndex
 import java.nio.IntBuffer
 
-context(Window, ImGuiEditor, RenderStateContext, GpuContext)
+context(Window, ImGuiEditor, RenderStateContext, GraphicsApi)
 fun TabBar.renderTab(gpuProfiler: GPUProfiler) {
     tab("Render") {
         text("FPS: ${fpsCounter.fps}") {}

@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.renderer
 
 
 import Vector4fStruktImpl.Companion.type
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.pipelines.TypedGpuBuffer
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.vertexbuffer.drawLines
@@ -13,7 +13,7 @@ import struktgen.api.forIndex
 import java.nio.FloatBuffer
 import kotlin.math.min
 
-context(GpuContext)
+context(GraphicsApi)
 fun drawLines(
     programManager: ProgramManager,
     linesProgram: IProgram<LinesProgramUniforms>,
@@ -50,7 +50,7 @@ fun TypedGpuBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector3fc>) {
     }
 }
 
-context(GpuContext)
+context(GraphicsApi)
 fun drawLines(
     linesProgram: IProgram<LinesProgramUniforms>,
     vertices: TypedGpuBuffer<Vector4fStrukt>,

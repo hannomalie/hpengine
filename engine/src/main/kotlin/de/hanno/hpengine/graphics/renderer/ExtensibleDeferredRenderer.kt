@@ -23,7 +23,7 @@ import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 
-context(GpuContext, RenderStateContext, GPUProfiler)
+context(GraphicsApi, RenderStateContext, GPUProfiler)
 class ExtensibleDeferredRenderer(
     private val window: Window,
     private val config: Config,
@@ -44,8 +44,8 @@ class ExtensibleDeferredRenderer(
 
     override val sharedRenderTarget = deferredRenderingBuffer.gBuffer
 
-    val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer, environmentProbesStateHolder, primaryCameraStateHolder)
-    val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, this@GpuContext, deferredRenderingBuffer, primaryCameraStateHolder)
+    val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, this@GraphicsApi, deferredRenderingBuffer, environmentProbesStateHolder, primaryCameraStateHolder)
+    val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, this@GraphicsApi, deferredRenderingBuffer, primaryCameraStateHolder)
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),

@@ -7,7 +7,7 @@ import de.hanno.hpengine.artemis.EntitiesStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
@@ -22,7 +22,6 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.buffers.copyTo
@@ -40,9 +39,9 @@ import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
 import java.nio.FloatBuffer
 
-context(GpuContext, GPUProfiler)
+context(GraphicsApi, GPUProfiler)
 class ProbeRenderer(
-    private val gpuContext: GpuContext,
+    private val graphicsApi: GraphicsApi,
     config: Config,
     programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
@@ -69,13 +68,13 @@ class ProbeRenderer(
     val probeCount = probesPerDimension.x * probesPerDimension.y * probesPerDimension.z
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
-    val probePositionsStructBuffer = gpuContext.window.invoke {
+    val probePositionsStructBuffer = graphicsApi.window.invoke {
         PersistentShaderStorageBuffer(probeCount * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
-    val probeAmbientCubeValues = gpuContext.window.invoke {
+    val probeAmbientCubeValues = graphicsApi.window.invoke {
         PersistentShaderStorageBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
-    val probeAmbientCubeValuesOld = gpuContext.window.invoke {
+    val probeAmbientCubeValuesOld = graphicsApi.window.invoke {
         PersistentShaderStorageBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
 
@@ -140,20 +139,18 @@ class ProbeRenderer(
         }
         probeAmbientCubeValues.buffer.copyTo(probeAmbientCubeValuesOld.buffer)
 
-        val gpuContext = gpuContext
-
         profiled("Probes") {
 
-            gpuContext.depthMask = true
-            gpuContext.disable(Capability.DEPTH_TEST)
-            gpuContext.disable(Capability.CULL_FACE)
+            graphicsApi.depthMask = true
+            graphicsApi.disable(Capability.DEPTH_TEST)
+            graphicsApi.disable(Capability.CULL_FACE)
             cubeMapRenderTarget.use(true)
 //            gpuContext.clearDepthAndColorBuffer()
-            gpuContext.viewPort(0, 0, probeResolution, probeResolution)
+            graphicsApi.viewPort(0, 0, probeResolution, probeResolution)
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
             for (probeIndex in probeStartIndex until (probeStartIndex + probesPerFrame)) {
-                gpuContext.clearDepthBuffer()
+                graphicsApi.clearDepthBuffer()
 
                 val skyBox = textureManager.cubeMap
 
@@ -178,14 +175,14 @@ class ProbeRenderer(
                 pointCubeShadowPassProgram.setUniform("sceneMin", sceneMin)
                 pointCubeShadowPassProgram.setUniform("probesPerDimension", probesPerDimensionFloat)
 
-                if (!gpuContext.isSupported(BindlessTextures)) {
-                    gpuContext.bindTexture(
+                if (!graphicsApi.isSupported(BindlessTextures)) {
+                    graphicsApi.bindTexture(
                         8,
                         TextureTarget.TEXTURE_2D,
                         directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
-                gpuContext.bindTexture(8, skyBox)
+                graphicsApi.bindTexture(8, skyBox)
                 val viewProjectionMatrices = getCubeViewProjectionMatricesForPosition(probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
@@ -217,7 +214,7 @@ class ProbeRenderer(
                     }
                 }
                 val cubeMap = cubeMapRenderTarget.textures.first() as OpenGLCubeMap
-                gpuContext.generateMipMaps(cubeMap)
+                graphicsApi.generateMipMaps(cubeMap)
                 val floatArrayOf = getTextureSubImage(cubeMap)
                 val ambientCubeValues = floatArrayOf.toList().windowed(4, 4) {
                     Vector3f(it[0], it[1], it[2])

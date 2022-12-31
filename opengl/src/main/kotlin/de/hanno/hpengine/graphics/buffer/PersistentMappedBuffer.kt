@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.buffer
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
 import de.hanno.hpengine.graphics.renderer.constants.glValue
 import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
@@ -17,7 +17,7 @@ import java.nio.ByteBuffer
 
 val flags = GL_MAP_WRITE_BIT or GL_MAP_PERSISTENT_BIT or GL_MAP_COHERENT_BIT
 
-context(GpuContext)
+context(GraphicsApi)
 class PersistentMappedBuffer(
     override var target: BufferTarget,
     capacityInBytes: Int = 1024

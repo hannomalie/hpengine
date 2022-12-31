@@ -4,7 +4,6 @@ import com.artemis.BaseEntitySystem
 import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.SpatialComponent
 import de.hanno.hpengine.artemis.TransformComponent
-import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor
@@ -29,7 +28,7 @@ class WorldAABB(
     override fun processSystem() { }
 }
 
-context(GpuContext, RenderStateContext)
+context(de.hanno.hpengine.graphics.GraphicsApi, RenderStateContext)
 class WorldAABBStateHolder {
     val worldAABBState = renderState.registerState {
         MinMax(min = Vector3f(), max = Vector3f())

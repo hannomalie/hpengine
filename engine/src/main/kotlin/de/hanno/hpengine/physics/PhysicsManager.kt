@@ -23,7 +23,7 @@ import com.bulletphysics.linearmath.Transform
 import de.hanno.hpengine.artemis.PhysicsComponent
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.addLine
 import de.hanno.hpengine.graphics.renderer.drawLines
@@ -42,7 +42,7 @@ import javax.vecmath.Matrix4f
 import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 @All(PhysicsComponent::class)
 class PhysicsManager(
     private val config: Config,

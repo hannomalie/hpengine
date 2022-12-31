@@ -1,13 +1,13 @@
 package de.hanno.hpengine.graphics.vertexbuffer
 
 import de.hanno.hpengine.graphics.DataChannels
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import org.lwjgl.opengl.*
 
 import java.util.*
 
 
-context(GpuContext)
+context(GraphicsApi)
 class VertexArrayObject(
     private val channels: EnumSet<DataChannels>
 ) {
@@ -35,7 +35,7 @@ class VertexArrayObject(
     fun delete() = GL30.glDeleteVertexArrays(id)
 
     companion object {
-        context(GpuContext)
+        context(GraphicsApi)
         fun getForChannels(channels: EnumSet<DataChannels>) = VertexArrayObject(channels)
 
         private val cache = HashMap<EnumSet<DataChannels>, Int>()

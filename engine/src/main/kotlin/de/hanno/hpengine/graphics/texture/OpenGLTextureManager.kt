@@ -5,7 +5,7 @@ import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.Access
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.*
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
@@ -29,7 +29,7 @@ import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 
-context(GpuContext)
+context(GraphicsApi)
 class OpenGLTextureManager(
     val config: Config,
     programManager: OpenGlProgramManager,
@@ -260,7 +260,7 @@ class OpenGLTextureManager(
     }
 
     fun copyCubeMap(sourceTexture: CubeMap): Int {
-        return this@GpuContext.copyCubeMap(sourceTexture).id
+        return this@GraphicsApi.copyCubeMap(sourceTexture).id
     }
 
     //TODO: Add texture filters as params

@@ -9,7 +9,7 @@ import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.graphics.EntityStrukt
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.model.material.Material
@@ -21,7 +21,7 @@ import de.hanno.hpengine.graphics.shader.*
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils.createFloatBuffer
 
-context(GpuContext)
+context(GraphicsApi)
 sealed class FirstPassUniforms: Uniforms() {
     var materials by SSBO("Material", 1, PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
     var entities by SSBO("Entity", 3, PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
@@ -46,18 +46,18 @@ sealed class FirstPassUniforms: Uniforms() {
 }
 fun createTransformBuffer() = createFloatBuffer(16).apply { Transform().get(this) }
 
-context(GpuContext)
+context(GraphicsApi)
 open class StaticFirstPassUniforms: FirstPassUniforms() {
     var vertices by SSBO("VertexPacked", 7, PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
 }
-context(GpuContext)
+context(GraphicsApi)
 open class AnimatedFirstPassUniforms: FirstPassUniforms() {
     var joints by SSBO("mat4", 6, PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type))
     var vertices by SSBO("VertexAnimatedPacked", 7, PersistentShaderStorageBuffer(AnimatedVertexStruktPacked.sizeInBytes).typed(
         AnimatedVertexStruktPacked.type))
 }
 
-context(GpuContext)
+context(GraphicsApi)
 fun IProgram<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>) {
     for (mapEnumEntry in Material.MAP.values()) {
 

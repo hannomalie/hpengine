@@ -46,7 +46,7 @@ context(GPUProfiler)
 class OpenGLContext private constructor(
     override val window: Window,
     private val config: Config,
-) : GpuContext, GpuExecutor by window {
+) : GraphicsApi, GpuExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
 
@@ -197,7 +197,7 @@ class OpenGLContext private constructor(
         }
     }
 
-    override fun <T> onGpu(block: context(GpuContext)() -> T) = invoke { block(this) }
+    override fun <T> onGpu(block: context(GraphicsApi)() -> T) = invoke { block(this) }
 
     override fun createCommandSync(): OpenGlCommandSync = onGpu {
         OpenGlCommandSync().also {

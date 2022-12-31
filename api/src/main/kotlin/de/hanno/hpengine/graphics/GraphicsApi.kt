@@ -12,17 +12,14 @@ import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.texture.*
-import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.ressources.CodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
-import de.hanno.hpengine.stopwatch.ProfilingTask
 import org.joml.Vector4f
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.nio.LongBuffer
 
-interface GpuContext {
+interface GraphicsApi {
     val window: Window
 
     val isError: Boolean
@@ -157,7 +154,7 @@ interface GpuContext {
 
     fun createCommandSync(): GpuCommandSync
     fun createCommandSync(onSignaled: () -> Unit): GpuCommandSync
-    fun <T> onGpu(block: context(GpuContext)() -> T): T
+    fun <T> onGpu(block: context(GraphicsApi)() -> T): T
 
     val maxLineWidth: Float
 

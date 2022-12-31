@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.shader
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.ressources.FileMonitor
 
@@ -12,7 +12,7 @@ class Program<T: Uniforms>(
     val tesselationEvaluationShader: TesselationEvaluationShader?,
     uniforms: T,
     defines: Defines = Defines(),
-    gpuContext: GpuContext,
+    graphicsApi: GraphicsApi,
     private val fileMonitor: FileMonitor,
 ): AbstractProgram<T>(
     shaders = listOfNotNull(
@@ -24,6 +24,6 @@ class Program<T: Uniforms>(
     ),
     defines = defines,
     uniforms = uniforms,
-    gpuContext = gpuContext,
+    graphicsApi = graphicsApi,
     fileMonitor = fileMonitor,
 )

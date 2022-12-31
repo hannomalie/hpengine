@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.vertexbuffer
 
 
 import de.hanno.hpengine.graphics.DataChannels
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
 import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
@@ -14,7 +14,7 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
-context(GpuContext)
+context(GraphicsApi)
 class VertexBuffer(
     _channels: EnumSet<DataChannels>,
     values: FloatArray
@@ -120,7 +120,7 @@ class VertexBuffer(
     }
 }
 
-fun GpuContext.createSixDebugBuffers() = onGpu {
+fun GraphicsApi.createSixDebugBuffers() = onGpu {
     object : ArrayList<IVertexBuffer>() {
         init {
             val height = -2f / 3f

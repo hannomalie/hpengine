@@ -3,19 +3,17 @@ package de.hanno.hpengine.graphics.renderer.extensions
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.Capability
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
@@ -26,13 +24,13 @@ context(GPUProfiler)
 class CombinePassRenderExtension(private val config: Config,
                                  private val programManager: ProgramManager,
                                  private val textureManager: TextureManager,
-                                 private val gpuContext: GpuContext,
+                                 private val graphicsApi: GraphicsApi,
                                  private val deferredRenderingBuffer: DeferredRenderingBuffer,
                                  private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
                                  private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
 
-    private val fullscreenBuffer = gpuContext.run { QuadVertexBuffer() }
+    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
     private val combineProgram = programManager.getProgram(
         config.EngineAsset("shaders/combine_pass_vertex.glsl").toCodeSource(),
         config.EngineAsset("shaders/combine_pass_fragment.glsl").toCodeSource(),
@@ -43,7 +41,7 @@ class CombinePassRenderExtension(private val config: Config,
     fun renderCombinePass(
         state: RenderState,
         renderTarget: RenderTarget2D = deferredRenderingBuffer.finalBuffer
-    ) = gpuContext.run {
+    ) = graphicsApi.run {
         val camera = state[primaryCameraStateHolder.camera]
 
         if(!config.effects.isAutoExposureEnabled) {

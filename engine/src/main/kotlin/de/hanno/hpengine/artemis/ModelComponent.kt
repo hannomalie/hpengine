@@ -13,7 +13,7 @@ import com.artemis.link.LinkListener
 import com.artemis.utils.IntBag
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.graphics.shader.Program
@@ -70,7 +70,7 @@ class InstancesComponent: Component() {
     val instances = mutableListOf<Int>()
 }
 
-context(GpuContext)
+context(GraphicsApi)
 @One(
     ModelComponent::class,
 //    InstanceComponent::class,
@@ -544,7 +544,7 @@ class ModelSystem(
     }
 }
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class EntitiesStateHolder {
     val entitiesState = renderState.registerState {
         EntitiesState()

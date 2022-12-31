@@ -1,13 +1,13 @@
 package de.hanno.hpengine.graphics.state
 
 import de.hanno.hpengine.graphics.GpuCommandSync
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 
 interface IRenderState {
     var gpuCommandSync: GpuCommandSync
 }
 
-context(GpuContext)
+context(GraphicsApi)
 class RenderState(
     private val dummy: Unit = Unit // need dummy for now, because context receiver resolution bug
 ) : IRenderState {

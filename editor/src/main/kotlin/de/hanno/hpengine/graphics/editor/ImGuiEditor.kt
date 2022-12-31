@@ -61,7 +61,7 @@ class EntityClickListener : OnClickListener {
 enum class SelectionMode { Entity, Mesh; }
 data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class ImGuiEditor(
     internal val window: Window,
     internal val textureManager: TextureManager,

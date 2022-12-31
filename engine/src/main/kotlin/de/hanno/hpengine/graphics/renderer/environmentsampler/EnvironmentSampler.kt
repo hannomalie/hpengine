@@ -5,13 +5,12 @@ import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.artemis.CameraComponent
 import de.hanno.hpengine.artemis.EnvironmentProbeComponent
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
@@ -19,8 +18,6 @@ import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
@@ -34,7 +31,7 @@ import java.nio.FloatBuffer
 import java.util.HashSet
 
 
-context(GpuContext)
+context(GraphicsApi)
 class EnvironmentSampler(
     private val transform: Transform,
     probe: EnvironmentProbeComponent,
@@ -118,7 +115,7 @@ class EnvironmentSampler(
     val renderTarget: RenderTarget2D
     val camera: Camera
 
-    var gpuContext = this@GpuContext
+    var gpuContext = this@GraphicsApi
     val config: Config
     val textureManager: OpenGLTextureManager
 

@@ -13,7 +13,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import java.util.concurrent.atomic.AtomicBoolean
 
-context(GpuContext)
+context(GraphicsApi)
 class RenderManager(
     private val config: Config,
     private val input: Input,
@@ -43,7 +43,7 @@ class RenderManager(
     var renderSystems: MutableList<RenderSystem> = _renderSystems.distinct().toMutableList()
 
     private val textureRenderer = SimpleTextureRenderer(
-        this@GpuContext,
+        this@GraphicsApi,
         config,
         finalOutput.texture2D,
         programManager,

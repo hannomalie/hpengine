@@ -12,7 +12,7 @@ import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
@@ -59,7 +59,7 @@ class ReflectionProbeManager(val config: Config) : BaseEntitySystem() {
     }
 }
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class ReflectionProbesStateHolder {
     val probesState = renderState.registerState {
         ReflectionProbesState()
@@ -73,7 +73,7 @@ class ReflectionProbeState {
     val halfExtents = Vector3f()
 }
 
-context(GpuContext)
+context(GraphicsApi)
 class ReflectionProbeRenderState {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
@@ -83,7 +83,7 @@ class ReflectionProbeRenderState {
     val probePositions = mutableListOf<Vector3f>()
 }
 
-context(GpuContext, RenderStateContext, GPUProfiler)
+context(GraphicsApi, RenderStateContext, GPUProfiler)
 class ReflectionProbeRenderExtension(
     private val config: Config,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -380,7 +380,7 @@ class ReflectionProbeRenderExtension(
     }
 }
 
-context(GpuContext)
+context(GraphicsApi)
 class ReflectionProbeRenderer(
     val config: Config,
     val programManager: ProgramManager,

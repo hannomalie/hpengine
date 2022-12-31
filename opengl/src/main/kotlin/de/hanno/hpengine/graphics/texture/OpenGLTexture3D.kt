@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.WrapMode
@@ -17,7 +17,7 @@ data class OpenGLTexture3D(
     override var uploadState: UploadState
 ) : Texture3D {
     companion object {
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(
             dimension: TextureDimension3D,
             filterConfig: TextureFilterConfig,

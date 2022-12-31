@@ -157,7 +157,7 @@ fun Window.createFrontBufferRenderTarget(): FrontBufferTarget = object : FrontBu
             this@createFrontBufferRenderTarget.height = value
         }
 
-    context(GpuContext)
+    context(GraphicsApi)
     override fun use(clear: Boolean) {
         bindFrameBuffer(frameBuffer)
         viewPort(0, 0, width, height)

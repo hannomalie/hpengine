@@ -13,7 +13,7 @@ import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
@@ -47,10 +47,10 @@ import java.util.ArrayList
 import kotlin.math.min
 
 // TODO: Implement autoadd for transform
-context(GpuContext)
+context(GraphicsApi)
 @All(AreaLightComponent::class, TransformComponent::class)
 class AreaLightSystem(
-    private val gpuContext: GpuContext,
+    private val graphicsApi: GraphicsApi,
     programManager: ProgramManager,
     config: Config,
     private val pointLightStateHolder: PointLightStateHolder,
@@ -99,7 +99,7 @@ class AreaLightSystem(
         AreaShadowPassUniforms()
     )
     private val areaLightDepthMaps = ArrayList<Int>().apply {
-        gpuContext.onGpu {
+        graphicsApi.onGpu {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
                 val internalFormat = InternalTextureFormat.RGBA16F // TODO: Use F for float or not?
                 val filterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
@@ -115,7 +115,7 @@ class AreaLightSystem(
                     TextureTarget.TEXTURE_2D,
                     wrapMode,
                 )
-                gpuContext.Texture2D(
+                graphicsApi.Texture2D(
                     dimension,
                     TextureTarget.TEXTURE_2D,
                     internalFormat,
@@ -134,9 +134,9 @@ class AreaLightSystem(
         if (areaLights.isEmpty()) return
 
         profiled("Arealight shadowmaps") {
-            gpuContext.depthMask = true
-            gpuContext.enable(Capability.DEPTH_TEST)
-            gpuContext.disable(Capability.CULL_FACE)
+            graphicsApi.depthMask = true
+            graphicsApi.enable(Capability.DEPTH_TEST)
+            graphicsApi.disable(Capability.CULL_FACE)
             mapRenderTarget.use(true)
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
@@ -144,7 +144,7 @@ class AreaLightSystem(
 
                 mapRenderTarget.setTargetTexture(areaLightDepthMaps[i], 0)
 
-                gpuContext.clearDepthAndColorBuffer()
+                graphicsApi.clearDepthAndColorBuffer()
 
                 val light = areaLights[i]
 
@@ -221,14 +221,14 @@ class AreaLightSystem(
 
 }
 
-context(GpuContext)
+context(GraphicsApi)
 class AreaShadowPassUniforms : Uniforms() {
     var entitiesBuffer by SSBO("Entity", 3, PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 }
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class AreaLightStateHolder {
     val lightState = renderState.registerState {
         AreaLightsState()

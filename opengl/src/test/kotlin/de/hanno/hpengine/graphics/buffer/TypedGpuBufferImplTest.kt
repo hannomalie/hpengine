@@ -22,7 +22,7 @@ internal class TypedGpuBufferImplTest {
             every { debug } returns mockk {
             }
         }
-        val gpuContext = OpenGLContext.invoke(
+        val graphicsApi = OpenGLContext.invoke(
             OpenGLGPUProfiler(config),
             GlfwWindow(
                 width = 800,
@@ -32,7 +32,7 @@ internal class TypedGpuBufferImplTest {
             config
         )
 
-        with(gpuContext) {
+        with(graphicsApi) {
             val buffer = PersistentMappedBuffer(512, BufferTarget.ShaderStorage)
             val typedBuffer = buffer.typed(Float3.type)
             val originalByteBuffer = buffer.buffer

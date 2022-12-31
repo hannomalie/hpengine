@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL21.*
@@ -13,9 +13,9 @@ class PixelBufferObject(val id: Int) {
         operator fun invoke() = PixelBufferObject(glGenBuffers())
     }
 
-    fun put(gpuContext: GpuContext, data: ByteBuffer) {
+    fun put(graphicsApi: GraphicsApi, data: ByteBuffer) {
 
-        val buffer = gpuContext.onGpu {
+        val buffer = graphicsApi.onGpu {
             GL15.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, id)
             GL15.glBufferData(GL_PIXEL_UNPACK_BUFFER, data.capacity().toLong(), GL15.GL_STREAM_COPY)
             val buffer = GL15.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)!!
@@ -24,11 +24,11 @@ class PixelBufferObject(val id: Int) {
         }
 
         buffer.put(data)
-        unmap(gpuContext)
+        unmap(graphicsApi)
     }
 
-    fun unmap(gpuContext: GpuContext) {
-        gpuContext.onGpu {
+    fun unmap(graphicsApi: GraphicsApi) {
+        graphicsApi.onGpu {
             bind()
             val isMapped = GL15.glGetBufferParameteri(GL_PIXEL_UNPACK_BUFFER, GL15.GL_BUFFER_MAPPED) == GL11.GL_TRUE
             val zeroIsBound = GL11.glGetInteger(GL_PIXEL_UNPACK_BUFFER_BINDING) == 0

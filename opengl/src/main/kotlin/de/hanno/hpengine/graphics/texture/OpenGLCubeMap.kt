@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.WrapMode
@@ -18,7 +18,7 @@ data class OpenGLCubeMap(
 ) : CubeMap {
     companion object {
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(
             dimension: TextureDimension2D,
             filterConfig: TextureFilterConfig,

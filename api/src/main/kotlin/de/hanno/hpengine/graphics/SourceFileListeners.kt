@@ -25,7 +25,7 @@ import de.hanno.hpengine.ressources.Reloadable
 //    })
 //}
 
-context(FileMonitor, GpuContext)
+context(FileMonitor, GraphicsApi)
 fun <T: Uniforms> AbstractProgram<T>.createFileListeners() {
     val sources: List<FileBasedCodeSource> = shaders.map { it.source }.filterIsInstance<FileBasedCodeSource>()
     replaceOldListeners(sources, object: Reloadable {

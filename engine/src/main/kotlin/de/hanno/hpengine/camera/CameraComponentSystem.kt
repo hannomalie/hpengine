@@ -7,7 +7,7 @@ import com.artemis.hackedOutComponents
 import de.hanno.hpengine.artemis.CameraComponent
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -22,7 +22,7 @@ import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class CameraRenderExtension(
     private val config: Config,
     private val programManager: ProgramManager,

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.graphics.state
 
-import de.hanno.hpengine.graphics.GpuContext
 import org.lwjgl.BufferUtils
 
 class EnvironmentProbesState {

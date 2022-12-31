@@ -17,7 +17,7 @@ import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
-context(GpuContext, RenderStateContext, de.hanno.hpengine.stopwatch.GPUProfiler)
+context(GraphicsApi, RenderStateContext, de.hanno.hpengine.stopwatch.GPUProfiler)
 class SimpleForwardRenderer(
     private val renderTarget: RenderTarget2D,
     private val programManager: ProgramManager,

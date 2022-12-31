@@ -9,7 +9,7 @@ import org.joml.Vector4f
 import org.lwjgl.opengl.GL30
 import kotlin.math.max
 
-context(GpuContext)
+context(GraphicsApi)
 class RenderTargetImpl<T : Texture>(
     override val frameBuffer: FrameBuffer,
     override val width: Int = 1280,

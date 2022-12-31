@@ -2,14 +2,14 @@ package de.hanno.hpengine.graphics.shader
 
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.ressources.*
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-context(FileMonitor, GpuContext)
+context(FileMonitor, GraphicsApi)
 class OpenGlProgramManager(
     override val config: Config,
 ) : BaseSystem(), ProgramManager {
@@ -39,7 +39,7 @@ class OpenGlProgramManager(
         codeSource: FileBasedCodeSource,
         defines: Defines,
         uniforms: Uniforms?
-    ): ComputeProgram = ComputeProgram(ComputeShader(this@GpuContext, codeSource, defines), this@GpuContext, this@FileMonitor).apply {
+    ): ComputeProgram = ComputeProgram(ComputeShader(this@GraphicsApi, codeSource, defines), this@GraphicsApi, this@FileMonitor).apply {
         programsCache.add(this)
     }
 
@@ -60,14 +60,14 @@ class OpenGlProgramManager(
         tesselationEvaluationShaderSource: CodeSource?,
         defines: Defines,
         uniforms: T): Program<T> = Program(
-            vertexShader = VertexShader(this@GpuContext, vertexShaderSource, defines),
-            fragmentShader = fragmentShaderSource?.let { FragmentShader(this@GpuContext, it, defines) },
-            geometryShader = geometryShaderSource?.let { GeometryShader(this@GpuContext, it, defines) },
-            tesselationControlShader = tesselationControlShaderSource?.let { TesselationControlShader(this@GpuContext, it, defines) },
-            tesselationEvaluationShader = tesselationEvaluationShaderSource?.let { TesselationEvaluationShader(this@GpuContext, it, defines) },
+            vertexShader = VertexShader(this@GraphicsApi, vertexShaderSource, defines),
+            fragmentShader = fragmentShaderSource?.let { FragmentShader(this@GraphicsApi, it, defines) },
+            geometryShader = geometryShaderSource?.let { GeometryShader(this@GraphicsApi, it, defines) },
+            tesselationControlShader = tesselationControlShaderSource?.let { TesselationControlShader(this@GraphicsApi, it, defines) },
+            tesselationEvaluationShader = tesselationEvaluationShaderSource?.let { TesselationEvaluationShader(this@GraphicsApi, it, defines) },
             defines = defines,
             uniforms = uniforms,
-            gpuContext = this@GpuContext,
+            graphicsApi = this@GraphicsApi,
             fileMonitor = this@FileMonitor,
         ).apply {
             load()
@@ -75,7 +75,7 @@ class OpenGlProgramManager(
         }
 
     override fun getComputeProgram(codeSource: CodeSource): ComputeProgram = ComputeProgram(
-        ComputeShader(this@GpuContext, codeSource, Defines()), this@GpuContext, this@FileMonitor,
+        ComputeShader(this@GraphicsApi, codeSource, Defines()), this@GraphicsApi, this@FileMonitor,
     )
 
     var programsSourceCache: WeakHashMap<Shader, Int> = WeakHashMap()

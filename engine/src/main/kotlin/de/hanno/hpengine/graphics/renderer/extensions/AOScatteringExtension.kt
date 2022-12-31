@@ -4,7 +4,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
@@ -27,7 +27,7 @@ import struktgen.api.forIndex
 context(GPUProfiler)
 class AOScatteringExtension(
     private val config: Config,
-    private val gpuContext: GpuContext,
+    private val graphicsApi: GraphicsApi,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
@@ -36,14 +36,14 @@ class AOScatteringExtension(
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
-    private val fullscreenBuffer = gpuContext.run { QuadVertexBuffer() }
+    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(
         config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/scattering_ao_fragment.glsl").toCodeSource(), Uniforms.Empty, Defines()
     )
 
-    override fun renderSecondPassHalfScreen(renderState: RenderState) = gpuContext.run {
+    override fun renderSecondPassHalfScreen(renderState: RenderState) = graphicsApi.run {
         profiled("Scattering and AO") {
             if (!config.quality.isUseAmbientOcclusion && !config.effects.isScattering) {
                 return
@@ -61,7 +61,7 @@ class AOScatteringExtension(
             renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
             val environmentProbesState = renderState[environmentProbesStateHolder.environmentProbesState]
             if(environmentProbesState.environmapsArray3Id > 0) {
-                gpuContext.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, environmentProbesState.environmapsArray3Id)
+                graphicsApi.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, environmentProbesState.environmapsArray3Id)
             }
 
             val camera = renderState[primaryCameraStateHolder.camera]
@@ -88,8 +88,8 @@ class AOScatteringExtension(
 
             fullscreenBuffer.draw()
             profiled("generate mipmaps") {
-                gpuContext.enable(Capability.DEPTH_TEST)
-                gpuContext.generateMipMaps(gBuffer.halfScreenBuffer.textures[0])
+                graphicsApi.enable(Capability.DEPTH_TEST)
+                graphicsApi.generateMipMaps(gBuffer.halfScreenBuffer.textures[0])
                 textureManager.blur2DTextureRGBA16F(gBuffer.halfScreenBuffer.renderedTexture, config.width / 2, config.height / 2, 0, 0)
             }
         }

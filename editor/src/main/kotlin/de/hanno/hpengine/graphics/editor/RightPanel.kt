@@ -6,7 +6,7 @@ import com.artemis.managers.TagManager
 import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.engine.graphics.imgui.float2Input
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.model.material.MaterialManager
@@ -16,7 +16,7 @@ import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiWindowFlags
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 fun ImGuiEditor.rightPanel(
     screenWidth: Float,
     rightPanelWidth: Float,

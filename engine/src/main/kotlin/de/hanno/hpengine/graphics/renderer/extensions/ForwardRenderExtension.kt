@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode.Factor.*
@@ -20,7 +20,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.lwjgl.BufferUtils
 
-context(GpuContext)
+context(GraphicsApi)
 class ForwardRenderExtension(
     private val config: Config,
     private val programManager: ProgramManager,

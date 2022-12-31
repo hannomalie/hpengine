@@ -12,7 +12,7 @@ import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.extension.*
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.Window
@@ -66,7 +66,7 @@ class Engine(
         modules(modules)
     }
     private val koin = application.koin
-    private val gpuContext: GpuContext = koin.get()
+    private val graphicsApi: GraphicsApi = koin.get()
     private val profiler: GPUProfiler = koin.get()
     private val renderStateContext = koin.get<RenderStateContext>()
     private val config = koin.get<Config>()
@@ -77,7 +77,7 @@ class Engine(
 
     private val openGlProgramManager: OpenGlProgramManager = koin.get()
     private val textureManager: OpenGLTextureManager = koin.get()
-    val modelSystem = gpuContext.run {
+    val modelSystem = graphicsApi.run {
         ModelSystem(
             config,
             koin.get(),
@@ -89,7 +89,7 @@ class Engine(
         )
     }
     val entityLinkManager = EntityLinkManager()
-    val directionalLightSystem = gpuContext.run {
+    val directionalLightSystem = graphicsApi.run {
         renderStateContext.run {
             DirectionalLightSystem(koin.get())
         }
@@ -102,16 +102,16 @@ class Engine(
         SkyBoxSystem(),
         CycleSystem(koin.get()),
         directionalLightSystem,
-        gpuContext.run {
+        graphicsApi.run {
             renderStateContext.run {
                 PointLightSystem(config, koin.get(), koin.get(), koin.get()).apply {
                     renderManager.renderSystems.add(this)
                 }
             }
         },
-        gpuContext.run {
+        graphicsApi.run {
             profiler.run {
-                AreaLightSystem(gpuContext, koin.get(), config, koin.get(), koin.get(), koin.get(), koin.get()).apply {
+                AreaLightSystem(graphicsApi, koin.get(), config, koin.get(), koin.get(), koin.get(), koin.get()).apply {
                     renderManager.renderSystems.add(this)
                 }
             }
@@ -124,7 +124,7 @@ class Engine(
         SpatialComponentSystem(),
         InvisibleComponentSystem(),
         GiVolumeSystem(koin.get()),
-        gpuContext.run {
+        graphicsApi.run {
             renderStateContext.run {
                 PhysicsManager(config, koin.get(), primaryCameraStateHolder = koin.get())
             }

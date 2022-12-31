@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.Format
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
@@ -11,7 +11,7 @@ import org.joml.Vector2i
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 
-context(GpuContext)
+context(GraphicsApi)
 class PixelPerfectPickingExtension(
     private val config: Config,
     private val input: Input,

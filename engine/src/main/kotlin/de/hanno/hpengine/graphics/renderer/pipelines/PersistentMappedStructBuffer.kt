@@ -4,15 +4,14 @@ import DrawElementsIndirectCommandStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
 import de.hanno.hpengine.buffers.copyTo
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.constants.BufferTarget
-import de.hanno.hpengine.math.Vector4fStrukt
 import org.lwjgl.opengl.*
 import struktgen.api.*
 import java.nio.ByteBuffer
 
-context(GpuContext)
+context(GraphicsApi)
 class PersistentMappedBufferAllocator(
     val target: BufferTarget = BufferTarget.ShaderStorage
 ) : Allocator<GpuBuffer> {
@@ -38,7 +37,7 @@ class PersistentMappedBufferAllocator(
 }
 
 
-context(GpuContext)
+context(GraphicsApi)
 fun CommandBuffer(
     size: Int = 1000
 ) = PersistentShaderStorageBuffer(
@@ -53,7 +52,7 @@ interface IntStrukt : Strukt {
     companion object
 }
 
-context(GpuContext)
+context(GraphicsApi)
 fun OpenGLIndexBuffer(size: Int = 1000) = PersistentMappedBuffer(
     size * IntStrukt.sizeInBytes, BufferTarget.ElementArray
 ).typed(IntStrukt.type)

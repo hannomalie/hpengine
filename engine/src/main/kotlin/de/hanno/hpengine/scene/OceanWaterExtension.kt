@@ -9,7 +9,7 @@ import de.hanno.hpengine.artemis.OceanWaterComponent
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.OpenGLContext.Companion.RED_BUFFER
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.constants.*
@@ -20,7 +20,6 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
@@ -33,7 +32,7 @@ import kotlin.math.max
 
 private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
 
-context(GpuContext)
+context(GraphicsApi)
 class OceanWaterRenderSystem(
     private val config: Config,
     private val renderStateContext: RenderStateContext,

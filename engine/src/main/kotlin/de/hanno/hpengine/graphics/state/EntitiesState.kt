@@ -4,7 +4,7 @@ import EntityStruktImpl.Companion.type
 import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.type
 import de.hanno.hpengine.graphics.EntityStrukt
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.RenderBatches
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBufferAllocator
@@ -15,7 +15,7 @@ import de.hanno.hpengine.scene.BatchKey
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import java.util.HashMap
 
-context(GpuContext)
+context(GraphicsApi)
 class EntitiesState {
     private val ssboAllocator = PersistentMappedBufferAllocator()
 

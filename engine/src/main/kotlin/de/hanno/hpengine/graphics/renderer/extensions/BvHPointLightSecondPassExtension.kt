@@ -5,7 +5,7 @@ import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
 
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
@@ -131,10 +131,10 @@ fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
 val Vector4f.xyz: Vector3f
     get() = Vector3f(x, y, z)
 
-context(GpuContext, GPUProfiler)
+context(GraphicsApi, GPUProfiler)
 class BvHPointLightSecondPassExtension(
     private val config: Config,
-    private val gpuContext: GpuContext,
+    private val graphicsApi: GraphicsApi,
     private val renderStateContext: RenderStateContext,
     private val programManager: ProgramManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -258,14 +258,14 @@ class BvHPointLightSecondPassExtension(
             val viewMatrix = camera.viewMatrixAsBuffer
             val projectionMatrix = camera.projectionMatrixAsBuffer
 
-            gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
-            gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
-            gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-            gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
-            gpuContext.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
-            gpuContext.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
+            graphicsApi.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
+            graphicsApi.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
+            graphicsApi.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+            graphicsApi.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
+            graphicsApi.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
+            graphicsApi.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             pointLightState.pointLightShadowMapStrategy.bindTextures()
-            gpuContext.bindImageTexture(
+            graphicsApi.bindImageTexture(
                 4,
                 deferredRenderingBuffer.lightAccumulationMapOneId,
                 0,
@@ -313,7 +313,7 @@ class BvHPointLightSecondPassExtension(
                 }
             }
             deferredRenderingBuffer.finalBuffer.use(false)
-            gpuContext.blend = false
+            graphicsApi.blend = false
             val camera = renderState[primaryCameraStateHolder.camera]
             drawLines(
                 programManager,

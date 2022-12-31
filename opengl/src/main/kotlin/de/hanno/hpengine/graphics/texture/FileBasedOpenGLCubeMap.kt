@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat.*
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.WrapMode
@@ -20,7 +20,7 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
 
-context(GpuContext)
+context(GraphicsApi)
 data class FileBasedOpenGLCubeMap(
     val path: String,
     val backingTexture: CubeMap,
@@ -97,7 +97,7 @@ data class FileBasedOpenGLCubeMap(
 
     companion object {
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(
             path: String,
             files: List<File>,
@@ -127,7 +127,7 @@ data class FileBasedOpenGLCubeMap(
         private val BufferedImage.isBgrFormat: Boolean
             get() = type == BufferedImage.TYPE_INT_BGR || type == BufferedImage.TYPE_3BYTE_BGR || type == BufferedImage.TYPE_4BYTE_ABGR || type == BufferedImage.TYPE_4BYTE_ABGR_PRE
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(
             path: String,
             file: File,

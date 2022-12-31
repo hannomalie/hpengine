@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
 import de.hanno.hpengine.directory.AbstractDirectory
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import java.io.File
 
 data class FileBasedTexture2D(
@@ -12,14 +12,14 @@ data class FileBasedTexture2D(
 
     companion object {
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(
             path: String,
             directory: AbstractDirectory,
             srgba: Boolean = false
         ) = invoke(path, directory.resolve(path), srgba)
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(path: String, file: File, srgba: Boolean = false) = FileBasedTexture2D(
             path, file, OpenGLTexture2D(file, srgba)
         )

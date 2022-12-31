@@ -1,13 +1,13 @@
 package de.hanno.hpengine.graphics.renderer
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.glValue
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import java.nio.ByteBuffer
 
-class PixelBufferObject(private val gpuContext: GpuContext, private val width: Int, private val height: Int) {
+class PixelBufferObject(private val graphicsApi: GraphicsApi, private val width: Int, private val height: Int) {
     private val id: Int = GL15.glGenBuffers()
     private val buffer: ByteBuffer = BufferUtils.createByteBuffer(4 * 4 * width * height) // 4 is byte size of float
     private val array: FloatArray = FloatArray(4 * width * height)
@@ -28,7 +28,7 @@ class PixelBufferObject(private val gpuContext: GpuContext, private val width: I
 
     fun readPixelsFromTexture(textureId: Int, mipmapLevel: Int, target: TextureTarget, format: Int, type: Int) {
         bind()
-        gpuContext.bindTexture(target, textureId)
+        graphicsApi.bindTexture(target, textureId)
         GL11.glGetTexImage(target.glValue, mipmapLevel, format, type, buffer)
         unbind()
     }
@@ -59,8 +59,8 @@ class PixelBufferObject(private val gpuContext: GpuContext, private val width: I
         buffer: ByteBuffer?
     ) {
         mapAndUnmap(offsetX, offsetY, width, height, buffer)
-        gpuContext.onGpu {
-            gpuContext.bindTexture(target, textureId)
+        graphicsApi.onGpu {
+            graphicsApi.bindTexture(target, textureId)
             GL11.glTexSubImage2D(
                 target.glValue,
                 mipmapLevel,
@@ -87,9 +87,9 @@ class PixelBufferObject(private val gpuContext: GpuContext, private val width: I
         border: Int,
         textureBuffer: ByteBuffer?
     ) {
-        gpuContext.onGpu {
+        graphicsApi.onGpu {
             mapAndUnmap(0, 0, width, height, buffer)
-            gpuContext.bindTexture(target, textureId)
+            graphicsApi.bindTexture(target, textureId)
             GL13.glCompressedTexImage2D(target.glValue, level, internalformat, width, height, border, null)
             Unit
         }

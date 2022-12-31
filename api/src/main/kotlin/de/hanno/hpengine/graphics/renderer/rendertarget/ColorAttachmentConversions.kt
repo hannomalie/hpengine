@@ -1,12 +1,12 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.WrapMode
 import de.hanno.hpengine.graphics.texture.*
 
-context(GpuContext)
+context(GraphicsApi)
 fun List<ColorAttachmentDefinition>.toTextures(
     width: Int,
     height: Int
@@ -21,7 +21,7 @@ fun List<ColorAttachmentDefinition>.toTextures(
     )
 }
 
-context(GpuContext)
+context(GraphicsApi)
 fun List<ColorAttachmentDefinition>.toCubeMaps(width: Int, height: Int): List<CubeMap> = map {
     CubeMap(
         dimension = TextureDimension(width, height),
@@ -31,7 +31,7 @@ fun List<ColorAttachmentDefinition>.toCubeMaps(width: Int, height: Int): List<Cu
     )
 }
 
-context(GpuContext)
+context(GraphicsApi)
 fun List<ColorAttachmentDefinition>.toCubeMapArrays(
     width: Int,
     height: Int,

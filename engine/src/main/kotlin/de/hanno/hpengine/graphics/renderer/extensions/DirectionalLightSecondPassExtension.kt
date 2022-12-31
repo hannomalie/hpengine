@@ -4,7 +4,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.BlendMode
@@ -21,18 +21,18 @@ import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import struktgen.api.forIndex
 
-context(GPUProfiler, GpuContext)
+context(GPUProfiler, GraphicsApi)
 class DirectionalLightSecondPassExtension(
     private val config: Config,
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
-    private val gpuContext: GpuContext,
+    private val graphicsApi: GraphicsApi,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
     // TODO: Remove all the creations of fullscreenbuffer, so that it is shared and bound once?
-    private val fullscreenBuffer = gpuContext.run { QuadVertexBuffer() }
+    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
     private val secondPassDirectionalProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_fragment.glsl"))
@@ -44,37 +44,37 @@ class DirectionalLightSecondPassExtension(
             val directionalLightState = renderState[directionalLightStateHolder.lightState]
 
             profiled("Set state") {
-                gpuContext.depthMask = false
-                gpuContext.depthTest = false
-                gpuContext.blend = true
-                gpuContext.blendEquation = BlendMode.FUNC_ADD
-                gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
-                gpuContext.clearColor(0f, 0f, 0f, 0f)
-                gpuContext.clearColorBuffer()
+                graphicsApi.depthMask = false
+                graphicsApi.depthTest = false
+                graphicsApi.blend = true
+                graphicsApi.blendEquation = BlendMode.FUNC_ADD
+                graphicsApi.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
+                graphicsApi.clearColor(0f, 0f, 0f, 0f)
+                graphicsApi.clearColorBuffer()
             }
 
             profiled("Activate DeferredRenderingBuffer textures") {
 
-                gpuContext.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
-                gpuContext.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
-                gpuContext.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-                gpuContext.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
-                gpuContext.bindTexture(4, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
-                gpuContext.bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
-                gpuContext.bindTexture(7, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-                if (!gpuContext.isSupported(BindlessTextures)) {
-                    gpuContext.bindTexture(
+                graphicsApi.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
+                graphicsApi.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
+                graphicsApi.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+                graphicsApi.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
+                graphicsApi.bindTexture(4, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
+                graphicsApi.bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+                graphicsApi.bindTexture(7, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
+                if (!graphicsApi.isSupported(BindlessTextures)) {
+                    graphicsApi.bindTexture(
                         8,
                         TextureTarget.TEXTURE_2D,
                         directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
-                gpuContext.bindTexture(
+                graphicsApi.bindTexture(
                     9,
                     TextureTarget.TEXTURE_2D,
                     deferredRenderingBuffer.halfScreenBuffer.getRenderedTexture(2)
                 )
-                gpuContext.bindTexture(
+                graphicsApi.bindTexture(
                     10,
                     TextureTarget.TEXTURE_2D,
                     deferredRenderingBuffer.gBuffer.getRenderedTexture(4)

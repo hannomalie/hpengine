@@ -12,7 +12,7 @@ import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.EntityStrukt
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.IndirectCulledDrawDescription
@@ -42,7 +42,7 @@ import struktgen.api.get
 
 val textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST)
 
-context(GpuContext, GPUProfiler)
+context(GraphicsApi, GPUProfiler)
 open class GPUCulledPipeline(
     private val config: Config,
     private val programManager: ProgramManager,
@@ -477,7 +477,7 @@ val CoarseCullingPhase.staticPhase: CullingPhase
 val CoarseCullingPhase.animatedPhase: CullingPhase
     get() = if (this == CoarseCullingPhase.ONE) CullingPhase.ANIMATED_ONE else CullingPhase.ANIMATED_TWO
 
-context(GpuContext)
+context(GraphicsApi)
 class CommandOrganizationGpuCulled {
     var commandCount = 0
     var primitiveCount = 0

@@ -4,7 +4,7 @@ import com.artemis.Component
 import de.hanno.hpengine.graphics.renderer.environmentsampler.EnvironmentSampler
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.state.EnvironmentProbesState
 import de.hanno.hpengine.transform.TransformSpatial
@@ -29,7 +29,7 @@ class EnvironmentProbeComponent: Component() {
     operator fun contains(minMaxWorld: AABB) = contains(minMaxWorld.min, minMaxWorld.max)
 }
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class EnvironmentProbesStateHolder {
     val environmentProbesState = renderState.registerState {
         EnvironmentProbesState()
@@ -377,7 +377,7 @@ class EnvironmentProbesStateHolder {
 //        val dimension = TextureDimension.invoke(RESOLUTION, RESOLUTION, MAX_PROBES)
 //        val filterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
 //        val wrapMode = GL11.GL_REPEAT
-//        val gpuContext = gpuContext
+//        val gpuContext = graphicsApi
 //        environmentMapsArray = CubeMapArray(gpuContext, dimension, filterConfig, GL30.GL_RGBA32F, wrapMode)
 //        environmentMapsArray1 = CubeMapArray(gpuContext, dimension, filterConfig, GL11.GL_RGBA8, wrapMode)
 //        environmentMapsArray2 = CubeMapArray(gpuContext, dimension, filterConfig, GL11.GL_RGBA8, wrapMode)

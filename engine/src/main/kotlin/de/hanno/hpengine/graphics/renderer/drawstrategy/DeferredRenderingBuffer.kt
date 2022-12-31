@@ -2,12 +2,11 @@ package de.hanno.hpengine.graphics.renderer.drawstrategy
 
 
 import InternalTextureFormat.*
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import org.joml.Matrix4f
@@ -15,7 +14,7 @@ import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import kotlin.math.max
 
-context(GpuContext)
+context(GraphicsApi)
 class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuffer<*>) {
 
     internal val gBuffer = RenderTarget(

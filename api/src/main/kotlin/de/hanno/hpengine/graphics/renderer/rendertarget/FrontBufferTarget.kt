@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import org.joml.Vector4f
 
 interface RenderTarget {
@@ -13,6 +13,6 @@ interface RenderTarget {
 interface FrontBufferTarget: RenderTarget {
     override val name: String get() = "FrontBufferTarget"
 
-    context(GpuContext)
+    context(GraphicsApi)
     fun use(clear: Boolean)
 }

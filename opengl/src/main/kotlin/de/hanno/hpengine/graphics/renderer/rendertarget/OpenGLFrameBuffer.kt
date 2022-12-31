@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.texture.CubeMap
 import de.hanno.hpengine.graphics.texture.CubeMapArray
 import de.hanno.hpengine.graphics.texture.Texture2D
@@ -12,7 +12,7 @@ import org.lwjgl.opengl.GL32
 class OpenGLFrameBuffer(override val frameBuffer: Int, override val depthBuffer: DepthBuffer<*>?) : FrameBuffer {
 
     companion object {
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer(
             frameBuffer = onGpu { glGenFramebuffers() },
             depthBuffer = depthBuffer

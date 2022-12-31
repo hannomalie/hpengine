@@ -3,8 +3,7 @@ package de.hanno.hpengine.graphics.texture
 import InternalTextureFormat
 import InternalTextureFormat.*
 import ddsutil.DDSUtil
-import de.hanno.hpengine.graphics.BindlessTextures
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.WrapMode
@@ -22,7 +21,7 @@ import javax.imageio.ImageIO
 
 val compressInternal = true
 
-context(GpuContext)
+context(GraphicsApi)
 data class OpenGLTexture2D(
     override val dimension: TextureDimension2D,
     override val id: Int,
@@ -39,7 +38,7 @@ data class OpenGLTexture2D(
     }
     companion object {
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(file: File, srgba: Boolean = false): OpenGLTexture2D {
             require(file.exists()) { "File ${file.absolutePath} must exist!" }
             require(file.isFile) { "File ${file.absolutePath} is not a file!" }
@@ -83,7 +82,7 @@ data class OpenGLTexture2D(
             )
         }
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(image: BufferedImage, srgba: Boolean = false): OpenGLTexture2D {
             val buffer = image.toByteBuffer()
             val internalFormat = if (compressInternal) {
@@ -123,7 +122,7 @@ data class OpenGLTexture2D(
             return buffer
         }
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(
             info: Texture2DUploadInfo,
             textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
@@ -150,7 +149,7 @@ data class OpenGLTexture2D(
             }
         }
 
-        context(GpuContext)
+        context(GraphicsApi)
         private fun OpenGLTexture2D.upload(info: Texture2DUploadInfo, internalFormat: InternalTextureFormat) {
             val usePbo = false
             if (usePbo) {
@@ -160,7 +159,7 @@ data class OpenGLTexture2D(
             }
         }
 
-        context(GpuContext)
+        context(GraphicsApi)
         private fun OpenGLTexture2D.uploadWithPixelBuffer(
             info: Texture2DUploadInfo,
             internalFormat: InternalTextureFormat
@@ -170,9 +169,9 @@ data class OpenGLTexture2D(
             val pbo = onGpu {
                 PixelBufferObject()
             }
-            pbo.put(this@GpuContext, data)
+            pbo.put(this@GraphicsApi, data)
             onGpu {
-                pbo.unmap(this@GpuContext)
+                pbo.unmap(this@GraphicsApi)
                 pbo.bind()
                 bindTexture(TextureTarget.TEXTURE_2D, id)
                 if (info.dataCompressed) {
@@ -206,7 +205,7 @@ data class OpenGLTexture2D(
             }
         }
 
-        context(GpuContext)
+        context(GraphicsApi)
         private fun OpenGLTexture2D.uploadWithoutPixelBuffer(info: Texture2DUploadInfo, internalFormat: InternalTextureFormat) = onGpu {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
             val data = info.data

@@ -1,7 +1,6 @@
 package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
-import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.WrapMode

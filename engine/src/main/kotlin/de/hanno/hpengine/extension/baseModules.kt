@@ -27,7 +27,6 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.*
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureManager
@@ -55,7 +54,7 @@ data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
 
 val deferredRendererModule = module {
     renderSystem {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 get<GPUProfiler>().run {
                     ExtensibleDeferredRenderer(
@@ -76,14 +75,14 @@ val deferredRendererModule = module {
     }
     single {
         val config: Config = get()
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             SharedDepthBuffer(DepthBuffer(config.width, config.height))
         }
     }
     single {
         val config: Config = get()
         val sharedDepthBuffer: SharedDepthBuffer = get()
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             DeferredRenderingBuffer(
                 config.width,
                 config.height,
@@ -107,14 +106,14 @@ val simpleForwardRendererModule = module {
 
     single {
         val config: Config = get()
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             SharedDepthBuffer(DepthBuffer(config.width, config.height))
         }
     }
     single {
         val config = get<Config>()
 
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             RenderTarget(
                 frameBuffer = FrameBuffer(
                     depthBuffer = DepthBuffer(config.width, config.height)
@@ -141,7 +140,7 @@ val simpleForwardRendererModule = module {
     }
     single { DebugOutput(null, 0) } // TODO: Can this be moved to base module?
     renderSystem {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 get<GPUProfiler>().run {
                     SimpleForwardRenderer(get(), get(), get(), get(), get())
@@ -156,7 +155,7 @@ val textureRendererModule = module {
     single {
         val config: Config = get()
 
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             RenderTarget(
                 frameBuffer = FrameBuffer(
                     depthBuffer = DepthBuffer(config.width, config.height)
@@ -185,12 +184,12 @@ val textureRendererModule = module {
         val textureManager: OpenGLTextureManager = get()
         val renderTarget: RenderTarget2D = get()
 
-            object : SimpleTextureRenderer(get<GpuContext>(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
+            object : SimpleTextureRenderer(get<GraphicsApi>(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
                 override val sharedRenderTarget = renderTarget
                 override val requiresClearSharedRenderTarget = true
 
                 override fun render(renderState: RenderState) {
-                    gpuContext.clearColor(1f, 0f, 0f, 1f)
+                    graphicsApi.clearColor(1f, 0f, 0f, 1f)
                     drawToQuad(texture = texture)
                 }
             }
@@ -203,13 +202,13 @@ val baseModule = module {
         system.fpsCounter
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll(), get())
         }
     }
     single {
         get<FileMonitor>().run {
-            get<GpuContext>().run {
+            get<GraphicsApi>().run {
                 OpenGlProgramManager(get())
             }
         }
@@ -218,7 +217,7 @@ val baseModule = module {
         OpenGlProgramManager::class,
     )
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             OpenGLTextureManager(get(), get())
         }
     } binds arrayOf(
@@ -242,7 +241,7 @@ val baseModule = module {
     single { KotlinComponentSystem(get()) }
 
     renderExtension {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             ForwardRenderExtension(get(), get(), get(), get(), get(), get())
         }
     }
@@ -252,7 +251,7 @@ val baseModule = module {
         }
     }
     renderExtension {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             PixelPerfectPickingExtension(get(), get(), getAll())
         }
     }
@@ -264,70 +263,70 @@ val baseModule = module {
 
 private fun Module.addStateHolders() {
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 PointLightStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 DirectionalLightStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 EntitiesStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 EnvironmentProbesStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 SkyBoxStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 WorldAABBStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 PrimaryCameraStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 AreaLightStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 ReflectionProbesStateHolder()
             }
         }
     }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 GiVolumeStateHolder()
             }
@@ -337,7 +336,7 @@ private fun Module.addStateHolders() {
 
 fun Module.addGIModule() {
     renderExtension {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 get<GPUProfiler>().run {
                     VoxelConeTracingExtension(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
@@ -349,7 +348,7 @@ fun Module.addGIModule() {
 
 fun Module.addPointLightModule() {
     renderExtension {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<GPUProfiler>().run {
                 BvHPointLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get(), get())
             }
@@ -359,7 +358,7 @@ fun Module.addPointLightModule() {
 
 fun Module.addDirectionalLightModule() {
     renderExtension {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 get<GPUProfiler>().run {
                     DirectionalLightShadowMapExtension(get(), get(), get(), get(), get())
@@ -369,7 +368,7 @@ fun Module.addDirectionalLightModule() {
     }
     renderExtension {
         get<GPUProfiler>().run {
-            get<GpuContext>().run {
+            get<GraphicsApi>().run {
                 DirectionalLightSecondPassExtension(get(), get(), get(), get(), get(), get(), get())
             }
         }
@@ -378,7 +377,7 @@ fun Module.addDirectionalLightModule() {
 
 fun Module.addOceanWaterModule() {
     renderSystem {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             OceanWaterRenderSystem(get(), get(), get(), get(), get())
         }
     }
@@ -386,7 +385,7 @@ fun Module.addOceanWaterModule() {
 
 fun Module.addReflectionProbeModule() {
     renderExtension {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 get<GPUProfiler>().run {
                     ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get(), get(), get(), get())
@@ -398,7 +397,7 @@ fun Module.addReflectionProbeModule() {
 
 fun Module.addCameraModule() {
     renderExtension {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 CameraRenderExtension(get(), get(), get())
             }
@@ -408,7 +407,7 @@ fun Module.addCameraModule() {
 
 fun Module.addSkyboxModule() {
     renderExtension {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 SkyboxRenderExtension(get(), get(), get(), get(), get(), get())
             }
@@ -417,13 +416,13 @@ fun Module.addSkyboxModule() {
 }
 fun Module.addBackendModule() {
     single { OpenGLGPUProfiler(get()) } binds arrayOf(GPUProfiler::class, OpenGLGPUProfiler::class)
-    single { OpenGLContext(get(), get(), get()) } bind GpuContext::class
+    single { OpenGLContext(get(), get(), get()) } bind GraphicsApi::class
 
     single { AddResourceContext() }
     single { Input(get()) }
     single { RenderSystemsConfig(getAll()) }
     single {
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             RenderStateContext { RenderState() }
         }
     }
@@ -447,7 +446,7 @@ class GiVolumeSystem(
     // TODO: Implement extraction to a GiVolumeStateHolder here
 }
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class GiVolumeStateHolder {
     val giVolumesState = renderState.registerState {
         GiVolumesState()
@@ -490,7 +489,7 @@ class SkyBoxSystem : BaseEntitySystem(), WorldPopulator {
     }
 }
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class SkyBoxStateHolder {
     // TODO: Actually write this
     val skyBoxMaterialIndex = renderState.registerState { -1 }

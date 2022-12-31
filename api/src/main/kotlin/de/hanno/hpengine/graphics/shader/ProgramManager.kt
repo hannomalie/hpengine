@@ -2,7 +2,6 @@ package de.hanno.hpengine.graphics.shader
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Asset
-import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.ressources.CodeSource

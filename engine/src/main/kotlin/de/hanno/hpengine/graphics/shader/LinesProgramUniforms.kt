@@ -2,12 +2,12 @@ package de.hanno.hpengine.graphics.shader
 
 import Vector4fStruktImpl.Companion.sizeInBytes
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.math.Vector4fStrukt
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
-context(GpuContext)
+context(GraphicsApi)
 class LinesProgramUniforms : Uniforms() {
     var vertices by SSBO("vec4", 7, PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes))
     val modelMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })

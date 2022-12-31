@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer
 
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.Capability
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
@@ -20,14 +20,14 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector2f
 
 open class SimpleTextureRenderer(
-    protected val gpuContext: GpuContext,
+    protected val graphicsApi: GraphicsApi,
     config: Config,
     var texture: Texture2D,
     private val programManager: ProgramManager,
     private val frontBuffer: FrontBufferTarget,
 ) : RenderSystem {
-    private val fullscreenBuffer = gpuContext.run { QuadVertexBuffer() }
-    val sixDebugBuffers: List<IVertexBuffer> = gpuContext.run {
+    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
+    val sixDebugBuffers: List<IVertexBuffer> = graphicsApi.run {
         val height = -2f / 3f
         val width = 2f
         val widthDiv = width / 6f
@@ -84,7 +84,7 @@ open class SimpleTextureRenderer(
         cubeMapArrayRenderTarget: CubeMapArrayRenderTarget?, cubeMapIndex: Int
     ) {
         if (cubeMapArrayRenderTarget == null) return
-        gpuContext.run {
+        graphicsApi.run {
             renderTarget.use(true)
         }
 
@@ -121,7 +121,7 @@ open class SimpleTextureRenderer(
         program: IProgram<Uniforms>,
         factorForDebugRendering: Float = 1f,
         mipMapLevel: Int = 0,
-    ) = gpuContext.run {
+    ) = graphicsApi.run {
 
         polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
         disable(Capability.BLEND)

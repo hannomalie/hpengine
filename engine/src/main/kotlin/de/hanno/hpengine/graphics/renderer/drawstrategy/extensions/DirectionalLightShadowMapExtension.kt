@@ -14,7 +14,7 @@ import de.hanno.hpengine.artemis.EntitiesStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
@@ -25,9 +25,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.OpenGLFrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Define
@@ -38,7 +36,6 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
@@ -46,7 +43,7 @@ import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector4f
 import struktgen.api.forIndex
 
-context(GpuContext, RenderStateContext, GPUProfiler)
+context(GraphicsApi, RenderStateContext, GPUProfiler)
 class DirectionalLightShadowMapExtension(
     private val config: Config,
     private val programManager: ProgramManager,
@@ -191,7 +188,7 @@ class DirectionalLightShadowMapExtension(
     }
 }
 
-context(GpuContext)
+context(GraphicsApi)
 sealed class DirectionalShadowUniforms() : Uniforms() {
     var materials by SSBO("Material", 1, PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
     var directionalLightState by SSBO(
@@ -205,7 +202,7 @@ sealed class DirectionalShadowUniforms() : Uniforms() {
     var entityBaseIndex by IntType(0)
 }
 
-context(GpuContext)
+context(GraphicsApi)
 class AnimatedDirectionalShadowUniforms : DirectionalShadowUniforms() {
     var joints by SSBO(
         "mat4",
@@ -219,7 +216,7 @@ class AnimatedDirectionalShadowUniforms : DirectionalShadowUniforms() {
     )
 }
 
-context(GpuContext)
+context(GraphicsApi)
 class StaticDirectionalShadowUniforms : DirectionalShadowUniforms() {
     var vertices by SSBO("VertexPacked", 7, PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
 }

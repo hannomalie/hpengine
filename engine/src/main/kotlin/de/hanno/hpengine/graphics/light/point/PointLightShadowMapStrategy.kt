@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.light.point
 
 import InternalTextureFormat.*
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
 import de.hanno.hpengine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget.TEXTURE_2D_ARRAY
@@ -29,7 +29,7 @@ interface PointLightShadowMapStrategy {
     fun bindTextures()
 }
 
-context(GpuContext)
+context(GraphicsApi)
 class CubeShadowMapStrategy(
     config: Config,
     programManager: ProgramManager
@@ -134,7 +134,7 @@ class CubeShadowMapStrategy(
     }
 }
 
-context(GpuContext)
+context(GraphicsApi)
 class DualParaboloidShadowMapStrategy(
     private val pointLightSystem: PointLightSystem,
     programManager: ProgramManager,

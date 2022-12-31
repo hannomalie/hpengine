@@ -2,12 +2,12 @@ package de.hanno.hpengine.scene
 
 import AnimatedVertexStruktPackedImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.vertexbuffer.OpenGLIndexBuffer
 import org.lwjgl.BufferUtils
 
-context(GpuContext)
+context(GraphicsApi)
 class VertexIndexBuffer(indexBufferSizeInIntsCount: Int): IVertexIndexBuffer<VertexStruktPacked, AnimatedVertexStruktPacked> {
 
     override var indexBuffer: IndexBuffer = OpenGLIndexBuffer(BufferUtils.createIntBuffer(indexBufferSizeInIntsCount))

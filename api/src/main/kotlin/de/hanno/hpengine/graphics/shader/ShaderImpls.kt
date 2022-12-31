@@ -1,22 +1,19 @@
 package de.hanno.hpengine.graphics.shader
 
 import de.hanno.hpengine.directory.EngineDirectory
-import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.shader.ShaderType
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.ressources.CodeSource
-import de.hanno.hpengine.ressources.Reloadable
 import java.io.IOException
-import java.util.logging.Logger
 import java.util.regex.Pattern
 
 sealed class Shader(
     var source: CodeSource,
     val defines: Defines = Defines(),
     val shaderType: ShaderType,
-    val gpuContext: GpuContext,
+    val graphicsApi: GraphicsApi,
 ) {
-    val id: Int = gpuContext.createShaderId(shaderType)
+    val id: Int = graphicsApi.createShaderId(shaderType)
     val name: String get() = source.name
 
     override fun equals(other: Any?): Boolean {
@@ -71,24 +68,24 @@ sealed class Shader(
     }
 }
 
-class VertexShader(gpuContext: GpuContext, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
-    shaderSource, defines, ShaderType.VertexShader, gpuContext
+class VertexShader(graphicsApi: GraphicsApi, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
+    shaderSource, defines, ShaderType.VertexShader, graphicsApi
 )
-class TesselationControlShader(gpuContext: GpuContext, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
-    shaderSource, defines, ShaderType.TesselationControlShader, gpuContext
+class TesselationControlShader(graphicsApi: GraphicsApi, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
+    shaderSource, defines, ShaderType.TesselationControlShader, graphicsApi
 )
-class TesselationEvaluationShader(gpuContext: GpuContext, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
-    shaderSource, defines, ShaderType.TesselationEvaluationShader, gpuContext
+class TesselationEvaluationShader(graphicsApi: GraphicsApi, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
+    shaderSource, defines, ShaderType.TesselationEvaluationShader, graphicsApi
 )
-class GeometryShader(gpuContext: GpuContext, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
-    shaderSource, defines, ShaderType.GeometryShader, gpuContext
+class GeometryShader(graphicsApi: GraphicsApi, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
+    shaderSource, defines, ShaderType.GeometryShader, graphicsApi
 )
-class FragmentShader(gpuContext: GpuContext, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
-    shaderSource, defines, ShaderType.FragmentShader, gpuContext
+class FragmentShader(graphicsApi: GraphicsApi, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
+    shaderSource, defines, ShaderType.FragmentShader, graphicsApi
 )
 
-class ComputeShader(gpuContext: GpuContext, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
-    shaderSource, defines, ShaderType.ComputeShader, gpuContext
+class ComputeShader(graphicsApi: GraphicsApi, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(
+    shaderSource, defines, ShaderType.ComputeShader, graphicsApi
 )
 
 private  fun String.countNewLines(): Int {

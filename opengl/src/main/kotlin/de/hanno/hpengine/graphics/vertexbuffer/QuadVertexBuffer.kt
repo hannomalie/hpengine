@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.vertexbuffer
 
 import de.hanno.hpengine.graphics.DataChannels
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import org.joml.Vector2f
 import java.util.*
 
@@ -13,7 +13,7 @@ private val DEFAULTCHANNELS = EnumSet.of(
 
 object QuadVertexBuffer {
 
-    context(GpuContext)
+    context(GraphicsApi)
     operator fun invoke(
         values: FloatArray = fullScreenVertices,
     ) = VertexBuffer(

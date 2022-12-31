@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.rendertarget
 
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
@@ -11,7 +11,7 @@ import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import org.joml.Vector4f
 
-context(GpuContext)
+context(GraphicsApi)
 class CubeMapArrayRenderTarget(
     renderTarget: BackBufferRenderTarget<CubeMapArray>
 ) : BackBufferRenderTarget<CubeMapArray> by renderTarget {
@@ -58,7 +58,7 @@ class CubeMapArrayRenderTarget(
 
     companion object {
 
-        context(GpuContext)
+        context(GraphicsApi)
         operator fun invoke(
             width: Int, height: Int,
             name: String, clear: Vector4f,
@@ -74,7 +74,7 @@ class CubeMapArrayRenderTarget(
             )
         )
 
-        context(GpuContext)
+        context(GraphicsApi)
         fun createDepthBuffer(
             width: Int,
             height: Int,

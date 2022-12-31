@@ -10,13 +10,13 @@ import de.hanno.hpengine.artemis.PointLightComponent
 import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.state.*
@@ -24,7 +24,7 @@ import de.hanno.hpengine.math.createPerspective
 import struktgen.api.forIndex
 
 // TODO: Autoadd Transform
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 @All(PointLightComponent::class, TransformComponent::class)
 class PointLightSystem(
     config: Config,

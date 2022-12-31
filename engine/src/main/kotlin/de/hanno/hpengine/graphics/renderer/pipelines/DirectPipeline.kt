@@ -6,7 +6,7 @@ import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.artemis.PrimaryCameraStateHolder
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
@@ -20,7 +20,7 @@ import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
-context(GpuContext, GPUProfiler)
+context(GraphicsApi, GPUProfiler)
 open class DirectFirstPassPipeline(
     private val config: Config,
     private val program: IProgram<out FirstPassUniforms>,
@@ -181,7 +181,7 @@ val Program<*>.primitiveType
         PrimitiveType.Triangles
     }
 
-context(GpuContext)
+context(GraphicsApi)
 fun DirectDrawDescription<FirstPassUniforms>.draw() {
     beforeDraw(renderState, program, drawCam)
     if(ignoreCustomPrograms) {

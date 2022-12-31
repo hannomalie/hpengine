@@ -11,7 +11,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.state.DirectionalLightState
@@ -23,7 +23,7 @@ import org.lwjgl.glfw.GLFW
 import struktgen.api.forIndex
 
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 @All(DirectionalLightComponent::class, TransformComponent::class)
 class DirectionalLightSystem(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
@@ -98,7 +98,7 @@ class DirectionalLightSystem(
 }
 
 
-context(GpuContext, RenderStateContext)
+context(GraphicsApi, RenderStateContext)
 class DirectionalLightStateHolder {
     val lightState = renderState.registerState {
         PersistentShaderStorageBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type)

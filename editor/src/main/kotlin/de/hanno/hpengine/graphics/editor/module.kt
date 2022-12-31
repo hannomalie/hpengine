@@ -1,9 +1,8 @@
 package de.hanno.hpengine.graphics.editor
 
 import com.artemis.BaseSystem
-import de.hanno.hpengine.extension.renderSystem
 import de.hanno.hpengine.graphics.FinalOutput
-import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.OnClickListener
 import de.hanno.hpengine.graphics.state.RenderSystem
@@ -18,7 +17,7 @@ val editorModule = module {
     single {
         val finalOutput: FinalOutput = get()
 
-        get<GpuContext>().run {
+        get<GraphicsApi>().run {
             get<RenderStateContext>().run {
                 ImGuiEditor(
                     get(),
