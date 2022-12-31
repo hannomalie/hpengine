@@ -35,6 +35,7 @@ import de.hanno.hpengine.scene.WorldAABBStateHolder
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3i
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
 import java.nio.FloatBuffer
@@ -110,8 +111,8 @@ class ProbeRenderer(
         Uniforms.Empty
     )
 
-    val cubeMapRenderTarget = de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget(
-        frameBuffer = OpenGLFrameBuffer(
+    val cubeMapRenderTarget = RenderTarget(
+        frameBuffer = FrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
                     TextureDimension(probeResolution, probeResolution),
@@ -126,7 +127,8 @@ class ProbeRenderer(
         textures = listOf(
             ColorAttachmentDefinition("Probes", RGBA16F, TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR))
         ).toCubeMaps(probeResolution, probeResolution),
-        name = "Probes"
+        name = "Probes",
+        clear = Vector4f(),
     )
 
     fun renderProbes(renderState: RenderState, probeStartIndex: Int, probesPerFrame: Int) {

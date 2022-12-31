@@ -2,16 +2,19 @@ package scenes
 
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.addStaticModelEntity
-import de.hanno.hpengine.config.ConfigImpl
+import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
+import de.hanno.hpengine.extension.deferredRendererModule
+import de.hanno.hpengine.extension.simpleForwardRendererModule
+import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.loadScene
 import java.io.File
 
 fun main() {
 
-    val config = ConfigImpl(
+    val config = Config(
         directories = Directories(
 //                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
             EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
@@ -20,8 +23,11 @@ fun main() {
         ),
     )
 
-    // TODO: remove useEditor by passing in editor module?
-    Engine(config, useEditor = true) {
+    Engine(config, listOf(
+        deferredRendererModule,
+//        simpleForwardRendererModule,
+        editorModule,
+    )) {
         world.loadScene {
             addStaticModelEntity("Sponza", "assets/models/sponza.obj")
         }

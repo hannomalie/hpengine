@@ -12,51 +12,46 @@ import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.camera.CameraRenderExtension
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.config.ConfigImpl
-import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
-import de.hanno.hpengine.graphics.imgui.editor.primaryCamera
-import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
-import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
-import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
-import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.input.Input
-import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.model.material.ProgramDescription
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.scene.AddResourceContext
-import de.hanno.hpengine.scene.OceanWaterRenderSystem
-import de.hanno.hpengine.scene.dsl.Directory
-import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.graphics.fps.FPSCounterSystem
-import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.graphics.*
-import de.hanno.hpengine.graphics.imgui.editor.EntityClickListener
-import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
+import de.hanno.hpengine.graphics.fps.FPSCounterSystem
 import de.hanno.hpengine.graphics.light.area.AreaLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
+import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.SimpleForwardRenderer
+import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.*
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
+import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.*
-import de.hanno.hpengine.graphics.state.PointLightStateHolder
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.input.Input
+import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.model.material.ProgramDescription
+import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.FileMonitor
+import de.hanno.hpengine.ressources.enhanced
+import de.hanno.hpengine.scene.AddResourceContext
+import de.hanno.hpengine.scene.OceanWaterRenderSystem
 import de.hanno.hpengine.scene.WorldAABBStateHolder
+import de.hanno.hpengine.scene.dsl.Directory
+import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
+import org.joml.Vector4f
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
 import kotlin.collections.set
 
-data class IdTexture(val texture: OpenGLTexture2D) // TODO: Move to a proper place
-data class SharedDepthBuffer(val depthBuffer: DepthBuffer<*>)
+data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
 
 val deferredRendererModule = module {
     renderSystem {
@@ -120,8 +115,8 @@ val simpleForwardRendererModule = module {
         val config = get<Config>()
 
         get<GpuContext>().run {
-            RenderTarget2D(
-                OpenGLFrameBuffer(
+            RenderTarget(
+                frameBuffer = FrameBuffer(
                     depthBuffer = DepthBuffer(config.width, config.height)
                 ),
                 width = config.width,
@@ -131,7 +126,8 @@ val simpleForwardRendererModule = module {
                 ).toTextures(
                     config.width, config.height
                 ),
-                name = "Final Image"
+                name = "Final Image",
+                clear = Vector4f(),
             )
         }
     }
@@ -143,7 +139,7 @@ val simpleForwardRendererModule = module {
         val renderTarget: RenderTarget2D = get()
         FinalOutput(renderTarget.textures.first())
     }
-    single { DebugOutput(null, 0) }
+    single { DebugOutput(null, 0) } // TODO: Can this be moved to base module?
     renderSystem {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
@@ -156,41 +152,13 @@ val simpleForwardRendererModule = module {
 
 }
 
-val imGuiEditorModule = module {
-    renderSystem {
-        val finalOutput: FinalOutput = get()
-
-        get<GpuContext>().run {
-            get<RenderStateContext>().run {
-                ImGuiEditor(
-                    get(),
-                    get(),
-                    finalOutput,
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    getAll<ImGuiEditorExtension>().distinct(),
-                    get(),
-                    get(),
-                    get(),
-                )
-            }
-        }
-    }
-    single {
-        EntityClickListener()
-    } binds arrayOf(EntityClickListener::class, OnClickListener::class)
-}
 val textureRendererModule = module {
     single {
         val config: Config = get()
 
         get<GpuContext>().run {
-            RenderTarget2D(
-                OpenGLFrameBuffer(
+            RenderTarget(
+                frameBuffer = FrameBuffer(
                     depthBuffer = DepthBuffer(config.width, config.height)
                 ),
                 width = config.width,
@@ -200,7 +168,8 @@ val textureRendererModule = module {
                 ).toTextures(
                     config.width, config.height
                 ),
-                name = "Final Image"
+                name = "Final Image",
+                clear = Vector4f(),
             )
         }
     }
@@ -270,10 +239,7 @@ val baseModule = module {
     addOceanWaterModule()
     addDirectionalLightModule()
 
-    single { KotlinComponentSystem(get()) } binds arrayOf(
-        KotlinComponentSystem::class,
-        ImGuiEditorExtension::class
-    )
+    single { KotlinComponentSystem(get()) }
 
     renderExtension {
         get<GpuContext>().run {
@@ -293,6 +259,10 @@ val baseModule = module {
 //    TODO: Fails because of shader code errors
 //    renderExtension { EvaluateProbeRenderExtension(get(), get(), get(), get(), get()) }
 
+    addStateHolders()
+}
+
+private fun Module.addStateHolders() {
     single {
         get<GpuContext>().run {
             get<RenderStateContext>().run {
@@ -446,9 +416,10 @@ fun Module.addSkyboxModule() {
     }
 }
 fun Module.addBackendModule() {
-    single { AddResourceContext() }
     single { OpenGLGPUProfiler(get()) } binds arrayOf(GPUProfiler::class, OpenGLGPUProfiler::class)
     single { OpenGLContext(get(), get(), get()) } bind GpuContext::class
+
+    single { AddResourceContext() }
     single { Input(get()) }
     single { RenderSystemsConfig(getAll()) }
     single {
@@ -495,12 +466,12 @@ class SkyBoxSystem : BaseEntitySystem(), WorldPopulator {
     lateinit var tagManager: TagManager
 
     @Wire
-    lateinit var config: ConfigImpl
+    lateinit var config: Config
 
     override fun processSystem() {
-        if (!tagManager.isRegistered(primaryCamera)) return
+        if (!tagManager.isRegistered(primaryCameraTag)) return
 
-        val primaryCameraEntityId = tagManager.getEntityId(primaryCamera)
+        val primaryCameraEntityId = tagManager.getEntityId(primaryCameraTag)
 
         if (subscription.entities.size() > 0) {
             subscription.entities.data.firstOrNull()?.let { skyBoxEntityId ->

@@ -3,25 +3,14 @@ package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.Format
-
-import java.nio.FloatBuffer
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.input.MouseClickListener
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.lwjgl.BufferUtils
-import java.lang.Exception
+import java.nio.FloatBuffer
 
-data class Indices(
-    val entityBufferIndex: Int,
-    val entityId: Int,
-    val meshIndex: Int,
-    val materialIndex: Int
-)
-interface OnClickListener {
-    fun onClick(coordinates: Vector2i, indices: Indices)
-}
 context(GpuContext)
 class PixelPerfectPickingExtension(
     private val config: Config,

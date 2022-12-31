@@ -50,7 +50,9 @@ vec2 encode(vec3 n) {
 
 void main()
 {
-	float depth = pass_Position.z/pass_Position.w;//(gl_FragCoord.z);
+	float depth = pass_Position.z/pass_Position.w;
+    depth = gl_FragCoord.z;
+    gl_FragDepth = gl_FragCoord.z;
 
 	float moment1 = (depth);
 	float moment2 = moment1 * moment1;

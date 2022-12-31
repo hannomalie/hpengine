@@ -10,8 +10,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.glValue
 import de.hanno.hpengine.graphics.renderer.pipelines.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
@@ -23,13 +22,14 @@ import de.hanno.hpengine.stopwatch.GPUProfiler
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import glValue
 import kotlinx.coroutines.*
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.ARBBindlessTexture.glGetTextureHandleARB
 import org.lwjgl.opengl.ARBBindlessTexture.glMakeTextureHandleResidentARB
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
-import org.lwjgl.opengl.GL30.*
+import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
 import org.lwjgl.opengl.GL32.*
 import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
 import org.lwjgl.opengl.GL40.glBlendFunci
@@ -83,13 +83,22 @@ class OpenGLContext private constructor(
         wrapMode: WrapMode,
         uploadState: UploadState
     ): OpenGLTexture2D {
-        val id = genTextures()
+        val info = UploadInfo.Texture2DUploadInfo(
+            dimension = dimension,
+            data = null,
+            dataCompressed = false,
+            srgba = false,
+            internalFormat = internalFormat,
+            textureFilterConfig = textureFilterConfig,
+        )
+        val textureAllocationData = allocateTexture(info, TextureTarget.TEXTURE_2D, wrapMode)
+
         return OpenGLTexture2D(
             dimension,
-            id,
+            textureAllocationData.textureId,
             target,
             internalFormat,
-            getTextureHandle(id),
+            textureAllocationData.handle,
             textureFilterConfig,
             wrapMode,
             uploadState,
@@ -105,8 +114,10 @@ class OpenGLContext private constructor(
         filterConfig = textureFilterConfig,
         internalFormat = internalFormat,
         wrapMode = wrapMode,
-
     )
+
+    override fun FrameBuffer(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer.invoke(depthBuffer)
+
     override fun createView(texture: CubeMapArray, cubeMapIndex: Int): CubeMap {
         val viewTextureId = onGpu { glGenTextures() }
         return object: CubeMap {
@@ -502,18 +513,16 @@ class OpenGLContext private constructor(
     override fun allocateTexture(
         info: UploadInfo,
         textureTarget: TextureTarget,
-        filterConfig: TextureFilterConfig,
         wrapMode: WrapMode,
     ): TextureAllocationData = onGpu {
         val textureId = glGenTextures()
         val glTarget = textureTarget.glValue
 
         glBindTexture(glTarget, textureId)
-        texParameters(glTarget, wrapMode, filterConfig)
+        texParameters(glTarget, wrapMode, info.textureFilterConfig)
         texStorage(info, glTarget)
 
-
-        if (filterConfig.minFilter.isMipMapped) {
+        if (info.textureFilterConfig.minFilter.isMipMapped) {
             GL30.glGenerateMipmap(glTarget)
         }
 
@@ -593,15 +602,15 @@ class OpenGLContext private constructor(
     private fun texParameters(glTarget: Int, wrapMode: WrapMode, filterConfig: TextureFilterConfig) {
         glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, wrapMode.glValue)
         glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, wrapMode.glValue)
+        glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, wrapMode.glValue)
         glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, filterConfig.minFilter.glValue)
         glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, filterConfig.magFilter.glValue)
-        glTexParameteri(glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode.glValue)
     }
 
     private fun texStorage(info: UploadInfo, glTarget: Int) = when (info) {
         is UploadInfo.CubeMapArrayUploadInfo -> GL42.glTexStorage3D(
             GL40.GL_TEXTURE_CUBE_MAP_ARRAY,
-            info.dimension.getMipMapCount(),
+            info.mipMapCount,
             info.internalFormat.glValue,
             info.dimension.width,
             info.dimension.height,
@@ -609,21 +618,21 @@ class OpenGLContext private constructor(
         )
         is UploadInfo.CubeMapUploadInfo -> GL42.glTexStorage2D(
             GL40.GL_TEXTURE_CUBE_MAP,
-            info.dimension.getMipMapCount(),
+            info.mipMapCount,
             info.internalFormat.glValue,
             info.dimension.width,
             info.dimension.height
         )
         is UploadInfo.Texture2DUploadInfo -> GL42.glTexStorage2D(
             glTarget,
-            info.dimension.getMipMapCount(),
+            info.mipMapCount,
             info.internalFormat.glValue,
             info.dimension.width,
             info.dimension.height
         )
         is UploadInfo.Texture3DUploadInfo -> GL42.glTexStorage3D(
             glTarget,
-            info.dimension.getMipMapCount(),
+            info.mipMapCount,
             info.internalFormat.glValue,
             info.dimension.width,
             info.dimension.height,
@@ -670,7 +679,7 @@ class OpenGLContext private constructor(
         GL30.glClearBufferfv(GL_COLOR, index, floatArray)
     }
     override fun framebufferDepthTexture(texture: Texture, level: Int) {
-        GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, texture.id, level)
+        glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, texture.id, level)
     }
     override fun framebufferTextureLayer(index: Int, texture: Texture, level: Int, layer: Int) {
         framebufferTexture(index, texture.id, level, layer)
@@ -682,7 +691,7 @@ class OpenGLContext private constructor(
         framebufferTexture(index, texture.id, level)
     }
     override fun framebufferTexture(index: Int, textureId: Int, level: Int) {
-        GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureId, level)
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureId, level)
     }
     override fun framebufferTexture(index: Int, textureId: Int, faceIndex: Int, level: Int) {
         glFramebufferTexture2D(
@@ -722,21 +731,21 @@ class OpenGLContext private constructor(
          )
     }
 
-    override fun validateFrameBufferState(renderTargetImpl: BackBufferRenderTarget<*>) {
+    override fun validateFrameBufferState(renderTarget: BackBufferRenderTarget<*>) {
         val frameBufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)
         if (frameBufferStatus != GL_FRAMEBUFFER_COMPLETE) {
-            println("RenderTarget fucked up")
-            when (frameBufferStatus) {
-                GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT")
-                GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT")
-                GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> println("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER")
-                GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> println("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER")
-                GL_FRAMEBUFFER_UNSUPPORTED -> println("GL_FRAMEBUFFER_UNSUPPORTED")
-                GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE")
-                GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS -> println("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS")
-                GL_FRAMEBUFFER_UNDEFINED -> println("GL_FRAMEBUFFER_UNDEFINED")
+            val error = when (frameBufferStatus) {
+                GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"
+                GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"
+                GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"
+                GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"
+                GL_FRAMEBUFFER_UNSUPPORTED -> "GL_FRAMEBUFFER_UNSUPPORTED"
+                GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"
+                GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS -> "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"
+                GL_FRAMEBUFFER_UNDEFINED -> "GL_FRAMEBUFFER_UNDEFINED"
+                else -> "UNKNOWN"
             }
-            throw RuntimeException("Rendertarget ${renderTargetImpl.name} fucked up")
+            throw RuntimeException("Rendertarget ${renderTarget.name} fucked up with $error")
         }
     }
 
@@ -785,7 +794,9 @@ class OpenGLContext private constructor(
     }
 
     override fun Shader.reload() {
-        load()
+        try {
+            load()
+        } catch (_: ShaderLoadException) { }
     }
     override fun Shader.unload() {
         source.unload()
@@ -804,9 +815,6 @@ class OpenGLContext private constructor(
             validateProgram()
 
             registerUniforms()
-
-            // TODO: Readd this somehow
-//            createFileListeners()
         }
     }
     override fun AbstractProgram<*>.unload() {
@@ -816,6 +824,23 @@ class OpenGLContext private constructor(
         }
     }
 
+    override fun AbstractProgram<*>.reload() {
+        onGpu {
+            try {
+                shaders.forEach {
+                    it.load()
+                    attach(it)
+                }
+
+                bindShaderAttributeChannels()
+                linkProgram()
+                validateProgram()
+
+                registerUniforms()
+            } catch (_: ShaderLoadException) { }
+        }
+    }
+    // TODO: Make reload not destructive
     override fun AbstractProgram<*>.reloadProgram(): Unit = try {
         onGpu {
             shaders.forEach {
@@ -964,6 +989,100 @@ class OpenGLContext private constructor(
         return targetTexture
     }
 
+
+    override fun RenderTarget(
+        frameBuffer: FrameBuffer,
+        width: Int,
+        height: Int ,
+        textures: List<Texture2D>,
+        name: String,
+        clear: Vector4f,
+    ) = RenderTarget2D(RenderTargetImpl(frameBuffer, width, height, textures, name, clear))
+
+    override fun <T : Texture> RenderTarget(
+        frameBuffer: FrameBuffer,
+        width: Int,
+        height: Int,
+        textures: List<T>,
+        name: String,
+        clear: Vector4f,
+    ) = RenderTargetImpl(
+        frameBuffer,
+        width,
+        height,
+        textures,
+        name,
+        clear,
+    )
+
+    override fun RenderTarget(
+        frameBuffer: FrameBuffer,
+        width: Int,
+        height: Int,
+        textures: List<CubeMapArray>,
+        name: String,
+        clear: Vector4f,
+    ) = CubeMapArrayRenderTarget(
+        RenderTargetImpl(frameBuffer, width, height, textures, name, clear)
+    )
+
+    override fun RenderTarget(
+        frameBuffer: FrameBuffer,
+        width: Int,
+        height: Int,
+        textures: List<CubeMap>,
+        name: String,
+        clear: Vector4f,
+    ) = CubeMapRenderTarget(
+        RenderTargetImpl(frameBuffer, width, height, textures, name, clear)
+    )
+
+    override fun CubeMapArray(
+        dimension: TextureDimension3D,
+        filterConfig: TextureFilterConfig,
+        internalFormat: InternalTextureFormat,
+        wrapMode: WrapMode
+    ): CubeMapArray {
+        val (textureId, handle) = allocateTexture(
+            UploadInfo.CubeMapArrayUploadInfo(dimension, internalFormat = internalFormat, textureFilterConfig = filterConfig),
+            TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
+            wrapMode
+        )
+        return OpenGLCubeMapArray(
+            dimension,
+            textureId,
+            TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
+            internalFormat,
+            handle,
+            filterConfig,
+            wrapMode,
+            UploadState.UPLOADED
+        )
+    }
+
+    override fun DepthBuffer(width: Int, height: Int): DepthBuffer<Texture2D> {
+        val dimension = TextureDimension(width, height)
+        val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
+        val textureTarget = TextureTarget.TEXTURE_2D
+        val internalFormat = InternalTextureFormat.DEPTH_COMPONENT24
+        val (textureId, handle, wrapMode) = allocateTexture(
+            UploadInfo.Texture2DUploadInfo(dimension, internalFormat = internalFormat, textureFilterConfig = filterConfig),
+            textureTarget,
+            WrapMode.Repeat,
+        )
+
+        return DepthBuffer(
+            Texture2D(
+                dimension,
+                textureTarget,
+                internalFormat,
+                filterConfig,
+                wrapMode,
+                UploadState.UPLOADED
+            )
+        )
+    }
+
     companion object {
         const val OPENGL_THREAD_NAME = "OpenGLContext"
 
@@ -1013,60 +1132,6 @@ class OpenGLContext private constructor(
             }
         }
     }
-}
-
-context(FileMonitor)
-fun Program<*>.createFileListeners() {
-    val sources = listOfNotNull(
-        fragmentShader?.source,
-        vertexShader.source,
-        geometryShader?.source,
-        tesselationControlShader?.source,
-        tesselationEvaluationShader?.source,
-    )
-    val fileBasedSources = sources.filterIsInstance<FileBasedCodeSource>() + sources.filterIsInstance<WrappedCodeSource>().map { it.underlying }
-
-//     TDOO: Make this possible again
-//    replaceOldListeners(fileBasedSources, this)
-}
-
-context(FileMonitor)
-fun ComputeProgram.createFileListeners() {
-    val sources: List<FileBasedCodeSource> = listOf(computeShader.source).filterIsInstance<FileBasedCodeSource>()
-//     TDOO: Make this possible again
-//    replaceOldListeners(sources, this)
-}
-
-context(FileMonitor)
-fun List<FileBasedCodeSource>.registerFileChangeListeners(reloadable: Reloadable) = map {
-    it.registerFileChangeListener(reloadable)
-}
-
-context(FileMonitor)
-fun FileBasedCodeSource.registerFileChangeListener(reloadable: Reloadable) = addOnFileChangeListener(
-    file,
-    { file ->
-        file.name.startsWith("globals")
-    },
-    {
-        reloadable.reload()
-    }
-)
-
-context(FileMonitor)
-fun AbstractProgram<*>.replaceOldListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
-    removeOldListeners()
-    fileListeners.addAll(sources.registerFileChangeListeners(reloadable))
-}
-
-context(FileMonitor)
-fun AbstractProgram<*>.removeOldListeners() {
-    monitor.observers.forEach { observer ->
-        fileListeners.forEach { listener ->
-            observer.removeListener(listener)
-        }
-    }
-    fileListeners.clear()
 }
 
 val Capability.glInt get() = when(this) {

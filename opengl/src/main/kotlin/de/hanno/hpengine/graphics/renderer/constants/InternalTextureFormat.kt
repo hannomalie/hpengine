@@ -62,5 +62,4 @@ val InternalTextureFormat.glValue: Int
         R16I -> GL_R16I
         R32F -> GL_R32F
         DEPTH24_STENCIL8 -> GL_DEPTH24_STENCIL8
-        DEPTH_COMPONENT -> GL_DEPTH_COMPONENT
     }

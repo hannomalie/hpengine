@@ -6,89 +6,96 @@ import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
 
 
-interface Config {
-    val quality: IQualityConfig
-    val debug: IDebugConfig
-    val effects: IEffectsConfig
-    val performance: IPerformanceConfig
-    val profiling: ProfilingConfig
+// TODO: Remove this global config stuff and let modules read config values themselves
+@Target(AnnotationTarget.PROPERTY)
+annotation class Button
 
-    val directories: Directories
-    val engineDir: EngineDirectory
-    val gameDir: GameDirectory
-    val width: Int
-    val height: Int
+data class Config(
+    var quality: QualityConfig = QualityConfig(),
+    var debug: DebugConfig = DebugConfig(),
+    var effects: EffectsConfig = EffectsConfig(),
+    var performance: PerformanceConfig = PerformanceConfig(),
+    var profiling: ProfilingConfig = ProfilingConfig(),
+    var directories: Directories = Directories(
+        Directories.ENGINEDIR_NAME,
+        Directories.GAMEDIR_NAME
+    ),
+    var width: Int = 1920,
+    var height: Int = 1080,
+) {
+    val engineDir by directories::engineDir
+    val gameDir by directories::gameDir
 
     fun EngineAsset(relativePath: String): EngineAsset = engineDir.toAsset(relativePath)
     fun GameAsset(relativePath: String): GameAsset = gameDir.toAsset(relativePath)
 }
 
-interface IQualityConfig {
-    val isUseAmbientOcclusion: Boolean
-    val isUseParallax: Boolean
-    val isUseSteepParallax: Boolean
-    val isUseGi: Boolean
-    val isUseSSR: Boolean
-    val isUseMultipleDiffuseSamples: Boolean
-    val isUseMultipleDiffuseSamplesProbes: Boolean
-    val isUseConetracingForDiffuse: Boolean
-    val isUseConetracingForDiffuseProbes: Boolean
-    val isUseConetracingForSpecular: Boolean
-    val isUseConetracingForSpecularProbes: Boolean
-    val isUsePrecomputedRadiance: Boolean
-    val isCalculateActualRadiance: Boolean
-    val isSsrFadeToScreenBorders: Boolean
-    val isSsrTemporalFiltering: Boolean
-    val isContinuousDrawProbes: Boolean
-    val isDrawProbes: Boolean
-    val isUseDpsm: Boolean
-    val isUsePcf: Boolean
-}
+data class QualityConfig(
+    var isUseAmbientOcclusion: Boolean = true,
+    var isUseParallax: Boolean = true,
+    var isUseSteepParallax: Boolean = false,
+    var isUseGi: Boolean = true,
+    var isUseSSR: Boolean = true,
+    var isUseMultipleDiffuseSamples: Boolean = true,
+    var isUseMultipleDiffuseSamplesProbes: Boolean = true,
+    var isUseConetracingForDiffuse: Boolean = true,
+    var isUseConetracingForDiffuseProbes: Boolean = true,
+    var isUseConetracingForSpecular: Boolean = true,
+    var isUseConetracingForSpecularProbes: Boolean = true,
+    var isUsePrecomputedRadiance: Boolean = true,
+    var isCalculateActualRadiance: Boolean = false,
+    var isSsrFadeToScreenBorders: Boolean = true,
+    var isSsrTemporalFiltering: Boolean = true,
+    var isContinuousDrawProbes: Boolean = false,
+    var isDrawProbes: Boolean = false,
+    var isUseDpsm: Boolean = false,
+    var isUsePcf: Boolean = false,
+)
 
-interface IDebugConfig {
-    var reRenderProbes: Boolean
-    var visualizeProbes: Boolean
-    var drawBvhInnerNodes: Boolean
-    var isEditorOverlay: Boolean
-    val isUseCpuFrustumCulling: Boolean
-    val isUseGpuFrustumCulling: Boolean
-    val isUseGpuOcclusionCulling: Boolean
-    val isDrawLines: Boolean
-    val isDrawBoundingVolumes: Boolean
-    val isDrawPointLightShadowMaps: Boolean
-    val isDrawCameras: Boolean
-    val isDrawScene: Boolean
-    val isDebugframeEnabled: Boolean
-    val isDrawlightsEnabled: Boolean
-    val isPrintPipelineDebugOutput: Boolean
-    val isUseComputeShaderDrawCommandAppend: Boolean
-    val isDebugVoxels: Boolean
-    val isUseFileReloading: Boolean
-    val isLockUpdaterate: Boolean
-    val directTextureOutputTextureIndex: Int
-    val directTextureOutputArrayIndex: Int
-    var isForceRevoxelization: Boolean
-    var freezeCulling: Boolean
-    var forceSingleThreadedRendering: Boolean
-    var profiling: Boolean
-}
+data class DebugConfig(
+    @Button var reRenderProbes: Boolean = false,
+    var visualizeProbes: Boolean = false,
+    var drawBvhInnerNodes: Boolean = false,
+    var isEditorOverlay: Boolean = true,
+    var isUseCpuFrustumCulling: Boolean = true,
+    var isUseGpuFrustumCulling: Boolean = true,
+    var isUseGpuOcclusionCulling: Boolean = true,
+    var isDrawLines: Boolean = false,
+    var isDrawBoundingVolumes: Boolean = false,
+    var isDrawPointLightShadowMaps: Boolean = false,
+    var isDrawCameras: Boolean = false,
+    var isDrawScene: Boolean = true,
+    var isDebugframeEnabled: Boolean = false,
+    var isDrawlightsEnabled: Boolean = false,
+    var isPrintPipelineDebugOutput: Boolean = false,
+    var isUseComputeShaderDrawCommandAppend: Boolean = false,
+    var isDebugVoxels: Boolean = false,
+    var isUseFileReloading: Boolean = true,
+    var isLockUpdaterate: Boolean = false,
+    var directTextureOutputTextureIndex: Int = 0,
+    var directTextureOutputArrayIndex: Int = 0,
+    var isForceRevoxelization: Boolean = false,
+    var freezeCulling: Boolean = false,
+    var forceSingleThreadedRendering: Boolean = false,
+    var profiling: Boolean = false,
+)
 
-interface IEffectsConfig {
-    val isScattering: Boolean
-    val rainEffect: Float
-    val ambientocclusionTotalStrength: Float
-    val ambientocclusionRadius: Float
-    val isUseBloom: Boolean
-    val isAutoExposureEnabled: Boolean
-    val isEnablePostprocessing: Boolean
-    val ambientLight: Vector3f
-}
+data class EffectsConfig (
+    var isScattering: Boolean = true,
+    var rainEffect: Float = 0f,
+    var ambientocclusionTotalStrength: Float = 0.5f,
+    var ambientocclusionRadius: Float = 0.025f,
+    var isUseBloom: Boolean = true,
+    var isAutoExposureEnabled: Boolean = false,
+    var isEnablePostprocessing: Boolean = false,
+    var ambientLight: Vector3f = Vector3f(0.1f),
+)
 
-interface IPerformanceConfig {
-    val updateGiOnSceneChange: Boolean
-    val isIndirectRendering: Boolean
-    val isVsync: Boolean
-}
+data class PerformanceConfig (
+    var updateGiOnSceneChange: Boolean = true,
+    var isIndirectRendering: Boolean = false,
+    var isVsync: Boolean = true,
+)
 
 class ProfilingConfig {
     var showFps = false

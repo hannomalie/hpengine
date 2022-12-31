@@ -1,7 +1,9 @@
 package de.hanno.hpengine.graphics.shader
 
 import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.createFileListeners
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.transform.x
 import de.hanno.hpengine.transform.y
 import de.hanno.hpengine.transform.z
@@ -19,6 +21,7 @@ abstract class AbstractProgram<T : Uniforms>(
     val defines: Defines = Defines(),
     override val uniforms: T,
     private val gpuContext: GpuContext, // TODO: Make context receiver, currently triggers compiler bugs
+    private val fileMonitor: FileMonitor,
 ) : IProgram<T> {
 
     override val id = gpuContext.createProgramId()
@@ -31,8 +34,12 @@ abstract class AbstractProgram<T : Uniforms>(
 
     init {
 //        TODO: Reimplement
-//        load()
-//        createFileListeners()
+        fileMonitor.run {
+            gpuContext.run {
+                load()
+                createFileListeners()
+            }
+        }
     }
     protected fun clearUniforms() = gpuContext.run {
         uniformBindings.clear()

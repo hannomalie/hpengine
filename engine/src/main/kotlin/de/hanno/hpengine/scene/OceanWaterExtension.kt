@@ -22,6 +22,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -48,7 +49,7 @@ class OceanWaterRenderSystem(
     private val random2 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_2.png", srgba = false, directory = engineDir)
     private val random3 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_3.png", srgba = false, directory = engineDir)
 
-    private fun createRandomTexture(): OpenGLTexture2D = listOf(ColorAttachmentDefinition("Random",
+    private fun createRandomTexture(): Texture2D = listOf(ColorAttachmentDefinition("Random",
         RGBA32F
     )).toTextures(N, N).first().apply {
         onGpu {
@@ -113,7 +114,7 @@ class OceanWaterRenderSystem(
     private val tildeHktDyMap = listOf(ColorAttachmentDefinition("tildeHktDyMap", RGBA32F)).toTextures(N, N).first()
     private val tildeHktDxMap = listOf(ColorAttachmentDefinition("tildeHktDxMap", RGBA32F)).toTextures(N, N).first()
     private val tildeHktDzMap = listOf(ColorAttachmentDefinition("tildeHktDzMap", RGBA32F)).toTextures(N, N).first()
-    data class TildeMapHelper(val tildeMap: OpenGLTexture2D, val displacementMap: OpenGLTexture2D, val pingPongMap: OpenGLTexture2D)
+    data class TildeMapHelper(val tildeMap: Texture2D, val displacementMap: Texture2D, val pingPongMap: Texture2D)
     val tildeMapHelpers = listOf(
         TildeMapHelper(tildeHktDyMap, displacementMapY, pingPongMapY),
     )

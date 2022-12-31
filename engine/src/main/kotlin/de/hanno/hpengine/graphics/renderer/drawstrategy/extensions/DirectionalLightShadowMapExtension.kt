@@ -19,6 +19,8 @@ import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
+import de.hanno.hpengine.graphics.renderer.constants.MinFilter
+import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.*
@@ -36,6 +38,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
@@ -58,9 +61,9 @@ class DirectionalLightShadowMapExtension(
         OpenGLFrameBuffer(DepthBuffer(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
         SHADOWMAP_RESOLUTION,
         SHADOWMAP_RESOLUTION,
-        //                Reflective shadowmaps?
-        //                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
-        listOf(ColorAttachmentDefinition("Shadow", InternalTextureFormat.RGBA16F)).toTextures(
+//                Reflective shadowmaps?
+//                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
+        listOf(ColorAttachmentDefinition("Shadow", InternalTextureFormat.RGBA16F, TextureFilterConfig(MinFilter.LINEAR))).toTextures(
             SHADOWMAP_RESOLUTION,
             SHADOWMAP_RESOLUTION
         ),
@@ -119,7 +122,8 @@ class DirectionalLightShadowMapExtension(
                 indirect = false
             }
 
-            for (batch in entitiesState.getRenderBatches(program.uniforms).filter { it.isShadowCasting }) {
+            val shadowCasters = entitiesState.getRenderBatches(program.uniforms).filter { it.isShadowCasting }
+            for (batch in shadowCasters) {
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(batch.drawElementsIndirectCommand, false, PrimitiveType.Triangles, RenderingMode.Fill)
@@ -145,8 +149,8 @@ class DirectionalLightShadowMapExtension(
 
     override fun extract(renderState: RenderState, world: World) {
         renderState[directionalLightStateHolder.lightState].typedBuffer.forIndex(0) {
-            it.shadowMapHandle = renderTarget.renderedTextureHandles[0]
-            it.shadowMapId = renderTarget.renderedTextures[0]
+            it.shadowMapHandle = renderTarget.frameBuffer.depthBuffer!!.texture.handle
+            it.shadowMapId = renderTarget.frameBuffer.depthBuffer!!.texture.id
         }
     }
 

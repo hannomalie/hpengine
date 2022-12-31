@@ -5,7 +5,6 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.WrapMode
-import org.lwjgl.opengl.GL11
 
 data class OpenGLCubeMap(
     override val dimension: TextureDimension2D,
@@ -27,9 +26,8 @@ data class OpenGLCubeMap(
             wrapMode: WrapMode = WrapMode.Repeat,
         ): OpenGLCubeMap {
             val (textureId, handle) = allocateTexture(
-                UploadInfo.Texture2DUploadInfo(dimension, internalFormat = internalFormat),
+                UploadInfo.Texture2DUploadInfo(dimension, internalFormat = internalFormat, textureFilterConfig = filterConfig),
                 TextureTarget.TEXTURE_CUBE_MAP,
-                filterConfig,
                 wrapMode
             )
             return OpenGLCubeMap(

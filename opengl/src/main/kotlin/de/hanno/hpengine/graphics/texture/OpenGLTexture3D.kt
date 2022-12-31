@@ -25,9 +25,12 @@ data class OpenGLTexture3D(
             wrapMode: WrapMode = WrapMode.Repeat
         ): OpenGLTexture3D {
             val (textureId, handle) = allocateTexture(
-                UploadInfo.Texture3DUploadInfo(dimension, internalFormat = internalFormat),
+                UploadInfo.Texture3DUploadInfo(
+                    dimension,
+                    internalFormat = internalFormat,
+                    textureFilterConfig = filterConfig
+                ),
                 TextureTarget.TEXTURE_3D,
-                filterConfig,
                 wrapMode
             )
             return OpenGLTexture3D(

@@ -43,6 +43,7 @@ data class OpenGLTexture2D(
         operator fun invoke(file: File, srgba: Boolean = false): OpenGLTexture2D {
             require(file.exists()) { "File ${file.absolutePath} must exist!" }
             require(file.isFile) { "File ${file.absolutePath} is not a file!" }
+
             val internalFormat = if (compressInternal) {
                 if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else COMPRESSED_RGBA_S3TC_DXT5_EXT
             } else {
@@ -59,7 +60,8 @@ data class OpenGLTexture2D(
                             ddsImage.getMipMap(0).data,
                             dataCompressed = true,
                             srgba = srgba,
-                            internalFormat = internalFormat
+                            internalFormat = internalFormat,
+                            textureFilterConfig = TextureFilterConfig(),
                         )
                     )
                 } else {
@@ -91,7 +93,9 @@ data class OpenGLTexture2D(
             }
             return OpenGLTexture2D(
                 Texture2DUploadInfo(
-                    TextureDimension(image.width, image.height), buffer, false, srgba, internalFormat = internalFormat
+                    TextureDimension(image.width, image.height), buffer, false, srgba,
+                    internalFormat = internalFormat,
+                    textureFilterConfig = TextureFilterConfig(),
                 )
             )
         }
@@ -125,20 +129,17 @@ data class OpenGLTexture2D(
             textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
             wrapMode: WrapMode = WrapMode.Repeat
         ) = onGpu {
-            val (textureId, handle) = allocateTexture(
+            val textureAllocationData = allocateTexture(
                 info,
                 TextureTarget.TEXTURE_2D,
-                textureFilterConfig,
                 wrapMode
             )
-            if (isSupported(BindlessTextures)) ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
-
             OpenGLTexture2D(
                 info.dimension,
-                textureId,
+                textureAllocationData.textureId,
                 TextureTarget.TEXTURE_2D,
                 info.internalFormat,
-                handle,
+                textureAllocationData.handle,
                 textureFilterConfig,
                 wrapMode,
                 UploadState.NOT_UPLOADED
