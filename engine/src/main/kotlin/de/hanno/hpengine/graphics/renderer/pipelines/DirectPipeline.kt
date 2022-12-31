@@ -10,7 +10,6 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.constants.DepthFunc
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Fill
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Lines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw

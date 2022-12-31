@@ -10,7 +10,7 @@ interface BackBufferRenderTarget<T : Texture> : RenderTarget {
     var mipMapCount: Int
     val renderedTexture: Int
     val factorsForDebugRendering: MutableList<Float>
-    val frameBuffer: Any
+    val frameBuffer: FrameBuffer
 
     fun setTargetTexture(textureID: Int, index: Int, mipMapLevel: Int = 0)
 

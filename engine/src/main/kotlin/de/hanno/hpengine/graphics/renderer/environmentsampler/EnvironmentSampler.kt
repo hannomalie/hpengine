@@ -7,7 +7,6 @@ import de.hanno.hpengine.artemis.EnvironmentProbeComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer.Companion.invoke
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
@@ -21,6 +20,7 @@ import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
 import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
@@ -28,6 +28,7 @@ import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer.invoke
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 import java.util.HashSet
@@ -114,7 +115,7 @@ class EnvironmentSampler(
             EngineAsset("shaders/frst_pass_fragment.glsl").toCodeSource()
         )
     }
-    val renderTarget: BackBufferRenderTarget<OpenGLTexture2D>
+    val renderTarget: RenderTarget2D
     val camera: Camera
 
     var gpuContext = this@GpuContext
@@ -258,13 +259,14 @@ class EnvironmentSampler(
             cubeMapFaceViews[3][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(3), probeIndex, faceIndex).id
         }
         renderTarget = RenderTarget(
-            OpenGLFrameBuffer(DepthBuffer(RESOLUTION, RESOLUTION)),
+            FrameBuffer(DepthBuffer(RESOLUTION, RESOLUTION)),
             RESOLUTION, RESOLUTION,
             listOf(ColorAttachmentDefinition("Environment Diffuse", diffuseInternalFormat)).toTextures(
                 RESOLUTION,
                 RESOLUTION
             ),
-            "Environment Sampler"
+            "Environment Sampler",
+            Vector4f(),
         )
         fullscreenBuffer = QuadVertexBuffer()
         fullscreenBuffer.upload()

@@ -7,8 +7,7 @@ import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.pipelines.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.GpuBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.graphics.renderer.rendertarget.BackBufferRenderTarget
+import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
@@ -181,7 +180,6 @@ interface GpuContext {
     fun allocateTexture(
         info: UploadInfo,
         textureTarget: TextureTarget,
-        filterConfig: TextureFilterConfig,
         wrapMode: WrapMode,
     ): TextureAllocationData
 
@@ -270,6 +268,7 @@ interface GpuContext {
     fun AbstractProgram<*>.reloadProgram()
     fun AbstractProgram<*>.load()
     fun AbstractProgram<*>.unload()
+    fun AbstractProgram<*>.reload()
 
     fun UniformBinding.set(value: Int)
     fun UniformBinding.set(value: Float)
@@ -292,6 +291,52 @@ interface GpuContext {
     fun IProgram<*>.getShaderStorageBlockBinding(name: String, bindingIndex: Int)
     fun IProgram<*>.bind()
     fun polygonMode(facing: Facing, mode: RenderingMode)
+    fun RenderTarget(
+        frameBuffer: FrameBuffer,
+        width: Int,
+        height: Int,
+        textures: List<Texture2D>,
+        name: String,
+        clear: Vector4f
+    ): RenderTarget2D
+
+    fun <T : Texture> RenderTarget(
+        frameBuffer: FrameBuffer,
+        width: Int,
+        height: Int,
+        textures: List<T>,
+        name: String,
+        clear: Vector4f
+    ): RenderTarget
+
+    fun RenderTarget(
+        frameBuffer: FrameBuffer,
+        width: Int,
+        height: Int,
+        textures: List<CubeMapArray>,
+        name: String,
+        clear: Vector4f
+    ): CubeMapArrayRenderTarget
+
+    fun RenderTarget(
+        frameBuffer: FrameBuffer,
+        width: Int,
+        height: Int,
+        textures: List<CubeMap>,
+        name: String,
+        clear: Vector4f
+    ): CubeMapRenderTarget
+
+    fun CubeMapArray(
+        dimension: TextureDimension3D,
+        filterConfig: TextureFilterConfig,
+        internalFormat: InternalTextureFormat,
+        wrapMode: WrapMode
+    ): CubeMapArray
+
+
+    fun DepthBuffer(width: Int, height: Int): DepthBuffer<Texture2D>
+    fun FrameBuffer(depthBuffer: DepthBuffer<*>?): FrameBuffer
 }
 
 enum class Access {

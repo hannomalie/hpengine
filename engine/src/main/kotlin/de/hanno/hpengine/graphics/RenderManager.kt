@@ -1,23 +1,17 @@
 package de.hanno.hpengine.graphics
 
 import com.artemis.BaseSystem
-
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
+import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
-import de.hanno.hpengine.graphics.fps.FPSCounter
-import de.hanno.hpengine.graphics.texture.Texture2D
-import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import java.util.concurrent.atomic.AtomicBoolean
-
-data class FinalOutput(var texture2D: Texture2D, var mipmapLevel: Int = 0)
-data class DebugOutput(var texture2D: Texture2D? = null, var mipmapLevel: Int = 0)
 
 context(GpuContext)
 class RenderManager(
@@ -77,12 +71,13 @@ class RenderManager(
                                     }
                                 }
                                 is RenderMode.SingleFrame -> {
+                                    // TODO: Make rendersystems excludable from single step, like editor
                                     if (renderMode.frameRequested.get()) {
                                         renderSystems.filter {
                                             renderSystemsConfig.run { it.enabled }
                                         }
                                     } else {
-                                        renderSystems.filterIsInstance<ImGuiEditor>()
+                                        emptyList() // TODO: Check whether this still works
                                     }.apply {
                                         renderMode.frameRequested.getAndSet(false)
                                     }

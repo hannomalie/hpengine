@@ -40,9 +40,17 @@ dependencies {
 
     api("", "dahie-dds", "1.0.0-SNAPSHOT")
 
+    val koinVersion= "3.1.1"
+    api("io.insert-koin:koin-core:$koinVersion")
+
+    api("net.onedaybeard.artemis:artemis-odb:2.3.0")
+    api("net.onedaybeard.artemis:artemis-odb-serializer-json:2.3.0")
+    api("net.mostlyoriginal.artemis-odb:contrib-plugin-singleton:2.5.0")
+
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testImplementation("io.kotest:kotest-runner-junit5:5.5.4")
     testImplementation("io.kotest:kotest-assertions-core:5.5.4")
+    testImplementation("io.insert-koin:koin-test:$koinVersion")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
 }

@@ -159,7 +159,9 @@ private fun List<BufferedImage>.getCubeMapUploadInfo() = UploadInfo.CubeMapUploa
         ByteBuffer.allocateDirect(byteArray.size).apply {
             buffer(byteArray)
         }
-    }, internalFormat = RGBA8
+    },
+    internalFormat = RGBA8,
+    textureFilterConfig = TextureFilterConfig()
 )
 
 fun List<BufferedImage>.toByteArrays() = map { image ->
@@ -176,7 +178,10 @@ private fun BufferedImage.getCubeMapUploadInfo(): UploadInfo.CubeMapUploadInfo {
             buffer(byteArray)
         }
     }
-    return UploadInfo.CubeMapUploadInfo(tileDimension, buffers, internalFormat = RGBA8)
+    return UploadInfo.CubeMapUploadInfo(tileDimension, buffers,
+        internalFormat = RGBA8,
+        textureFilterConfig = TextureFilterConfig()
+    )
 }
 
 fun BufferedImage.convertCubeMapData(): List<ByteArray> {

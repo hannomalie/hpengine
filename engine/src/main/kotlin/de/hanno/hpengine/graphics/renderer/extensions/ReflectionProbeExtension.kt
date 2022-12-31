@@ -40,6 +40,7 @@ import de.hanno.hpengine.ressources.StringBasedCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3fc
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
 import java.nio.FloatBuffer
@@ -397,7 +398,7 @@ class ReflectionProbeRenderer(
     )
 
     val cubeMapRenderTarget = RenderTarget(
-        frameBuffer = OpenGLFrameBuffer(
+        frameBuffer = FrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
                     TextureDimension(cubeMap.dimension.width, cubeMap.dimension.height),
@@ -410,7 +411,8 @@ class ReflectionProbeRenderer(
         width = cubeMap.dimension.width,
         height = cubeMap.dimension.height,
         textures = listOf(cubeMap),
-        name = "ReflectionProbe$indexInCubeMapArray"
+        name = "ReflectionProbe$indexInCubeMapArray",
+        clear = Vector4f(),
     )
 
 }

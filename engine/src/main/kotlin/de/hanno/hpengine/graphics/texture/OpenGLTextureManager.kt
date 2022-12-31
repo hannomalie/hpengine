@@ -38,8 +38,8 @@ class OpenGLTextureManager(
     val engineDir = config.directories.engineDir
 
     /** The table of textures that have been loaded in this loader  */
-    var textures: MutableMap<String, Texture> = LinkedHashMap()
-    val texturesForDebugOutput: MutableMap<String, Texture> = LinkedHashMap()
+    override var textures: MutableMap<String, Texture> = LinkedHashMap()
+    override val texturesForDebugOutput: MutableMap<String, Texture> = LinkedHashMap()
 
     init {
 //    	loadAllAvailableTextures();

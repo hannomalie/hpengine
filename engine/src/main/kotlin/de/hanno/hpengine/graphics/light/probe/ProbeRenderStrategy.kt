@@ -32,6 +32,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3i
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 
@@ -47,7 +48,7 @@ class ProbeRenderStrategy(
     private val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     private val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
-    private val cubeMapRenderTarget = RenderTargetImpl(
+    private val cubeMapRenderTarget = RenderTarget(
         frameBuffer = OpenGLFrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
@@ -72,7 +73,8 @@ class ProbeRenderStrategy(
                 TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
             )
         ).toCubeMaps(resolution, resolution),
-        name = "Probes"
+        name = "Probes",
+        clear = Vector4f()
     )
 
     private var probeProgram = programManager.getProgram(

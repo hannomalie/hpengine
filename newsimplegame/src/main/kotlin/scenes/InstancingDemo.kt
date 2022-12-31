@@ -6,7 +6,7 @@ import de.hanno.hpengine.artemis.TransformComponent
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.addStaticModelEntity
 import de.hanno.hpengine.artemis.MaterialComponent
-import de.hanno.hpengine.config.ConfigImpl
+import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
@@ -19,7 +19,7 @@ import kotlin.random.Random
 
 fun main() {
 
-    val config = ConfigImpl(
+    val config = Config(
         directories = Directories(
 //                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
             EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
@@ -28,7 +28,7 @@ fun main() {
         ),
     )
 
-    Engine(config, useEditor = true) {
+    Engine(config) {
         world.loadScene {
             val cube = addStaticModelEntity("Cube", "assets/models/cube.obj", Directory.Engine)
             val sphere = addStaticModelEntity("Sphere", "assets/models/sphere.obj", Directory.Engine, Vector3f(0f, 0f, -20f))

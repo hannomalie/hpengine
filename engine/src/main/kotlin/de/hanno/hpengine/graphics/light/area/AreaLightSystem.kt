@@ -34,12 +34,12 @@ import de.hanno.hpengine.graphics.renderer.constants.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.graphics.renderer.pipelines.enlarge
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.joml.Matrix4f
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
 import struktgen.api.get
@@ -66,13 +66,13 @@ class AreaLightSystem(
     lateinit var areaLightComponentComponentMapper: ComponentMapper<AreaLightComponent>
 
     private val mapRenderTarget = CubeMapRenderTarget(
-        RenderTargetImpl(
-            OpenGLFrameBuffer(
+        RenderTarget(
+            FrameBuffer(
                 DepthBuffer(
-                    OpenGLCubeMap(
+                    CubeMap(
                         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
-                        TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
                         InternalTextureFormat.DEPTH_COMPONENT24,
+                        TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
                         WrapMode.Repeat
                     )
                 )
@@ -86,7 +86,8 @@ class AreaLightSystem(
                     TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
                 )
             ).toCubeMaps(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
-            "AreaLight Shadow"
+            "AreaLight Shadow",
+            Vector4f(),
         )
     )
 
@@ -109,9 +110,9 @@ class AreaLightSystem(
                     UploadInfo.Texture2DUploadInfo(
                         dimension = dimension,
                         internalFormat = internalFormat,
+                        textureFilterConfig = filterConfig,
                     ),
                     TextureTarget.TEXTURE_2D,
-                    filterConfig,
                     wrapMode,
                 )
                 gpuContext.Texture2D(

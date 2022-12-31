@@ -71,9 +71,7 @@ class CameraRenderExtension(
         )
     }
 
-    override fun renderFirstPass(
-        renderState: RenderState
-    ) {
+    override fun renderFirstPass(renderState: RenderState) {
         if (config.debug.isDrawCameras) {
             val camera = renderState[primaryCameraStateHolder.camera]
 

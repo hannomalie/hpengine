@@ -7,44 +7,42 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.config.ConfigImpl
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
-import de.hanno.hpengine.entity.CycleSystem
+import de.hanno.hpengine.cycle.CycleSystem
+import de.hanno.hpengine.extension.*
+import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.RenderManager
+import de.hanno.hpengine.graphics.RenderStateContext
 import de.hanno.hpengine.graphics.Window
-import de.hanno.hpengine.graphics.imgui.editor.EditorCameraInputSystem
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
+import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.extensions.ReflectionProbeManager
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialManager
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.physics.PhysicsManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.scene.WorldAABB
-import de.hanno.hpengine.system.Clearable
-import de.hanno.hpengine.system.Extractor
-import de.hanno.hpengine.transform.AABBData
-import de.hanno.hpengine.extension.*
-import de.hanno.hpengine.graphics.GpuContext
-import de.hanno.hpengine.graphics.RenderStateContext
-import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
-import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.system.Clearable
+import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.transform.AABBData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import net.mostlyoriginal.api.SingletonPlugin
 import org.joml.Vector3f
 import org.koin.core.context.startKoin
+import org.koin.core.module.Module
 import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.objenesis.strategy.StdInstantiatorStrategy
@@ -56,18 +54,16 @@ import kotlin.math.min
 
 
 class Engine(
-    config: ConfigImpl,
-    useEditor: Boolean = false, // TODO: Remove and pass module into here
+    config: Config,
+    modules: List<Module> = emptyList(),
     afterInit: Engine.() -> Unit = { world.loadDemoScene() })
 {
     private val configModule = module {
-        single { config } binds arrayOf(Config::class, ConfigImpl::class)
+        single { config } binds arrayOf(Config::class, Config::class)
     }
     val application = startKoin {
-        modules(configModule, baseModule, deferredRendererModule)
-        if(useEditor) {
-            modules(imGuiEditorModule)
-        }
+        modules(configModule, baseModule)
+        modules(modules)
     }
     private val koin = application.koin
     private val gpuContext: GpuContext = koin.get()
@@ -104,7 +100,6 @@ class Engine(
         renderManager,
         modelSystem,
         SkyBoxSystem(),
-        EditorCameraInputSystem(koin.get()),
         CycleSystem(koin.get()),
         directionalLightSystem,
         gpuContext.run {
@@ -159,10 +154,6 @@ class Engine(
             .register(input)
             .register(config)
     ).apply {
-        if(useEditor) {
-            // TODO: Remove and make ImGuiEditor initialized as a normal BaseSystem
-            koin.get<ImGuiEditor>().artemisWorld = this
-        }
         // TODO: Remove and make ExtensibleDeferredRenderer initialized as a normal BaseSystem
         koin.getAll<ExtensibleDeferredRenderer>().forEach { it.world = this }
         getSystem(EntityLinkManager::class.java).apply {
@@ -232,7 +223,7 @@ class Engine(
         @JvmStatic
         fun main(args: Array<String>) {
 
-            val config = ConfigImpl(
+            val config = Config(
                 directories = Directories(
 //                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
                     EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
@@ -280,10 +271,6 @@ fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = Gl
 
         actualUpdateStep(deltaSeconds)
     }
-}
-
-interface WorldPopulator {
-    fun World.populate()
 }
 
 fun World.loadScene(block: World.() -> Unit) {

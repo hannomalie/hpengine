@@ -7,11 +7,13 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.joml.Vector4i
 
-data class AnimatedVertex (val position: Vector3f = Vector3f(),
-                  val texCoord: Vector2f = Vector2f(),
-                  val normal: Vector3f = Vector3f(),
-                  val weights: Vector4f,
-                  val jointIndices: Vector4i) {
+data class AnimatedVertex (
+    val position: Vector3f = Vector3f(),
+    val texCoord: Vector2f = Vector2f(),
+    val normal: Vector3f = Vector3f(),
+    val weights: Vector4f,
+    val jointIndices: Vector4i
+) {
 
     companion object {
 

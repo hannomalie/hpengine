@@ -52,5 +52,4 @@ enum class InternalTextureFormat {
     R16I,
     R32F,
     DEPTH24_STENCIL8,
-    DEPTH_COMPONENT,
 }

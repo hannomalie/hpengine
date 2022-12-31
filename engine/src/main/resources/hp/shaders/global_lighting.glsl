@@ -98,14 +98,14 @@ float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D s
 
     vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
     positionShadow.xyz /= positionShadow.w;
-    float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
+    float depthInLightSpace = positionShadow.z;
     vec2 shadowMapCoords = positionShadow.xy;
 
     const bool simpleShadows = true;
     if(simpleShadows) {
         vec2 shadowMapValue = textureLod(shadowMap, shadowMapCoords, 0).rg;
-        return shadowMapValue.r > depthInLightSpace - 0.0001f ? 1f : 0f;
+        return shadowMapValue.r > (depthInLightSpace - 0.001f) ? 1f : 0f;
     }
     return clamp(chebyshevUpperBound(depthInLightSpace, shadowMapCoords, light, shadowMap), 0, 1).r;
 }

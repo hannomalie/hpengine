@@ -11,7 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 context(FileMonitor, GpuContext)
 class OpenGlProgramManager(
-    override val config: Config
+    override val config: Config,
 ) : BaseSystem(), ProgramManager {
 
     override fun List<UniformDelegate<*>>.toUniformDeclaration() = joinToString("\n") {
@@ -39,7 +39,7 @@ class OpenGlProgramManager(
         codeSource: FileBasedCodeSource,
         defines: Defines,
         uniforms: Uniforms?
-    ): ComputeProgram = ComputeProgram(ComputeShader(this@GpuContext, codeSource, defines), this@GpuContext).apply {
+    ): ComputeProgram = ComputeProgram(ComputeShader(this@GpuContext, codeSource, defines), this@GpuContext, this@FileMonitor).apply {
         programsCache.add(this)
     }
 
@@ -68,17 +68,15 @@ class OpenGlProgramManager(
             defines = defines,
             uniforms = uniforms,
             gpuContext = this@GpuContext,
+            fileMonitor = this@FileMonitor,
         ).apply {
             load()
             programsCache.add(this)
         }
 
-    override fun getComputeProgram(codeSource: CodeSource): ComputeProgram {
-        val defines = Defines()
-        return ComputeProgram(
-            ComputeShader(this@GpuContext, codeSource, defines), this@GpuContext
-        )
-    }
+    override fun getComputeProgram(codeSource: CodeSource): ComputeProgram = ComputeProgram(
+        ComputeShader(this@GpuContext, codeSource, Defines()), this@GpuContext, this@FileMonitor,
+    )
 
     var programsSourceCache: WeakHashMap<Shader, Int> = WeakHashMap()
     override fun update(deltaSeconds: Float) {

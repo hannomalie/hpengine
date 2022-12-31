@@ -7,26 +7,28 @@ import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
+import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import org.joml.Matrix4f
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import kotlin.math.max
 
 context(GpuContext)
 class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuffer<*>) {
 
-    internal val gBuffer = RenderTargetImpl(
-        OpenGLFrameBuffer(depthBuffer),
+    internal val gBuffer = RenderTarget(
+        FrameBuffer(depthBuffer),
         width,
         height,
         (ColorAttachmentDefinitions(
             names = arrayOf("PositionView/Roughness", "Normal/Ambient", "Color/Metallic", "Motion/Depth/Transparency"),
             internalFormat = RGBA16F,
             textureFilter = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
-        ).toList() + ColorAttachmentDefinition("Depth/Indices", RGBA32F)).toTextures(width, height),
+        ).toList() + ColorAttachmentDefinition("Depth/Indices", RGBA32F, TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR))).toTextures(width, height),
         "GBuffer",
+        Vector4f(),
     )
 
     internal val reflectionBuffer = RenderTarget(
@@ -37,11 +39,12 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
             width,
             height
         ),
-        "Reflection"
+        "Reflection",
+        Vector4f(),
     )
 
     internal val forwardBuffer = RenderTarget(
-        OpenGLFrameBuffer(depthBuffer),
+        FrameBuffer(depthBuffer),
         width = width,
         height = height,
         textures = (ColorAttachmentDefinitions(
@@ -51,18 +54,20 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
             width,
             height
         ),
-        name = "Forward"
+        name = "Forward",
+        clear = Vector4f(),
     )
 
     internal val laBuffer = RenderTarget(
-        OpenGLFrameBuffer(depthBuffer),
+        FrameBuffer(depthBuffer),
         width = width,
         height = height,
         textures = (ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), RGBA16F).toList()).toTextures(
             width,
             height
         ),
-        name = "LightAccum"
+        name = "LightAccum",
+        clear = Vector4f(),
     )
 
     internal val finalBuffer = RenderTarget(
@@ -70,7 +75,8 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
         width = width,
         height = height,
         textures = listOf(ColorAttachmentDefinition("Color", RGB8)).toTextures(width, height),
-        name = "Final Image"
+        name = "Final Image",
+        clear = Vector4f(),
     )
 
     internal val halfScreenBuffer = RenderTarget(
@@ -82,7 +88,8 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
             ColorAttachmentDefinition("Indirect", RGBA16F),
             ColorAttachmentDefinition("Bent Normals", RGBA16F)
         ).toTextures(width / 2, height / 2),
-        name = "Half Screen"
+        name = "Half Screen",
+        clear = Vector4f(),
     )
 
     val fullScreenMipmapCount = calculateMipMapCount(max(width, height))
@@ -106,15 +113,15 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
 
     val colorReflectivenessMap: Int = gBuffer.getRenderedTexture(2)
 
-    val colorReflectivenessTexture: OpenGLTexture2D = gBuffer.textures[2]
+    val colorReflectivenessTexture: Texture2D = gBuffer.textures[2]
 
     val motionMap: Int = gBuffer.getRenderedTexture(3)
 
     val visibilityMap: Int = gBuffer.getRenderedTexture(4)
 
-    val depthAndIndicesMap: OpenGLTexture2D = gBuffer.textures[4]
+    val depthAndIndicesMap: Texture2D = gBuffer.textures[4]
 
-    val finalMap: OpenGLTexture2D = finalBuffer.textures[0]
+    val finalMap: Texture2D = finalBuffer.textures[0]
 
     val finalMapId: Int = finalBuffer.getRenderedTexture(0)
 
@@ -124,9 +131,8 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
 
     val lightAccumulationBuffer: BackBufferRenderTarget<*> = laBuffer
 
-    val depthBufferTexture = gBuffer.frameBuffer.depthBuffer!!.texture
-    val depthBufferTextureId: Int = gBuffer.frameBuffer.depthBuffer!!.texture.id
-
+    val depthBufferTexture = depthBuffer.texture
+    val depthBufferTextureId: Int = depthBuffer.texture.id
 
     val ambientOcclusionScatteringMap: Int = halfScreenBuffer.getRenderedTexture(0)
 
@@ -140,18 +146,13 @@ class DeferredRenderingBuffer(width: Int, height: Int, val depthBuffer: DepthBuf
     }
 
     companion object {
-        @Volatile
         var IMPORTANCE_SAMPLE_COUNT = 8
 
-        @Volatile
         var USE_COMPUTESHADER_FOR_REFLECTIONS = false
 
-        @JvmField
-        @Volatile
         var RENDER_PROBES_WITH_SECOND_BOUNCE = true
         private val identityMatrixBuffer = BufferUtils.createFloatBuffer(16)
     }
 }
 
-@Volatile
 var RENDER_PROBES_WITH_FIRST_BOUNCE = true

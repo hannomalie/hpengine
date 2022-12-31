@@ -36,8 +36,11 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
+import org.joml.Vector4f
 import struktgen.api.forIndex
 import struktgen.api.get
+
+val textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST)
 
 context(GpuContext, GPUProfiler)
 open class GPUCulledPipeline(
@@ -52,8 +55,8 @@ open class GPUCulledPipeline(
     // TODO: Fill these if possible
     private var verticesCount = 0
     private var entitiesCount = 0
-    internal var commandOrganizationStatic = CommandOrganizationGpuCulled()
-    internal var commandOrganizationAnimated = CommandOrganizationGpuCulled()
+    val commandOrganizationStatic = CommandOrganizationGpuCulled()
+    val commandOrganizationAnimated = CommandOrganizationGpuCulled()
 
     private var occlusionCullingPhase1Vertex = config.run {
         programManager.getProgram(EngineAsset("shaders/occlusion_culling1_vertex.glsl").toCodeSource(), null)
@@ -70,8 +73,8 @@ open class GPUCulledPipeline(
     }
 
     private val baseDepthTexture = OpenGLTexture2D(
-        info = Texture2DUploadInfo(TextureDimension(config.width, config.height), internalFormat = RGBA16F),
-        textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
+        info = Texture2DUploadInfo(TextureDimension(config.width, config.height), internalFormat = RGBA16F, textureFilterConfig = textureFilterConfig),
+        textureFilterConfig = textureFilterConfig,
         wrapMode = WrapMode.ClampToEdge,
     ).apply {
         textureManager.registerTextureForDebugOutput("High Z base depth", this)
@@ -80,9 +83,10 @@ open class GPUCulledPipeline(
     private val debugMinMaxTexture = OpenGLTexture2D(
         info = Texture2DUploadInfo(
             TextureDimension(config.width / 2, config.height / 2),
-            internalFormat = RGBA16F
+            internalFormat = RGBA16F,
+            textureFilterConfig = textureFilterConfig,
         ),
-        textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
+        textureFilterConfig = textureFilterConfig,
         wrapMode = WrapMode.ClampToEdge,
     ).apply {
         textureManager.registerTextureForDebugOutput("Min Max Debug", this)
@@ -96,12 +100,15 @@ open class GPUCulledPipeline(
             OpenGLTexture2D(
                 info = Texture2DUploadInfo(
                     TextureDimension(config.width / 2, config.height / 2),
-                    internalFormat = RGBA16F
+                    internalFormat = RGBA16F,
+                    textureFilterConfig = textureFilterConfig,
                 ),
-                textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST),
+                textureFilterConfig = textureFilterConfig,
                 wrapMode = WrapMode.ClampToEdge,
             )
-        ), name = "High Z"
+        ),
+        name = "High Z",
+        clear = Vector4f(),
     ).apply {
         register(this)
     }

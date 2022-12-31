@@ -13,7 +13,6 @@ import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.constants.WrapMode.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
-import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -44,7 +43,7 @@ class CubeShadowMapStrategy(
         Uniforms.Empty
     )
 
-    val cubeMapArray = OpenGLCubeMapArray(
+    val cubeMapArray = CubeMapArray(
         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
         TextureFilterConfig(MinFilter.NEAREST),
         RGBA16F,
@@ -145,13 +144,14 @@ class DualParaboloidShadowMapStrategy(
         FileBasedCodeSource(File("shaders/" + "pointlight_shadow_vertex.glsl")),
         FileBasedCodeSource(File("shaders/" + "pointlight_shadow_fragment.glsl")),
         Uniforms.Empty,
- Defines()
+        Defines()
     )
 
     var pointLightDepthMapsArrayFront: Int = 0
     var pointLightDepthMapsArrayBack: Int = 0
 
-    private val renderTarget = RenderTargetImpl(
+    private val textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
+    private val renderTarget = RenderTarget(
         frameBuffer = OpenGLFrameBuffer(
             DepthBuffer(
                 AREALIGHT_SHADOWMAP_RESOLUTION,
@@ -167,12 +167,14 @@ class DualParaboloidShadowMapStrategy(
                         AREALIGHT_SHADOWMAP_RESOLUTION,
                         AREALIGHT_SHADOWMAP_RESOLUTION
                     ),
-                    internalFormat = RGBA8
+                    internalFormat = RGBA8,
+                    textureFilterConfig = textureFilterConfig
                 ),
-                textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
+                textureFilterConfig = textureFilterConfig
             )
         ),
-        name = "PointLight Shadow"
+        name = "PointLight Shadow",
+        clear = Vector4f()
     )
 
     init {
@@ -182,19 +184,18 @@ class DualParaboloidShadowMapStrategy(
                 AREALIGHT_SHADOWMAP_RESOLUTION,
                 MAX_POINTLIGHT_SHADOWMAPS,
             ),
-            RGBA16F
+            RGBA16F,
+            textureFilterConfig = textureFilterConfig
         )
         pointLightDepthMapsArrayFront = allocateTexture(
             texture3DUploadInfo,
             TEXTURE_2D_ARRAY,
-            TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR),
             ClampToEdge
         ).textureId
 
         pointLightDepthMapsArrayBack = allocateTexture(
             texture3DUploadInfo,
             TEXTURE_2D_ARRAY,
-            TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR),
             ClampToEdge
         ).textureId
     }

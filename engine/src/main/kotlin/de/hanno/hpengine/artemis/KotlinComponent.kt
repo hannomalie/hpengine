@@ -4,8 +4,6 @@ import com.artemis.BaseEntitySystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
-import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditor
-import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
 import de.hanno.hpengine.lifecycle.Updatable
 import de.hanno.hpengine.ressources.CodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource
@@ -24,12 +22,11 @@ class KotlinComponent : Component() {
 @All(KotlinComponent::class)
 class KotlinComponentSystem(
     private val fileMonitor: FileMonitor,
-) : BaseEntitySystem(), ImGuiEditorExtension {
+) : BaseEntitySystem() {
     lateinit var kotlinComponentMapper: ComponentMapper<KotlinComponent>
 
     // TODO: Abstract over extension points maybe?
     private val updatableInstances = mutableMapOf<Int, Updatable>()
-    private val editorExtensionInstances = mutableMapOf<Int, ImGuiEditorExtension>()
 
     private val compiler = K2JVMCompiler()
     private val outputFolder = File(System.getProperty("java.io.tmpdir"))
@@ -72,9 +69,6 @@ class KotlinComponentSystem(
         if (instance is Updatable) {
             updatableInstances[entityId] = instance
         }
-        if (instance is ImGuiEditorExtension) {
-            editorExtensionInstances[entityId] = instance
-        }
     }
 
     private fun File.compile() {
@@ -103,18 +97,11 @@ class KotlinComponentSystem(
 
     override fun removed(entityId: Int) {
         updatableInstances.remove(entityId)
-        editorExtensionInstances.remove(entityId)
     }
 
     override fun processSystem() {
         updatableInstances.values.forEach { it.update(world.delta) }
     }
-
-
-    override fun render(imGuiEditor: ImGuiEditor) {
-        editorExtensionInstances.values.forEach { it.render(imGuiEditor) }
-    }
-
 }
 
 // baeldung.com/java-classloaders

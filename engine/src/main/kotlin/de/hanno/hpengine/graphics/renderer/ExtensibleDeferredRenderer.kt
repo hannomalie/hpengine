@@ -199,6 +199,7 @@ class ExtensibleDeferredRenderer(
             }
         }.onFailure {
             println("Not able to render texture")
+            it.printStackTrace()
         }
     }
 

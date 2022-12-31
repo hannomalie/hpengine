@@ -181,8 +181,21 @@ void main(void) {
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	out_DiffuseSpecular.a = 1;
 
-//	out_DiffuseSpecular.rgb = vec3(1-visibility);
-//	out_DiffuseSpecular = vec4(100*textureLod(directionalLightShadowMap, st, 0).rgb, 1);
+
+//	mat4 shadowMatrix = directionalLight.viewProjectionMatrix;
+//	vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
+//	positionShadow.xyz /= positionShadow.w;
+//	positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
+//	float depthInLightSpace = positionShadow.z;
+//	vec2 shadowMapCoords = positionShadow.xy;
+//	sampler2D directionalLightShadowMap = sampler2D(directionalLight.shadowMapHandle);
+//	float shadowDepth = textureLod(directionalLightShadowMap, shadowMapCoords, 0).r;
+//	float bias = 0.005;
+//	if((depthInLightSpace - bias) < shadowDepth) {
+//		out_DiffuseSpecular.rgb = vec3(1);
+//	} else {
+//		out_DiffuseSpecular.rgb = vec3(0);
+//	}
 
 //	out_DiffuseSpecular = vec4(st, 0f,1f);
 //	out_DiffuseSpecular = vec4(lightDirectionView,1);
