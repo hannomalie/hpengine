@@ -6,25 +6,6 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.ressources.Reloadable
 
-//context(FileMonitor, GpuContext)
-//fun Program<*>.createFileListeners() {
-//    val sources = listOfNotNull(
-//        fragmentShader?.source,
-//        vertexShader.source,
-//        geometryShader?.source,
-//        tesselationControlShader?.source,
-//        tesselationEvaluationShader?.source,
-//    )
-//    val fileBasedSources = sources.filterIsInstance<FileBasedCodeSource>() + sources.filterIsInstance<WrappedCodeSource>().map { it.underlying }
-//
-//    replaceOldListeners(fileBasedSources, object: Reloadable {
-//        override val name = this@createFileListeners.name
-//        override fun load() {
-//            this@createFileListeners.load()
-//        }
-//    })
-//}
-
 context(FileMonitor, GraphicsApi)
 fun <T: Uniforms> AbstractProgram<T>.createFileListeners() {
     val sources: List<FileBasedCodeSource> = shaders.map { it.source }.filterIsInstance<FileBasedCodeSource>()

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics
+package de.hanno.hpengine.graphics.rendertarget
 
 import de.hanno.hpengine.graphics.rendertarget.DepthBuffer
 

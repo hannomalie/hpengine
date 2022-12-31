@@ -6,7 +6,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.*
-import de.hanno.hpengine.graphics.vertexbuffer.OpenGLIndexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
 import org.lwjgl.BufferUtils
 
 context(GraphicsApi)

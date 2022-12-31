@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer
 
-import de.hanno.hpengine.graphics.shader.Program
+import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.graphics.shader.Uniforms
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -11,12 +11,12 @@ interface LineRenderer {
     fun MutableList<Vector3fc>.batchPointForLine(point: Vector3f)
     fun MutableList<Vector3fc>.batchLine(from: Vector3fc, to: Vector3fc)
 
-    fun drawLines(program: Program<Uniforms>) = drawLines(linePoints, program, 2f)
-    fun drawLines(linePoints: List<Vector3fc>, program: Program<Uniforms>, lineWidth: Float): Int
-    fun drawAllLines(action: Consumer<Program<Uniforms>>) {
+    fun drawLines(program: ProgramImpl<Uniforms>) = drawLines(linePoints, program, 2f)
+    fun drawLines(linePoints: List<Vector3fc>, program: ProgramImpl<Uniforms>, lineWidth: Float): Int
+    fun drawAllLines(action: Consumer<ProgramImpl<Uniforms>>) {
         drawAllLines(2f, action)
     }
-    fun drawAllLines(lineWidth: Float, action: Consumer<Program<Uniforms>>)
+    fun drawAllLines(lineWidth: Float, action: Consumer<ProgramImpl<Uniforms>>)
 
 }
 

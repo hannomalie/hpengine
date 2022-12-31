@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.state
 
-import de.hanno.hpengine.graphics.GpuCommandSync
+import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import de.hanno.hpengine.graphics.GraphicsApi
 
 interface IRenderState {

@@ -7,11 +7,14 @@ import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import de.hanno.hpengine.graphics.feature.GpuFeature
 import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
+import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import de.hanno.hpengine.graphics.texture.*
+import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.ressources.CodeSource
 import org.joml.Vector4f
 import java.nio.ByteBuffer
@@ -279,14 +282,14 @@ interface GraphicsApi {
     fun UniformBinding.setFloatArrayAsFloatBuffer(values: FloatBuffer)
     fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int)
     fun copyCubeMap(sourceTexture: CubeMap): CubeMap
-    fun IProgram<*>.delete()
-    fun IProgram<*>.use()
-    fun IProgram<*>.getUniformLocation(name: String): Int
-    fun IProgram<*>.bindShaderStorageBuffer(index: Int, block: GpuBuffer)
-    fun IProgram<*>.bindAtomicCounterBufferBuffer(index: Int, block: AtomicCounterBuffer)
-    fun IProgram<*>.getShaderStorageBlockIndex(name: String): Int
-    fun IProgram<*>.getShaderStorageBlockBinding(name: String, bindingIndex: Int)
-    fun IProgram<*>.bind()
+    fun Program<*>.delete()
+    fun Program<*>.use()
+    fun Program<*>.getUniformLocation(name: String): Int
+    fun Program<*>.bindShaderStorageBuffer(index: Int, block: GpuBuffer)
+    fun Program<*>.bindAtomicCounterBufferBuffer(index: Int, block: AtomicCounterBuffer)
+    fun Program<*>.getShaderStorageBlockIndex(name: String): Int
+    fun Program<*>.getShaderStorageBlockBinding(name: String, bindingIndex: Int)
+    fun Program<*>.bind()
     fun polygonMode(facing: Facing, mode: RenderingMode)
     fun RenderTarget(
         frameBuffer: FrameBuffer,

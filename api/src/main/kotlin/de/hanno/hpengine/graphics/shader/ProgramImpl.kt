@@ -4,7 +4,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.ressources.FileMonitor
 
-class Program<T: Uniforms>(
+class ProgramImpl<T: Uniforms>(
     val vertexShader: VertexShader,
     val fragmentShader: FragmentShader?,
     val geometryShader: GeometryShader?,
@@ -13,7 +13,7 @@ class Program<T: Uniforms>(
     uniforms: T,
     defines: Defines = Defines(),
     graphicsApi: GraphicsApi,
-    private val fileMonitor: FileMonitor,
+    fileMonitor: FileMonitor,
 ): AbstractProgram<T>(
     shaders = listOfNotNull(
         vertexShader,

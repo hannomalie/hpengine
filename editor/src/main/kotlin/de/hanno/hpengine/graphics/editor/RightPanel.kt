@@ -10,7 +10,7 @@ import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.engine.graphics.imgui.float2Input
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.model.material.MaterialManager
 import imgui.ImGui

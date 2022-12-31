@@ -19,6 +19,8 @@ import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.fps.FPSCounterSystem
 import de.hanno.hpengine.graphics.light.area.AreaLightStateHolder
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.output.DebugOutput
+import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.SimpleForwardRenderer
@@ -44,7 +46,8 @@ import de.hanno.hpengine.scene.OceanWaterRenderSystem
 import de.hanno.hpengine.scene.WorldAABBStateHolder
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import org.joml.Vector4f
 import org.koin.core.module.Module

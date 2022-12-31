@@ -16,7 +16,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.graphics.shader.Program
+import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.Matrix4fStrukt
@@ -39,11 +39,11 @@ import de.hanno.hpengine.transform.TransformSpatial
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.component.TransformComponent
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
-import de.hanno.hpengine.graphics.vertexbuffer.appendIndices
+import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
 import de.hanno.hpengine.scene.*
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
@@ -112,7 +112,7 @@ class ModelSystem(
     }
 
     private val modelCache = mutableMapOf<ModelComponentDescription, Model<*>>()
-    private val programCache = mutableMapOf<ProgramDescription, Program<FirstPassUniforms>>()
+    private val programCache = mutableMapOf<ProgramDescription, ProgramImpl<FirstPassUniforms>>()
     private val staticModelLoader = StaticModelLoader()
     private val animatedModelLoader = AnimatedModelLoader()
 
@@ -198,7 +198,7 @@ class ModelSystem(
                     materialManager.registerMaterial(meshMaterial)
                     meshMaterial.programDescription?.let { programDescription ->
                         programCache[programDescription] =
-                            programManager.getFirstPassProgram(programDescription, StaticFirstPassUniforms()) as Program<FirstPassUniforms>
+                            programManager.getFirstPassProgram(programDescription, StaticFirstPassUniforms()) as ProgramImpl<FirstPassUniforms>
                     }
                 }
             }

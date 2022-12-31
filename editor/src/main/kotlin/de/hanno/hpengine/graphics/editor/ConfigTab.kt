@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.editor
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.imgui.dsl.TabBar
-import de.hanno.hpengine.graphics.Window
+import de.hanno.hpengine.graphics.window.Window
 import imgui.ImGui
 
 fun TabBar.configTab(config: Config, window: Window) {

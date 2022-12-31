@@ -5,6 +5,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
+import de.hanno.hpengine.graphics.window.Window
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback

@@ -22,7 +22,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.SSBO
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.graphics.shader.safePut
+import de.hanno.hpengine.buffers.safePut
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
@@ -30,14 +30,14 @@ import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.buffers.enlarge
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Matrix4f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils

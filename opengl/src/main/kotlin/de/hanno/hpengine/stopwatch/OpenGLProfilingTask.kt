@@ -1,6 +1,8 @@
 package de.hanno.hpengine.stopwatch
 
 
+import de.hanno.hpengine.graphics.profiling.ProfilingTask
+import de.hanno.hpengine.graphics.profiling.Record
 import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL15.*
 import org.lwjgl.opengl.GL33.glGetQueryObjectui64

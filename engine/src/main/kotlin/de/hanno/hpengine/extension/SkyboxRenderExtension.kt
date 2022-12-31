@@ -7,7 +7,7 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access.ReadWrite
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension

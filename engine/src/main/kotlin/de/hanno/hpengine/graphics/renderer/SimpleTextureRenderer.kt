@@ -7,16 +7,16 @@ import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
-import de.hanno.hpengine.graphics.shader.IProgram
+import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.texture.Texture2D
-import de.hanno.hpengine.graphics.vertexbuffer.IVertexBuffer
-import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
-import de.hanno.hpengine.graphics.vertexbuffer.draw
+import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector2f
 
@@ -28,7 +28,7 @@ open class SimpleTextureRenderer(
     private val frontBuffer: FrontBufferTarget,
 ) : RenderSystem {
     private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
-    val sixDebugBuffers: List<IVertexBuffer> = graphicsApi.run {
+    val sixDebugBuffers: List<VertexBuffer> = graphicsApi.run {
         val height = -2f / 3f
         val width = 2f
         val widthDiv = width / 6f
@@ -62,8 +62,8 @@ open class SimpleTextureRenderer(
 
     fun drawToQuad(
         texture: Int = finalImage,
-        buffer: IVertexBuffer = fullscreenBuffer,
-        program: IProgram<Uniforms> = renderToQuadProgram,
+        buffer: VertexBuffer = fullscreenBuffer,
+        program: Program<Uniforms> = renderToQuadProgram,
         factorForDebugRendering: Float = 1f,
         mipMapLevel: Int = 0,
     ) {
@@ -72,8 +72,8 @@ open class SimpleTextureRenderer(
 
     fun drawToQuad(
         texture: Texture2D,
-        buffer: IVertexBuffer = fullscreenBuffer,
-        program: IProgram<Uniforms> = renderToQuadProgram,
+        buffer: VertexBuffer = fullscreenBuffer,
+        program: Program<Uniforms> = renderToQuadProgram,
         factorForDebugRendering: Float = 1f,
         mipMapLevel: Int = 0,
     ) {
@@ -118,8 +118,8 @@ open class SimpleTextureRenderer(
 
     private fun draw(
         texture: Int,
-        buffer: IVertexBuffer = fullscreenBuffer,
-        program: IProgram<Uniforms>,
+        buffer: VertexBuffer = fullscreenBuffer,
+        program: Program<Uniforms>,
         factorForDebugRendering: Float = 1f,
         mipMapLevel: Int = 0,
     ) = graphicsApi.run {

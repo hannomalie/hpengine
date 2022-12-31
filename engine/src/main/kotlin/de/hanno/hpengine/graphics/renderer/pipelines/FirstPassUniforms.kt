@@ -58,7 +58,7 @@ open class AnimatedFirstPassUniforms: FirstPassUniforms() {
 }
 
 context(GraphicsApi)
-fun IProgram<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>) {
+fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>) {
     for (mapEnumEntry in Material.MAP.values()) {
 
         if (maps.contains(mapEnumEntry)) {

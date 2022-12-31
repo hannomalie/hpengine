@@ -31,7 +31,7 @@ class OpenGlProgramManager(
     override val Uniforms.shaderDeclarations
         get() = registeredUniforms.toUniformDeclaration()
 
-    var programsCache: MutableList<IProgram<*>> = CopyOnWriteArrayList()
+    var programsCache: MutableList<Program<*>> = CopyOnWriteArrayList()
 
     override val heightMappingFirstPassProgramDescription = getFirstPassHeightMappingProgramDescription()
 
@@ -39,7 +39,7 @@ class OpenGlProgramManager(
         codeSource: FileBasedCodeSource,
         defines: Defines,
         uniforms: Uniforms?
-    ): ComputeProgram = ComputeProgram(ComputeShader(this@GraphicsApi, codeSource, defines), this@GraphicsApi, this@FileMonitor).apply {
+    ): ComputeProgramImpl = ComputeProgramImpl(ComputeShader(this@GraphicsApi, codeSource, defines), this@GraphicsApi, this@FileMonitor).apply {
         programsCache.add(this)
     }
 
@@ -47,7 +47,7 @@ class OpenGlProgramManager(
                                            fragmentShaderSource: CodeSource?,
                                            geometryShaderSource: CodeSource?,
                                            defines: Defines,
-                                           uniforms: T): Program<T> {
+                                           uniforms: T): ProgramImpl<T> {
 
         return getProgram(vertexShaderSource, fragmentShaderSource, geometryShaderSource, null, null, defines, uniforms)
     }
@@ -59,7 +59,7 @@ class OpenGlProgramManager(
         tesselationControlShaderSource: CodeSource?,
         tesselationEvaluationShaderSource: CodeSource?,
         defines: Defines,
-        uniforms: T): Program<T> = Program(
+        uniforms: T): ProgramImpl<T> = ProgramImpl(
             vertexShader = VertexShader(this@GraphicsApi, vertexShaderSource, defines),
             fragmentShader = fragmentShaderSource?.let { FragmentShader(this@GraphicsApi, it, defines) },
             geometryShader = geometryShaderSource?.let { GeometryShader(this@GraphicsApi, it, defines) },
@@ -74,7 +74,7 @@ class OpenGlProgramManager(
             programsCache.add(this)
         }
 
-    override fun getComputeProgram(codeSource: CodeSource): ComputeProgram = ComputeProgram(
+    override fun getComputeProgram(codeSource: CodeSource): ComputeProgramImpl = ComputeProgramImpl(
         ComputeShader(this@GraphicsApi, codeSource, Defines()), this@GraphicsApi, this@FileMonitor,
     )
 

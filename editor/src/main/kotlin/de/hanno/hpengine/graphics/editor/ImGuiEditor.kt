@@ -11,7 +11,7 @@ import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.SharedDepthBuffer
+import de.hanno.hpengine.graphics.rendertarget.SharedDepthBuffer
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.constants.MinFilter
@@ -24,10 +24,13 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.Facing
+import de.hanno.hpengine.graphics.output.DebugOutput
+import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.scene.AddResourceContext
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.window.Window
 import imgui.ImGui
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiStyleVar

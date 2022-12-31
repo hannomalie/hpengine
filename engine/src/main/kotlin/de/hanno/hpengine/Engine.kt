@@ -17,8 +17,8 @@ import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.extension.*
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderManager
-import de.hanno.hpengine.graphics.RenderStateContext
-import de.hanno.hpengine.graphics.Window
+import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
@@ -36,7 +36,7 @@ import de.hanno.hpengine.scene.WorldAABB
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABBData

@@ -1,9 +1,9 @@
 package de.hanno.hpengine.graphics.editor
 
 import com.artemis.BaseSystem
-import de.hanno.hpengine.graphics.FinalOutput
+import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.picking.OnClickListener
 import de.hanno.hpengine.graphics.RenderSystem
 import org.koin.dsl.binds

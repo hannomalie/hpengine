@@ -1,5 +1,6 @@
-package de.hanno.hpengine.graphics
+package de.hanno.hpengine.graphics.window
 
+import de.hanno.hpengine.graphics.GpuExecutor
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 
 

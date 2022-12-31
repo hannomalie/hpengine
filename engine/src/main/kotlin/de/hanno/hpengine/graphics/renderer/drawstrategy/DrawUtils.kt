@@ -5,8 +5,8 @@ import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import de.hanno.hpengine.graphics.constants.RenderingMode
-import de.hanno.hpengine.graphics.vertexbuffer.TriangleCount
-import de.hanno.hpengine.graphics.vertexbuffer.drawInstancedBaseVertex
+import de.hanno.hpengine.graphics.buffer.vertex.TriangleCount
+import de.hanno.hpengine.graphics.buffer.vertex.drawInstancedBaseVertex
 import de.hanno.hpengine.scene.VertexIndexBuffer
 
 fun VertexIndexBuffer.draw(

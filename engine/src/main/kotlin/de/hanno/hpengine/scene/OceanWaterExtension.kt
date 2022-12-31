@@ -11,7 +11,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.OpenGLContext.Companion.RED_BUFFER
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.buffer.typed

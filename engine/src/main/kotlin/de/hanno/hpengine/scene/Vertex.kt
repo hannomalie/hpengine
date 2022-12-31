@@ -3,8 +3,8 @@ package de.hanno.hpengine.scene
 import com.google.common.collect.ImmutableSet
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.Vector4iStrukt
-import de.hanno.hpengine.graphics.vertexbuffer.DataChannelComponent.FloatThree
-import de.hanno.hpengine.graphics.vertexbuffer.DataChannelComponent.FloatTwo
+import de.hanno.hpengine.graphics.buffer.vertex.DataChannelComponent.FloatThree
+import de.hanno.hpengine.graphics.buffer.vertex.DataChannelComponent.FloatTwo
 import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.joml.Vector3f

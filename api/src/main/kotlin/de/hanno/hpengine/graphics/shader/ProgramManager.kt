@@ -12,16 +12,16 @@ interface ProgramManager {
     val config: Config
 
     fun update(deltaSeconds: Float)
-    fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: Uniforms? = null): IComputeProgram<Uniforms>
-    fun getComputeProgram(codeSourceAsset: Asset): IComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), Defines(), null)
-    fun getComputeProgram(codeSourceAsset: Asset, defines: Defines = Defines(), uniforms: Uniforms? = null): IComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), defines, uniforms)
-    fun getComputeProgram(codeSource: CodeSource): IComputeProgram<Uniforms> // TODO: Enhance and make like the other geometry pipeline
+    fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: Uniforms? = null): ComputeProgram<Uniforms>
+    fun getComputeProgram(codeSourceAsset: Asset): ComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), Defines(), null)
+    fun getComputeProgram(codeSourceAsset: Asset, defines: Defines = Defines(), uniforms: Uniforms? = null): ComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), defines, uniforms)
+    fun getComputeProgram(codeSource: CodeSource): ComputeProgram<Uniforms> // TODO: Enhance and make like the other geometry pipeline
 
     fun <T: Uniforms> getProgram(vertexShaderSource: CodeSource,
                                  fragmentShaderSource: CodeSource?,
                                  geometryShaderSource: CodeSource?,
                                  defines: Defines,
-                                 uniforms: T): IProgram<T>
+                                 uniforms: T): Program<T>
 
     fun <T: Uniforms> getProgram(vertexShaderSource: CodeSource,
                                  fragmentShaderSource: CodeSource?,
@@ -29,20 +29,20 @@ interface ProgramManager {
                                  tesselationControlShaderSource: CodeSource?,
                                  tesselationEvaluationShaderSource: CodeSource?,
                                  defines: Defines,
-                                 uniforms: T): IProgram<T>
+                                 uniforms: T): Program<T>
 
     fun <T: Uniforms> getProgram(
         vertexShaderSource: CodeSource,
         fragmentShaderSource: CodeSource?,
         uniforms: T,
         defines: Defines
-    ): IProgram<T> {
+    ): Program<T> {
 
         return getProgram(vertexShaderSource, fragmentShaderSource, null, defines, uniforms)
     }
 
     fun getProgram(vertexShaderSource: CodeSource,
-                   fragmentShaderSource: CodeSource?): IProgram<Uniforms> {
+                   fragmentShaderSource: CodeSource?): Program<Uniforms> {
 
         return getProgram(vertexShaderSource, fragmentShaderSource, null, Defines(), Uniforms.Empty)
     }
@@ -51,7 +51,7 @@ interface ProgramManager {
     fun List<UniformDelegate<*>>.toUniformDeclaration(): String
     val Uniforms.shaderDeclarations: String
     // TODO: Make capable of animated uniforms stuff
-    fun getFirstPassProgram(programDescription: ProgramDescription, uniforms: Uniforms): IProgram<Uniforms> = programDescription.run {
+    fun getFirstPassProgram(programDescription: ProgramDescription, uniforms: Uniforms): Program<Uniforms> = programDescription.run {
         getProgram(
             vertexShaderSource,
             fragmentShaderSource,

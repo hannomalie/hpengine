@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics.vertexbuffer
+package de.hanno.hpengine.graphics.buffer.vertex
 
 
 sealed class DataChannelComponent(componentCount : Int, componentByteSize : Int) {

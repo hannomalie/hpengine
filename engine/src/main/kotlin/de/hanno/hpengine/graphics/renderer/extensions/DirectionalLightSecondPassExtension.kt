@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.BindlessTextures
+import de.hanno.hpengine.graphics.feature.BindlessTextures
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
@@ -14,10 +14,10 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
-import de.hanno.hpengine.graphics.vertexbuffer.draw
+import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector3f
 import struktgen.api.forIndex
 

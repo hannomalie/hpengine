@@ -22,7 +22,7 @@ abstract class AbstractProgram<T : Uniforms>(
     override val uniforms: T,
     private val graphicsApi: GraphicsApi, // TODO: Make context receiver, currently triggers compiler bugs
     private val fileMonitor: FileMonitor,
-) : IProgram<T> {
+) : Program<T> {
 
     override val id = graphicsApi.createProgramId()
     val name: String = shaders.joinToString(",") { it.name }

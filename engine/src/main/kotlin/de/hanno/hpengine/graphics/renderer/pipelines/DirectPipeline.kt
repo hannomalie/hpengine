@@ -16,14 +16,14 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
 context(GraphicsApi, GPUProfiler)
 open class DirectFirstPassPipeline(
     private val config: Config,
-    private val program: IProgram<out FirstPassUniforms>,
+    private val program: Program<out FirstPassUniforms>,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     // TODO: Use shouldBeSkipped
@@ -171,10 +171,10 @@ open class DirectFirstPassPipeline(
     }
 }
 
-private val <T: Uniforms> IProgram<T>.tesselationControlShader: TesselationControlShader?
+private val <T: Uniforms> Program<T>.tesselationControlShader: TesselationControlShader?
     get() = shaders.firstIsInstanceOrNull<TesselationControlShader>()
 
-val Program<*>.primitiveType
+val ProgramImpl<*>.primitiveType
     get() = if (tesselationControlShader != null) {
         PrimitiveType.Patches
     } else {
@@ -191,7 +191,7 @@ fun DirectDrawDescription<FirstPassUniforms>.draw() {
     val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
-        var program: IProgram<FirstPassUniforms> // TODO: Assign this program in the loop below and use() only on change
+        var program: Program<FirstPassUniforms> // TODO: Assign this program in the loop below and use() only on change
         for(batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
             if (!ignoreCustomPrograms) {
                 program = (batch.program ?: this.program)

@@ -5,7 +5,7 @@ import de.hanno.hpengine.graphics.renderer.environmentsampler.EnvironmentSampler
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.EnvironmentProbesState
 import de.hanno.hpengine.transform.TransformSpatial
 import org.joml.Vector3f

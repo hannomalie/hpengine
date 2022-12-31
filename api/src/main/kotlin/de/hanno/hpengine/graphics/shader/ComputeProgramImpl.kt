@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.shader
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.ressources.FileMonitor
 
-class ComputeProgram(
+class ComputeProgramImpl(
     val computeShader: ComputeShader,
     private val graphicsApi: GraphicsApi,
     private val fileMonitor: FileMonitor,
@@ -13,8 +13,8 @@ class ComputeProgram(
     uniforms = Uniforms.Empty,
     graphicsApi,
     fileMonitor,
-), IComputeProgram<Uniforms> {
-    override fun dispatchCompute(num_groups_x: Int, num_groups_y: Int, num_groups_z: Int) {
-        graphicsApi.dispatchCompute(num_groups_x, num_groups_y, num_groups_z)
+), ComputeProgram<Uniforms> {
+    override fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int) {
+        graphicsApi.dispatchCompute(numGroupsX, numGroupsY, numGroupsZ)
     }
 }

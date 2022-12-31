@@ -13,7 +13,7 @@ import de.hanno.hpengine.extension.GiVolumeStateHolder
 import de.hanno.hpengine.extension.SkyBoxStateHolder
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.RenderBatch
@@ -34,12 +34,12 @@ import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTexture3D
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
-import de.hanno.hpengine.graphics.vertexbuffer.draw
+import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import struktgen.api.forEachIndexed
@@ -330,7 +330,7 @@ class VoxelConeTracingExtension(
         memoryBarrier()
     }
 
-    private fun mipmapGrid(texture3D: Int, shader: IComputeProgram<out Uniforms>, renderState: RenderState) {
+    private fun mipmapGrid(texture3D: Int, shader: ComputeProgram<out Uniforms>, renderState: RenderState) {
         shader.use()
         val voxelGrids = renderState[this.voxelGrids]
         val globalGrid = voxelGrids.typedBuffer[0]

@@ -25,11 +25,11 @@ import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
-import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
-import de.hanno.hpengine.graphics.vertexbuffer.draw
+import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.joml.Vector4f

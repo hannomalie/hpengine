@@ -22,18 +22,18 @@ import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
-import de.hanno.hpengine.graphics.shader.IProgram
+import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.TextureDimension
-import de.hanno.hpengine.graphics.vertexbuffer.drawElementsIndirectCount
+import de.hanno.hpengine.graphics.buffer.vertex.drawElementsIndirectCount
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.joml.Vector4f
@@ -149,8 +149,8 @@ open class GPUCulledPipeline(
 
     fun draw(
         renderState: RenderState,
-        programStatic: IProgram<StaticFirstPassUniforms>,
-        programAnimated: IProgram<AnimatedFirstPassUniforms>
+        programStatic: Program<StaticFirstPassUniforms>,
+        programAnimated: Program<AnimatedFirstPassUniforms>
     ) {
         profiled("Actual draw entities") {
             val mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill

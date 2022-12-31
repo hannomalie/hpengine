@@ -18,7 +18,7 @@ import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.state.*
 import de.hanno.hpengine.math.createPerspective

@@ -10,11 +10,11 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.vertexbuffer.draw
+import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.texture.TextureManager
-import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 
 context(GPUProfiler, GraphicsApi)
 class PostProcessingExtension(

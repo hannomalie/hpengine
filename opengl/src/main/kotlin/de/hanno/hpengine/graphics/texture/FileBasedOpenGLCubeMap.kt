@@ -198,10 +198,10 @@ fun BufferedImage.convertCubeMapData(): List<ByteArray> {
 
         val texImage = if (colorModel.hasAlpha()) {
             val raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 4, null)
-            BufferedImage(glAlphaColorModel, raster, false, Hashtable<Any, Any>())
+            BufferedImage(alphaColorModel, raster, false, Hashtable<Any, Any>())
         } else {
             val raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 3, null)
-            BufferedImage(glColorModel, raster, false, Hashtable<Any, Any>())
+            BufferedImage(de.hanno.hpengine.graphics.texture.colorModel, raster, false, Hashtable<Any, Any>())
         }
 
         val graphics = texImage.graphics

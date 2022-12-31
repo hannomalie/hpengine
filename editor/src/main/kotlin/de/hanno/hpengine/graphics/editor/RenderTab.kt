@@ -2,12 +2,12 @@ package de.hanno.hpengine.graphics.editor
 
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderMode
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.TabBar
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.pipelines.GPUCulledPipeline
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import imgui.ImGui
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import struktgen.api.forEach

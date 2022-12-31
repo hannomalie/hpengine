@@ -15,7 +15,7 @@ import de.hanno.hpengine.artemis.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.constants.DepthFunc
@@ -40,7 +40,7 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector4f
 import struktgen.api.forIndex
 
@@ -91,7 +91,7 @@ class DirectionalLightShadowMapExtension(
         DirectionalShadowMapPipeline(animatedDirectionalShadowPassProgram)
     }
 
-    inner class DirectionalShadowMapPipeline(val directionalShadowPassProgram: IProgram<out DirectionalShadowUniforms>) {
+    inner class DirectionalShadowMapPipeline(val directionalShadowPassProgram: Program<out DirectionalShadowUniforms>) {
         private var verticesCount = 0
         private var entitiesCount = 0
 

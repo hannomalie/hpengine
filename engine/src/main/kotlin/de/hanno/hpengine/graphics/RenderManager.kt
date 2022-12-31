@@ -5,11 +5,15 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
+import de.hanno.hpengine.graphics.output.DebugOutput
+import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
 import de.hanno.hpengine.ressources.FileBasedCodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.graphics.window.Window
 import java.util.concurrent.atomic.AtomicBoolean
 
 context(GraphicsApi)

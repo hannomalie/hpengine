@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics
+package de.hanno.hpengine.graphics.output
 
 import de.hanno.hpengine.graphics.texture.Texture2D
 

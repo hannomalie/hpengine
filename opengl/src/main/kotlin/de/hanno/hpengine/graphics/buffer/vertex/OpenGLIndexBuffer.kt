@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics.vertexbuffer
+package de.hanno.hpengine.graphics.buffer.vertex
 
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.BufferTarget

@@ -15,10 +15,12 @@ import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.texture.*
-import de.hanno.hpengine.graphics.vertexbuffer.OpenGLIndexBuffer
-import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.VertexBufferImpl
+import de.hanno.hpengine.graphics.feature.*
 import de.hanno.hpengine.ressources.*
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import glValue
 import kotlinx.coroutines.*
@@ -53,7 +55,7 @@ class OpenGLContext private constructor(
     init {
         onGpu {
             // TODO: Test whether this does what it is intended to do: binding dummy vertex and index buffers
-            VertexBuffer(EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).bind()
+            VertexBufferImpl(EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).bind()
             OpenGLIndexBuffer().bind()
 
             // Map the internal OpenGL coordinate system to the entire screen
@@ -540,36 +542,36 @@ class OpenGLContext private constructor(
     override fun delete(texture: Texture) = onGpu {
         glDeleteTextures(texture.id)
     }
-    override fun IProgram<*>.delete() {
+    override fun Program<*>.delete() {
         glUseProgram(0)
         glDeleteProgram(id)
     }
 
-    override fun IProgram<*>.use() {
+    override fun Program<*>.use() {
         glUseProgram(id)
     }
 
-    override fun IProgram<*>.getUniformLocation(name: String): Int {
+    override fun Program<*>.getUniformLocation(name: String): Int {
         return GL20.glGetUniformLocation(id, name)
     }
 
-    override fun IProgram<*>.bindShaderStorageBuffer(index: Int, block: GpuBuffer) {
+    override fun Program<*>.bindShaderStorageBuffer(index: Int, block: GpuBuffer) {
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, block.id)
     }
 
-    override fun IProgram<*>.bindAtomicCounterBufferBuffer(index: Int, block: AtomicCounterBuffer) {
+    override fun Program<*>.bindAtomicCounterBufferBuffer(index: Int, block: AtomicCounterBuffer) {
         GL30.glBindBufferBase(GL42.GL_ATOMIC_COUNTER_BUFFER, index, block.id)
     }
 
-    override fun IProgram<*>.getShaderStorageBlockIndex(name: String): Int {
+    override fun Program<*>.getShaderStorageBlockIndex(name: String): Int {
         return GL43.glGetProgramResourceIndex(id, GL43.GL_SHADER_STORAGE_BLOCK, name)
     }
 
-    override fun IProgram<*>.getShaderStorageBlockBinding(name: String, bindingIndex: Int) {
+    override fun Program<*>.getShaderStorageBlockBinding(name: String, bindingIndex: Int) {
         GL43.glShaderStorageBlockBinding(id, getShaderStorageBlockIndex(name), bindingIndex)
     }
 
-    override fun IProgram<*>.bind() {
+    override fun Program<*>.bind() {
         uniforms.registeredUniforms.forEach {
             it.run {
                 when (this) {

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.camera
 
-import de.hanno.hpengine.graphics.shader.safePut
+import de.hanno.hpengine.buffers.safePut
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.math.createOrthogonal
 import de.hanno.hpengine.math.createPerspective

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics
+package de.hanno.hpengine.graphics.state
 
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.multithreading.TripleBuffer

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics
+package de.hanno.hpengine.graphics.feature
 
 interface GpuFeature {
     val defineString: String

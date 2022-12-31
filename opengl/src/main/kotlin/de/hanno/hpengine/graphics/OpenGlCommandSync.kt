@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics
 
+import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import org.lwjgl.opengl.GL32.*
 
 

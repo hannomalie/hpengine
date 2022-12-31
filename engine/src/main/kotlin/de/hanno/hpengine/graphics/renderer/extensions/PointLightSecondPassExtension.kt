@@ -14,7 +14,7 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 
 context(GPUProfiler, GraphicsApi)
 class PointLightSecondPassExtension(

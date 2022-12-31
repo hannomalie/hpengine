@@ -1,6 +1,7 @@
 package de.hanno.hpengine.buffers
 
 import java.nio.ByteBuffer
+import java.nio.FloatBuffer
 
 fun ByteBuffer.copyTo(
     target: ByteBuffer,
@@ -21,4 +22,11 @@ fun ByteBuffer.copyTo(
 
     rewind()
     target.rewind()
+}
+
+fun FloatBuffer.safePut(matrix: FloatBuffer) {
+    rewind()
+    put(matrix)
+    rewind()
+    matrix.rewind()
 }

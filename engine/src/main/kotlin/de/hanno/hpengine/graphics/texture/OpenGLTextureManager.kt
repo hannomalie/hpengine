@@ -222,10 +222,10 @@ class OpenGLTextureManager(
 
         if (bufferedImage.colorModel.hasAlpha()) {
             raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, width, height, 4, null)
-            texImage = BufferedImage(glAlphaColorModel, raster, false, Hashtable<Any, Any>())
+            texImage = BufferedImage(alphaColorModel, raster, false, Hashtable<Any, Any>())
         } else {
             raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, width, height, 3, null)
-            texImage = BufferedImage(glColorModel, raster, false, Hashtable<Any, Any>())
+            texImage = BufferedImage(colorModel, raster, false, Hashtable<Any, Any>())
         }
 
         // copy the source image into the produced image

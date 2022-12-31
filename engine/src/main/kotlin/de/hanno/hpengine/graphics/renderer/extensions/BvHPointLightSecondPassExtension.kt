@@ -6,7 +6,7 @@ import Vector4fStruktImpl.Companion.type
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
@@ -31,7 +31,7 @@ import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.ressources.StringBasedCodeSource
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f

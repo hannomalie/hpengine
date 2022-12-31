@@ -1,4 +1,4 @@
-package de.hanno.hpengine.stopwatch
+package de.hanno.hpengine.graphics.profiling
 
 interface GPUProfiler {
     fun dump()

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics.vertexbuffer
+package de.hanno.hpengine.graphics.buffer.vertex
 
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
@@ -10,7 +10,7 @@ import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.glValue
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.scene.IVertexIndexBuffer
-import de.hanno.hpengine.stopwatch.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.lwjgl.opengl.ARBIndirectParameters.glMultiDrawElementsIndirectCountARB
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL42
@@ -41,7 +41,7 @@ fun GpuBuffer.drawInstancedBaseVertex(
     primitiveType
 )
 
-fun IVertexBuffer.draw(indexBuffer: IndexBuffer? = null): Int {
+fun VertexBuffer.draw(indexBuffer: IndexBuffer? = null): Int {
     bind()
     return if (indexBuffer != null) {
         indexBuffer.bind()

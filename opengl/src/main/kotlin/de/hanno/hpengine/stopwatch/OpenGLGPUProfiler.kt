@@ -1,6 +1,9 @@
 package de.hanno.hpengine.stopwatch
 
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.profiling.AverageHelper
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.Record
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL33
 import java.util.ArrayList

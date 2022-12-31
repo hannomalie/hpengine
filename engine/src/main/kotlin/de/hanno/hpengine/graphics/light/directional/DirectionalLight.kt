@@ -15,7 +15,7 @@ import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderStateContext
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.state.DirectionalLightState
 import org.joml.AxisAngle4f

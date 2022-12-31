@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics.vertexbuffer
+package de.hanno.hpengine.graphics.buffer.vertex
 
 
 import de.hanno.hpengine.graphics.DataChannels
@@ -15,10 +15,10 @@ import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
 context(GraphicsApi)
-class VertexBuffer(
+class VertexBufferImpl(
     _channels: EnumSet<DataChannels>,
     values: FloatArray
-) : GpuBuffer, IVertexBuffer {
+) : GpuBuffer, VertexBuffer {
 
     private val gpuBuffer = PersistentMappedBuffer(
         BufferTarget.Array,
@@ -71,14 +71,14 @@ class VertexBuffer(
         return buffer.asFloatBuffer()
     }
 
-    override fun upload(): CompletableFuture<IVertexBuffer> {
+    override fun upload(): CompletableFuture<VertexBuffer> {
         buffer.rewind()
-        val future = CompletableFuture<IVertexBuffer>()
+        val future = CompletableFuture<VertexBuffer>()
         onGpu {
             bind()
 //             Don't remove this, will break things
             vertexArrayObject = VertexArrayObject.getForChannels(channels)
-            future.complete(this@VertexBuffer)
+            future.complete(this@VertexBufferImpl)
         }
         return future
     }
@@ -100,7 +100,7 @@ class VertexBuffer(
 
     companion object {
 
-        internal val LOGGER = Logger.getLogger(VertexBuffer::class.java.name)
+        internal val LOGGER = Logger.getLogger(VertexBufferImpl::class.java.name)
 
         fun calculateVerticesCount(vertices: FloatArray, channels: EnumSet<DataChannels>): Int {
             val totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels)
@@ -121,7 +121,7 @@ class VertexBuffer(
 }
 
 fun GraphicsApi.createSixDebugBuffers() = onGpu {
-    object : ArrayList<IVertexBuffer>() {
+    object : ArrayList<VertexBuffer>() {
         init {
             val height = -2f / 3f
             val width = 2f

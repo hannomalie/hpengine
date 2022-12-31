@@ -5,8 +5,7 @@ import java.awt.image.ComponentColorModel
 import java.awt.image.DataBuffer
 
 
-/** The colour model including alpha for the GL image  */
-val glAlphaColorModel = ComponentColorModel(
+val alphaColorModel = ComponentColorModel(
     ColorSpace.getInstance(ColorSpace.CS_sRGB),
     intArrayOf(8, 8, 8, 8),
     true,
@@ -15,8 +14,7 @@ val glAlphaColorModel = ComponentColorModel(
     DataBuffer.TYPE_BYTE
 )
 
-/** The colour model for the GL image  */
-val glColorModel = ComponentColorModel(
+val colorModel = ComponentColorModel(
     ColorSpace.getInstance(ColorSpace.CS_sRGB),
     intArrayOf(8, 8, 8, 0),
     false,
