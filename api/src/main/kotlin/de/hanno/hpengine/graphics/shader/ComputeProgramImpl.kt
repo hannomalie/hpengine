@@ -12,7 +12,6 @@ class ComputeProgramImpl(
     defines = computeShader.defines,
     uniforms = Uniforms.Empty,
     graphicsApi,
-    fileMonitor,
 ), ComputeProgram<Uniforms> {
     override fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int) {
         graphicsApi.dispatchCompute(numGroupsX, numGroupsY, numGroupsZ)

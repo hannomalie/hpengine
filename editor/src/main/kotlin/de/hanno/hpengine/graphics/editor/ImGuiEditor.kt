@@ -30,6 +30,7 @@ import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
 import imgui.ImGui
 import imgui.flag.ImGuiConfigFlags

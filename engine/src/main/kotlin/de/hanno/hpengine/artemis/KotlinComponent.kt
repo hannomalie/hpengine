@@ -41,7 +41,7 @@ class KotlinComponentSystem(
         val className = codeSource.name
 
         if (codeSource is FileBasedCodeSource) {
-            fileMonitor.addOnFileChangeListener(codeSource.file) {
+            fileMonitor.registerFileChangeListener(codeSource.file) {
                 codeSource.reload()
                 compileAndCreateInstance(className, entityId, codeSource)
             }

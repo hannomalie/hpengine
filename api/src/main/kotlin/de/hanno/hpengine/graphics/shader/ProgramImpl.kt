@@ -25,5 +25,4 @@ class ProgramImpl<T: Uniforms>(
     defines = defines,
     uniforms = uniforms,
     graphicsApi = graphicsApi,
-    fileMonitor = fileMonitor,
 )

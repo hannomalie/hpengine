@@ -231,7 +231,7 @@ val baseModule = module {
         OpenGLTextureManager::class,
     )
 
-    single { FileMonitor() }
+    single { FileMonitor(get()) }
 
     single { GlfwWindow(get()) } bind Window::class
 

@@ -1,13 +1,10 @@
 package de.hanno.hpengine.graphics.shader
 
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.createFileListeners
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.transform.x
 import de.hanno.hpengine.transform.y
 import de.hanno.hpengine.transform.z
-import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -20,27 +17,15 @@ abstract class AbstractProgram<T : Uniforms>(
     override val shaders: List<Shader>,
     val defines: Defines = Defines(),
     override val uniforms: T,
-    private val graphicsApi: GraphicsApi, // TODO: Make context receiver, currently triggers compiler bugs
-    private val fileMonitor: FileMonitor,
+    private val graphicsApi: GraphicsApi,
 ) : Program<T> {
 
     override val id = graphicsApi.createProgramId()
     val name: String = shaders.joinToString(",") { it.name }
 
     private var longBuffer: LongBuffer? = null
-    val fileListeners: MutableList<FileAlterationListenerAdaptor> = ArrayList()
-
     override val uniformBindings = HashMap<String, UniformBinding>()
 
-    init {
-//        TODO: Reimplement
-        fileMonitor.run {
-            graphicsApi.run {
-                load()
-                createFileListeners()
-            }
-        }
-    }
     protected fun clearUniforms() = graphicsApi.run {
         uniformBindings.clear()
     }

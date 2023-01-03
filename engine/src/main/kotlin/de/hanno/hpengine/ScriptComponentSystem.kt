@@ -20,7 +20,7 @@ class ScriptComponentSystem(
     override fun inserted(entityId: Int) {
         val codeSource = kotlinComponentComponentMapper[entityId].codeSource
         if (codeSource is FileBasedCodeSource) {
-            fileMonitor.addOnFileChangeListener(codeSource.file) {
+            fileMonitor.registerFileChangeListener(codeSource.file) {
                 codeSource.reload()
             }
         }

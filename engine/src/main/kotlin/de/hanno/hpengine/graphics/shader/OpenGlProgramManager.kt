@@ -3,9 +3,11 @@ package de.hanno.hpengine.graphics.shader
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.ProgramChangeListenerManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.ressources.*
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -13,6 +15,10 @@ context(FileMonitor, GraphicsApi)
 class OpenGlProgramManager(
     override val config: Config,
 ) : BaseSystem(), ProgramManager {
+
+    private var programsCache: MutableList<Program<*>> = CopyOnWriteArrayList()
+
+    private val programChangeListener = ProgramChangeListenerManager()
 
     override fun List<UniformDelegate<*>>.toUniformDeclaration() = joinToString("\n") {
         when (it) {
@@ -28,10 +34,7 @@ class OpenGlProgramManager(
             is FloatType -> "uniform float ${it.name};"
         }
     }
-    override val Uniforms.shaderDeclarations
-        get() = registeredUniforms.toUniformDeclaration()
-
-    var programsCache: MutableList<Program<*>> = CopyOnWriteArrayList()
+    override val Uniforms.shaderDeclarations get() = registeredUniforms.toUniformDeclaration()
 
     override val heightMappingFirstPassProgramDescription = getFirstPassHeightMappingProgramDescription()
 
@@ -40,17 +43,22 @@ class OpenGlProgramManager(
         defines: Defines,
         uniforms: Uniforms?
     ): ComputeProgramImpl = ComputeProgramImpl(ComputeShader(this@GraphicsApi, codeSource, defines), this@GraphicsApi, this@FileMonitor).apply {
-        programsCache.add(this)
+        programsCache.add(this).apply {
+            programChangeListener.run {
+                reregisterListener { reload() }
+            }
+        }
     }
 
-    override fun <T : Uniforms> getProgram(vertexShaderSource: CodeSource,
-                                           fragmentShaderSource: CodeSource?,
-                                           geometryShaderSource: CodeSource?,
-                                           defines: Defines,
-                                           uniforms: T): ProgramImpl<T> {
-
-        return getProgram(vertexShaderSource, fragmentShaderSource, geometryShaderSource, null, null, defines, uniforms)
-    }
+    override fun <T : Uniforms> getProgram(
+        vertexShaderSource: CodeSource,
+        fragmentShaderSource: CodeSource?,
+        geometryShaderSource: CodeSource?,
+        defines: Defines,
+        uniforms: T
+    ): ProgramImpl<T> = getProgram(
+        vertexShaderSource, fragmentShaderSource, geometryShaderSource, null, null, defines, uniforms
+    )
 
     override fun <T : Uniforms> getProgram(
         vertexShaderSource: CodeSource,
@@ -72,6 +80,9 @@ class OpenGlProgramManager(
         ).apply {
             load()
             programsCache.add(this)
+            programChangeListener.run {
+                reregisterListener { reload() }
+            }
         }
 
     override fun getComputeProgram(codeSource: CodeSource): ComputeProgramImpl = ComputeProgramImpl(

@@ -14,10 +14,12 @@ import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
-context(GraphicsApi, RenderStateContext, de.hanno.hpengine.stopwatch.GPUProfiler)
+context(GraphicsApi, RenderStateContext, GPUProfiler)
 class SimpleForwardRenderer(
     private val renderTarget: RenderTarget2D,
     private val programManager: ProgramManager,
