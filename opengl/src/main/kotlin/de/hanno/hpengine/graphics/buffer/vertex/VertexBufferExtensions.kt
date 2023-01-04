@@ -88,7 +88,7 @@ fun GpuBuffer.drawInstancedBaseVertex(
 }
 
 context(GPUProfiler)
-fun IVertexIndexBuffer<*, *>.drawElementsIndirectCount(
+fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
     drawCount: Long = 0,

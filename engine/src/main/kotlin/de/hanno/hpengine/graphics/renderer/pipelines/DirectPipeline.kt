@@ -17,6 +17,7 @@ import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
@@ -46,7 +47,7 @@ open class DirectFirstPassPipeline(
     open fun RenderState.extractRenderBatches(): List<RenderBatch> = this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot {
         it.shouldBeSkipped(this[primaryCameraStateHolder.camera])
     }
-    open fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
+    open fun RenderState.selectVertexIndexBuffer(): VertexIndexBuffer<*> = this[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
 
     fun draw(renderState: RenderState) = profiled("Actual draw entities") {
 
@@ -82,7 +83,7 @@ open class DirectFirstPassPipeline(
                                 entitiesState.vertexIndexBufferStatic.vertexStructArray
                             is AnimatedFirstPassUniforms -> {
                                 uniforms.joints = entitiesState.jointsBuffer
-                                uniforms.vertices = entitiesState.vertexIndexBufferAnimated.animatedVertexStructArray
+                                uniforms.vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
                             }
                         }
                         useRainEffect = config.effects.rainEffect != 0.0f
@@ -129,7 +130,7 @@ open class DirectFirstPassPipeline(
                     is StaticFirstPassUniforms -> uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
                     is AnimatedFirstPassUniforms -> {
                         uniforms.joints = entitiesState.jointsBuffer
-                        uniforms.vertices = entitiesState.vertexIndexBufferAnimated.animatedVertexStructArray
+                        uniforms.vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
                     }
                 }
                 useRainEffect = config.effects.rainEffect != 0.0f

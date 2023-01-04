@@ -9,14 +9,12 @@ import de.hanno.hpengine.graphics.buffer.vertex.TriangleCount
 import de.hanno.hpengine.graphics.buffer.vertex.drawInstancedBaseVertex
 import de.hanno.hpengine.scene.VertexIndexBuffer
 
-fun VertexIndexBuffer.draw(
+fun VertexIndexBuffer<*>.draw(
     renderBatch: RenderBatch,
     bindIndexBuffer: Boolean,
     primitiveType: PrimitiveType = PrimitiveType.Triangles,
     mode: RenderingMode = RenderingMode.Fill
-): Int {
-    return indexBuffer.draw(renderBatch.drawElementsIndirectCommand, bindIndexBuffer, primitiveType, mode)
-}
+): TriangleCount = indexBuffer.draw(renderBatch.drawElementsIndirectCommand, bindIndexBuffer, primitiveType, mode)
 
 fun IndexBuffer.draw(
     drawElementsIndirectCommand: DrawElementsIndirectCommand,

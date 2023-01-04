@@ -386,7 +386,7 @@ open class GPUCulledPipeline(
                         is StaticFirstPassUniforms -> vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
                         is AnimatedFirstPassUniforms -> {
                             joints = entitiesState.jointsBuffer
-                            vertices = entitiesState.vertexIndexBufferAnimated.animatedVertexStructArray
+                            vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
                         }
                     }
                     useRainEffect = config.effects.rainEffect != 0.0f

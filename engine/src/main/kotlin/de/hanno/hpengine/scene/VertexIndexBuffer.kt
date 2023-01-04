@@ -1,16 +1,16 @@
 package de.hanno.hpengine.scene
 
-import AnimatedVertexStruktPackedImpl.Companion.type
-import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import org.lwjgl.BufferUtils
+import struktgen.api.Strukt
+import struktgen.api.StruktType
 
 context(GraphicsApi)
-class VertexIndexBuffer(indexBufferSizeInIntsCount: Int): IVertexIndexBuffer<VertexStruktPacked, AnimatedVertexStruktPacked> {
+class VertexIndexBuffer<T: Strukt>(val type: StruktType<T>, indexBufferSizeInIntsCount: Int): IVertexIndexBuffer<T> {
 
     override var indexBuffer: IndexBuffer = OpenGLIndexBuffer(BufferUtils.createIntBuffer(indexBufferSizeInIntsCount))
     // TODO: It's invalid to use a single index for two vertex arrays, move animated vertex array out of here
@@ -30,10 +30,5 @@ class VertexIndexBuffer(indexBufferSizeInIntsCount: Int): IVertexIndexBuffer<Ver
         currentIndexOffset = 0
     }
 
-    override var vertexStructArray: TypedGpuBuffer<VertexStruktPacked> = PersistentShaderStorageBuffer(VertexStruktPacked.type.sizeInBytes).typed(
-        VertexStruktPacked.type
-    )
-    override var animatedVertexStructArray: TypedGpuBuffer<AnimatedVertexStruktPacked> = PersistentShaderStorageBuffer(AnimatedVertexStruktPacked.type.sizeInBytes).typed(
-        AnimatedVertexStruktPacked.type
-    )
+    override var vertexStructArray: TypedGpuBuffer<T> = PersistentShaderStorageBuffer(type.sizeInBytes).typed(type)
 }

@@ -1,9 +1,9 @@
 package de.hanno.hpengine.artemis
 
-import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
+import AnimatedVertexStruktPackedImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
-import VertexStruktPackedImpl.Companion.sizeInBytes
+import VertexStruktPackedImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
@@ -11,14 +11,23 @@ import com.artemis.annotations.One
 import com.artemis.hackedOutComponents
 import com.artemis.link.LinkListener
 import com.artemis.utils.IntBag
+import de.hanno.hpengine.buffers.copyTo
+import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.camera.Camera
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
+import de.hanno.hpengine.graphics.state.EntitiesState
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.loader.assimp.AnimatedModelLoader
@@ -26,7 +35,7 @@ import de.hanno.hpengine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.model.material.ProgramDescription
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.scene.*
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.ModelComponentDescription
@@ -36,15 +45,6 @@ import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.SimpleSpatial
 import de.hanno.hpengine.transform.StaticTransformSpatial
 import de.hanno.hpengine.transform.TransformSpatial
-import de.hanno.hpengine.buffers.copyTo
-import de.hanno.hpengine.buffers.enlarge
-import de.hanno.hpengine.component.TransformComponent
-import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
-import de.hanno.hpengine.graphics.state.EntitiesState
-import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
-import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
-import de.hanno.hpengine.scene.*
 import org.joml.FrustumIntersection
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -96,8 +96,8 @@ class ModelSystem(
     lateinit var instancesComponentMapper: ComponentMapper<InstancesComponent>
     lateinit var spatialComponentMapper: ComponentMapper<SpatialComponent>
 
-    val vertexIndexBufferStatic = VertexIndexBuffer(10)
-    val vertexIndexBufferAnimated = VertexIndexBuffer(10)
+    val vertexIndexBufferStatic = VertexIndexBuffer(VertexStruktPacked.type, 10)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(AnimatedVertexStruktPacked.type, 10)
 
     val joints: MutableList<Matrix4f> = CopyOnWriteArrayList()
 
@@ -338,6 +338,7 @@ class ModelSystem(
                     val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
                     val vertexIndexOffsetsForMeshes = c.putToBuffer(
                         vertexIndexBuffer,
+                        vertexIndexBufferAnimated,
                         vertexIndexOffsets
                     )
                     Allocation.Static(vertexIndexOffsetsForMeshes)
@@ -346,6 +347,7 @@ class ModelSystem(
                     val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
                     val vertexIndexOffsetsForMeshes = c.putToBuffer(
                         vertexIndexBuffer,
+                        vertexIndexBufferAnimated,
                         vertexIndexOffsets
                     )
 
@@ -361,7 +363,7 @@ class ModelSystem(
         this.allocations.putAll(allocations)
     }
 
-    fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {
+    fun VertexIndexBuffer<*>.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {
         val model = modelCache[modelComponent.modelComponentDescription]!!
         return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
     }
@@ -382,27 +384,23 @@ class ModelSystem(
     }
 
     fun ModelComponent.putToBuffer(
-        indexBuffer: VertexIndexBuffer,
+        vertexIndexBuffer: VertexIndexBuffer<*>,
+        vertexIndexBufferAnimated: VertexIndexBuffer<*>,
         vertexIndexOffsets: VertexIndexOffsets
     ): List<VertexIndexOffsets> {
-
-        synchronized(indexBuffer) {
+        val model = modelCache[modelComponentDescription]!!
+        val (targetBuffer, vertexType) = when(model) {
+            is AnimatedModel -> Pair(vertexIndexBufferAnimated, AnimatedVertexStruktPacked.type)
+            is StaticModel -> Pair(vertexIndexBuffer, VertexStruktPacked.type)
+        }
+        return synchronized(targetBuffer) {
             val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
-            val model = modelCache[modelComponentDescription]!!
-            when (model) {
-                is StaticModel -> indexBuffer.vertexStructArray.addAll(
-                    vertexIndexOffsets.vertexOffset * VertexStruktPacked.sizeInBytes,
-                    model.verticesPacked.byteBuffer
-                )
-                is AnimatedModel -> indexBuffer.animatedVertexStructArray.addAll(
-                    vertexIndexOffsets.vertexOffset * AnimatedVertexStruktPacked.sizeInBytes,
-                    model.verticesPacked.byteBuffer
-                )
-            }
-
-            indexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, model.indices)
-
-            return vertexIndexOffsetsForMeshes
+            targetBuffer.vertexStructArray.addAll(
+                vertexIndexOffsets.vertexOffset * vertexType.sizeInBytes,
+                model.verticesPacked.byteBuffer
+            )
+            targetBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, model.indices)
+            vertexIndexOffsetsForMeshes
         }
     }
 

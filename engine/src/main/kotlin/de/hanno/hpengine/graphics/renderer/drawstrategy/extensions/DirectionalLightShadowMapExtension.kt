@@ -112,7 +112,7 @@ class DirectionalLightShadowMapExtension(
                 when (this) {
                     is StaticDirectionalShadowUniforms -> vertices = vertexIndexBuffer.vertexStructArray
                     is AnimatedDirectionalShadowUniforms -> {
-                        vertices = vertexIndexBuffer.animatedVertexStructArray
+                        vertices = vertexIndexBuffer.vertexStructArray
                         joints = entitiesState.jointsBuffer
                     }
                 }

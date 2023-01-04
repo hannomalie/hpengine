@@ -1,8 +1,10 @@
 package de.hanno.hpengine.graphics.state
 
+import AnimatedVertexStruktPackedImpl.Companion.type
 import EntityStruktImpl.Companion.type
 import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.type
+import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.RenderBatch
@@ -11,8 +13,10 @@ import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBufferAlloc
 import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
+import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.BatchKey
 import de.hanno.hpengine.scene.VertexIndexBuffer
+import de.hanno.hpengine.scene.VertexStruktPacked
 import java.util.HashMap
 
 context(GraphicsApi)
@@ -28,8 +32,8 @@ class EntitiesState {
     var componentAddedInCycle: Long = -1
     var renderBatchesStatic = RenderBatches()
     var renderBatchesAnimated = RenderBatches()
-    var vertexIndexBufferStatic = VertexIndexBuffer(10)
-    var vertexIndexBufferAnimated = VertexIndexBuffer(10)
+    var vertexIndexBufferStatic = VertexIndexBuffer(VertexStruktPacked.type, 10)
+    var vertexIndexBufferAnimated = VertexIndexBuffer(AnimatedVertexStruktPacked.type, 10)
 
     var entitiesBuffer = PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
     var jointsBuffer = PersistentShaderStorageBuffer(Matrix4fStrukt.type.sizeInBytes).typed(Matrix4fStrukt.type)
