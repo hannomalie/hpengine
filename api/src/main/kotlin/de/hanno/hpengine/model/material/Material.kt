@@ -32,8 +32,6 @@ data class Material(
     init {
         require(name.isNotEmpty()) { "Name may not empty for material! $this" }
     }
-    var materialIndex = -1
-
     enum class MaterialType {
         DEFAULT,
         FOLIAGE,

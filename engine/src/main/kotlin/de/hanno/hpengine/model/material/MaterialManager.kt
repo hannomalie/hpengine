@@ -20,7 +20,6 @@ import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
 import de.hanno.hpengine.artemis.ModelComponent
 import struktgen.api.forEachIndexed
-import struktgen.api.size
 
 @One(
     ModelComponent::class,
@@ -91,7 +90,6 @@ class MaterialManager(
 //        This happens often, I have to reconsider that somehow
 //        require(materials.none { material.name == it.name }) { "Material with name ${material.name} already registered!" }
 
-        material.materialIndex = materials.size
         materials.add(material)
     }
 
@@ -101,15 +99,13 @@ class MaterialManager(
         currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.buffer.rewind()
         materialsBuffer = materialsBuffer.resize(sizeInBytes = materials.size * MaterialStrukt.sizeInBytes)
 
-        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
+        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.forEachIndexed(untilIndex = materials.size) { index, targetMaterial ->
             val material = materials[index]
 
-            it.run {
-                diffuse.run {
-                    x = material.diffuse.x
-                    y = material.diffuse.y
-                    z = material.diffuse.z
-                }
+            targetMaterial.run {
+                diffuse.x = material.diffuse.x
+                diffuse.y = material.diffuse.y
+                diffuse.z = material.diffuse.z
                 metallic = material.metallic
                 roughness = material.roughness
                 ambient = material.ambient
@@ -126,13 +122,10 @@ class MaterialManager(
                 heightMapHandle = material.maps[MAP.HEIGHT]?.handle ?: 0
                 displacementMapHandle = material.maps[MAP.DISPLACEMENT]?.handle ?: 0
                 roughnessMapHandle = material.maps[MAP.ROUGHNESS]?.handle ?: 0
-                uvScale.run {
-                    x = material.uvScale.x
-                    y = material.uvScale.y
-                }
+                uvScale.x = material.uvScale.x
+                uvScale.y = material.uvScale.y
             }
         }
-//        materialsBuffer.byteBuffer.copyTo(currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.buffer, true)
     }
 
 
@@ -146,6 +139,8 @@ class MaterialManager(
     override fun clear() {
         materials.clear()
     }
+
+    fun indexOf(material: Material): Int = materials.indexOf(material)
 }
 
 private fun TypedBuffer<MaterialStrukt>.resize(sizeInBytes: Int): TypedBuffer<MaterialStrukt> = this.let {

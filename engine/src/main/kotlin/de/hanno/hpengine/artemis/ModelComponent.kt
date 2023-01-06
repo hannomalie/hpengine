@@ -247,7 +247,7 @@ class ModelSystem(
                             val currentEntity = gpuEntitiesArray[entityBufferIndex]
 
                             val meshMaterial = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
-                            val targetMaterialIndex = meshMaterial.materialIndex//materials.indexOf(meshMaterial)
+                            val targetMaterialIndex = materialManager.indexOf(meshMaterial)
                             currentEntity.run {
                                 materialIndex = targetMaterialIndex
                                 update = Update.STATIC.value
