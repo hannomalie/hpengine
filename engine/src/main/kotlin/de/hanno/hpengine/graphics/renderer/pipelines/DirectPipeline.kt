@@ -2,7 +2,7 @@ package de.hanno.hpengine.graphics.renderer.pipelines
 
 
 import de.hanno.hpengine.graphics.constants.PrimitiveType
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config

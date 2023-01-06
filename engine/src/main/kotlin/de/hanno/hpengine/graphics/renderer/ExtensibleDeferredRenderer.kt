@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.renderer
 
 import com.artemis.World
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config

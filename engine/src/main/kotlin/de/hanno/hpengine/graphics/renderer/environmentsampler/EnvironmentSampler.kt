@@ -14,7 +14,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.constants.RenderingMode

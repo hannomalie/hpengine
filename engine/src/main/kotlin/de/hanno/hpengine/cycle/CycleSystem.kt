@@ -2,7 +2,7 @@ package de.hanno.hpengine.cycle
 
 import com.artemis.BaseEntitySystem
 import com.artemis.annotations.All
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor
 

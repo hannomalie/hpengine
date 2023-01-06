@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.light.probe
 import AmbientCubeImpl.Companion.sizeInBytes
 import InternalTextureFormat.*
 import de.hanno.hpengine.graphics.constants.PrimitiveType
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi

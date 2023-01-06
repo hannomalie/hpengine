@@ -5,8 +5,8 @@ import MaterialStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
-import de.hanno.hpengine.artemis.EntitiesStateHolder
-import de.hanno.hpengine.artemis.MaterialComponent
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.MaterialComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material.MAP
@@ -18,7 +18,7 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
-import de.hanno.hpengine.artemis.ModelComponent
+import de.hanno.hpengine.artemis.model.ModelComponent
 import struktgen.api.forEachIndexed
 
 @One(

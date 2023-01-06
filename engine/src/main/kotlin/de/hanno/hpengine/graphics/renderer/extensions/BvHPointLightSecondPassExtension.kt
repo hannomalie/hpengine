@@ -23,7 +23,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.Access

@@ -11,7 +11,7 @@ import de.hanno.hpengine.model.Model
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.artemis.ModelComponent as ModelComponentArtemis
+import de.hanno.hpengine.artemis.model.ModelComponent as ModelComponentArtemis
 
 sealed class Selection {
     object None: Selection()

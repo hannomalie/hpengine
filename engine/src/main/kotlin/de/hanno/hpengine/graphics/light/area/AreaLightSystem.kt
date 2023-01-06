@@ -28,7 +28,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.constants.*

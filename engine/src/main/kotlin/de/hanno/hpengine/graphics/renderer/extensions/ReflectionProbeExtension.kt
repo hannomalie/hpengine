@@ -6,7 +6,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.World
 import com.artemis.annotations.All
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.component.TransformComponent

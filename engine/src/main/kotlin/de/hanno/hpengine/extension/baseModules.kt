@@ -10,6 +10,9 @@ import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.*
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.MaterialComponent
+import de.hanno.hpengine.artemis.model.ModelComponent
 import de.hanno.hpengine.camera.CameraRenderExtension
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent

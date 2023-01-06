@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 import InternalTextureFormat.RGBA16F
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.feature.BindlessTextures

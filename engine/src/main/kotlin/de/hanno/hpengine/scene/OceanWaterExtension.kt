@@ -3,7 +3,7 @@ package de.hanno.hpengine.scene
 import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
 import InternalTextureFormat.RGBA32F
-import de.hanno.hpengine.artemis.MaterialComponent
+import de.hanno.hpengine.artemis.model.MaterialComponent
 import de.hanno.hpengine.artemis.OceanSurfaceComponent
 import de.hanno.hpengine.artemis.OceanWaterComponent
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder

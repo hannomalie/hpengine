@@ -5,7 +5,7 @@ import EntityStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
 import InternalTextureFormat.*
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.camera.Camera

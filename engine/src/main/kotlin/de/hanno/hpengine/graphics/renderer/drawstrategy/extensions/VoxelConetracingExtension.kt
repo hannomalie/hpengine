@@ -6,7 +6,7 @@ import Vector4fStruktImpl.Companion.type
 import VoxelGridImpl.Companion.type
 import com.artemis.World
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.extension.GiVolumeStateHolder

@@ -10,7 +10,7 @@ import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
 import com.artemis.World
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt

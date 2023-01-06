@@ -2,7 +2,7 @@ package de.hanno.hpengine.extension
 
 import InternalTextureFormat.RGBA16F
 import com.artemis.World
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access.ReadWrite

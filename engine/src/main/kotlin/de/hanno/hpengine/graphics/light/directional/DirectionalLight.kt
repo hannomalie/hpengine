@@ -11,6 +11,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent

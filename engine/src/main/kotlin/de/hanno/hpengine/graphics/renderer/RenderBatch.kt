@@ -29,21 +29,17 @@ class RenderBatch(
     var material: Material = Material("default"),
     var program: ProgramImpl<FirstPassUniforms>? = null,
     var entityBufferIndex: Int = 0,
-    var contributesToGi: Boolean = true) {
+    var contributesToGi: Boolean = true
+) {
 
-    val isShadowCasting: Boolean
-        get() = material.isShadowCasting
+    val isShadowCasting: Boolean get() = material.isShadowCasting
 
-    val instanceCount: Int
-        get() = drawElementsIndirectCommand.instanceCount
+    val instanceCount: Int get() = drawElementsIndirectCommand.instanceCount
 
-    val vertexCount: Int
-        get() = drawElementsIndirectCommand.count / 3
+    val vertexCount: Int get() = drawElementsIndirectCommand.count / 3
 
-    val isStatic: Boolean
-        get() = !animated
+    val isStatic: Boolean get() = !animated
 
-    val hasOwnProgram
-        get() = program != null
+    val hasOwnProgram get() = program != null
 }
 class RenderBatches : ArrayList<RenderBatch>()

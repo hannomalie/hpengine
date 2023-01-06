@@ -6,6 +6,8 @@ import com.artemis.managers.TagManager
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import de.hanno.hpengine.artemis.*
+import de.hanno.hpengine.artemis.model.ModelComponent
+import de.hanno.hpengine.artemis.model.ModelSystem
 import de.hanno.hpengine.component.CameraSystem
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent

@@ -4,6 +4,7 @@ import com.artemis.Component
 import com.artemis.World
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.artemis.*
+import de.hanno.hpengine.artemis.model.ModelSystem
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag

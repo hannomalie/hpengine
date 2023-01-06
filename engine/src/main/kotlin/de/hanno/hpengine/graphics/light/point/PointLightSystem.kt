@@ -14,7 +14,7 @@ import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.artemis.EntitiesStateHolder
+import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.graphics.GraphicsApi
