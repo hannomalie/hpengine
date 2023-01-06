@@ -8,7 +8,6 @@ import com.artemis.BaseEntitySystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
-import com.artemis.hackedOutComponents
 import com.artemis.link.LinkListener
 import com.artemis.utils.IntBag
 import de.hanno.hpengine.buffers.copyTo
@@ -101,7 +100,7 @@ class ModelSystem(
 
     val joints: MutableList<Matrix4f> = CopyOnWriteArrayList()
 
-    val allocations: MutableMap<ModelComponentDescription, Allocation> = mutableMapOf()
+    private val allocations: MutableMap<ModelComponentDescription, Allocation> = mutableMapOf()
 
     private var gpuJointsArray = BufferUtils.createByteBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
 
@@ -119,19 +118,9 @@ class ModelSystem(
     operator fun get(modelComponentDescription: ModelComponentDescription) = modelCache[modelComponentDescription]
 
     override fun inserted(entityId: Int) {
-        loadModelToCache(entityId)
+        loadModelToCache(entityId) ?: return
 
         cacheEntityIndices()
-        allocateVertexIndexBufferSpace() // TODO: Move this out of here so that it can be batch allocated below
-
-        modelCacheComponentMapper.getOrNull(entityId)?.apply {
-            val instanceComponent = instanceComponentMapper.getOrNull(entityId)
-            val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
-
-            val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
-            val descr = modelComponent.modelComponentDescription
-            this.allocation = allocations[descr]!!
-        }
 
         requiredEntityBufferSize = calculateRequiredEntityBufferSize()
     }
@@ -149,26 +138,17 @@ class ModelSystem(
         }
 
         cacheEntityIndices()
-        allocateVertexIndexBufferSpace()
-        entities.forEach { entityId ->
-            modelCacheComponentMapper.getOrNull(entityId)?.apply {
-                val instanceComponent = instanceComponentMapper.getOrNull(entityId)
-                val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
 
-                val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
-                val descr = modelComponent.modelComponentDescription
-                this.allocation = allocations[descr]!!
-            }
-        }
         requiredEntityBufferSize = calculateRequiredEntityBufferSize()
     }
 
-    private fun loadModelToCache(entityId: Int) {
+    private fun loadModelToCache(entityId: Int): ModelCacheComponent? {
         val instanceComponent = instanceComponentMapper.getOrNull(entityId)
-        val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper[instanceComponent!!.targetEntity]
         val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
+        if(instanceComponent == null && modelComponentOrNull == null) return null
+
+        val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper[instanceComponent!!.targetEntity]
         val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
-        if(instanceComponent == null && modelComponentOrNull == null) return
 
         val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
         val descr = modelComponent.modelComponentDescription
@@ -205,7 +185,7 @@ class ModelSystem(
         }
 
         boundingVolumeComponentMapper.create(entityId).boundingVolume = model.boundingVolume
-        modelCacheComponentMapper.create(entityId).apply {
+        return modelCacheComponentMapper.create(entityId).apply {
             this.model = model
             this.meshSpatials = model.meshes.map {
                 val origin = it.spatial.boundingVolume
@@ -216,6 +196,7 @@ class ModelSystem(
                     AABB(origin.localMin, origin.localMax),
                 )
             }
+            allocateVertexIndexBufferSpace(this, descr)
         }
     }
 
@@ -224,6 +205,9 @@ class ModelSystem(
         updateGpuJointsArray()
 
         var entityBufferIndex = 0
+
+        // TODO: This should not happen here, but in "inserted" methods
+        requiredEntityBufferSize = calculateRequiredEntityBufferSize()
 
         forEachEntity { parentEntityId ->
             val modelComponent = modelComponentMapper.getOrNull(parentEntityId)
@@ -248,8 +232,7 @@ class ModelSystem(
                     val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(instanceComponent!!.targetEntity)
                     val transform = transformComponent!!.transform
 
-                    // TODO: Take a look if allocation from cache component could be used?
-                    val allocation = allocations[modelComponent.modelComponentDescription]!!
+                    val allocation = modelCacheComponent.allocation
 
                     val meshes = model.meshes
 
@@ -330,41 +313,42 @@ class ModelSystem(
         }
     }
 
-    fun allocateVertexIndexBufferSpace() {
-        val allocations = modelComponentMapper.hackedOutComponents.associateWith { c ->
-            modelCache[c.modelComponentDescription]?.let { model ->
-                if (model.isStatic) {
-                    val vertexIndexBuffer = vertexIndexBufferStatic
-                    val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                    val vertexIndexOffsetsForMeshes = c.putToBuffer(
-                        vertexIndexBuffer,
-                        vertexIndexBufferAnimated,
-                        vertexIndexOffsets
-                    )
-                    Allocation.Static(vertexIndexOffsetsForMeshes)
-                } else {
-                    val vertexIndexBuffer = vertexIndexBufferAnimated
-                    val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                    val vertexIndexOffsetsForMeshes = c.putToBuffer(
-                        vertexIndexBuffer,
-                        vertexIndexBufferAnimated,
-                        vertexIndexOffsets
-                    )
+    fun allocateVertexIndexBufferSpace(modelCacheComponent: ModelCacheComponent, descr: ModelComponentDescription) {
+        val allocation = when(val model = modelCacheComponent.model) {
+            is AnimatedModel -> {
+                val vertexIndexBuffer = vertexIndexBufferAnimated
+                val vertexIndexOffsets = vertexIndexBuffer.allocateForModel(model)
+                val vertexIndexOffsetsForMeshes = model.putToBuffer(
+                    vertexIndexBuffer,
+                    vertexIndexBufferAnimated,
+                    vertexIndexOffsets
+                )
 
-                    val elements = (model as AnimatedModel).animation.frames
-                        .flatMap { frame -> frame.jointMatrices.toList() }
-                    val jointsOffset = joints.size
-                    joints.addAll(elements)
-                    Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
-                }
+                val elements = model.animation.frames.flatMap { frame -> frame.jointMatrices.toList() }
+                val jointsOffset = joints.size
+                joints.addAll(elements)
+                Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
             }
-        }.mapKeys { it.key.modelComponentDescription }.filter { it.value != null } as Map<ModelComponentDescription, Allocation>
-
-        this.allocations.putAll(allocations)
+            is StaticModel -> {
+                val vertexIndexBuffer = vertexIndexBufferStatic
+                val vertexIndexOffsets = vertexIndexBuffer.allocateForModel(model)
+                val vertexIndexOffsetsForMeshes = model.putToBuffer(
+                    vertexIndexBuffer,
+                    vertexIndexBufferAnimated,
+                    vertexIndexOffsets
+                )
+                Allocation.Static(vertexIndexOffsetsForMeshes)
+            }
+        }
+        modelCacheComponent.allocation = allocation
+        allocations[descr] = allocation
     }
 
     fun VertexIndexBuffer<*>.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {
         val model = modelCache[modelComponent.modelComponentDescription]!!
+        return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
+    }
+    fun VertexIndexBuffer<*>.allocateForModel(model: Model<*>): VertexIndexOffsets {
         return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
     }
 
@@ -382,6 +366,20 @@ class ModelSystem(
             }
         }
     }
+    fun Model<*>.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
+        var currentIndexOffset = vertexIndexOffsets.indexOffset
+        var currentVertexOffset = vertexIndexOffsets.vertexOffset
+
+        val model = this
+
+        return model.meshes.indices.map { i ->
+            val mesh = model.meshes[i] as Mesh<*>
+            VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
+                currentIndexOffset += mesh.indexBufferValues.capacity() / Integer.BYTES
+                currentVertexOffset += mesh.vertices.size
+            }
+        }
+    }
 
     fun ModelComponent.putToBuffer(
         vertexIndexBuffer: VertexIndexBuffer<*>,
@@ -389,6 +387,26 @@ class ModelSystem(
         vertexIndexOffsets: VertexIndexOffsets
     ): List<VertexIndexOffsets> {
         val model = modelCache[modelComponentDescription]!!
+        val (targetBuffer, vertexType) = when(model) {
+            is AnimatedModel -> Pair(vertexIndexBufferAnimated, AnimatedVertexStruktPacked.type)
+            is StaticModel -> Pair(vertexIndexBuffer, VertexStruktPacked.type)
+        }
+        return synchronized(targetBuffer) {
+            val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
+            targetBuffer.vertexStructArray.addAll(
+                vertexIndexOffsets.vertexOffset * vertexType.sizeInBytes,
+                model.verticesPacked.byteBuffer
+            )
+            targetBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, model.indices)
+            vertexIndexOffsetsForMeshes
+        }
+    }
+    fun Model<*>.putToBuffer(
+        vertexIndexBuffer: VertexIndexBuffer<*>,
+        vertexIndexBufferAnimated: VertexIndexBuffer<*>,
+        vertexIndexOffsets: VertexIndexOffsets
+    ): List<VertexIndexOffsets> {
+        val model = this
         val (targetBuffer, vertexType) = when(model) {
             is AnimatedModel -> Pair(vertexIndexBufferAnimated, AnimatedVertexStruktPacked.type)
             is StaticModel -> Pair(vertexIndexBuffer, VertexStruktPacked.type)
