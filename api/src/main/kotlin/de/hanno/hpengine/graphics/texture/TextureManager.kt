@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
 interface TextureManager {
+    val defaultTexture: Texture
     val textures: Map<String, Texture>
     val texturesForDebugOutput : Map<String, Texture>
     val cubeMap: CubeMap

@@ -77,7 +77,7 @@ class OpenGLTextureManager(
     )
 
     private val temp = loadDefaultTexture()
-    val defaultTexture = temp.first
+    override val defaultTexture = temp.first
 
     private fun loadDefaultTexture(): Pair<FileBasedTexture2D, BufferedImage> {
         val defaultTexturePath = "assets/textures/default/gi_flag.png"

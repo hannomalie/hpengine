@@ -18,6 +18,7 @@ import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.shader.*
+import de.hanno.hpengine.graphics.texture.UploadState
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils.createFloatBuffer
 
@@ -54,18 +55,27 @@ context(GraphicsApi)
 open class AnimatedFirstPassUniforms: FirstPassUniforms() {
     var joints by SSBO("mat4", 6, PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type))
     var vertices by SSBO("VertexAnimatedPacked", 7, PersistentShaderStorageBuffer(AnimatedVertexStruktPacked.sizeInBytes).typed(
-        AnimatedVertexStruktPacked.type))
+            AnimatedVertexStruktPacked.type
+        )
+    )
 }
 
 context(GraphicsApi)
-fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>) {
+fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>, diffusefallbackTexture: Texture? = null) {
     for (mapEnumEntry in Material.MAP.values()) {
 
         if (maps.contains(mapEnumEntry)) {
             val map = maps[mapEnumEntry]!!
             if (map.id > 0) {
-                bindTexture(mapEnumEntry.textureSlot, map)
-                setUniform(mapEnumEntry.uniformKey, true)
+                if(map.uploadState == UploadState.UPLOADED) {
+                    bindTexture(mapEnumEntry.textureSlot, map)
+                    setUniform(mapEnumEntry.uniformKey, true)
+                } else if(mapEnumEntry == Material.MAP.DIFFUSE && diffusefallbackTexture != null) {
+                    bindTexture(mapEnumEntry.textureSlot, diffusefallbackTexture)
+                    setUniform(mapEnumEntry.uniformKey, true)
+                } else {
+                    setUniform(mapEnumEntry.uniformKey, false)
+                }
             }
         } else {
             setUniform(mapEnumEntry.uniformKey, false)

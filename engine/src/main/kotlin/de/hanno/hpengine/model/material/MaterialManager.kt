@@ -19,6 +19,8 @@ import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
 import de.hanno.hpengine.artemis.model.ModelComponent
+import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.UploadState
 import struktgen.api.forEachIndexed
 
 @One(
@@ -116,17 +118,22 @@ class MaterialManager(
                 lodFactor = material.lodFactor
                 useWorldSpaceXZAsTexCoords = if (material.useWorldSpaceXZAsTexCoords) 1 else 0
                 environmentMapId = material.maps[MAP.ENVIRONMENT]?.id ?: 0
-                diffuseMapHandle = material.maps[MAP.DIFFUSE]?.handle ?: 0
-                normalMapHandle = material.maps[MAP.NORMAL]?.handle ?: 0
-                specularMapHandle = material.maps[MAP.SPECULAR]?.handle ?: 0
-                heightMapHandle = material.maps[MAP.HEIGHT]?.handle ?: 0
-                displacementMapHandle = material.maps[MAP.DISPLACEMENT]?.handle ?: 0
-                roughnessMapHandle = material.maps[MAP.ROUGHNESS]?.handle ?: 0
+                diffuseMapHandle = material.deriveHandle(MAP.DIFFUSE, textureManager.defaultTexture)
+                normalMapHandle = material.deriveHandle(MAP.NORMAL)
+                specularMapHandle = material.deriveHandle(MAP.SPECULAR)
+                heightMapHandle = material.deriveHandle(MAP.HEIGHT)
+                displacementMapHandle = material.deriveHandle(MAP.DISPLACEMENT)
+                roughnessMapHandle = material.deriveHandle(MAP.ROUGHNESS)
                 uvScale.x = material.uvScale.x
                 uvScale.y = material.uvScale.y
             }
         }
     }
+
+    private fun Material.deriveHandle(key: MAP, fallbackTexture: Texture? = null): Long = maps[key]?.let {
+        val fallbackHandle = (fallbackTexture?.handle ?: 0)
+        if (it.uploadState == UploadState.UPLOADED) it.handle else fallbackHandle
+    } ?: 0
 
 
     companion object {

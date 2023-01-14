@@ -8,6 +8,7 @@ import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.WrapMode
 import de.hanno.hpengine.graphics.constants.glValue
+import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import jogl.DDSImage
 import org.lwjgl.BufferUtils
@@ -151,7 +152,7 @@ data class OpenGLTexture2D(
 
         context(GraphicsApi)
         private fun OpenGLTexture2D.upload(info: Texture2DUploadInfo, internalFormat: InternalTextureFormat) {
-            val usePbo = false
+            val usePbo = true
             if (usePbo) {
                 uploadWithPixelBuffer(info, internalFormat)
             } else {
@@ -164,45 +165,50 @@ data class OpenGLTexture2D(
             info: Texture2DUploadInfo,
             internalFormat: InternalTextureFormat
         ) {
-            val data = info.data ?: return
+            val data = info.data
 
-            val pbo = onGpu {
-                PixelBufferObject()
-            }
-            pbo.put(this@GraphicsApi, data)
-            onGpu {
-                pbo.unmap(this@GraphicsApi)
-                pbo.bind()
-                bindTexture(TextureTarget.TEXTURE_2D, id)
-                if (info.dataCompressed) {
-                    GL13.glCompressedTexSubImage2D(
-                        GL11.GL_TEXTURE_2D,
-                        0,
-                        0,
-                        0,
-                        info.dimension.width,
-                        info.dimension.height,
-                        internalFormat.glValue,
-                        data.capacity(),
-                        0
-                    )
-                } else {
-                    GL11.glTexSubImage2D(
-                        GL11.GL_TEXTURE_2D,
-                        0,
-                        0,
-                        0,
-                        info.dimension.width,
-                        info.dimension.height,
-                        GL11.GL_RGBA,
-                        GL11.GL_UNSIGNED_BYTE,
-                        0
-                    )
+            if(data != null) {
+//                Thread.sleep(5000) // TODO: Remove, is just to simulate slow texture upload
+                val pbo = PixelBufferObject()
+
+                CompletableFuture.supplyAsync {
+                    pbo.put(data)
+                    onGpu {
+                        pbo.unmap()
+                        bindTexture(TextureTarget.TEXTURE_2D, id)
+                        pbo.bind()
+                        if (info.dataCompressed) {
+                            GL13.glCompressedTexSubImage2D(
+                                GL11.GL_TEXTURE_2D,
+                                0,
+                                0,
+                                0,
+                                info.dimension.width,
+                                info.dimension.height,
+                                internalFormat.glValue,
+                                data.capacity(),
+                                0
+                            )
+                        } else {
+                            GL11.glTexSubImage2D(
+                                GL11.GL_TEXTURE_2D,
+                                0,
+                                0,
+                                0,
+                                info.dimension.width,
+                                info.dimension.height,
+                                GL11.GL_RGBA,
+                                GL11.GL_UNSIGNED_BYTE,
+                                0
+                            )
+                        }
+                        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
+                        pbo.unbind()
+                    }
                 }
-                GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
-                pbo.unbind()
-                uploadState = UploadState.UPLOADED
             }
+
+            uploadState = UploadState.UPLOADED
         }
 
         context(GraphicsApi)

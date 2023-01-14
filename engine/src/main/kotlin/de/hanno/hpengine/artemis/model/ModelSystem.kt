@@ -173,19 +173,22 @@ class ModelSystem(
             }
         }
 
-        boundingVolumeComponentMapper.create(entityId).boundingVolume = model.boundingVolume
-        return modelCacheComponentMapper.create(entityId).apply {
-            this.model = model
-            this.meshSpatials = model.meshes.map {
-                val origin = it.spatial.boundingVolume
+        world.edit(entityId).run { BoundingVolumeComponent().apply { boundingVolume = model.boundingVolume } }
+        return world.edit(entityId).run {
+            ModelCacheComponent().apply {
+                this.model = model
+                this.meshSpatials = model.meshes.map {
+                    val origin = it.spatial.boundingVolume
 //                TODO: This doesn't work yet, aabbs are not calculated per mesh, figure out why
 //                StaticTransformSpatial(
-                TransformSpatial(
-                    transformComponent.transform,
-                    AABB(origin.localMin, origin.localMax),
-                )
+                    TransformSpatial(
+                        transformComponent.transform,
+                        AABB(origin.localMin, origin.localMax),
+                    )
+                }
+                allocateVertexIndexBufferSpace(this, descr)
+                add(this)
             }
-            allocateVertexIndexBufferSpace(this, descr)
         }
     }
 
@@ -442,7 +445,6 @@ class ModelSystem(
         currentWriteState[entitiesStateHolder.entitiesState].renderBatchesStatic.clear()
         currentWriteState[entitiesStateHolder.entitiesState].renderBatchesAnimated.clear()
 
-        var batchIndex = 0
         forEachEntity { parentEntityId ->
             val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
             val entityIds = listOf(parentEntityId) + instances
@@ -523,7 +525,6 @@ class ModelSystem(
                     }
                 }
             }
-            batchIndex++
         }
     }
 

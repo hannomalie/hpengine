@@ -17,6 +17,7 @@ import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
@@ -27,6 +28,7 @@ open class DirectFirstPassPipeline(
     private val program: Program<out FirstPassUniforms>,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val fallbackTexture: Texture? = null,
     // TODO: Use shouldBeSkipped
     protected val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
@@ -103,7 +105,7 @@ open class DirectFirstPassPipeline(
                 }
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.uniforms.entityBaseIndex = 0
-                program.setTextureUniforms(batch.material.maps)
+                program.setTextureUniforms(batch.material.maps, fallbackTexture)
 
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(

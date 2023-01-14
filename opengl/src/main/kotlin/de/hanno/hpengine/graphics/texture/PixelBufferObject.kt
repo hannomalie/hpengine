@@ -7,15 +7,16 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL21.*
 import java.nio.ByteBuffer
 
+context(GraphicsApi)
 class PixelBufferObject(val id: Int) {
 
     companion object {
-        operator fun invoke() = PixelBufferObject(glGenBuffers())
+        context(GraphicsApi)
+        operator fun invoke() = PixelBufferObject(onGpu { glGenBuffers() })
     }
 
-    fun put(graphicsApi: GraphicsApi, data: ByteBuffer) {
-
-        val buffer = graphicsApi.onGpu {
+    fun put(data: ByteBuffer) {
+        val buffer = onGpu {
             GL15.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, id)
             GL15.glBufferData(GL_PIXEL_UNPACK_BUFFER, data.capacity().toLong(), GL15.GL_STREAM_COPY)
             val buffer = GL15.glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)!!
@@ -24,24 +25,18 @@ class PixelBufferObject(val id: Int) {
         }
 
         buffer.put(data)
-        unmap(graphicsApi)
+        unmap()
     }
 
-    fun unmap(graphicsApi: GraphicsApi) {
-        graphicsApi.onGpu {
-            bind()
-            val isMapped = GL15.glGetBufferParameteri(GL_PIXEL_UNPACK_BUFFER, GL15.GL_BUFFER_MAPPED) == GL11.GL_TRUE
-            val zeroIsBound = GL11.glGetInteger(GL_PIXEL_UNPACK_BUFFER_BINDING) == 0
-            if (isMapped && !zeroIsBound) {
-                GL15.glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
-            }
-        }
+    fun unmap() = onGpu {
+        bind()
+        GL15.glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
     }
 
-    fun bind() {
+    fun bind() = onGpu {
         GL15.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, id)
     }
-    fun unbind() {
+    fun unbind() = onGpu {
         GL15.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
     }
 }
