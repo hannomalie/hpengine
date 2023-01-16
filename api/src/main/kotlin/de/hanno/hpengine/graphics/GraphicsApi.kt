@@ -337,6 +337,8 @@ interface GraphicsApi {
 
     fun DepthBuffer(width: Int, height: Int): DepthBuffer<Texture2D>
     fun FrameBuffer(depthBuffer: DepthBuffer<*>?): FrameBuffer
+
+    val pixelBufferObjectPool: PixelBufferObjectPool
 }
 
 enum class Access {

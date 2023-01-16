@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.buffer.vertex
 
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
@@ -87,7 +88,7 @@ fun GpuBuffer.drawInstancedBaseVertex(
     return instanceCount * (indexCount / 3)
 }
 
-context(GPUProfiler)
+context(GPUProfiler, GraphicsApi)
 fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
@@ -106,7 +107,7 @@ fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
     )
 }
 
-context(GPUProfiler)
+context(GPUProfiler, GraphicsApi)
 fun drawElementsIndirectCount(
     indexBuffer: GpuBuffer,
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,

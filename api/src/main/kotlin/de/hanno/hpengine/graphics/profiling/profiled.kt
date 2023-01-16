@@ -2,9 +2,9 @@ package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 
-context(GPUProfiler)
+context(GPUProfiler, GraphicsApi)
 inline fun <T> profiled(name: String, action: () -> T): T {
-    val task = start(name)
+    val task = onGpu { start(name) }
     try {
         return action()
     } finally {

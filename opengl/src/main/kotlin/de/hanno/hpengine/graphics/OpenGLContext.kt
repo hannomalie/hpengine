@@ -119,6 +119,7 @@ class OpenGLContext private constructor(
     )
 
     override fun FrameBuffer(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer.invoke(depthBuffer)
+    override val pixelBufferObjectPool = OpenGLPixelBufferObjectPool()
 
     override fun createView(texture: CubeMapArray, cubeMapIndex: Int): CubeMap {
         val viewTextureId = onGpu { glGenTextures() }
@@ -486,7 +487,7 @@ class OpenGLContext private constructor(
         bindFrameBuffer(frameBuffer.frameBuffer)
     }
 
-    override fun finish() = glFinish()
+    override fun finish() = onGpu { glFinish() }
 
     override fun copyImageSubData(
         source: Texture,

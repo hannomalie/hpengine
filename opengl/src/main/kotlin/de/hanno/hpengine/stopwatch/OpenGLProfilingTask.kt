@@ -19,8 +19,8 @@ class OpenGLProfilingTask(
 
     val children = ArrayList<OpenGLProfilingTask>()
 
-    private var startQuery: Int = openGLGPUProfiler.genQuery()
-    private var endQuery: Int = openGLGPUProfiler.genQuery()
+    internal var startQuery: Int = openGLGPUProfiler.genQuery()
+    internal var endQuery: Int = openGLGPUProfiler.genQuery()
 
     private var startTimeCpu: Long = System.nanoTime()
     private var endTimeCpu: Long = 0
