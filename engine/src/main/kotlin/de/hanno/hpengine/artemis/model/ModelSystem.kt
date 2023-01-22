@@ -48,9 +48,7 @@ import org.lwjgl.BufferUtils
 import struktgen.api.get
 import struktgen.api.typed
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
 
 context(GraphicsApi)
 @One(
@@ -101,7 +99,7 @@ class ModelSystem(
 
     override fun inserted(entityId: Int) {
         threadPool.submit {
-            if(loadModelToCache(entityId) != null) {
+            if (loadModelToCache(entityId) != null) {
                 cacheEntityIndices()
 
                 requiredEntityBufferSize = calculateRequiredEntityBufferSize()
@@ -112,6 +110,7 @@ class ModelSystem(
     override fun removed(entities: IntBag?) {
         cacheEntityIndices()
     }
+
     override fun removed(entityId: Int) {
         cacheEntityIndices()
     }
@@ -132,9 +131,10 @@ class ModelSystem(
     private fun loadModelToCache(entityId: Int): ModelCacheComponent? {
         val instanceComponent = instanceComponentMapper.getOrNull(entityId)
         val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
-        if(instanceComponent == null && modelComponentOrNull == null) return null
+        if (instanceComponent == null && modelComponentOrNull == null) return null
 
-        val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper[instanceComponent!!.targetEntity]
+        val transformComponent =
+            transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper[instanceComponent!!.targetEntity]
         val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
 
         val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
@@ -165,7 +165,8 @@ class ModelSystem(
                     materialManager.registerMaterial(meshMaterial)
                     meshMaterial.programDescription?.let { programDescription ->
                         programCache[programDescription] =
-                            programManager.getFirstPassProgram(programDescription,
+                            programManager.getFirstPassProgram(
+                                programDescription,
                                 StaticFirstPassUniforms()
                             ) as ProgramImpl<FirstPassUniforms>
                     }
@@ -193,37 +194,41 @@ class ModelSystem(
     }
 
     override fun processSystem() {
-        updateGpuEntitiesArray()
-        updateGpuJointsArray()
-
-        var entityBufferIndex = 0
-
         // TODO: This should not happen here, but in "inserted" methods
         requiredEntityBufferSize = calculateRequiredEntityBufferSize()
+
+        gpuEntitiesArray = gpuEntitiesArray.enlarge(requiredEntityBufferSize)
+        gpuJointsArray = gpuJointsArray.enlarge(joints.size)
+
+        var entityBufferIndex = 0
 
         forEachEntity { parentEntityId ->
             val modelComponent = modelComponentMapper.getOrNull(parentEntityId)
 
             val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances
-            val entityIds = if(instances == null) arrayOf(parentEntityId) else arrayOf(parentEntityId) + instances
+            val entityIds = if (instances == null) arrayOf(parentEntityId) else arrayOf(parentEntityId) + instances
 
             for (entityId in entityIds) {
                 val instanceComponent = instanceComponentMapper.getOrNull(entityId)
                 val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
 
-                if(modelComponent != null) {
-                    val modelCacheComponent = modelCacheComponentMapper.getOrNull(entityId) ?: modelCacheComponentMapper[parentEntityId]
+                if (modelComponent != null) {
+                    val modelCacheComponent =
+                        modelCacheComponentMapper.getOrNull(entityId) ?: modelCacheComponentMapper[parentEntityId]
                     val modelIsLoaded = modelCacheComponent != null
 
-                    if(modelIsLoaded) {
+                    if (modelIsLoaded) {
                         val model = modelCacheComponent.model
-                        when(model) {
+                        when (model) {
                             is AnimatedModel -> model.animations.values.forEach {
                                 it.update(world.delta)
                             }
-                            is StaticModel -> {  }
+                            is StaticModel -> {}
                         }
-                        val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(instanceComponent!!.targetEntity)
+                        val transformComponent =
+                            transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(
+                                instanceComponent!!.targetEntity
+                            )
                         val transform = transformComponent!!.transform
 
                         val allocation = modelCacheComponent.allocation
@@ -231,7 +236,7 @@ class ModelSystem(
                         val meshes = model.meshes
 
 
-                        val animationFrame = when(model) {
+                        val animationFrame = when (model) {
                             is AnimatedModel -> model.animation.currentFrame
                             is StaticModel -> 0
                         }
@@ -239,7 +244,8 @@ class ModelSystem(
                             for ((targetMeshIndex, mesh) in meshes.withIndex()) {
                                 val currentEntity = gpuEntitiesArray[entityBufferIndex]
 
-                                val meshMaterial = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
+                                val meshMaterial = materialComponentOrNull?.material
+                                    ?: mesh.material // TODO: Think about override per mesh instead of all at once
                                 val targetMaterialIndex = materialManager.indexOf(meshMaterial)
                                 currentEntity.run {
                                     materialIndex = targetMaterialIndex
@@ -252,7 +258,8 @@ class ModelSystem(
                                     animationFrame0 = animationFrame
                                     isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                                     dummy4 = allocation.indexOffset
-                                    val boundingVolume = modelCacheComponent.meshSpatials[targetMeshIndex].boundingVolume
+                                    val boundingVolume =
+                                        modelCacheComponent.meshSpatials[targetMeshIndex].boundingVolume
 
                                     setTrafoAndBoundingVolume(transform.transformation, boundingVolume)
                                 }
@@ -263,16 +270,17 @@ class ModelSystem(
                 }
             }
         }
-    }
-
-    private fun updateGpuEntitiesArray() {
-        gpuEntitiesArray = gpuEntitiesArray.enlarge(requiredEntityBufferSize)
+        with(gpuJointsArray.byteBuffer) {
+            for ((index, joint) in joints.withIndex()) {
+                gpuJointsArray[index].set(joint)
+            }
+        }
     }
 
     private var requiredEntityBufferSize: Int = 0
     private fun calculateRequiredEntityBufferSize(): Int = mapEntity { parentEntityId ->
         val modelComponentOrNull = modelComponentMapper.getOrNull(parentEntityId)
-        if(modelComponentOrNull != null) {
+        if (modelComponentOrNull != null) {
 
             val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
             val entityIds = listOf(parentEntityId) + instances
@@ -282,14 +290,6 @@ class ModelSystem(
         } else 0
     }.sum()
 
-    private fun updateGpuJointsArray() = with(gpuJointsArray.byteBuffer) {
-        gpuJointsArray = gpuJointsArray.enlarge(joints.size)
-
-        for ((index, joint) in joints.withIndex()) {
-            gpuJointsArray[index].set(joint)
-        }
-    }
-
     fun cacheEntityIndices() {
         entityIndices.clear()
         var instanceIndex = 0
@@ -297,7 +297,7 @@ class ModelSystem(
             entityIndices[parentEntityId] = instanceIndex
 
             val modelCacheComponent = modelCacheComponentMapper.getOrNull(parentEntityId)
-            if(modelCacheComponent != null) {
+            if (modelCacheComponent != null) {
                 val meshCount = modelCacheComponent.model.meshes.size
 
                 val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
@@ -310,7 +310,7 @@ class ModelSystem(
     }
 
     fun allocateVertexIndexBufferSpace(modelCacheComponent: ModelCacheComponent, descr: ModelComponentDescription) {
-        val allocation = when(val model = modelCacheComponent.model) {
+        val allocation = when (val model = modelCacheComponent.model) {
             is AnimatedModel -> {
                 val vertexIndexBuffer = vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForModel(model)
@@ -344,6 +344,7 @@ class ModelSystem(
         val model = modelCache[modelComponent.modelComponentDescription]!!
         return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
     }
+
     fun VertexIndexBuffer<*>.allocateForModel(model: Model<*>): VertexIndexOffsets {
         return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
     }
@@ -362,6 +363,7 @@ class ModelSystem(
             }
         }
     }
+
     fun Model<*>.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
         var currentIndexOffset = vertexIndexOffsets.indexOffset
         var currentVertexOffset = vertexIndexOffsets.vertexOffset
@@ -383,7 +385,7 @@ class ModelSystem(
         vertexIndexOffsets: VertexIndexOffsets
     ): List<VertexIndexOffsets> {
         val model = modelCache[modelComponentDescription]!!
-        val (targetBuffer, vertexType) = when(model) {
+        val (targetBuffer, vertexType) = when (model) {
             is AnimatedModel -> Pair(vertexIndexBufferAnimated, AnimatedVertexStruktPacked.type)
             is StaticModel -> Pair(vertexIndexBuffer, VertexStruktPacked.type)
         }
@@ -397,13 +399,14 @@ class ModelSystem(
             vertexIndexOffsetsForMeshes
         }
     }
+
     fun Model<*>.putToBuffer(
         vertexIndexBuffer: VertexIndexBuffer<*>,
         vertexIndexBufferAnimated: VertexIndexBuffer<*>,
         vertexIndexOffsets: VertexIndexOffsets
     ): List<VertexIndexOffsets> {
         val model = this
-        val (targetBuffer, vertexType) = when(model) {
+        val (targetBuffer, vertexType) = when (model) {
             is AnimatedModel -> Pair(vertexIndexBufferAnimated, AnimatedVertexStruktPacked.type)
             is StaticModel -> Pair(vertexIndexBuffer, VertexStruktPacked.type)
         }
@@ -456,13 +459,16 @@ class ModelSystem(
             val entityId = parentEntityId
 
             val instanceComponent = instanceComponentMapper.getOrNull(entityId)
-            val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(instanceComponent!!.targetEntity)
+            val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(
+                instanceComponent!!.targetEntity
+            )
             val transform = transformComponent!!.transform
 
             if (modelComponent != null && modelCacheComponent != null) {
-                val materialComponentOrNull = materialComponentMapper.getOrNull(entityId) ?: instanceComponent?.targetEntity?.let { targetEntity ->
-                    materialComponentMapper.getOrNull(targetEntity)
-                }
+                val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
+                    ?: instanceComponent?.targetEntity?.let { targetEntity ->
+                        materialComponentMapper.getOrNull(targetEntity)
+                    }
                 val entityVisible = !invisibleComponentMapper.has(entityId)
 
                 val entityIndexOf = entityIndices[parentEntityId]!! // TODO: Factor in instance index here
@@ -479,7 +485,8 @@ class ModelSystem(
                     val meshIsInFrustum =
                         intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
 
-                    val visibleForCamera = meshIsInFrustum// || entity.instanceCount > 1 // TODO: Better culling for instances
+                    val visibleForCamera =
+                        meshIsInFrustum// || entity.instanceCount > 1 // TODO: Better culling for instances
                     val meshBufferIndex = entityIndexOf + meshIndex //* entity.instanceCount
 
                     val batch =
@@ -506,10 +513,13 @@ class ModelSystem(
                         this.boundingSphereRadius = boundingSphereRadius
                         drawElementsIndirectCommand.instanceCount = instanceCount
                         drawElementsIndirectCommand.count = model.meshIndexCounts[meshIndex]
-                        drawElementsIndirectCommand.firstIndex = allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].indexOffset
-                        drawElementsIndirectCommand.baseVertex = allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].vertexOffset
+                        drawElementsIndirectCommand.firstIndex =
+                            allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].indexOffset
+                        drawElementsIndirectCommand.baseVertex =
+                            allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].vertexOffset
                         this.animated = !model.isStatic
-                        val meshMaterial = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
+                        val meshMaterial = materialComponentOrNull?.material
+                            ?: mesh.material // TODO: Think about override per mesh instead of all at once
                         material = meshMaterial
                         program = meshMaterial.programDescription?.let { programCache[it]!! }
                         entityIndex = entityIndexOf //TODO: check if correct index, it got out of hand
@@ -532,10 +542,11 @@ class ModelSystem(
         instancesComponentMapper.create(targetId).apply {
             instances.add(sourceId)
         }
-        val transform = transformComponentMapper.getOrNull(sourceId)?.transform ?: transformComponentMapper[targetId].transform
+        val transform =
+            transformComponentMapper.getOrNull(sourceId)?.transform ?: transformComponentMapper[targetId].transform
         spatialComponentMapper.getOrNull(sourceId)?.spatial?.recalculate(transform.transformation)
         val parentModelCacheComponent = modelCacheComponentMapper.getOrNull(targetId)
-        if(parentModelCacheComponent != null) {
+        if (parentModelCacheComponent != null) {
             modelCacheComponentMapper.create(sourceId).apply {
                 model = parentModelCacheComponent.model
                 allocation = parentModelCacheComponent.allocation

@@ -101,6 +101,16 @@ sealed interface UploadInfo {
         override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) data.size else 1
     }
 
+    data class LazyTexture2DUploadInfo(
+        override val dimension: TextureDimension2D,
+        val data: List<() -> ByteBuffer>,
+        override val dataCompressed: Boolean = false,
+        override val srgba: Boolean = false,
+        override val internalFormat: InternalTextureFormat,
+        override val textureFilterConfig: TextureFilterConfig,
+        override val mipMapCount: Int
+    ) : Texture2DUploadInfo
+
     data class Texture3DUploadInfo(
         override val dimension: TextureDimension3D,
         override val internalFormat: InternalTextureFormat,

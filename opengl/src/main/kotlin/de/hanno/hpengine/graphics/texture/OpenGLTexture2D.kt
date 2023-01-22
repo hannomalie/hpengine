@@ -8,6 +8,7 @@ import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.WrapMode
 import de.hanno.hpengine.graphics.constants.glValue
+import de.hanno.hpengine.graphics.texture.OpenGLTexture2D.Companion.toByteBuffer
 import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import jogl.DDSImage
 import org.lwjgl.BufferUtils
@@ -90,15 +91,6 @@ data class OpenGLTexture2D(
                 if (srgba) SRGB8_ALPHA8_EXT else RGBA16F
             }
 
-            val mipMapCount = TextureDimension(image.width, image.height).getMipMapCount()
-            var nextWidth = (image.width * 0.5).toInt()
-            val mipMapData = (0 until mipMapCount-1).map {
-                image.resize(nextWidth).apply {
-                    nextWidth = (nextWidth * 0.5).toInt()
-                }
-            }.map { it.toByteBuffer() }
-            val data = listOf(image.toByteBuffer()) + mipMapData
-
             return OpenGLTexture2D(
                 UploadInfo.SimpleTexture2DUploadInfo(
                     TextureDimension(image.width, image.height), null, false, srgba,
@@ -106,12 +98,34 @@ data class OpenGLTexture2D(
                     textureFilterConfig = TextureFilterConfig(),
                 )
             ).apply {
+
+                val mipMapCount = TextureDimension(image.width, image.height).getMipMapCount()
+                val widths = mutableListOf<Int>()
+                var nextWidth = (image.width * 0.5).toInt()
+                (0 until mipMapCount-1).forEach {
+                    widths.add(nextWidth)
+                    nextWidth = (nextWidth * 0.5).toInt()
+                }
                 CompletableFuture.supplyAsync {
-                    val info = UploadInfo.CompleteTexture2DUploadInfo(
+                    val mipMapData = widths.map {
+                        {
+                            image.resize(it).toByteBuffer()
+                        }
+                    }
+                    val data = listOf { image.toByteBuffer() } + mipMapData
+
+//                    val info = UploadInfo.CompleteTexture2DUploadInfo(
+//                        TextureDimension(image.width, image.height), data.map { it.invoke() }, false, srgba,
+//                        internalFormat = internalFormat,
+//                        textureFilterConfig = TextureFilterConfig(),
+//                    )
+                    val info = UploadInfo.LazyTexture2DUploadInfo(
                         TextureDimension(image.width, image.height), data, false, srgba,
                         internalFormat = internalFormat,
                         textureFilterConfig = TextureFilterConfig(),
+                        mipMapCount,
                     )
+
                     upload(info)
                 }
             }
@@ -175,16 +189,7 @@ data class OpenGLTexture2D(
 
         context(GraphicsApi)
         private fun OpenGLTexture2D.uploadWithPixelBuffer(info: Texture2DUploadInfo) {
-            val data = when(info) {
-                is UploadInfo.CompleteTexture2DUploadInfo -> info.data.firstOrNull()
-                is UploadInfo.SimpleTexture2DUploadInfo -> info.data
-            }
-
-            if(data != null) {
-                pixelBufferObjectPool.scheduleUpload(info, this)
-            }
-
-            uploadState = UploadState.UPLOADED
+            pixelBufferObjectPool.scheduleUpload(info, this)
         }
 
         context(GraphicsApi)
@@ -194,6 +199,7 @@ data class OpenGLTexture2D(
             val data = when(info) {
                 is UploadInfo.CompleteTexture2DUploadInfo -> info.data.firstOrNull()
                 is UploadInfo.SimpleTexture2DUploadInfo -> info.data
+                is UploadInfo.LazyTexture2DUploadInfo -> info.data.firstOrNull()?.invoke()
             }
 
             if(data != null) {

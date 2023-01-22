@@ -60,34 +60,36 @@ class RenderManager(
 
     internal val rendering = AtomicBoolean(false)
     init {
-        launchEndlessRenderLoop { deltaSeconds ->
-            onGpu(block = {
-                rendering.getAndSet(true)
-                gpuProfiler.run {
-                    try {
-                        renderStateContext.renderState.readLocked { currentReadState ->
+        launchEndlessRenderLoop { _ ->
+            gpuProfiler.run {
+                onGpu {
+                    profiled("Frame") {
+                        rendering.getAndSet(true)
+                        try {
+                            renderStateContext.renderState.readLocked { currentReadState ->
 
-                            val renderSystems = when (val renderMode = renderMode) {
-                                RenderMode.Normal -> {
-                                    renderSystems.filter {
-                                        renderSystemsConfig.run { it.enabled }
-                                    }
-                                }
-                                is RenderMode.SingleFrame -> {
-                                    // TODO: Make rendersystems excludable from single step, like editor
-                                    if (renderMode.frameRequested.get()) {
-                                        renderSystems.filter {
-                                            renderSystemsConfig.run { it.enabled }
+                                val renderSystems = profiled("determineRenderSystems") {
+                                    when (val renderMode = renderMode) {
+                                        RenderMode.Normal -> {
+                                            renderSystems.filter {
+                                                renderSystemsConfig.run { it.enabled }
+                                            }
                                         }
-                                    } else {
-                                        emptyList() // TODO: Check whether this still works
-                                    }.apply {
-                                        renderMode.frameRequested.getAndSet(false)
+                                        is RenderMode.SingleFrame -> {
+                                            // TODO: Make rendersystems excludable from single step, like editor
+                                            if (renderMode.frameRequested.get()) {
+                                                renderSystems.filter {
+                                                    renderSystemsConfig.run { it.enabled }
+                                                }
+                                            } else {
+                                                emptyList() // TODO: Check whether this still works
+                                            }.apply {
+                                                renderMode.frameRequested.getAndSet(false)
+                                            }
+                                        }
                                     }
                                 }
-                            }
 
-                            profiled("Frame") {
                                 profiled("renderSystems") {
                                     renderSystems.groupBy { it.sharedRenderTarget }
                                         .forEach { (renderTarget, renderSystems) ->
@@ -101,7 +103,10 @@ class RenderManager(
 
                                 profiled("present") {
                                     window.frontBuffer.use(true)
-                                    textureRenderer.drawToQuad(finalOutput.texture2D, mipMapLevel = finalOutput.mipmapLevel)
+                                    textureRenderer.drawToQuad(
+                                        finalOutput.texture2D,
+                                        mipMapLevel = finalOutput.mipmapLevel
+                                    )
                                     debugOutput.texture2D?.let { debugOutputTexture ->
                                         textureRenderer.drawToQuad(
                                             debugOutputTexture,
@@ -116,7 +121,6 @@ class RenderManager(
                                     checkCommandSyncs()
                                 }
 
-                                val oldFenceSync = currentReadState.gpuCommandSync
                                 profiled("finishFrame") {
                                     finishFrame(currentReadState)
                                     renderSystems.forEach {
@@ -129,20 +133,17 @@ class RenderManager(
                                 profiled("swapBuffers") {
                                     window.swapBuffers()
                                 }
-//                            require(oldFenceSync.isSignaled) {
-//                                "GPU has not finished all actions using resources of read state, can't swap"
-//                            }
                             }
-                            gpuProfiler.dump()
-                        }
 
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    } finally {
-                        rendering.getAndSet(false)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        } finally {
+                            rendering.getAndSet(false)
+                        }
                     }
+                    gpuProfiler.dump()
                 }
-            })
+            }
         }
     }
 

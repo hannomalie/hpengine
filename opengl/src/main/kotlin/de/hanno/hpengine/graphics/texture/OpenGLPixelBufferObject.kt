@@ -6,6 +6,7 @@ import de.hanno.hpengine.graphics.constants.BufferTarget
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.glValue
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.query.GpuTimerQuery
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import de.hanno.hpengine.stopwatch.OpenGLProfilingTask
 import org.lwjgl.opengl.GL11
@@ -36,8 +37,6 @@ class OpenGLPixelBufferObject: PixelBufferObject {
 
                     val level = index
                     onGpu {
-                        finish()
-                        bindTexture(TextureTarget.TEXTURE_2D, texture.id)
                         buffer.bind()
                         if (info.dataCompressed) {
                             glCompressedTextureSubImage2D(
@@ -59,12 +58,12 @@ class OpenGLPixelBufferObject: PixelBufferObject {
                                 0,
                                 currentWidth,
                                 currentHeight,
-                                GL11.GL_RGBA,
-                                GL11.GL_UNSIGNED_BYTE,
+                                GL_RGBA,
+                                GL_UNSIGNED_BYTE,
                                 0
                             )
                         }
-                        finish()
+                        buffer.unbind()
                     }
                     currentWidth = (currentWidth * 0.5).toInt()
                     currentHeight = (currentHeight * 0.5).toInt()
@@ -72,45 +71,96 @@ class OpenGLPixelBufferObject: PixelBufferObject {
             }
             is UploadInfo.SimpleTexture2DUploadInfo -> {
 
-                buffer.buffer.put(info.data!!)
-                buffer.buffer.rewind()
+                info.data?.let { data ->
 
-                onGpu {
-                    bindTexture(TextureTarget.TEXTURE_2D, texture.id)
-                    buffer.bind()
-                    if (info.dataCompressed) {
-                        GL13.glCompressedTexSubImage2D(
-                            GL11.GL_TEXTURE_2D,
-                            0,
-                            0,
-                            0,
-                            info.dimension.width,
-                            info.dimension.height,
-                            info.internalFormat.glValue,
-                            info.data!!.capacity(),
-                            0
-                        )
-                    } else {
-                        GL11.glTexSubImage2D(
-                            GL11.GL_TEXTURE_2D,
-                            0,
-                            0,
-                            0,
-                            info.dimension.width,
-                            info.dimension.height,
-                            GL11.GL_RGBA,
-                            GL11.GL_UNSIGNED_BYTE,
-                            0
-                        )
+                    buffer.buffer.put(data)
+                    buffer.buffer.rewind()
+
+                    onGpu {
+                        bindTexture(TextureTarget.TEXTURE_2D, texture.id)
+                        buffer.bind()
+                        if (info.dataCompressed) {
+                            glCompressedTexSubImage2D(
+                                GL_TEXTURE_2D,
+                                0,
+                                0,
+                                0,
+                                info.dimension.width,
+                                info.dimension.height,
+                                info.internalFormat.glValue,
+                                data.capacity(),
+                                0
+                            )
+                        } else {
+                            glTexSubImage2D(
+                                GL_TEXTURE_2D,
+                                0,
+                                0,
+                                0,
+                                info.dimension.width,
+                                info.dimension.height,
+                                GL_RGBA,
+                                GL_UNSIGNED_BYTE,
+                                0
+                            )
+                        }
+                        generateMipMaps(texture)
+                        buffer.unbind()
+                        finish()
                     }
-                    generateMipMaps(texture)
-                    finish()
+                }
+            }
+            is UploadInfo.LazyTexture2DUploadInfo -> {
+
+                var currentWidth = info.dimension.width
+                var currentHeight = info.dimension.height
+
+                info.data.forEachIndexed { index, dataProvider ->
+                    val data = dataProvider()
+
+                    buffer.buffer.rewind()
+                    data.rewind()
+                    buffer.buffer.put(data)
+                    buffer.buffer.rewind()
+
+                    val level = index
+                    // TODO: Strange spiked whenever the last mip was updated.
+                    onGpu {
+                        buffer.bind()
+                        if (info.dataCompressed) {
+                            glCompressedTextureSubImage2D(
+                                texture.id,
+                                level,
+                                0,
+                                0,
+                                currentWidth,
+                                currentHeight,
+                                info.internalFormat.glValue,
+                                data.capacity(),
+                                0
+                            )
+                        } else {
+                            glTextureSubImage2D(
+                                texture.id,
+                                level,
+                                0,
+                                0,
+                                currentWidth,
+                                currentHeight,
+                                GL_RGBA,
+                                GL_UNSIGNED_BYTE,
+                                0
+                            )
+                        }
+                        buffer.unbind()
+                    }
+                    currentWidth = (currentWidth * 0.5).toInt()
+                    currentHeight = (currentHeight * 0.5).toInt()
                 }
             }
         }
 
         texture.uploadState = UploadState.UPLOADED
-        buffer.unbind()
     }
 }
 

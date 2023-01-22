@@ -189,18 +189,15 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
             this(Vector3f(center).sub(Vector3f(halfExtents)), Vector3f(center).add(Vector3f(halfExtents)))
 
     private fun transform(transform: Matrix4f) {
-        val localMin = Vector3f(localAABB.min)
-        val localMax = Vector3f(localAABB.max)
+        transform.transformPosition(localAABB.min, corners[0])
+        transform.transformPosition(corners[1].set(localAABB.min.x, localAABB.min.y, localAABB.max.z), corners[1])
+        transform.transformPosition(corners[2].set(localAABB.max.x, localAABB.min.y, localAABB.min.z), corners[2])
+        transform.transformPosition(corners[3].set(localAABB.max.x, localAABB.min.y, localAABB.max.z), corners[3])
 
-        transform.transformPosition(localMin, corners[0])
-        transform.transformPosition(corners[1].set(localMin.x, localMin.y, localMax.z), corners[1])
-        transform.transformPosition(corners[2].set(localMax.x, localMin.y, localMin.z), corners[2])
-        transform.transformPosition(corners[3].set(localMax.x, localMin.y, localMax.z), corners[3])
-
-        transform.transformPosition(localMax, corners[4])
-        transform.transformPosition(corners[5].set(localMin.x, localMax.y, localMax.z), corners[5])
-        transform.transformPosition(corners[6].set(localMax.x, localMax.y, localMin.z), corners[6])
-        transform.transformPosition(corners[7].set(localMin.x, localMax.y, localMin.z), corners[7])
+        transform.transformPosition(localAABB.max, corners[4])
+        transform.transformPosition(corners[5].set(localAABB.min.x, localAABB.max.y, localAABB.max.z), corners[5])
+        transform.transformPosition(corners[6].set(localAABB.max.x, localAABB.max.y, localAABB.min.z), corners[6])
+        transform.transformPosition(corners[7].set(localAABB.min.x, localAABB.max.y, localAABB.min.z), corners[7])
 
         val minResult = Vector3f(absoluteMaximum)
         val maxResult = Vector3f(absoluteMinimum)
