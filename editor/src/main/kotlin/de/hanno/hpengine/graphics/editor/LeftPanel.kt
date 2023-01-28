@@ -12,9 +12,12 @@ import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.imgui.dsl.Window
+import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.model.material.MaterialManager
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
 fun ImGuiEditor.leftPanel(
@@ -49,7 +52,6 @@ fun ImGuiEditor.leftPanel(
                             selectOrUnselect(SimpleEntitySelection(entityId, components.toList()))
                         }
                         components.forEach { component ->
-
                             val openNextNode = when (val selection = selection) {
                                 is EntitySelection -> {
                                     when (val selection: EntitySelection = selection) {
@@ -76,6 +78,8 @@ fun ImGuiEditor.leftPanel(
                                 is OceanWaterSelection -> false
                                 is ReflectionProbeSelection -> false
                                 null -> false
+                                is TextureSelection -> false
+                                is TextureManagerSelection -> false
                             }
                             val componentName = component.javaClass.simpleName
                             ImGui.setNextItemOpen(openNextNode)
@@ -118,6 +122,20 @@ fun ImGuiEditor.leftPanel(
                     }
                 }
 
+                Window.treeNode("Textures") {
+                    artemisWorld.systems.firstIsInstanceOrNull<TextureManagerBaseSystem>()?.let { textureManager ->
+                        text("Manager") {
+                            selectOrUnselect(TextureManagerSelection(textureManager))
+                        }
+                        treeNode("Textures") {
+                            textureManager.textures.entries.sortedBy { it.key }.forEach { (key, texture) ->
+                                text(key.takeLast(15)) {
+                                    selectOrUnselect(TextureSelection(key, texture))
+                                }
+                            }
+                        }
+                    }
+                }
                 Window.treeNode("Materials") {
                     artemisWorld.getSystem(MaterialManager::class.java)?.materials?.sortedBy { it.name }
                         ?.forEach { material ->

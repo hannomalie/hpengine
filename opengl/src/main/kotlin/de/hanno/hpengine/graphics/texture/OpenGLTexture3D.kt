@@ -41,7 +41,7 @@ data class OpenGLTexture3D(
                 handle,
                 filterConfig,
                 wrapMode,
-                UploadState.UPLOADED
+                UploadState.Uploaded
             )
         }
     }

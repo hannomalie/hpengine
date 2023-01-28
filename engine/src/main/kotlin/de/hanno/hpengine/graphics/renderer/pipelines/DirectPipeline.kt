@@ -159,7 +159,7 @@ open class DirectFirstPassPipeline(
             depthMask = batch.material.writesDepth
             cullFace = batch.material.cullBackFaces
             depthTest = batch.material.depthTest
-            program.setTextureUniforms(batch.material.maps)
+            program.setTextureUniforms(batch.material.maps, fallbackTexture)
             program.uniforms.entityIndex = batch.entityBufferIndex
             program.bind()
             vertexIndexBuffer.indexBuffer.draw(

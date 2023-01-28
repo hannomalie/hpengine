@@ -26,21 +26,16 @@ fun main() {
         ),
     )
 
-    Engine(config, listOf(
-        deferredRendererModule,
-//        simpleForwardRendererModule,
-        editorModule,
-    )) {
-        world.loadScene {
-            addStaticModelEntity("Sponza", "assets/models/sponza.obj")
-            addAnimatedModelEntity("Hellknight",
-                "assets/models/doom3monster/monster.md5mesh",
-                AABBData(
-                    Vector3f(-60f, -10f, -35f),
-                    Vector3f(60f, 130f, 50f)
-                )
-            )
-        }
+    val engine = Engine(
+        config,
+        listOf(
+            deferredRendererModule,
+            editorModule,
+        )
+    )
+    engine.world.loadScene {
+        addStaticModelEntity("Sponza", "assets/models/sponza.obj")
     }
+    engine.simulate()
 }
 

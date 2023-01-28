@@ -120,7 +120,7 @@ void main(void) {
 #endif
 
 	if(hasDiffuseMap) {
-		color = texture(diffuseMap, UV);
+		color = texture(diffuseMap, UV, material.diffuseMipmapBias);
 		alpha *= color.a;
 	}
 

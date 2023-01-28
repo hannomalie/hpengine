@@ -61,20 +61,44 @@ open class AnimatedFirstPassUniforms: FirstPassUniforms() {
 }
 
 context(GraphicsApi)
-fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>, diffusefallbackTexture: Texture? = null) {
+fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>, diffuseFallbackTexture: Texture? = null) {
     for (mapEnumEntry in Material.MAP.values()) {
-
         if (maps.contains(mapEnumEntry)) {
             val map = maps[mapEnumEntry]!!
             if (map.id > 0) {
-                if(map.uploadState == UploadState.UPLOADED) {
-                    bindTexture(mapEnumEntry.textureSlot, map)
-                    setUniform(mapEnumEntry.uniformKey, true)
-                } else if(mapEnumEntry == Material.MAP.DIFFUSE && diffusefallbackTexture != null) {
-                    bindTexture(mapEnumEntry.textureSlot, diffusefallbackTexture)
-                    setUniform(mapEnumEntry.uniformKey, true)
-                } else {
-                    setUniform(mapEnumEntry.uniformKey, false)
+                val isDiffuse = mapEnumEntry == Material.MAP.DIFFUSE
+
+                when(map.uploadState) {
+                    UploadState.Uploaded -> {
+                        bindTexture(mapEnumEntry.textureSlot, map)
+                        setUniform(mapEnumEntry.uniformKey, true)
+                        if(isDiffuse) {
+                            setUniform("diffuseMipBias", 0)
+                        }
+                    }
+                    UploadState.NotUploaded -> {
+                        if(isDiffuse) {
+                            if(diffuseFallbackTexture != null) {
+                                bindTexture(mapEnumEntry.textureSlot, diffuseFallbackTexture)
+                                setUniform(mapEnumEntry.uniformKey, true)
+                                setUniform("diffuseMipBias", 0)
+                            } else {
+                                setUniform(mapEnumEntry.uniformKey, false)
+                                setUniform("diffuseMipBias", 0)
+                            }
+                        } else {
+                            setUniform(mapEnumEntry.uniformKey, false)
+                        }
+                    }
+                    is UploadState.Uploading -> {
+                        if(isDiffuse) {
+                            bindTexture(mapEnumEntry.textureSlot, map)
+                            setUniform(mapEnumEntry.uniformKey, true)
+                            setUniform("diffuseMipBias", (map.uploadState as UploadState.Uploading).maxMipMapLoaded)
+                        } else {
+                            setUniform(mapEnumEntry.uniformKey, false)
+                        }
+                    }
                 }
             }
         } else {

@@ -1,7 +1,6 @@
 package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
-import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.Access
@@ -33,7 +32,7 @@ context(GraphicsApi)
 class OpenGLTextureManager(
     val config: Config,
     programManager: OpenGlProgramManager,
-) : BaseSystem(), TextureManager {
+) : TextureManagerBaseSystem() {
 
     val engineDir = config.directories.engineDir
 
@@ -289,7 +288,7 @@ class OpenGLTextureManager(
             internalFormat,
             TextureFilterConfig(),
             WrapMode.Repeat,
-            UploadState.UPLOADED
+            UploadState.Uploaded
         )
         TEXTURE_CUBE_MAP -> CubeMap(
             TextureDimension2D(width, height),

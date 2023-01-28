@@ -24,6 +24,11 @@ struct Material {
     vec2 uvScale;
     float lodFactor;
     int useWorldSpaceXZAsTexCoords;
+
+    int diffuseMipmapBias;
+    float dummy0;
+    float dummy1;
+    float dummy2;
 };
 
 struct PointLight {

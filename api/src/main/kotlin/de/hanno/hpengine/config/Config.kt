@@ -78,6 +78,7 @@ data class DebugConfig(
     var freezeCulling: Boolean = false,
     var forceSingleThreadedRendering: Boolean = false,
     var profiling: Boolean = false,
+    var simulateSlowTextureStreaming: Boolean = false,
 )
 
 data class EffectsConfig (

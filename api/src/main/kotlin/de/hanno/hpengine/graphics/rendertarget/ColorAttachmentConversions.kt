@@ -17,7 +17,7 @@ fun List<ColorAttachmentDefinition>.toTextures(
         it.internalFormat,
         it.textureFilter,
         WrapMode.Repeat,
-        UploadState.UPLOADED
+        UploadState.Uploaded
     )
 }
 

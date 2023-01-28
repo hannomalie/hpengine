@@ -119,7 +119,7 @@ class OpenGLContext private constructor(
     )
 
     override fun FrameBuffer(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer.invoke(depthBuffer)
-    override val pixelBufferObjectPool = OpenGLPixelBufferObjectPool()
+    override val pixelBufferObjectPool = config.run { OpenGLPixelBufferObjectPool() }
 
     override fun createView(texture: CubeMapArray, cubeMapIndex: Int): CubeMap {
         val viewTextureId = onGpu { glGenTextures() }
@@ -131,7 +131,7 @@ class OpenGLContext private constructor(
             override var handle: Long = glGetTextureHandleARB(viewTextureId)
             override val textureFilterConfig = texture.textureFilterConfig
             override val wrapMode = texture.wrapMode
-            override var uploadState = UploadState.UPLOADED
+            override var uploadState: UploadState = UploadState.Uploaded
         }.apply {
             onGpu {
                 GL43.glTextureView(
@@ -160,7 +160,7 @@ class OpenGLContext private constructor(
             override var handle: Long = glGetTextureHandleARB(viewTextureId)
             override val textureFilterConfig = texture.textureFilterConfig
             override val wrapMode = texture.wrapMode
-            override var uploadState = UploadState.UPLOADED
+            override var uploadState: UploadState = UploadState.Uploaded
         }.apply {
             GL43.glTextureView(
                 id,
@@ -202,6 +202,13 @@ class OpenGLContext private constructor(
 
     override fun <T> onGpu(block: context(GraphicsApi)() -> T) = invoke { block(this) }
 
+    override fun fencedOnGpu(block: context(GraphicsApi) () -> Unit) {
+        val sync = onGpu { OpenGlCommandSync() }
+        onGpu(block)
+        onGpu {
+            sync.await()
+        }
+    }
     override fun createCommandSync(): OpenGlCommandSync = onGpu {
         OpenGlCommandSync().also {
             commandSyncs.add(it)
@@ -1059,7 +1066,7 @@ class OpenGLContext private constructor(
             handle,
             filterConfig,
             wrapMode,
-            UploadState.UPLOADED
+            UploadState.Uploaded
         )
     }
 
@@ -1081,7 +1088,7 @@ class OpenGLContext private constructor(
                 internalFormat,
                 filterConfig,
                 wrapMode,
-                UploadState.UPLOADED
+                UploadState.Uploaded
             )
         )
     }

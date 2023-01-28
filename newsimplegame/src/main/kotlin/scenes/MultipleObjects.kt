@@ -14,6 +14,7 @@ import de.hanno.hpengine.loadScene
 import de.hanno.hpengine.transform.AABBData
 import org.joml.Vector3f
 import java.io.File
+import java.util.concurrent.CompletableFuture
 
 fun main() {
 
@@ -26,12 +27,14 @@ fun main() {
         ),
     )
 
-    Engine(config, listOf(
+    val engine = Engine(config, listOf(
         deferredRendererModule,
 //        simpleForwardRendererModule,
         editorModule,
-    )) {
-        world.loadScene {
+    ))
+    CompletableFuture.supplyAsync {
+        Thread.sleep(5000)
+        engine.world.loadScene {
             addStaticModelEntity("Sponza", "assets/models/sponza.obj")
             addStaticModelEntity("Ferrari", "assets/models/ferrari.obj", translation = Vector3f(100f, 10f, 0f))
             addAnimatedModelEntity("Hellknight",
@@ -50,5 +53,6 @@ fun main() {
             )
         }
     }
+    engine.simulate()
 }
 

@@ -119,6 +119,7 @@ class MaterialManager(
                 useWorldSpaceXZAsTexCoords = if (material.useWorldSpaceXZAsTexCoords) 1 else 0
                 environmentMapId = material.maps[MAP.ENVIRONMENT]?.id ?: 0
                 diffuseMapHandle = material.deriveHandle(MAP.DIFFUSE, textureManager.defaultTexture)
+                diffuseMipmapBias = material.deriveDiffuseMipmapBias()
                 normalMapHandle = material.deriveHandle(MAP.NORMAL)
                 specularMapHandle = material.deriveHandle(MAP.SPECULAR)
                 heightMapHandle = material.deriveHandle(MAP.HEIGHT)
@@ -129,10 +130,20 @@ class MaterialManager(
             }
         }
     }
+    private fun Material.deriveDiffuseMipmapBias(): Int = if(maps.containsKey(MAP.DIFFUSE)) {
+        when(val uploadState = maps[MAP.DIFFUSE]!!.uploadState) {
+            is UploadState.Uploading -> uploadState.maxMipMapLoaded
+            else -> 0
+        }
+    } else 0
 
     private fun Material.deriveHandle(key: MAP, fallbackTexture: Texture? = null): Long = maps[key]?.let {
         val fallbackHandle = (fallbackTexture?.handle ?: 0)
-        if (it.uploadState == UploadState.UPLOADED) it.handle else fallbackHandle
+        when(it.uploadState) {
+            UploadState.NotUploaded -> fallbackHandle
+            UploadState.Uploaded -> it.handle
+            is UploadState.Uploading -> it.handle
+        }
     } ?: 0
 
 

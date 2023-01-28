@@ -39,6 +39,7 @@ import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABBData
@@ -61,7 +62,7 @@ import kotlin.math.min
 class Engine(
     config: Config,
     modules: List<Module> = emptyList(),
-    afterInit: Engine.() -> Unit = { world.loadDemoScene() })
+    afterInit: Engine.() -> Unit = { world.loadDemoScene() }) // TODO: Change callsites to use new method simulate to block
 {
     private val configModule = module {
         single { config } binds arrayOf(Config::class, Config::class)
@@ -81,7 +82,7 @@ class Engine(
     private val renderManager = koin.get<RenderManager>()
 
     private val openGlProgramManager: OpenGlProgramManager = koin.get()
-    private val textureManager: OpenGLTextureManager = koin.get()
+    private val textureManager: TextureManagerBaseSystem = koin.get()
     val modelSystem = graphicsApi.run {
         ModelSystem(
             config,
@@ -177,9 +178,7 @@ class Engine(
 
     private val updating = AtomicBoolean(false)
 
-    init {
-        afterInit()
-
+    fun simulate() {
         launchEndlessLoop { deltaSeconds ->
             try {
                 updating.getAndSet(true)

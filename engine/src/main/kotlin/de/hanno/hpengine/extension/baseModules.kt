@@ -50,6 +50,7 @@ import de.hanno.hpengine.scene.WorldAABBStateHolder
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import org.joml.Vector4f
@@ -232,6 +233,7 @@ val baseModule = module {
     } binds arrayOf(
         TextureManager::class,
         OpenGLTextureManager::class,
+        TextureManagerBaseSystem::class,
     )
 
     single { FileMonitor(get()) }

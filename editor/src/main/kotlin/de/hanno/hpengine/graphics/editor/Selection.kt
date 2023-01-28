@@ -6,6 +6,8 @@ import de.hanno.hpengine.artemis.GiVolumeComponent
 import de.hanno.hpengine.artemis.OceanWaterComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.renderer.extensions.ReflectionProbe
+import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.model.Mesh
 import de.hanno.hpengine.model.Model
 import de.hanno.hpengine.model.material.Material
@@ -16,6 +18,7 @@ import de.hanno.hpengine.artemis.model.ModelComponent as ModelComponentArtemis
 sealed class Selection {
     object None: Selection()
 }
+data class TextureSelection(val path: String, val texture: Texture): Selection()
 
 data class MaterialSelection(val material: Material): Selection() {
     override fun toString() = material.name
@@ -49,3 +52,5 @@ data class CameraSelection(private val _entity: Int, val cameraComponent: Camera
 data class GiVolumeSelection(val giVolumeComponent: GiVolumeComponent): Selection()
 data class OceanWaterSelection(val oceanWater: OceanWaterComponent): Selection()
 data class ReflectionProbeSelection(val reflectionProbe: ReflectionProbe): Selection()
+
+data class TextureManagerSelection(val textureManagerBaseSystem: TextureManagerBaseSystem): Selection()

@@ -1,7 +1,11 @@
 package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.graphics.sync.GpuCommandSync
+import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL32.*
+import org.lwjgl.system.MemoryStack
+import org.lwjgl.system.MemoryUtil
+import java.nio.IntBuffer
 
 
 class OpenGlCommandSync internal constructor(val onSignaled: (() -> Unit)? = null) : GpuCommandSync {
@@ -16,10 +20,15 @@ class OpenGlCommandSync internal constructor(val onSignaled: (() -> Unit)? = nul
      * retrieves the signal state from the gpu and returns true if it is signaled now but
      * wasn't before and false otherwise.
      */
-    override fun check() {
+    override fun await() {
         val syncResult = glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0)
         val result =  syncResult == GL_ALREADY_SIGNALED || syncResult == GL_CONDITION_SATISFIED
         signaled = result
+    }
+
+    private val intBuffer = BufferUtils.createIntBuffer(1)
+    override fun update() {
+        signaled = glGetSynci(gpuCommandSync, GL_SYNC_STATUS, intBuffer) == GL_SIGNALED
     }
 
     override val isSignaled: Boolean get() = signaled
@@ -31,4 +40,4 @@ class OpenGlCommandSync internal constructor(val onSignaled: (() -> Unit)? = nul
     }
 }
 
-fun List<OpenGlCommandSync>.check() = forEach { it.check() }
+fun List<OpenGlCommandSync>.check() = forEach { it.update() }

@@ -121,7 +121,7 @@ class AreaLightSystem(
                     internalFormat,
                     filterConfig,
                     wrapMode,
-                    UploadState.UPLOADED
+                    UploadState.Uploaded
                 )
                 add(allocation.textureId)
             }

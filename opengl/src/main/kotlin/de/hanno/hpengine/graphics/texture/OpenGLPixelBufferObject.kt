@@ -1,24 +1,20 @@
 package de.hanno.hpengine.graphics.texture
 
 
+import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.BufferTarget
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.glValue
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
-import de.hanno.hpengine.graphics.query.GpuTimerQuery
-import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
-import de.hanno.hpengine.stopwatch.OpenGLProfilingTask
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL21.*
 import org.lwjgl.opengl.GL45.glCompressedTextureSubImage2D
 import org.lwjgl.opengl.GL45.glTextureSubImage2D
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 
-context(GraphicsApi, GPUProfiler)
+
+context(GraphicsApi, GPUProfiler, Config)
 class OpenGLPixelBufferObject: PixelBufferObject {
     private val buffer = PersistentMappedBuffer(50_000_000, BufferTarget.PixelUnpack)
 
@@ -36,7 +32,7 @@ class OpenGLPixelBufferObject: PixelBufferObject {
                     buffer.buffer.rewind()
 
                     val level = index
-                    onGpu {
+                    fencedOnGpu {
                         buffer.bind()
                         if (info.dataCompressed) {
                             glCompressedTextureSubImage2D(
@@ -65,6 +61,7 @@ class OpenGLPixelBufferObject: PixelBufferObject {
                         }
                         buffer.unbind()
                     }
+
                     currentWidth = (currentWidth * 0.5).toInt()
                     currentHeight = (currentHeight * 0.5).toInt()
                 }
@@ -111,81 +108,137 @@ class OpenGLPixelBufferObject: PixelBufferObject {
                 }
             }
             is UploadInfo.LazyTexture2DUploadInfo -> {
-
-                var currentWidth = info.dimension.width
-                var currentHeight = info.dimension.height
-
-                info.data.forEachIndexed { index, dataProvider ->
-                    val data = dataProvider()
-
-                    buffer.buffer.rewind()
-                    data.rewind()
-                    buffer.buffer.put(data)
-                    buffer.buffer.rewind()
-
-                    val level = index
-                    // TODO: Strange spiked whenever the last mip was updated.
-                    onGpu {
-                        buffer.bind()
-                        if (info.dataCompressed) {
-                            glCompressedTextureSubImage2D(
-                                texture.id,
-                                level,
-                                0,
-                                0,
-                                currentWidth,
-                                currentHeight,
-                                info.internalFormat.glValue,
-                                data.capacity(),
-                                0
-                            )
-                        } else {
-                            glTextureSubImage2D(
-                                texture.id,
-                                level,
-                                0,
-                                0,
-                                currentWidth,
-                                currentHeight,
-                                GL_RGBA,
-                                GL_UNSIGNED_BYTE,
-                                0
-                            )
-                        }
-                        buffer.unbind()
-                    }
-                    currentWidth = (currentWidth * 0.5).toInt()
-                    currentHeight = (currentHeight * 0.5).toInt()
+                info.data.asReversed().forEachIndexed { level, foo ->
+                    upload(texture, info.data.size - 1 - level, info, foo)
                 }
             }
         }
 
-        texture.uploadState = UploadState.UPLOADED
+        texture.uploadState = UploadState.Uploaded
+    }
+
+    override fun upload(
+        texture: Texture2D,
+        level: Int,
+        info: UploadInfo.Texture2DUploadInfo,
+        foo: Foo
+    ) {
+        val dataProvider = foo.dataProvider
+        val width = foo.width
+        val height = foo.height
+
+        val data = dataProvider()
+
+        buffer.buffer.rewind()
+        data.rewind()
+        buffer.buffer.put(data)
+        buffer.buffer.rewind()
+
+        fencedOnGpu {
+            buffer.bind()
+            if (info.dataCompressed) {
+                glCompressedTextureSubImage2D(
+                    texture.id,
+                    level,
+                    0,
+                    0,
+                    width,
+                    height,
+                    info.internalFormat.glValue,
+                    data.capacity(),
+                    0
+                )
+            } else {
+                glTextureSubImage2D(
+                    texture.id,
+                    level,
+                    0,
+                    0,
+                    width,
+                    height,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    0
+                )
+            }
+            buffer.unbind()
+        }
+        texture.uploadState = UploadState.Uploading(level)
+
+        if (debug.simulateSlowTextureStreaming) {
+            println("Uploaded level $level")
+            Thread.sleep((level * 100).toLong())
+        }
     }
 }
 
-context(GraphicsApi, GPUProfiler)
+context(GraphicsApi, GPUProfiler, Config)
 class OpenGLPixelBufferObjectPool: PixelBufferObjectPool {
     private val buffers = listOf(
         OpenGLPixelBufferObject(),
-//        OpenGLPixelBufferObject(),
-//        OpenGLPixelBufferObject(),
-//        OpenGLPixelBufferObject(),
-//        OpenGLPixelBufferObject(),
+        OpenGLPixelBufferObject(),
+        OpenGLPixelBufferObject(),
+        OpenGLPixelBufferObject(),
+        OpenGLPixelBufferObject(),
     )
     private val currentBuffer = AtomicInteger(0)
-    private val threadPool = Executors.newFixedThreadPool(buffers.size)
-
-    override fun scheduleUpload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D) {
-        CompletableFuture.supplyAsync({
-            val bufferCounter = currentBuffer.getAndIncrement()
-            val bufferToUse = bufferCounter % buffers.size
-
-            buffers[bufferToUse].let {
-                synchronized(it) {
-                    it.upload(info, texture)
+    private val queue = PriorityBlockingQueue(10000, TaskComparator)
+    private val threadPool = Executors.newFixedThreadPool(buffers.size).apply {
+        repeat(buffers.size) {
+            submit {
+                var current = queue.take()
+                while(current != null) {
+                    current.run()
+                    current = queue.take()
                 }
             }
-        }, threadPool)
+        }
     }
+
+    override fun scheduleUpload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D) {
+        when(info) {
+            is UploadInfo.LazyTexture2DUploadInfo -> {
+                val uploadLevel = { level: Int, foo: Foo ->
+                    val bufferCounter = currentBuffer.getAndIncrement()
+                    val bufferToUse = bufferCounter % buffers.size
+
+                    buffers[bufferToUse].let {
+                        synchronized(it) {
+                            it.upload(texture, level, info, foo)
+                        }
+                    }
+                }
+                info.data.reversed().forEachIndexed { index, foo ->
+                    val level = info.data.size - 1 - index
+                    queue.put(Task(level) {
+                        uploadLevel(level, foo)
+                    })
+                }
+            }
+            else -> {
+                val uploadAllLevels = {
+                    val bufferCounter = currentBuffer.getAndIncrement()
+                    val bufferToUse = bufferCounter % buffers.size
+
+                    buffers[bufferToUse].let {
+                        synchronized(it) {
+                            it.upload(info, texture)
+                        }
+                    }
+                }
+
+                queue.put(Task(0, uploadAllLevels))
+            }
+        }
+    }
+}
+
+class Task(val priority: Int, val action: () -> Unit): Runnable {
+    override fun run() {
+        action()
+    }
+
+}
+private object TaskComparator: Comparator<Task> {
+    override fun compare(o1: Task, o2: Task) = o2.priority.compareTo(o1.priority)
 }

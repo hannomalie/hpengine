@@ -4,5 +4,6 @@ interface GpuCommandSync {
     val isSignaled: Boolean
 
     fun delete() {}
-    fun check()
+    fun await()
+    fun update()
 }

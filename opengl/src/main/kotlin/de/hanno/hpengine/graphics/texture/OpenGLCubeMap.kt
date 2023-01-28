@@ -38,7 +38,7 @@ data class OpenGLCubeMap(
                 handle,
                 filterConfig,
                 wrapMode,
-                UploadState.UPLOADED
+                UploadState.Uploaded
             )
         }
     }

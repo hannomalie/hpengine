@@ -91,7 +91,13 @@ fun ImGuiEditor.rightPanel(
                         oceanWaterInputs(selection)
                     }
                     is ReflectionProbeSelection -> tab("Entity") { }
+                    is TextureSelection -> tab("Entity") {
+                        textureGrid(selection.path, selection.texture)
+                    }
                     Selection.None -> tab("Entity") { }
+                    is TextureManagerSelection -> tab("Entity") {
+                        textureManagerGrid(selection.textureManagerBaseSystem)
+                    }
                 }.let {}
 
                 tab("Output") {

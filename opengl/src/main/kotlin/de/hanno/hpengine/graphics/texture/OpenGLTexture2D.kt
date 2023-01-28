@@ -8,7 +8,6 @@ import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.WrapMode
 import de.hanno.hpengine.graphics.constants.glValue
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D.Companion.toByteBuffer
 import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import jogl.DDSImage
 import org.lwjgl.BufferUtils
@@ -40,7 +39,7 @@ data class OpenGLTexture2D(
     companion object {
 
         context(GraphicsApi)
-        operator fun invoke(file: File, srgba: Boolean = false): OpenGLTexture2D {
+        operator fun invoke(file: File, path: String = file.absolutePath, srgba: Boolean = false): FileBasedTexture2D {
             require(file.exists()) { "File ${file.absolutePath} must exist!" }
             require(file.isFile) { "File ${file.absolutePath} is not a file!" }
 
@@ -50,7 +49,7 @@ data class OpenGLTexture2D(
                 if (srgba) SRGB8_ALPHA8_EXT else RGBA16F
             }
 
-            return if (file.extension == "dds") {
+            val openGLTexture = if (file.extension == "dds") {
                 val ddsImage = DDSImage.read(file)
                 val compressedTextures = true
                 if (compressedTextures) {
@@ -81,6 +80,12 @@ data class OpenGLTexture2D(
                 ImageIO.read(file).apply { DDSConverter.run { rescaleToNextPowerOfTwo() } },
                 srgba
             )
+
+            return FileBasedTexture2D(
+                path,
+                file,
+                openGLTexture
+            )
         }
 
         context(GraphicsApi)
@@ -98,36 +103,40 @@ data class OpenGLTexture2D(
                     textureFilterConfig = TextureFilterConfig(),
                 )
             ).apply {
+                uploadAsync(image, srgba, internalFormat)
+            }
+        }
 
-                val mipMapCount = TextureDimension(image.width, image.height).getMipMapCount()
-                val widths = mutableListOf<Int>()
-                var nextWidth = (image.width * 0.5).toInt()
-                (0 until mipMapCount-1).forEach {
-                    widths.add(nextWidth)
-                    nextWidth = (nextWidth * 0.5).toInt()
+        context(GraphicsApi)
+        internal fun OpenGLTexture2D.uploadAsync(
+            image: BufferedImage,
+            srgba: Boolean,
+            internalFormat: InternalTextureFormat
+        ) {
+            val mipMapCount = TextureDimension(image.width, image.height).getMipMapCount()
+            val widths = mutableListOf<Int>()
+            val heights = mutableListOf<Int>()
+            var nextWidth = (image.width * 0.5).toInt()
+            var nextHeight = (image.width * 0.5).toInt()
+            (0 until mipMapCount - 1).forEach {
+                widths.add(nextWidth)
+                heights.add(nextWidth)
+                nextWidth = (nextWidth * 0.5).toInt()
+                nextHeight = (nextHeight * 0.5).toInt()
+            }
+            CompletableFuture.supplyAsync {
+                val mipMapData = widths.mapIndexed { index, it ->
+                    Foo(it, heights[index]) { image.resize(it).toByteBuffer() }
                 }
-                CompletableFuture.supplyAsync {
-                    val mipMapData = widths.map {
-                        {
-                            image.resize(it).toByteBuffer()
-                        }
-                    }
-                    val data = listOf { image.toByteBuffer() } + mipMapData
+                val data = listOf(Foo(image.width, image.height) { image.toByteBuffer() }) + mipMapData
+                val info = UploadInfo.LazyTexture2DUploadInfo(
+                    TextureDimension(image.width, image.height), data, false, srgba,
+                    internalFormat = internalFormat,
+                    textureFilterConfig = TextureFilterConfig(),
+                    mipMapCount,
+                )
 
-//                    val info = UploadInfo.CompleteTexture2DUploadInfo(
-//                        TextureDimension(image.width, image.height), data.map { it.invoke() }, false, srgba,
-//                        internalFormat = internalFormat,
-//                        textureFilterConfig = TextureFilterConfig(),
-//                    )
-                    val info = UploadInfo.LazyTexture2DUploadInfo(
-                        TextureDimension(image.width, image.height), data, false, srgba,
-                        internalFormat = internalFormat,
-                        textureFilterConfig = TextureFilterConfig(),
-                        mipMapCount,
-                    )
-
-                    upload(info)
-                }
+                upload(info)
             }
         }
 
@@ -173,12 +182,12 @@ data class OpenGLTexture2D(
                 textureAllocationData.handle,
                 textureFilterConfig,
                 wrapMode,
-                UploadState.NOT_UPLOADED
+                UploadState.NotUploaded
             )
         }
 
         context(GraphicsApi)
-        private fun OpenGLTexture2D.upload(info: Texture2DUploadInfo) {
+        internal fun OpenGLTexture2D.upload(info: Texture2DUploadInfo) {
             val usePbo = true
             if (usePbo) {
                 uploadWithPixelBuffer(info)
@@ -199,7 +208,7 @@ data class OpenGLTexture2D(
             val data = when(info) {
                 is UploadInfo.CompleteTexture2DUploadInfo -> info.data.firstOrNull()
                 is UploadInfo.SimpleTexture2DUploadInfo -> info.data
-                is UploadInfo.LazyTexture2DUploadInfo -> info.data.firstOrNull()?.invoke()
+                is UploadInfo.LazyTexture2DUploadInfo -> info.data.firstOrNull()?.dataProvider?.invoke()
             }
 
             if(data != null) {
@@ -229,7 +238,7 @@ data class OpenGLTexture2D(
                 }
             }
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
-            uploadState = UploadState.UPLOADED
+            uploadState = UploadState.Uploaded
         }
     }
 }

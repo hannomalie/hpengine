@@ -10,10 +10,14 @@ import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 
-enum class UploadState {
-    NOT_UPLOADED,
-    UPLOADING,
-    UPLOADED
+sealed interface UploadState {
+    object NotUploaded : UploadState {
+        override fun toString() = "NotUploaded"
+    }
+    data class Uploading(val maxMipMapLoaded: Int): UploadState
+    object Uploaded : UploadState {
+        override fun toString() = "Uploaded"
+    }
 }
 // https://stackoverflow.com/questions/9417356/bufferedimage-resize
 fun BufferedImage.resize(targetSize: Int): BufferedImage {
@@ -103,7 +107,7 @@ sealed interface UploadInfo {
 
     data class LazyTexture2DUploadInfo(
         override val dimension: TextureDimension2D,
-        val data: List<() -> ByteBuffer>,
+        val data: List<Foo>,
         override val dataCompressed: Boolean = false,
         override val srgba: Boolean = false,
         override val internalFormat: InternalTextureFormat,
@@ -135,3 +139,6 @@ sealed interface UploadInfo {
         override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
     }
 }
+
+// TODO: Rename properly
+data class Foo(val width: Int, val height: Int, val dataProvider: () -> ByteBuffer)

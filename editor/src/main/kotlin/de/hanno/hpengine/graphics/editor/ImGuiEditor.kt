@@ -33,6 +33,7 @@ import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
 import imgui.ImGui
 import imgui.flag.ImGuiConfigFlags
@@ -73,7 +74,7 @@ data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
 context(GraphicsApi, RenderStateContext)
 class ImGuiEditor(
     internal val window: Window,
-    internal val textureManager: TextureManager,
+    internal val textureManager: TextureManagerBaseSystem,
     internal val finalOutput: FinalOutput,
     internal val debugOutput: DebugOutput,
     internal val config: Config,
