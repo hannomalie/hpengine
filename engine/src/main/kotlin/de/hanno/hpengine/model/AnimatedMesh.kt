@@ -39,7 +39,11 @@ class AnimatedMesh(
 
 
     override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
-        boundingVolume.localAABB = calculateBoundingAABB(Mesh.IDENTITY, vertices, faces)
+        boundingVolume.localAABB.recaclulating {
+            val newData = calculateBoundingAABB(Mesh.IDENTITY, vertices, faces)
+            min.set(newData.min)
+            max.set(newData.max)
+        }
     }
 
     fun calculateAABB(modelMatrix: Matrix4f?) = calculateBoundingAABB(modelMatrix, vertices, faces)
@@ -74,7 +78,7 @@ class AnimatedMesh(
                 }
             }
 
-            return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
+            return AABBData(Vector3f(min), Vector3f(max))
         }
 
     }

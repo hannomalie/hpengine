@@ -19,7 +19,7 @@ class StaticMesh(
     val uuid = UUID.randomUUID()
 
     override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
-        boundingVolume.localAABB = calculateAABB(IDENTITY, vertices.map { it.position }, faces)
+        boundingVolume.localAABB.setFrom(calculateAABB(IDENTITY, vertices.map { it.position }, faces))
     }
 
     override val indexBufferValues = faces.extractIndices()

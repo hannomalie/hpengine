@@ -78,12 +78,12 @@ class Transform() : Matrix4f(), Parentable<Transform>, Serializable {
     val rightDirection: Vector3f get() = transformDirection(Vector3f(1f, 0f, 0f)).normalize()
     val upDirection: Vector3f get() = transformDirection(Vector3f(0f, 1f, 0f)).normalize()
     val viewDirection: Vector3f get() = transformDirection(Vector3f(0f, 0f, 1f)).normalize()
-    val rotation: Quaternionf
-        get() = transformation.getNormalizedRotation(Quaternionf())
-    val scale: Vector3f
-        get() = transformation.getScale(Vector3f())
-    val center: Vector3f
-        get() = transformation.getTranslation(Vector3f())
+    private val _rotation = Quaternionf()
+    val rotation: Quaternionf get() = transformation.getNormalizedRotation(_rotation)
+    private val _scale = Vector3f()
+    val scale: Vector3f get() = transformation.getScale(_scale)
+    private val _center = Vector3f()
+    val center: Vector3f get() = transformation.getTranslation(_center)
 
     fun rotate(axisAngle: Vector4f) {
         rotate(axisAngle.w, axisAngle.x, axisAngle.y, axisAngle.z)

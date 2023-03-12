@@ -23,7 +23,7 @@ class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
     var localBoundingSphere = BoundingSphereData()
         set(value) {
             field = value
-            actuallyRecalculate(lastUsedTransformationMatrix ?: Transform.IDENTITY)
+            actuallyRecalculate(lastUsedTransformationMatrix ?: IDENTITY)
             lastUsedTransformationMatrix = null
         }
     var boundingSphere = BoundingSphereData()
@@ -43,7 +43,12 @@ class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
     fun recalculate(transform: Matrix4f) {
         recalculateIfNotClean(transform)
     }
+    private val _temp = Matrix4f()
     private fun actuallyRecalculate(transform: Matrix4f) {
+
+        _temp.set(transform)
+        val transform = _temp
+
         lastUsedTransformationMatrix = transform
         lastUsedBoundingSphereTrafo = BoundingSphereTrafo()
 
@@ -64,23 +69,37 @@ class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
 
     private fun recalculateIfNotClean(transform: Matrix4f) {
         if (!isClean(transform)) {
-            actuallyRecalculate(Matrix4f(transform))
+            actuallyRecalculate(transform)
         }
     }
 }
 
-data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vector3fc = Vector3f(absoluteMinimum)) {
-    val extents by lazy {
-        Vector3f(max).sub(min)
+data class AABBData(val min: Vector3f = Vector3f(absoluteMaximum), val max: Vector3f = Vector3f(absoluteMinimum)) {
+    val extents = Vector3f()
+    val halfExtents = Vector3f()
+    val center = Vector3f()
+
+    var boundingSphereRadius = 0.0f
+        private set
+
+    private fun updateExtents() { extents.set(max).sub(min) }
+    private fun updateHalfExtents() { halfExtents.set(extents).mul(0.5f) }
+    private fun updateCenter() { center.set(min).add(halfExtents) }
+    private fun updateBoundingSphereRadius() { boundingSphereRadius = halfExtents[halfExtents.maxComponent()] }
+    fun update() {
+        updateExtents()
+        updateHalfExtents()
+        updateCenter()
+        updateBoundingSphereRadius()
     }
-    val halfExtents by lazy {
-        Vector3f(extents).mul(0.5f)
+
+    init {
+        update()
     }
-    val center by lazy {
-        Vector3f(min).add(halfExtents)
-    }
-    val boundingSphereRadius by lazy {
-        halfExtents.get(halfExtents.maxComponent())
+
+    inline fun recaclulating(block: AABBData.() -> Unit) {
+        block()
+        update()
     }
     companion object {
         @JvmName("getSurroundingAABBData")
@@ -91,7 +110,7 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
                 newMin.min(it.min)
                 newMax.max(it.max)
             }
-            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+            return AABBData(newMin, newMax)
         }
         fun List<AABB>.getSurroundingAABB(): AABBData {
             val newMin = Vector3f(first().min)
@@ -100,7 +119,7 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
                 newMin.min(it.min)
                 newMax.max(it.max)
             }
-            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+            return AABBData(newMin, newMax)
         }
 
         @JvmName("getSurroundingAABBForInstances")
@@ -111,52 +130,46 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
                 newMin.min(it.boundingVolume.min)
                 newMax.max(it.boundingVolume.max)
             }
-            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+            return AABBData(newMin, newMax)
         }
     }
 }
 
-class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc = Vector3f(absoluteMinimum)): BoundingVolume() {
+class AABB(localMin: Vector3f = Vector3f(absoluteMaximum), localMax: Vector3f = Vector3f(absoluteMinimum)): BoundingVolume() {
     constructor(aabbData: AABBData): this(aabbData.min, aabbData.max)
 
-    var localAABB = AABBData(localMin, localMax)
-        set(value) {
-            field = value
-            actuallyRecalculate(lastUsedTransformationMatrix ?: IDENTITY)
-            lastUsedTransformationMatrix = null
-        }
+    val localAABB = AABBData(localMin, localMax)
 
-    var worldAABB = AABBData()
-        private set
+    val worldAABB = AABBData()
 
-    inline val min: Vector3fc
-        get() = worldAABB.min
+    inline val min: Vector3f get() = worldAABB.min
 
-    inline val max: Vector3fc
-        get() = worldAABB.max
+    inline val max: Vector3f get() = worldAABB.max
 
-    var localMin: Vector3fc
+    var localMin: Vector3f
         get() = localAABB.min
-        set(value) {
-            localAABB = AABBData(value, localMax)
+        set(value) = recalculating {
+            localAABB.min.set(value)
         }
 
-    var localMax: Vector3fc
+    var localMax: Vector3f
         get() = localAABB.max
-        set(value) {
-            localAABB = AABBData(localMin, value)
+        set(value) = recalculating {
+            localAABB.max.set(value)
         }
 
-    inline val extents: Vector3f
-        get() = worldAABB.extents
-    inline val halfExtents: Vector3f
-        get() = worldAABB.halfExtents
+    fun recalculating(block: AABB.() -> Unit) {
+        block()
+        actuallyRecalculate(lastUsedTransformationMatrix ?: IDENTITY)
+        lastUsedTransformationMatrix = null
+    }
 
-    inline val boundingSphereRadius: Float
-        get() = worldAABB.boundingSphereRadius
+    inline val extents: Vector3f get() = worldAABB.extents
+    inline val halfExtents: Vector3f get() = worldAABB.halfExtents
 
-    inline val center: Vector3f
-        get() = worldAABB.center
+    inline val boundingSphereRadius: Float get() = worldAABB.boundingSphereRadius
+
+    inline val center: Vector3f get() = worldAABB.center
 
     private var lastUsedTransformationMatrix: Matrix4f? = null
 
@@ -182,7 +195,7 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
 
     private fun recalculateIfNotClean(transform: Matrix4f) {
         if (!isClean(transform)) {
-            actuallyRecalculate(Matrix4f(transform))
+            actuallyRecalculate(transform)
         }
     }
     constructor(center: Vector3f, halfExtents: Float):
@@ -205,7 +218,11 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
             minResult.min(corner)
             maxResult.max(corner)
         }
-        worldAABB = AABBData(minResult, maxResult)
+
+        worldAABB.recaclulating {
+            min.set(minResult)
+            max.set(maxResult)
+        }
     }
 
     fun contains(position: Vector3fc): Boolean = contains(Vector4f(position.x, position.y, position.z, 1.0f))
@@ -351,7 +368,7 @@ fun calculateAABB(
         }
     }
 
-    return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
+    return AABBData(Vector3f(min), Vector3f(max))
 }
 
 fun calculateAABB(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f, faces: List<CompiledFace>) {
@@ -407,3 +424,11 @@ fun getBoundingSphereRadius(target: Vector3f, min: Vector4f, max: Vector4f) =
 
 val absoluteMaximum = Vector3f(Float.MAX_VALUE).toImmutable()
 val absoluteMinimum = Vector3f(-Float.MAX_VALUE).toImmutable()
+
+
+fun AABBData.setFrom(source: AABBData) {
+    recaclulating {
+        min.set(source.min)
+        max.set(source.max)
+    }
+}

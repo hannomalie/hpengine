@@ -2,11 +2,8 @@ package de.hanno.hpengine.model
 
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.lifecycle.Updatable
-import de.hanno.hpengine.transform.AABB
-import de.hanno.hpengine.transform.AABBData
+import de.hanno.hpengine.transform.*
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
-import de.hanno.hpengine.transform.Spatial
-import de.hanno.hpengine.transform.StaticTransformSpatial
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 import java.util.ArrayList
@@ -31,31 +28,31 @@ class Cluster : ArrayList<Instance>(), Updatable {
     override fun add(element: Instance): Boolean {
         if(element.spatial !is StaticTransformSpatial) allStaticInstances = false
         return super.add(element).apply {
-            boundingVolume.localAABB = getSurroundingAABB()
+            boundingVolume.localAABB.setFrom(getSurroundingAABB())
         }
     }
     override fun addAll(elements: Collection<Instance>): Boolean {
         if(any { it.spatial !is StaticTransformSpatial }) allStaticInstances = false
         return super.addAll(elements).apply {
-            boundingVolume.localAABB = getSurroundingAABB()
+            boundingVolume.localAABB.setFrom(getSurroundingAABB())
         }
     }
     override fun addAll(index: Int, elements: Collection<Instance>): Boolean {
         if(any { it.spatial !is StaticTransformSpatial }) allStaticInstances = false
         return super.addAll(index, elements).apply {
-            boundingVolume.localAABB = getSurroundingAABB()
+            boundingVolume.localAABB.setFrom(getSurroundingAABB())
         }
     }
     override fun add(index: Int, element: Instance) {
         if(element.spatial !is StaticTransformSpatial) allStaticInstances = false
         super.add(index, element)
-        boundingVolume.localAABB = getSurroundingAABB()
+        boundingVolume.localAABB.setFrom(getSurroundingAABB())
     }
 
     private fun recalculate() {
         if(allStaticInstances) return
 
-        boundingVolume.localAABB = getSurroundingAABB()
+        boundingVolume.localAABB.setFrom(getSurroundingAABB())
     }
 
     fun instanceCountToDraw(camera: Camera): Int {

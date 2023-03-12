@@ -63,84 +63,86 @@ class RenderManager(
         launchEndlessRenderLoop { _ ->
             gpuProfiler.run {
                 onGpu {
-                    profiled("Frame") {
-                        rendering.getAndSet(true)
-                        try {
-                            renderStateContext.renderState.readLocked { currentReadState ->
+//                    while (true) {
+                        profiled("Frame") {
+                            rendering.getAndSet(true)
+                            try {
+                                renderStateContext.renderState.readLocked { currentReadState ->
 
-                                val renderSystems = profiled("determineRenderSystems") {
-                                    when (val renderMode = renderMode) {
-                                        RenderMode.Normal -> {
-                                            renderSystems.filter {
-                                                renderSystemsConfig.run { it.enabled }
-                                            }
-                                        }
-                                        is RenderMode.SingleFrame -> {
-                                            // TODO: Make rendersystems excludable from single step, like editor
-                                            if (renderMode.frameRequested.get()) {
+                                    val renderSystems = profiled("determineRenderSystems") {
+                                        when (val renderMode = renderMode) {
+                                            RenderMode.Normal -> {
                                                 renderSystems.filter {
                                                     renderSystemsConfig.run { it.enabled }
                                                 }
-                                            } else {
-                                                emptyList() // TODO: Check whether this still works
-                                            }.apply {
-                                                renderMode.frameRequested.getAndSet(false)
+                                            }
+                                            is RenderMode.SingleFrame -> {
+                                                // TODO: Make rendersystems excludable from single step, like editor
+                                                if (renderMode.frameRequested.get()) {
+                                                    renderSystems.filter {
+                                                        renderSystemsConfig.run { it.enabled }
+                                                    }
+                                                } else {
+                                                    emptyList() // TODO: Check whether this still works
+                                                }.apply {
+                                                    renderMode.frameRequested.getAndSet(false)
+                                                }
                                             }
                                         }
                                     }
-                                }
 
-                                profiled("renderSystems") {
-                                    renderSystems.groupBy { it.sharedRenderTarget }
-                                        .forEach { (renderTarget, renderSystems) ->
-                                            val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                            renderTarget?.use(clear)
-                                            renderSystems.forEach { renderSystem ->
-                                                renderSystem.render(currentReadState)
+                                    profiled("renderSystems") {
+                                        renderSystems.groupBy { it.sharedRenderTarget }
+                                            .forEach { (renderTarget, renderSystems) ->
+                                                val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
+                                                renderTarget?.use(clear)
+                                                renderSystems.forEach { renderSystem ->
+                                                    renderSystem.render(currentReadState)
+                                                }
                                             }
-                                        }
-                                }
+                                    }
 
-                                profiled("present") {
-                                    window.frontBuffer.use(true)
-                                    textureRenderer.drawToQuad(
-                                        finalOutput.texture2D,
-                                        mipMapLevel = finalOutput.mipmapLevel
-                                    )
-                                    debugOutput.texture2D?.let { debugOutputTexture ->
+                                    profiled("present") {
+                                        window.frontBuffer.use(true)
                                         textureRenderer.drawToQuad(
-                                            debugOutputTexture,
-                                            buffer = debugBuffer,
-                                            program = drawToDebugQuadProgram,
-                                            mipMapLevel = debugOutput.mipmapLevel
+                                            finalOutput.texture2D,
+                                            mipMapLevel = finalOutput.mipmapLevel
                                         )
+                                        debugOutput.texture2D?.let { debugOutputTexture ->
+                                            textureRenderer.drawToQuad(
+                                                debugOutputTexture,
+                                                buffer = debugBuffer,
+                                                program = drawToDebugQuadProgram,
+                                                mipMapLevel = debugOutput.mipmapLevel
+                                            )
+                                        }
+                                    }
+
+                                    profiled("checkCommandSyncs") {
+                                        checkCommandSyncs()
+                                    }
+
+                                    profiled("finishFrame") {
+                                        finishFrame(currentReadState)
+                                        renderSystems.forEach {
+                                            it.afterFrameFinished()
+                                        }
+                                    }
+                                    profiled("finish") {
+                                        finish()
+                                    }
+                                    profiled("swapBuffers") {
+                                        window.swapBuffers()
                                     }
                                 }
 
-                                profiled("checkCommandSyncs") {
-                                    checkCommandSyncs()
-                                }
-
-                                profiled("finishFrame") {
-                                    finishFrame(currentReadState)
-                                    renderSystems.forEach {
-                                        it.afterFrameFinished()
-                                    }
-                                }
-                                profiled("finish") {
-                                    finish()
-                                }
-                                profiled("swapBuffers") {
-                                    window.swapBuffers()
-                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            } finally {
+                                rendering.getAndSet(false)
                             }
-
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        } finally {
-                            rendering.getAndSet(false)
                         }
-                    }
+//                    }
                     gpuProfiler.dump()
                 }
             }

@@ -7,6 +7,7 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
@@ -17,6 +18,7 @@ import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
@@ -59,10 +61,82 @@ open class DirectFirstPassPipeline(
         vertexIndexBuffer.indexBuffer.bind()
 
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
-        val batchesWithOwnProgram: Map<Material, List<RenderBatch>> =
-            renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
-
         val camera = renderState[primaryCameraStateHolder.camera]
+
+        drawCustomProgramBatches(camera, entitiesState, renderState, vertexIndexBuffer, mode)
+        drawDefaultProgramBatches(camera, entitiesState, renderState, vertexIndexBuffer, mode)
+    }
+
+    private fun drawDefaultProgramBatches(
+        camera: Camera,
+        entitiesState: EntitiesState,
+        renderState: RenderState,
+        vertexIndexBuffer: VertexIndexBuffer<*>,
+        mode: RenderingMode
+    ) {
+        program.use()
+        val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
+        val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
+        val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
+        program.useAndBind { uniforms: FirstPassUniforms ->
+            uniforms.apply {
+                materials = entitiesState.materialBuffer
+                entities = entitiesState.entitiesBuffer
+                uniforms.indirect = false
+                when (val uniforms = uniforms) {
+                    is StaticFirstPassUniforms -> uniforms.vertices =
+                        entitiesState.vertexIndexBufferStatic.vertexStructArray
+
+                    is AnimatedFirstPassUniforms -> {
+                        uniforms.joints = entitiesState.jointsBuffer
+                        uniforms.vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
+                    }
+                }
+                useRainEffect = config.effects.rainEffect != 0.0f
+                rainEffect = config.effects.rainEffect
+                viewMatrix = viewMatrixAsBuffer
+                lastViewMatrix = viewMatrixAsBuffer
+                projectionMatrix = projectionMatrixAsBuffer
+                viewProjectionMatrix = viewProjectionMatrixAsBuffer
+
+                eyePosition = camera.getPosition()
+                near = camera.near
+                far = camera.far
+                time = renderState.time.toInt()
+                useParallax = config.quality.isUseParallax
+                useSteepParallax = config.quality.isUseSteepParallax
+            }
+        }
+        program.uniforms.entityBaseIndex = 0
+        program.uniforms.indirect = false
+
+        val batchesWithPipelineProgram = renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }
+        for (batch in batchesWithPipelineProgram) {
+            depthMask = batch.material.writesDepth
+            cullFace = batch.material.cullBackFaces
+            depthTest = batch.material.depthTest
+            program.setTextureUniforms(batch.material.maps, fallbackTexture)
+            program.uniforms.entityIndex = batch.entityBufferIndex
+            program.bind()
+            vertexIndexBuffer.indexBuffer.draw(
+                batch.drawElementsIndirectCommand,
+                primitiveType = PrimitiveType.Triangles,
+                mode = mode,
+                bindIndexBuffer = false,
+            )
+            verticesCount += batch.vertexCount
+            entitiesCount += 1
+        }
+    }
+
+    private fun drawCustomProgramBatches(
+        camera: Camera,
+        entitiesState: EntitiesState,
+        renderState: RenderState,
+        vertexIndexBuffer: VertexIndexBuffer<*>,
+        mode: RenderingMode
+    ) {
+        val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
 
         for (groupedBatches in batchesWithOwnProgram) {
             for (batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
@@ -83,6 +157,7 @@ open class DirectFirstPassPipeline(
                         when (val uniforms = program.uniforms) {
                             is StaticFirstPassUniforms -> uniforms.vertices =
                                 entitiesState.vertexIndexBufferStatic.vertexStructArray
+
                             is AnimatedFirstPassUniforms -> {
                                 uniforms.joints = entitiesState.jointsBuffer
                                 uniforms.vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
@@ -117,59 +192,6 @@ open class DirectFirstPassPipeline(
                 verticesCount += batch.vertexCount
                 entitiesCount += 1
             }
-        }
-
-        program.use()
-        val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
-        val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
-        val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
-        program.useAndBind { uniforms: FirstPassUniforms ->
-            uniforms.apply {
-                materials = entitiesState.materialBuffer
-                entities = entitiesState.entitiesBuffer
-                uniforms.indirect = false
-                when (val uniforms = uniforms) {
-                    is StaticFirstPassUniforms -> uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
-                    is AnimatedFirstPassUniforms -> {
-                        uniforms.joints = entitiesState.jointsBuffer
-                        uniforms.vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
-                    }
-                }
-                useRainEffect = config.effects.rainEffect != 0.0f
-                rainEffect = config.effects.rainEffect
-                viewMatrix = viewMatrixAsBuffer
-                lastViewMatrix = viewMatrixAsBuffer
-                projectionMatrix = projectionMatrixAsBuffer
-                viewProjectionMatrix = viewProjectionMatrixAsBuffer
-
-                eyePosition = camera.getPosition()
-                near = camera.near
-                far = camera.far
-                time = renderState.time.toInt()
-                useParallax = config.quality.isUseParallax
-                useSteepParallax = config.quality.isUseSteepParallax
-            }
-        }
-        program.uniforms.entityBaseIndex = 0
-        program.uniforms.indirect = false
-
-        val batchesWithPipelineProgram =
-            renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }
-        for (batch in batchesWithPipelineProgram) {
-            depthMask = batch.material.writesDepth
-            cullFace = batch.material.cullBackFaces
-            depthTest = batch.material.depthTest
-            program.setTextureUniforms(batch.material.maps, fallbackTexture)
-            program.uniforms.entityIndex = batch.entityBufferIndex
-            program.bind()
-            vertexIndexBuffer.indexBuffer.draw(
-                batch.drawElementsIndirectCommand,
-                primitiveType = PrimitiveType.Triangles,
-                mode = mode,
-                bindIndexBuffer = false,
-            )
-            verticesCount += batch.vertexCount
-            entitiesCount += 1
         }
     }
 }

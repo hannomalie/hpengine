@@ -177,9 +177,6 @@ class OpenGLPixelBufferObjectPool: PixelBufferObjectPool {
     private val buffers = listOf(
         OpenGLPixelBufferObject(),
         OpenGLPixelBufferObject(),
-        OpenGLPixelBufferObject(),
-        OpenGLPixelBufferObject(),
-        OpenGLPixelBufferObject(),
     )
     private val currentBuffer = AtomicInteger(0)
     private val queue = PriorityBlockingQueue(10000, TaskComparator)
