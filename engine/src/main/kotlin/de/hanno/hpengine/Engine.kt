@@ -28,7 +28,6 @@ import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.extensions.ReflectionProbeManager
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.RenderSystem
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialManager
@@ -61,8 +60,8 @@ import kotlin.math.min
 
 class Engine(
     config: Config,
-    modules: List<Module> = emptyList(),
-    afterInit: Engine.() -> Unit = { world.loadDemoScene() }) // TODO: Change callsites to use new method simulate to block
+    modules: List<Module> = emptyList()
+) // TODO: Change callsites to use new method simulate to block
 {
     private val configModule = module {
         single { config } binds arrayOf(Config::class, Config::class)

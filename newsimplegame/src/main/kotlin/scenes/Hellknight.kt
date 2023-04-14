@@ -1,14 +1,10 @@
 package scenes
 
 import de.hanno.hpengine.Engine
-import de.hanno.hpengine.addAnimatedModelEntity
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
-import de.hanno.hpengine.loadScene
-import de.hanno.hpengine.transform.AABBData
-import org.joml.Vector3f
 import java.io.File
 
 fun main() {
@@ -22,15 +18,5 @@ fun main() {
         ),
     )
 
-    Engine(config) {
-        world.loadScene {
-            addAnimatedModelEntity("Hellknight",
-                "assets/models/doom3monster/monster.md5mesh",
-                AABBData(
-                    Vector3f(-60f, -10f, -35f),
-                    Vector3f(60f, 130f, 50f)
-                )
-            )
-        }
-    }
+    Engine(config)
 }

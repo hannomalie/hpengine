@@ -134,7 +134,7 @@ class OpenGLPixelBufferObject: PixelBufferObject {
         buffer.buffer.put(data)
         buffer.buffer.rewind()
 
-        fencedOnGpu {
+        fencedOnGpu(priority = 100) {
             buffer.bind()
             if (info.dataCompressed) {
                 glCompressedTextureSubImage2D(

@@ -12,7 +12,6 @@ import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.loadScene
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
@@ -32,29 +31,7 @@ fun main() {
         ),
     )
 
-    Engine(config) {
-        world.loadScene {
-            edit(create()).apply {
-                create(OceanWaterComponent::class.java).apply {
-                    windspeed = 130f
-                    waveHeight = 1.2f
-                    timeFactor = 8f
-                }
-                create(NameComponent::class.java).apply {
-                    name = "Ocean"
-                }
-            }
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f())
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, 2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, 0f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, 2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, 0f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(0f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(0f, 0f, 2f))
-        }
-    }
+    Engine(config)
 }
 
 private var oceanSurfaceCounter = 0

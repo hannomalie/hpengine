@@ -157,8 +157,11 @@ interface GraphicsApi {
 
     fun createCommandSync(): GpuCommandSync
     fun createCommandSync(onSignaled: () -> Unit): GpuCommandSync
+
+    fun <T> onGpu(priority: Int, block: context(GraphicsApi)() -> T): T
     fun <T> onGpu(block: context(GraphicsApi)() -> T): T
     fun fencedOnGpu(block: context(GraphicsApi)() -> Unit)
+    fun fencedOnGpu(priority: Int, block: context(GraphicsApi)() -> Unit)
 
     val maxLineWidth: Float
 

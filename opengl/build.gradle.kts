@@ -21,6 +21,7 @@ dependencies {
     api(kotlin("stdlib"))
     api(project(":api"))
     implementation("org.lwjgl:lwjgl-opengl:$lwjgl_version")
+    api("org.lwjgl", "lwjgl", lwjgl_version)
     api("org.lwjgl", "lwjgl", lwjgl_version, classifier = lwjgl_natives)
     api("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
 
