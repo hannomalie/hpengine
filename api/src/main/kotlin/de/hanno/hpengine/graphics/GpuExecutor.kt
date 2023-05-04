@@ -8,8 +8,10 @@ interface GpuExecutor {
     operator fun <T> invoke(block: () -> T): T
 
     fun launch(block: () -> Unit) {
-        GlobalScope.launch {
-            execute(block)
-        }
+//        GlobalScope.launch {
+            invoke(block)
+//        }
     }
+
+    var perFrameAction: (() -> Unit)?
 }

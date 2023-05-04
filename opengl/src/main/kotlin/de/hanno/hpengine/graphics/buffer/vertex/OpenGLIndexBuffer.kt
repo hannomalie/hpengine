@@ -8,7 +8,7 @@ import java.nio.IntBuffer
 
 context(GraphicsApi)
 fun OpenGLIndexBuffer(): IndexBuffer {
-    val underlying = PersistentMappedBuffer(10 * Int.SIZE_BYTES, BufferTarget.ElementArray)
+    val underlying = PersistentMappedBuffer(BufferTarget.ElementArray, 10 * Int.SIZE_BYTES)
     return object: IndexBuffer, GpuBuffer by underlying {}
 }
 

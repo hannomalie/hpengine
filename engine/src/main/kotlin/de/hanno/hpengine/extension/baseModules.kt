@@ -238,7 +238,7 @@ val baseModule = module {
 
     single { FileMonitor(get()) }
 
-    single { GlfwWindow(get()) } bind Window::class
+    single { GlfwWindow(get<Config>(), get<GPUProfiler>()) } bind Window::class
 
     addBackendModule()
     addCameraModule()

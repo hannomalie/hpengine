@@ -18,9 +18,18 @@ interface GpuBuffer : Buffer {
         set(value) {
             ensureCapacityInBytes(value)
         }
+    fun put(src: ByteBuffer) {
+        buffer.rewind()
+        map()
+        buffer.put(src)
+        unmap()
+        buffer.rewind()
+    }
     fun ensureCapacityInBytes(requestedCapacity: Int)
     fun bind()
     fun unbind()
+    fun map() {}
+    fun unmap() {}
 
     // TODO: I made a change here, check whether buffer.position usage is safe here and makes sense
     fun addAll(offset: Int = buffer.position(), elements: ByteBuffer) {

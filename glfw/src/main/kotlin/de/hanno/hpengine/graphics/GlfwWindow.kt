@@ -2,10 +2,12 @@ package de.hanno.hpengine.graphics
 
 
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -15,6 +17,7 @@ import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
+import org.lwjgl.opengl.GLUtil
 import org.lwjgl.system.APIUtil
 import java.lang.reflect.Field
 import kotlin.system.exitProcess
@@ -50,13 +53,18 @@ class OpenGlException(msg: String): RuntimeException(msg)
 class GlfwWindow(
     override var width: Int,
     override var height: Int,
+    private val config: Config,
     title: String,
     vSync: Boolean = true,
     closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
-    private val executor: GpuExecutor = OpenGlExecutorImpl()
+    private val profiler: GPUProfiler = OpenGLGPUProfiler(config),
+    private val executor: GpuExecutor = FrameBasedOpenGLExecutor(profiler)//OpenGlExecutorImpl()
 ) : Window, GpuExecutor by executor {
 
-    constructor(config: Config) : this(config.width, config.height, "HPEngine", config.performance.isVsync)
+    constructor(
+        config: Config,
+        profiler: GPUProfiler
+    ) : this(config.width, config.height, config, "HPEngine", config.performance.isVsync, profiler = profiler)
 
     override var vSync: Boolean = vSync
         set(value) {
@@ -108,6 +116,7 @@ class GlfwWindow(
         glfwSwapInterval(if (this.vSync) 1 else 0)
         glfwShowWindow(handle)
         GL.createCapabilities()
+        GLUtil.setupDebugMessageCallback()
 
         // Don't remove that, or some operating systems won't make context current on another thread
         glfwMakeContextCurrent(0)

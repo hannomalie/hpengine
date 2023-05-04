@@ -32,7 +32,7 @@ internal class TypedGpuBufferImplTest {
         )
 
         with(graphicsApi) {
-            val buffer = PersistentMappedBuffer(512, BufferTarget.ShaderStorage)
+            val buffer = PersistentMappedBuffer(BufferTarget.ShaderStorage, 512)
             val typedBuffer = buffer.typed(Float3.type)
             val originalByteBuffer = buffer.buffer
 

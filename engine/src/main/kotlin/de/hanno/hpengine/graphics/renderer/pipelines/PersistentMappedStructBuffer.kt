@@ -57,7 +57,7 @@ interface IntStrukt : Strukt {
 
 context(GraphicsApi)
 fun OpenGLIndexBuffer(size: Int = 1000) = PersistentMappedBuffer(
-    size * IntStrukt.sizeInBytes, BufferTarget.ElementArray
+    BufferTarget.ElementArray, size * IntStrukt.sizeInBytes
 ).typed(IntStrukt.type)
 
 class PersistentTypedBuffer<T: Strukt>(

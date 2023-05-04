@@ -191,7 +191,7 @@ interface GraphicsApi {
     fun makeTextureHandleResident(texture: Texture)
 
     fun PersistentShaderStorageBuffer(capacityInBytes: Int): GpuBuffer
-    fun PersistentMappedBuffer(capacityInBytes: Int, bufferTarget: BufferTarget): GpuBuffer
+    fun PersistentMappedBuffer(bufferTarget: BufferTarget, capacityInBytes: Int): GpuBuffer
 
     fun finish()
     fun copyImageSubData(
@@ -340,6 +340,8 @@ interface GraphicsApi {
     fun FrameBuffer(depthBuffer: DepthBuffer<*>?): FrameBuffer
 
     val pixelBufferObjectPool: PixelBufferObjectPool
+
+    fun GpuBuffer(bufferTarget: BufferTarget, capacityInBytes: Int): GpuBuffer
 }
 
 enum class Access {

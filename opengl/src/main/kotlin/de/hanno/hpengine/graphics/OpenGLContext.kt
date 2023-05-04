@@ -1,29 +1,26 @@
 package de.hanno.hpengine.graphics
 
-import de.hanno.hpengine.graphics.constants.Facing
 import InternalTextureFormat
-import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.constants.*
-import de.hanno.hpengine.graphics.constants.RenderingMode
-import de.hanno.hpengine.graphics.renderer.glValue
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import de.hanno.hpengine.graphics.buffer.OpenGLGpuBuffer
+import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.VertexBufferImpl
+import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.feature.*
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.renderer.glValue
 import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.texture.*
-import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.VertexBufferImpl
-import de.hanno.hpengine.graphics.feature.*
-import de.hanno.hpengine.ressources.*
-import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.ressources.*
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import glValue
-import kotlinx.coroutines.*
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -42,7 +39,6 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.nio.LongBuffer
 import java.util.*
-import java.util.concurrent.Executors
 
 context(GPUProfiler)
 class OpenGLContext private constructor(
@@ -603,12 +599,21 @@ class OpenGLContext private constructor(
     )
 
     override fun PersistentMappedBuffer(
-        capacityInBytes: Int,
-        bufferTarget: BufferTarget
-    ) = PersistentMappedBuffer(
+        bufferTarget: BufferTarget,
+        capacityInBytes: Int
+    ): PersistentMappedBuffer = de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer(
+        bufferTarget,
+        capacityInBytes,
+    )
+
+    override fun GpuBuffer(
+        bufferTarget: BufferTarget,
+        capacityInBytes: Int
+    ) = OpenGLGpuBuffer(
         bufferTarget,
         capacityInBytes
     )
+
     private fun texParameters(glTarget: Int, wrapMode: WrapMode, filterConfig: TextureFilterConfig) {
         glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, wrapMode.glValue)
         glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, wrapMode.glValue)
@@ -1094,7 +1099,9 @@ class OpenGLContext private constructor(
     }
 
     companion object {
-        const val OPENGL_THREAD_NAME = "OpenGLContext"
+        private var counter = 0
+        val OPENGL_THREAD_NAME_BASE = "OpenGLContext"
+        fun createOpenGLThreadName() = "${OPENGL_THREAD_NAME_BASE}_${counter++}"
 
         val ZERO_BUFFER: FloatBuffer = BufferUtils.createFloatBuffer(4).apply {
             put(0f)
@@ -1153,33 +1160,3 @@ val Capability.glInt get() = when(this) {
 
 val Capability.isEnabled: Boolean get() = glIsEnabled(glInt)
 
-class OpenGlExecutorImpl(
-    dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-) : CoroutineScope, GpuExecutor {
-    var gpuThreadId: Long = runBlocking(dispatcher) {
-        Thread.currentThread().name = OpenGLContext.OPENGL_THREAD_NAME
-        Thread.currentThread().id
-    }
-
-    override val coroutineContext = dispatcher + Job()
-
-    inline val isOpenGLThread: Boolean get() = Thread.currentThread().isOpenGLThread
-
-    inline val Thread.isOpenGLThread: Boolean get() = id == gpuThreadId
-
-    override suspend fun <T> execute(block: () -> T) = if (isOpenGLThread) {
-        block()
-    } else {
-        withContext(coroutineContext) {
-            block()
-        }
-    }
-
-    override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE) = if (isOpenGLThread) {
-        block()
-    } else {
-        runBlocking(coroutineContext) {
-            block()
-        }
-    }
-}

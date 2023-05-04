@@ -126,9 +126,10 @@ data class OpenGLTexture2D(
             }
             CompletableFuture.supplyAsync {
                 val mipMapData = widths.mapIndexed { index, it ->
-                    Foo(it, heights[index]) { image.resize(it).toByteBuffer() }
+                    LazyTextureData(it, heights[index]) { image.resize(it).toByteBuffer() }
                 }
-                val data = listOf(Foo(image.width, image.height) { image.toByteBuffer() }) + mipMapData
+                val data = listOf(LazyTextureData(image.width, image.height) { image.toByteBuffer() }) + mipMapData
+
                 val info = UploadInfo.LazyTexture2DUploadInfo(
                     TextureDimension(image.width, image.height), data, false, srgba,
                     internalFormat = internalFormat,
@@ -188,7 +189,7 @@ data class OpenGLTexture2D(
 
         context(GraphicsApi)
         internal fun OpenGLTexture2D.upload(info: Texture2DUploadInfo) {
-            val usePbo = true
+            val usePbo = false // the current state of texture streaming doesn't make pbos feasible
             if (usePbo) {
                 uploadWithPixelBuffer(info)
             } else {

@@ -11,3 +11,12 @@ inline fun <T> profiled(name: String, action: () -> T): T {
         task?.end()
     }
 }
+context(GPUProfiler, GpuExecutor)
+inline fun <T> profiledFoo(name: String, action: () -> T): T {
+    val task = invoke { start(name) }
+    try {
+        return action()
+    } finally {
+        task?.end()
+    }
+}

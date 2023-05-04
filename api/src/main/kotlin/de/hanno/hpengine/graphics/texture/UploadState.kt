@@ -107,7 +107,7 @@ sealed interface UploadInfo {
 
     data class LazyTexture2DUploadInfo(
         override val dimension: TextureDimension2D,
-        val data: List<Foo>,
+        val data: List<LazyTextureData>,
         override val dataCompressed: Boolean = false,
         override val srgba: Boolean = false,
         override val internalFormat: InternalTextureFormat,
@@ -140,5 +140,4 @@ sealed interface UploadInfo {
     }
 }
 
-// TODO: Rename properly
-data class Foo(val width: Int, val height: Int, val dataProvider: () -> ByteBuffer)
+data class LazyTextureData(val width: Int, val height: Int, val dataProvider: () -> ByteBuffer)
