@@ -189,7 +189,7 @@ data class OpenGLTexture2D(
 
         context(GraphicsApi)
         internal fun OpenGLTexture2D.upload(info: Texture2DUploadInfo) {
-            val usePbo = false // the current state of texture streaming doesn't make pbos feasible
+            val usePbo = true // the current state of texture streaming doesn't make pbos feasible
             if (usePbo) {
                 uploadWithPixelBuffer(info)
             } else {

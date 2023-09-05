@@ -8,13 +8,13 @@ import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import de.hanno.hpengine.graphics.feature.GpuFeature
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import de.hanno.hpengine.graphics.texture.*
-import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.ressources.CodeSource
 import org.joml.Vector4f
 import java.nio.ByteBuffer
@@ -23,7 +23,9 @@ import java.nio.IntBuffer
 import java.nio.LongBuffer
 
 interface GraphicsApi {
-    val window: Window
+    val backgroundContext: GraphicsApi?
+
+    val profiler: GPUProfiler
 
     val isError: Boolean
 
@@ -157,7 +159,13 @@ interface GraphicsApi {
 
     fun createCommandSync(): GpuCommandSync
     fun createCommandSync(onSignaled: () -> Unit): GpuCommandSync
+
+    fun CommandSync(): GpuCommandSync
+    fun CommandSync(onCompletion: () -> Unit): GpuCommandSync
+
     fun <T> onGpu(block: context(GraphicsApi)() -> T): T
+    fun launchOnGpu(block: context(GraphicsApi)() -> Unit)
+
     fun fencedOnGpu(block: context(GraphicsApi)() -> Unit)
 
     val maxLineWidth: Float
@@ -253,7 +261,7 @@ interface GraphicsApi {
     fun framebufferTextureLayer(index: Int, textureId: Int, level: Int, layer: Int) // TODO: Remove this
     fun framebufferTexture(index: Int, texture: Texture, level: Int)
     fun framebufferTexture(index: Int, textureId: Int, level: Int) // TODO: Remove this
-    fun framebufferTexture(index: Int, textureId: Int, faceIndex: Int, level: Int) // TODO: Take cubemap here
+    fun framebufferTexture(index: Int, textureTarget: TextureTarget, textureId: Int, faceIndex: Int, level: Int) // TODO: Take cubemap here
     fun drawBuffers(indices: IntArray)
 
     fun Shader(
@@ -266,10 +274,10 @@ interface GraphicsApi {
     fun CodeSource.toResultingShaderSource(defines: Defines): String
     fun Shader.reload()
     fun Shader.unload()
-    fun AbstractProgram<*>.reloadProgram()
-    fun AbstractProgram<*>.load()
-    fun AbstractProgram<*>.unload()
-    fun AbstractProgram<*>.reload()
+    fun Program<*>.reloadProgram()
+    fun Program<*>.load()
+    fun Program<*>.unload()
+    fun Program<*>.reload()
 
     fun UniformBinding.set(value: Int)
     fun UniformBinding.set(value: Float)

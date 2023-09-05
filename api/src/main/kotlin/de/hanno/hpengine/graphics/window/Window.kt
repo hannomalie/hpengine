@@ -1,10 +1,13 @@
 package de.hanno.hpengine.graphics.window
 
 import de.hanno.hpengine.graphics.GpuExecutor
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 
 
-interface Window: GpuExecutor {
+interface Window {
+    val gpuExecutor: GpuExecutor
+    val profiler: GPUProfiler
     val handle: Long
     var title: String
 

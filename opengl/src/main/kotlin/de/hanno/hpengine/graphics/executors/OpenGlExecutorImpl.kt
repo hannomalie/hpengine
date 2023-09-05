@@ -1,16 +1,27 @@
-package de.hanno.hpengine.graphics
+package de.hanno.hpengine.graphics.executors
 
+import de.hanno.hpengine.graphics.GpuExecutor
+import de.hanno.hpengine.graphics.OpenGLContext
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.window.Window
 import kotlinx.coroutines.*
 import java.util.concurrent.Executors
 
 class OpenGlExecutorImpl(
-    dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
+    override val gpuProfiler: GPUProfiler,
+    initBlock: () -> Unit,
 ) : CoroutineScope, GpuExecutor {
+    override var parentContext: Window? = null
     private val openGLThreadName = OpenGLContext.createOpenGLThreadName()
     var gpuThreadId: Long = runBlocking(dispatcher) {
         Thread.currentThread().name = openGLThreadName
         Thread.currentThread().id
     }
+    init {
+        runBlocking(dispatcher) {initBlock() }
+    }
+    override val backgroundContext: GpuExecutor? = null
 
     override var perFrameAction: (() -> Unit)? = null
     override val coroutineContext = dispatcher + Job()
@@ -32,6 +43,15 @@ class OpenGlExecutorImpl(
     } else {
         runBlocking(coroutineContext) {
             block()
+        }
+    }
+    override fun launch(block: () -> Unit) {
+        if (isOpenGLThread) {
+            block()
+        } else {
+            GlobalScope.launch(coroutineContext) {
+                block()
+            }
         }
     }
 }

@@ -1,12 +1,12 @@
 package de.hanno.hpengine.graphics
 
+import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.rendertarget.BackBufferRenderTarget
 import de.hanno.hpengine.graphics.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMapArray
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL30
 import kotlin.math.max
 
 context(GraphicsApi)
@@ -35,8 +35,8 @@ class RenderTargetImpl<T : Texture>(
     init {
         onGpu {
             bindFrameBuffer(frameBuffer)
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer.frameBuffer)
 
+            // TODO: This is broken, reimplement
             if (textures.first() is OpenGLCubeMapArray) {
                 textures.forEachIndexed { index, it ->
                     framebufferTextureLayer(index, it, 0, 0)
@@ -117,6 +117,7 @@ class RenderTargetImpl<T : Texture>(
     override fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int) {
         framebufferTexture(
             attachmentIndex,
+            TextureTarget.TEXTURE_CUBE_MAP,
             index,
             textureId,
             mipmap

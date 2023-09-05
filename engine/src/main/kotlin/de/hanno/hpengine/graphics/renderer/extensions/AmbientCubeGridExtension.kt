@@ -68,13 +68,13 @@ class ProbeRenderer(
     val probeCount = probesPerDimension.x * probesPerDimension.y * probesPerDimension.z
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
-    val probePositionsStructBuffer = graphicsApi.window.invoke {
+    val probePositionsStructBuffer = graphicsApi.onGpu {
         PersistentShaderStorageBuffer(probeCount * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
-    val probeAmbientCubeValues = graphicsApi.window.invoke {
+    val probeAmbientCubeValues = graphicsApi.onGpu {
         PersistentShaderStorageBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
-    val probeAmbientCubeValuesOld = graphicsApi.window.invoke {
+    val probeAmbientCubeValuesOld = graphicsApi.onGpu {
         PersistentShaderStorageBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
 

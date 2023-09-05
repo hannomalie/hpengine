@@ -48,6 +48,7 @@ class OpenGlProgramManager(
                 reregisterListener { reload() }
             }
         }
+        load()
     }
 
     override fun <T : Uniforms> getProgram(

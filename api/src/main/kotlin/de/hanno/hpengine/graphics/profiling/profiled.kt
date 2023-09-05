@@ -1,10 +1,11 @@
 package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.ProfilingTask
 
-context(GPUProfiler, GraphicsApi)
+context(GraphicsApi)
 inline fun <T> profiled(name: String, action: () -> T): T {
-    val task = onGpu { start(name) }
+    val task = onGpu { profiler.start(name) }
     try {
         return action()
     } finally {
@@ -12,10 +13,9 @@ inline fun <T> profiled(name: String, action: () -> T): T {
     }
 }
 context(GPUProfiler, GpuExecutor)
-inline fun <T> profiledFoo(name: String, action: () -> T): T {
-    val task = invoke { start(name) }
+inline fun <T> profiledFoo(name: String, action: () -> T): ProfilingTask? = invoke { start(name) }.also { task ->
     try {
-        return action()
+        action()
     } finally {
         task?.end()
     }

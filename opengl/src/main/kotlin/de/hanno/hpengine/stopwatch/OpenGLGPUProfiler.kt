@@ -1,17 +1,15 @@
 package de.hanno.hpengine.stopwatch
 
-import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.profiling.AverageHelper
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.profiling.ProfilingTask
 import de.hanno.hpengine.graphics.profiling.Record
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL33
-import java.util.ArrayList
-import java.util.HashMap
+import kotlin.reflect.KMutableProperty0
 
-class OpenGLGPUProfiler(val config: Config): GPUProfiler {
-
-    var profiling: Boolean by config.debug::profiling
+class OpenGLGPUProfiler(private val profilingEnabled: KMutableProperty0<Boolean>): GPUProfiler {
+    var profiling: Boolean by profilingEnabled
 
     private var queryObjects: ArrayList<Int> = ArrayList()
 
@@ -108,9 +106,7 @@ class OpenGLGPUProfiler(val config: Config): GPUProfiler {
         collectedTimes = ArrayList()
     }
 
-    fun OpenGLProfilingTask.dump(builder: StringBuilder): StringBuilder {
-        return dump(0, builder)
-    }
+    fun OpenGLProfilingTask.dump(builder: StringBuilder): StringBuilder = dump(0, builder)
 
     private fun OpenGLProfilingTask.dump(indentation: Int, builder: StringBuilder): StringBuilder {
         if (profiling) {
@@ -131,15 +127,9 @@ class OpenGLGPUProfiler(val config: Config): GPUProfiler {
         return builder
     }
 
-    override fun dump() {
-        // TODO: Why is this fps count different from the fsp count by fps counter?
-        currentTimings = currentTask?.let {
-            val timeTakenMilliseconds = it.timeTaken / 1000000.0
-            val fps = (1000f / timeTakenMilliseconds).toInt()
-            """$fps - ${it.dumpTimings()}"""
-        } ?: ""
+    override fun dump(task: ProfilingTask?) {
+        currentTimings = task?.dumpTimings() ?: ""
         currentAverages = dumpAverages()
-        currentTask = null
     }
 
 }

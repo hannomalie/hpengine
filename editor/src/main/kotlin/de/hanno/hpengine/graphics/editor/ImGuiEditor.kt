@@ -90,6 +90,7 @@ class ImGuiEditor(
 ) : BaseSystem(), RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val formerFinalOutput = finalOutput.texture2D
+    override val supportsSingleStep: Boolean get() = false
 
     private var editorConfig = EditorConfig()
 

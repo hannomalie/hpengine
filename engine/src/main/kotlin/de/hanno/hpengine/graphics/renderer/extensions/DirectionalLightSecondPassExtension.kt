@@ -60,7 +60,11 @@ class DirectionalLightSecondPassExtension(
                 graphicsApi.bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
                 graphicsApi.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
                 graphicsApi.bindTexture(4, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
-                graphicsApi.bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+
+                val directionalShadowMap = directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+                if(directionalShadowMap > -1) {
+                    graphicsApi.bindTexture(6, TextureTarget.TEXTURE_2D, directionalShadowMap)
+                }
                 graphicsApi.bindTexture(7, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
                 if (!graphicsApi.isSupported(BindlessTextures)) {
                     graphicsApi.bindTexture(

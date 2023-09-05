@@ -50,13 +50,14 @@ class CubeShadowMapStrategy(
         Repeat
     )
     val pointLightDepthMapsArrayCube = cubeMapArray.id
-    var cubemapArrayRenderTarget: CubeMapArrayRenderTarget = CubeMapArrayRenderTarget(
-        cubeMapArray.dimension.width,
-        cubeMapArray.dimension.height,
-        "PointlightCubeMapArrayRenderTarget",
-        Vector4f(0f, 0f, 0f, 0f),
-        cubeMapArray
-    )
+    // TODO: Reimplement with new render target api usage
+//    var cubemapArrayRenderTarget: CubeMapArrayRenderTarget = CubeMapArrayRenderTarget(
+//        cubeMapArray.dimension.width,
+//        cubeMapArray.dimension.height,
+//        "PointlightCubeMapArrayRenderTarget",
+//        Vector4f(0f, 0f, 0f, 0f),
+//        cubeMapArray
+//    )
     // TODO: Remove CubeMapArrayRenderTarget to new api
 
     override fun bindTextures() {

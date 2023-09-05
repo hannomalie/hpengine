@@ -275,10 +275,11 @@ class ReflectionProbeRenderExtension(
         bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
         bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
         bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
-        bindTexture(
-            6,
-            TextureTarget.TEXTURE_2D,
-            directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+
+        val directionalShadowMap = directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+        if(directionalShadowMap > -1) {
+            bindTexture(6, TextureTarget.TEXTURE_2D, directionalShadowMap)
+        }
         bindTexture(7, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
         renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
 

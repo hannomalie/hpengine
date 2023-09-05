@@ -19,6 +19,23 @@ class CubeMapArrayRenderTarget(
     val cubeMapViews = ArrayList<CubeMap>()
     val cubeMapFaceViews = ArrayList<Texture2D>()
 
+    init {
+        for (cubeMapArrayIndex in textures.indices) {
+            val cma = textures[cubeMapArrayIndex]
+            onGpu {
+                bindTexture(cma)
+                for (cubeMapIndex in 0 until cma.dimension.depth) {
+                    val cubeMapView = createView(cma, cubeMapIndex)
+                    cubeMapViews.add(cubeMapView)
+                    for (faceIndex in 0..5) {
+                        cubeMapFaceViews.add(createView(cma, cubeMapIndex, faceIndex))
+                    }
+                }
+            }
+        }
+        register(this)
+    }
+
     override fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int) {
         framebufferTextureLayer(
             attachmentIndex,
@@ -38,23 +55,6 @@ class CubeMapArrayRenderTarget(
 
     val arraySize: Int
         get() = textures[0].dimension.depth
-
-    init {
-        for (cubeMapArrayIndex in textures.indices) {
-            val cma = textures[cubeMapArrayIndex]
-            onGpu {
-                bindTexture(cma)
-                for (cubeMapIndex in 0 until cma.dimension.depth) {
-                    val cubeMapView = createView(cma, cubeMapIndex)
-                    cubeMapViews.add(cubeMapView)
-                    for (faceIndex in 0..5) {
-                        cubeMapFaceViews.add(createView(cma, cubeMapIndex, faceIndex))
-                    }
-                }
-            }
-        }
-        register(this)
-    }
 
     companion object {
 

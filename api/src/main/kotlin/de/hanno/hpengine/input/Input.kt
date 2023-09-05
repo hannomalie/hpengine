@@ -2,12 +2,13 @@ package de.hanno.hpengine.input
 
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.window.Window
 import org.joml.Vector2i
 
 import org.lwjgl.glfw.GLFW.*
 
 class Input(
-    private val graphicsApi: GraphicsApi
+    private val window: Window
 ) {
     private val keysPressed = IntArrayList()
     private val keysPressedLastFrame = IntArrayList()
@@ -56,9 +57,9 @@ class Input(
         keysReleased.clear()
 
         for (i in FIRST_KEY until NUM_KEYS) {
-            if (isKeyPressedImpl(graphicsApi, i)) {
+            if (isKeyPressedImpl(window, i)) {
                 keysPressed.add(i)
-            } else if (isKeyReleasedImpl(graphicsApi, i)) {
+            } else if (isKeyReleasedImpl(window, i)) {
                 keysReleased.add(i)
             }
         }
@@ -89,19 +90,19 @@ class Input(
         dyLast = dy
         mouseXLast[0] = mouseX[0]
         mouseYLast[0] = mouseY[0]
-        graphicsApi.window.getCursorPosition(mouseX, mouseY)
-        graphicsApi.window.getFrameBufferSize(width, height)
+        window.getCursorPosition(mouseX, mouseY)
+        window.getFrameBufferSize(width, height)
         dx = (-(mouseXLast[0] - mouseX[0])).toInt()
         dy = (mouseYLast[0] - mouseY[0]).toInt()
     }
 
-    private fun isKeyPressedImpl(graphicsApi: GraphicsApi, keyCode: Int): Boolean {
-        val action = graphicsApi.window.getKey(keyCode)
+    private fun isKeyPressedImpl(window: Window, keyCode: Int): Boolean {
+        val action = window.getKey(keyCode)
         return action == GLFW_PRESS || action == GLFW_REPEAT
     }
-    private fun isKeyReleasedImpl(graphicsApi: GraphicsApi, keyCode: Int) = graphicsApi.window.getKey(keyCode) == GLFW_RELEASE
-    private fun isMousePressedImpl(buttonCode: Int) = graphicsApi.window.getMouseButton(buttonCode) == GLFW_PRESS
-    private fun isMouseReleasedImpl(buttonCode: Int) = graphicsApi.window.getMouseButton(buttonCode) == GLFW_RELEASE
+    private fun isKeyReleasedImpl(window: Window, keyCode: Int) = window.getKey(keyCode) == GLFW_RELEASE
+    private fun isMousePressedImpl(buttonCode: Int) = window.getMouseButton(buttonCode) == GLFW_PRESS
+    private fun isMouseReleasedImpl(buttonCode: Int) = window.getMouseButton(buttonCode) == GLFW_RELEASE
 
     fun isKeyPressed(keyCode: Int) = keysPressed.contains(keyCode)
     fun isKeyReleased(keyCode: Int) = keysReleased.contains(keyCode)

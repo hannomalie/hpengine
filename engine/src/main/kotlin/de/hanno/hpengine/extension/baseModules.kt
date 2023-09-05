@@ -263,7 +263,7 @@ val baseModule = module {
     }
     renderExtension {
         get<GraphicsApi>().run {
-            PixelPerfectPickingExtension(get(), get(), getAll())
+            PixelPerfectPickingExtension(get(), get(), getAll(), get())
         }
     }
 //    TODO: Fails because of shader code errors
@@ -426,8 +426,10 @@ fun Module.addSkyboxModule() {
     }
 }
 fun Module.addBackendModule() {
-    single { OpenGLGPUProfiler(get()) } binds arrayOf(GPUProfiler::class, OpenGLGPUProfiler::class)
-    single { OpenGLContext(get(), get(), get()) } bind GraphicsApi::class
+    single {
+        OpenGLGPUProfiler(get<Config>().debug::profiling)
+    } binds arrayOf(GPUProfiler::class, OpenGLGPUProfiler::class)
+    single { OpenGLContext(get(), get()) } bind GraphicsApi::class
 
     single { AddResourceContext() }
     single { Input(get()) }

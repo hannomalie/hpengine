@@ -6,6 +6,7 @@ import de.hanno.hpengine.graphics.constants.Format
 import de.hanno.hpengine.graphics.renderer.picking.Indices
 import de.hanno.hpengine.graphics.renderer.picking.OnClickListener
 import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.input.MouseClickListener
 import org.joml.Vector2f
@@ -17,7 +18,8 @@ context(GraphicsApi)
 class PixelPerfectPickingExtension(
     private val config: Config,
     private val input: Input,
-    private val listeners: List<OnClickListener>
+    private val listeners: List<OnClickListener>,
+    private val window: Window,
 ) : DeferredRenderExtension {
     override val renderPriority: Int = 1000
     private val floatBuffer: FloatBuffer = BufferUtils.createFloatBuffer(4)

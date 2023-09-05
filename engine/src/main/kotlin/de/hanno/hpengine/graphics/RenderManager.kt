@@ -60,7 +60,7 @@ class RenderManager(
     internal val rendering = AtomicBoolean(false)
 
     init {
-        window.perFrameAction = ::frame
+        window.gpuExecutor.perFrameAction = ::frame
     }
 
     private fun frame() {
@@ -78,15 +78,19 @@ class RenderManager(
                             }
 
                             is RenderMode.SingleFrame -> {
-                                // TODO: Make rendersystems excludable from single step, like editor
-                                if (renderMode.frameRequested.get()) {
-                                    renderSystems.filter {
-                                        renderSystemsConfig.run { it.enabled }
+                                renderSystemsConfig.run {
+                                    val (singleStepSystems, continuousSystems) = renderSystems.filter { it.enabled }.partition {
+                                        it.supportsSingleStep
                                     }
-                                } else {
-                                    emptyList() // TODO: Check whether this still works
-                                }.apply {
-                                    renderMode.frameRequested.getAndSet(false)
+                                    val systemsToExecute = continuousSystems + if (renderMode.frameRequested.get()) {
+                                        singleStepSystems
+                                    } else {
+                                        emptyList() // TODO: Check whether this still works
+                                    }
+
+                                    systemsToExecute.apply {
+                                        renderMode.frameRequested.getAndSet(false)
+                                    }
                                 }
                             }
                         }

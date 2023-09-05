@@ -16,6 +16,7 @@ import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
+import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.ressources.*
@@ -28,6 +29,7 @@ import org.lwjgl.opengl.ARBBindlessTexture.glGetTextureHandleARB
 import org.lwjgl.opengl.ARBBindlessTexture.glMakeTextureHandleResidentARB
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
+import org.lwjgl.opengl.GL11.GL_FALSE
 import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
 import org.lwjgl.opengl.GL32.*
 import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
@@ -40,11 +42,12 @@ import java.nio.IntBuffer
 import java.nio.LongBuffer
 import java.util.*
 
-context(GPUProfiler)
 class OpenGLContext private constructor(
-    override val window: Window,
+    private val gpuExecutor: GpuExecutor,
     private val config: Config,
-) : GraphicsApi, GpuExecutor by window {
+    override val profiler: GPUProfiler,
+    override val backgroundContext: OpenGLContext? = null,
+) : GraphicsApi, GpuExecutor by gpuExecutor {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
 
@@ -53,9 +56,6 @@ class OpenGLContext private constructor(
             // TODO: Test whether this does what it is intended to do: binding dummy vertex and index buffers
             VertexBufferImpl(EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).bind()
             OpenGLIndexBuffer().bind()
-
-            // Map the internal OpenGL coordinate system to the entire screen
-            viewPort(0, 0, window.width, window.height)
 
             cullFace = true
             depthMask = true
@@ -115,7 +115,11 @@ class OpenGLContext private constructor(
     )
 
     override fun FrameBuffer(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer.invoke(depthBuffer)
-    override val pixelBufferObjectPool = config.run { OpenGLPixelBufferObjectPool() }
+    override val pixelBufferObjectPool = config.run {
+        profiler.run {
+            OpenGLPixelBufferObjectPool()
+        }
+    }
 
     override fun createView(texture: CubeMapArray, cubeMapIndex: Int): CubeMap {
         val viewTextureId = onGpu { glGenTextures() }
@@ -197,6 +201,7 @@ class OpenGLContext private constructor(
     }
 
     override fun <T> onGpu(block: context(GraphicsApi)() -> T) = invoke { block(this) }
+    override fun launchOnGpu(block: context(GraphicsApi)() -> Unit) = launch { block(this) }
 
     override fun fencedOnGpu(block: context(GraphicsApi) () -> Unit) {
         val sync = onGpu { OpenGlCommandSync() }
@@ -220,12 +225,20 @@ class OpenGLContext private constructor(
 
     override fun checkCommandSyncs() = onGpu {
         commandSyncs.check()
-        val (signaled, nonSignaled) = commandSyncs.partition { it.signaled }
-        signaled.forEach {
-            it.onSignaled?.invoke()
-            it.delete()
-        }
+
+        val (_, nonSignaled) = commandSyncs.partition { it.signaled }
         commandSyncs = nonSignaled.toMutableList()
+    }
+
+    override fun CommandSync(): GpuCommandSync = onGpu {
+        OpenGlCommandSync().also {
+            commandSyncs.add(it)
+        }
+    }
+    override fun CommandSync(onCompletion: () -> Unit): GpuCommandSync = onGpu {
+        OpenGlCommandSync(onCompletion).also {
+            commandSyncs.add(it)
+        }
     }
 
     override fun enable(cap: Capability) = onGpu { glEnable(cap.glInt) }
@@ -697,7 +710,7 @@ class OpenGLContext private constructor(
         glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, texture.id, level)
     }
     override fun framebufferTextureLayer(index: Int, texture: Texture, level: Int, layer: Int) {
-        framebufferTexture(index, texture.id, level, layer)
+        framebufferTexture(index, texture.target, texture.id, layer, level)
     }
     override fun framebufferTextureLayer(index: Int, textureId: Int, level: Int, layer: Int) {
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureId, level, layer)
@@ -708,14 +721,57 @@ class OpenGLContext private constructor(
     override fun framebufferTexture(index: Int, textureId: Int, level: Int) {
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureId, level)
     }
-    override fun framebufferTexture(index: Int, textureId: Int, faceIndex: Int, level: Int) {
-        glFramebufferTexture2D(
-            GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0 + index,
-            GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceIndex,
-            textureId,
-            level
-        )
+    override fun framebufferTexture(index: Int, textureTarget: TextureTarget, textureId: Int, faceIndex: Int, level: Int) {
+        when(textureTarget) {
+            TextureTarget.TEXTURE_2D -> {
+                glFramebufferTexture2D(
+                    GL_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0 + index,
+                    textureTarget.glValue,
+                    textureId,
+                    level
+                )
+            }
+            TextureTarget.TEXTURE_CUBE_MAP -> {
+                glFramebufferTexture2D(
+                    GL_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0 + index,
+                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceIndex,
+                    textureId,
+                    level
+                )
+            }
+            TextureTarget.TEXTURE_CUBE_MAP_ARRAY -> {
+                glFramebufferTexture3D(
+                    GL_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0 + index,
+                    textureTarget.glValue,
+                    textureId,
+                    level,
+                    0 // TODO: Make it possible to pass layer
+                )
+            }
+            TextureTarget.TEXTURE_2D_ARRAY -> {
+                glFramebufferTexture3D(
+                    GL_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0 + index,
+                    textureTarget.glValue,
+                    textureId,
+                    level,
+                    0 // TODO: Make it possible to pass layer
+                )
+            }
+            TextureTarget.TEXTURE_3D -> {
+                glFramebufferTexture3D(
+                    GL_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0 + index,
+                    textureTarget.glValue,
+                    textureId,
+                    level,
+                    0 // TODO: Make it possible to pass layer
+                )
+            }
+        }
     }
     override fun drawBuffers(indices: IntArray) {
         GL20.glDrawBuffers(indices.map { GL_COLOR_ATTACHMENT0 + it }.toIntArray())
@@ -791,8 +847,8 @@ class OpenGLContext private constructor(
         }
 
         val shaderLoadFailed = onGpu {
-            val shaderStatus = GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS)
-            if (shaderStatus == GL11.GL_FALSE) {
+            val compileStatus = GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS)
+            if (compileStatus == GL_FALSE) {
                 System.err.println("Could not compile " + shaderType + ": " + source.name)
                 var shaderInfoLog = GL20.glGetShaderInfoLog(id, 10000)
                 val lines = resultingShaderSource.lines()
@@ -818,7 +874,7 @@ class OpenGLContext private constructor(
         GL20.glDeleteShader(id)
     }
 
-    override fun AbstractProgram<*>.load() {
+    override fun Program<*>.load() {
         onGpu {
             shaders.forEach {
                 it.load()
@@ -832,14 +888,15 @@ class OpenGLContext private constructor(
             registerUniforms()
         }
     }
-    override fun AbstractProgram<*>.unload() {
+
+    override fun Program<*>.unload() {
         onGpu {
             glDeleteProgram(id)
             shaders.forEach { it.unload() }
         }
     }
 
-    override fun AbstractProgram<*>.reload() {
+    override fun Program<*>.reload() {
         onGpu {
             try {
                 shaders.forEach {
@@ -856,7 +913,7 @@ class OpenGLContext private constructor(
         }
     }
     // TODO: Make reload not destructive
-    override fun AbstractProgram<*>.reloadProgram(): Unit = try {
+    override fun Program<*>.reloadProgram(): Unit = try {
         onGpu {
             shaders.forEach {
                 detach(it)
@@ -871,37 +928,40 @@ class OpenGLContext private constructor(
     private fun AbstractProgram<*>.attach(shader: Shader) {
         glAttachShader(id, shader.id)
     }
+    private fun Program<*>.attach(shader: Shader) {
+        glAttachShader(id, shader.id)
+    }
 
-    private fun AbstractProgram<*>.detach(shader: Shader) {
+    private fun Program<*>.detach(shader: Shader) {
         glDetachShader(id, shader.id)
     }
 
-    fun <T : Uniforms> AbstractProgram<T>.validateProgram() {
+    fun <T : Uniforms> Program<T>.validateProgram() {
         glValidateProgram(id)
         val validationResult = glGetProgrami(id, GL_VALIDATE_STATUS)
-        if (GL11.GL_FALSE == validationResult) {
+        if (GL_FALSE == validationResult) {
             System.err.println(glGetProgramInfoLog(id))
-            throw IllegalStateException("Program invalid: $name")
+            throw IllegalStateException("Program invalid: ${shaders.joinToString { it.name }}")
         }
     }
 
-    private fun AbstractProgram<*>.bindShaderAttributeChannels() {
+    private fun Program<*>.bindShaderAttributeChannels() {
         val channels = EnumSet.allOf(DataChannels::class.java)
         for (channel in channels) {
             glBindAttribLocation(id, channel.location, channel.binding)
         }
     }
 
-    fun <T : Uniforms> AbstractProgram<T>.linkProgram() {
+    fun <T : Uniforms> Program<T>.linkProgram() {
         glLinkProgram(id)
         val linkResult = glGetProgrami(id, GL_LINK_STATUS)
-        if (GL11.GL_FALSE == linkResult) {
+        if (GL_FALSE == linkResult) {
             System.err.println(glGetProgramInfoLog(id))
-            throw IllegalStateException("Program not linked: $name")
+            throw IllegalStateException("Program not linked: ${shaders.joinToString { it.name }}")
         }
     }
 
-    fun AbstractProgram<*>.registerUniforms() {
+    fun Program<*>.registerUniforms() {
         uniformBindings.clear()
         uniforms.registeredUniforms.forEach {
             uniformBindings[it.name] = when(it) {
@@ -1136,15 +1196,20 @@ class OpenGLContext private constructor(
         private var openGLContextSingleton: OpenGLContext? = null
 
         operator fun invoke(
-            profiler: OpenGLGPUProfiler,
             window: Window,
             config: Config,
-        ): OpenGLContext = if (openGLContextSingleton != null) {
-            throw IllegalStateException("Can only instantiate one OpenGLContext!")
-        } else {
-            profiler.run {
-                OpenGLContext(window, config).apply {
-                    openGLContextSingleton = this
+        ): OpenGLContext = run {
+            OpenGLContext(
+                window.gpuExecutor,
+                config,
+                window.profiler,
+                window.gpuExecutor.backgroundContext?.let {
+                    OpenGLContext(it, config, OpenGLGPUProfiler(config.debug::backgroundContextProfiling))
+                }
+            ).apply {
+                openGLContextSingleton = this
+                require(this.parentContext == null) {
+                    "Can not set a non main context as singleton!"
                 }
             }
         }
@@ -1159,4 +1224,3 @@ val Capability.glInt get() = when(this) {
 }
 
 val Capability.isEnabled: Boolean get() = glIsEnabled(glInt)
-

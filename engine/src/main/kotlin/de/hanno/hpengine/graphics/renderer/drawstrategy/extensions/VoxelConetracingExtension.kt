@@ -97,7 +97,8 @@ class VoxelConeTracingExtension(
     private val fullscreenBuffer = QuadVertexBuffer()
     private val lineVertices = PersistentShaderStorageBuffer(100 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
     val voxelGrids = renderState.registerState {
-        PersistentShaderStorageBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type)
+        //PersistentShaderStorageBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type)
+        PersistentShaderStorageBuffer(Byte.SIZE_BYTES).typed(VoxelGrid.type) // make it one byte size as long as no elements, so that we can encode the "empty" state
     }
     data class GIVolumeGrids(val grid: OpenGLTexture3D,
                              val indexGrid: OpenGLTexture3D,
@@ -154,6 +155,9 @@ class VoxelConeTracingExtension(
     private var gridCache = mutableMapOf<Int, GIVolumeGrids>()
 
     override fun renderFirstPass(renderState: RenderState) = profiled("VCT first pass") {
+        val noGridsInUse = renderState[this.voxelGrids].sizeInBytes == Byte.SIZE_BYTES
+        if(noGridsInUse) return
+
         val directionalLightMoved = renderState[directionalLightStateHolder.directionalLightHasMovedInCycle] > litInCycle
         val pointlightMoved = renderState[pointLightStateHolder.lightState].pointLightMovedInCycle > litInCycle
         val bounces = 1

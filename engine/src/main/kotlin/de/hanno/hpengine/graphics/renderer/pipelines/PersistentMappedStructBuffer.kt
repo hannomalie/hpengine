@@ -19,7 +19,7 @@ class PersistentMappedBufferAllocator(
     val target: BufferTarget = BufferTarget.ShaderStorage
 ) : Allocator<GpuBuffer> {
 
-    override fun allocate(capacityInBytes: Int, current: GpuBuffer?): GpuBuffer = window.invoke {
+    override fun allocate(capacityInBytes: Int, current: GpuBuffer?): GpuBuffer = onGpu {
         require(capacityInBytes > 0) { "Cannot allocate buffer of size 0!" }
 
         PersistentShaderStorageBuffer(capacityInBytes).apply {

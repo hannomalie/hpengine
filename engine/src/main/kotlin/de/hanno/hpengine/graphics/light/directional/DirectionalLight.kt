@@ -25,6 +25,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
 import struktgen.api.forIndex
+import struktgen.api.get
 
 
 context(GraphicsApi, RenderStateContext)
@@ -105,7 +106,13 @@ class DirectionalLightSystem(
 context(GraphicsApi, RenderStateContext)
 class DirectionalLightStateHolder {
     val lightState = renderState.registerState {
-        PersistentShaderStorageBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type)
+        PersistentShaderStorageBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type).apply {
+            forIndex(0) {
+                it.shadowMapId = -1
+                it.shadowMapHandle = -1L
+            }
+
+        }
     }
     val directionalLightHasMovedInCycle = renderState.registerState { 0L }
 }

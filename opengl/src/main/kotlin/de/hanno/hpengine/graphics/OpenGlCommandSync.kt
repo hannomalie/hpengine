@@ -6,9 +6,10 @@ import org.lwjgl.opengl.GL32.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import java.nio.IntBuffer
+import kotlin.math.sign
 
 
-class OpenGlCommandSync internal constructor(val onSignaled: (() -> Unit)? = null) : GpuCommandSync {
+class OpenGlCommandSync internal constructor(override val onSignaled: (() -> Unit)? = null) : GpuCommandSync {
     private val gpuCommandSync: Long = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0).apply {
         require(this > 0) { "Error creating sync with glFenceSync, value is $this" }
     }
@@ -28,7 +29,12 @@ class OpenGlCommandSync internal constructor(val onSignaled: (() -> Unit)? = nul
 
     private val intBuffer = BufferUtils.createIntBuffer(1)
     override fun update() {
+        val signaledBefore = signaled
         signaled = glGetSynci(gpuCommandSync, GL_SYNC_STATUS, intBuffer) == GL_SIGNALED
+        if(!signaledBefore && signaled) {
+            onSignaled?.invoke()
+            delete()
+        }
     }
 
     override val isSignaled: Boolean get() = signaled

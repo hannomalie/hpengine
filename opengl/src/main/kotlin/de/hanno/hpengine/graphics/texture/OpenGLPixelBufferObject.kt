@@ -9,19 +9,24 @@ import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.glValue
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL21.*
 import org.lwjgl.opengl.GL45.glCompressedTextureSubImage2D
 import org.lwjgl.opengl.GL45.glTextureSubImage2D
 import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 context(GraphicsApi, GPUProfiler, Config)
 // strange nullable primary constructor param because of compiler issues with context receivers
 class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
-    private val buffer = _buffer ?: GpuBuffer(BufferTarget.PixelUnpack, 10_000_000)
+    private val buffer = _buffer ?: GpuBuffer(BufferTarget.PixelUnpack, 5_000_000)
+    var uploading = AtomicBoolean(false)
 
     override fun upload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D) {
+        uploading.getAndSet(true)
+
         when(info) {
             is UploadInfo.CompleteTexture2DUploadInfo -> {
 
@@ -47,6 +52,7 @@ class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
                     currentHeight = (currentHeight * 0.5).toInt()
                 }
                 texture.uploadState = UploadState.Uploaded
+                uploading.getAndSet(false)
             }
             is UploadInfo.SimpleTexture2DUploadInfo -> {
 
@@ -65,8 +71,10 @@ class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
                         }
                         generateMipMaps(texture)
                         buffer.unbind()
-                        finish()
-                        texture.uploadState = UploadState.Uploaded
+                        CommandSync {
+                            uploading.getAndSet(false)
+                            texture.uploadState = UploadState.Uploaded
+                        }
                     }
                 }
             }
@@ -84,6 +92,7 @@ class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
         info: UploadInfo.Texture2DUploadInfo,
         lazyTextureData: LazyTextureData
     ) {
+        uploading.getAndSet(true)
         val dataProvider = lazyTextureData.dataProvider
         val width = lazyTextureData.width
         val height = lazyTextureData.height
@@ -95,44 +104,41 @@ class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
 
         val capacity = data.capacity()
         val textureId = texture.id
-        val compressedFormat = info.internalFormat.glValue
-
-        onGpu {
-            profiled("textureSubImage") {
-                profiled("bindBuffer") {
-//                    buffer.bind()
-                    glBindBuffer(buffer.target.glValue, buffer.id)
-                }
-                if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {
-                    glCompressedTextureSubImage2D(textureId, level, 0, 0, width, height, compressedFormat, capacity, 0)
-                } else profiled("glTextureSubImage2D") {
-                    glTextureSubImage2D(textureId, level, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
-                }
-
-                if(level == 0) {
-                    texture.uploadState = UploadState.Uploaded
-                }
-                profiled("unBindBuffer") {
-                    glBindBuffer(buffer.target.glValue, 0)
-//                    buffer.unbind()
-                }
-            }
-        }
-        texture.uploadState = UploadState.Uploading(level)
 
         if (debug.simulateSlowTextureStreaming) {
             println("Uploaded level $level")
             Thread.sleep((level * 100).toLong())
         }
+
+//        onGpu {
+        (backgroundContext ?: this@GraphicsApi).onGpu {
+            profiled("textureSubImage") {
+//                buffer.bind()
+                glBindBuffer(buffer.target.glValue, buffer.id)
+                if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {
+                    glCompressedTextureSubImage2D(textureId, level, 0, 0, width, height, info.internalFormat.glValue, capacity, 0)
+                } else profiled("glTextureSubImage2D") {
+                    glTextureSubImage2D(textureId, level, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                }
+                glBindBuffer(buffer.target.glValue, 0)
+//                buffer.unbind()
+            }
+            CommandSync {
+                uploading.getAndSet(false)
+                if(level == 0) {
+                    texture.uploadState = UploadState.Uploaded
+                }
+            }
+        }
+        texture.uploadState = UploadState.Uploading(level)
     }
     fun delete() {
         buffer.delete()
     }
 }
 
-class Task(val priority: Int, val action: () -> Unit): Runnable {
-    override fun run() {
-        action()
+class Task(val priority: Int, val action: (PixelBufferObject) -> Unit) {
+    fun run(pbo: PixelBufferObject) {
+        action(pbo)
     }
-
 }

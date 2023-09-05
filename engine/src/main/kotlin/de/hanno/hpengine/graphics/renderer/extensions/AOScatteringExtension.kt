@@ -57,7 +57,10 @@ class AOScatteringExtension(
             bindTexture(1, TextureTarget.TEXTURE_2D, gBuffer.normalMap)
             bindTexture(2, TextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
             bindTexture(3, TextureTarget.TEXTURE_2D, gBuffer.motionMap)
-            bindTexture(6, TextureTarget.TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
+            val directionalShadowMap = directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+            if(directionalShadowMap > -1) {
+                bindTexture(6, TextureTarget.TEXTURE_2D, directionalShadowMap)
+            }
             renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
             val environmentProbesState = renderState[environmentProbesStateHolder.environmentProbesState]
             if(environmentProbesState.environmapsArray3Id > 0) {

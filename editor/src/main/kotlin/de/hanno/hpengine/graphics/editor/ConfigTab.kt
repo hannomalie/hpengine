@@ -35,11 +35,11 @@ fun TabBar.configTab(config: Config, window: Window) {
         if (ImGui.checkbox("Print pipeline output", config.debug.isPrintPipelineDebugOutput)) {
             config.debug.isPrintPipelineDebugOutput = !config.debug.isPrintPipelineDebugOutput
         }
-        if (ImGui.checkbox("Editor", config.debug.isEditorOverlay)) {
-            config.debug.isEditorOverlay = !config.debug.isEditorOverlay
-        }
         if (ImGui.checkbox("GPU Profiling", config.debug.profiling)) {
             config.debug.profiling = !config.debug.profiling
+        }
+        if (ImGui.checkbox("GPU Background Profiling", config.debug.backgroundContextProfiling)) {
+            config.debug.backgroundContextProfiling = !config.debug.backgroundContextProfiling
         }
         if (ImGui.checkbox("VSync", window.vSync)) {
             window.vSync = !window.vSync

@@ -7,6 +7,7 @@ import de.hanno.hpengine.lifecycle.Updatable
 interface RenderSystem: Updatable {
     val sharedRenderTarget: BackBufferRenderTarget<*>? get() = null
     val requiresClearSharedRenderTarget: Boolean get() = false
+    val supportsSingleStep: Boolean get() = true
     fun render(renderState: RenderState) { }
     fun afterFrameFinished() { }
     fun extract(renderState: RenderState) { }
