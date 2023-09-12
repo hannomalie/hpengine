@@ -10,6 +10,7 @@ import de.hanno.hpengine.graphics.state.EnvironmentProbesState
 import de.hanno.hpengine.transform.TransformSpatial
 import org.joml.Vector3f
 import org.joml.Vector3fc
+import org.koin.core.annotation.Single
 
 class EnvironmentProbeComponent: Component() {
     var size = Vector3f(10f)
@@ -29,9 +30,11 @@ class EnvironmentProbeComponent: Component() {
     operator fun contains(minMaxWorld: AABB) = contains(minMaxWorld.min, minMaxWorld.max)
 }
 
-context(GraphicsApi, RenderStateContext)
-class EnvironmentProbesStateHolder {
-    val environmentProbesState = renderState.registerState {
+@Single
+class EnvironmentProbesStateHolder(
+    renderStateContext: RenderStateContext,
+) {
+    val environmentProbesState = renderStateContext.renderState.registerState {
         EnvironmentProbesState()
     }
 }

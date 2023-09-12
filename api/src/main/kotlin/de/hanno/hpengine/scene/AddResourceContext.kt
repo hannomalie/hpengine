@@ -6,9 +6,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.koin.core.annotation.Single
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
+@Single
 class AddResourceContext {
     val channel = Channel<() -> Any>(Channel.Factory.UNLIMITED)
 

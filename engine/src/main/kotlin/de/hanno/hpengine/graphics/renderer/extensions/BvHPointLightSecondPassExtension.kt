@@ -25,6 +25,7 @@ import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.enlarge
+import de.hanno.hpengine.extension.SkyboxRenderExtension
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
@@ -35,6 +36,7 @@ import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
+import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.Strukt
 import struktgen.api.forIndex
@@ -131,7 +133,7 @@ fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
 val Vector4f.xyz: Vector3f
     get() = Vector3f(x, y, z)
 
-context(GraphicsApi, GPUProfiler)
+@Single(binds = [BvHPointLightSecondPassExtension::class, DeferredRenderExtension::class])
 class BvHPointLightSecondPassExtension(
     private val config: Config,
     private val graphicsApi: GraphicsApi,
@@ -142,13 +144,13 @@ class BvHPointLightSecondPassExtension(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
-    private val lineVertices = PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
     private val secondPassPointBvhComputeProgram =
         programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 
     private val linesProgram = programManager.run {
-        val uniforms = LinesProgramUniforms()
+        val uniforms = LinesProgramUniforms(graphicsApi)
         getProgram(
             StringBasedCodeSource(
                 "mvp_vertex_vec4", """
@@ -190,7 +192,7 @@ class BvHPointLightSecondPassExtension(
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    val bvh = PersistentShaderStorageBuffer(BvhNodeGpu.type.sizeInBytes).typed(BvhNodeGpu.type)
+    val bvh = graphicsApi.PersistentShaderStorageBuffer(BvhNodeGpu.type.sizeInBytes).typed(BvhNodeGpu.type)
 
     fun Vector4f.set(other: Vector3f) {
         x = other.x
@@ -230,7 +232,7 @@ class BvHPointLightSecondPassExtension(
         putToBufferHelper()
     }
 
-    override fun renderSecondPassFullScreen(renderState: RenderState) {
+    override fun renderSecondPassFullScreen(renderState: RenderState) = graphicsApi.run {
         val pointLightState = renderState[pointLightStateHolder.lightState]
         if (pointLightState.pointLights.isEmpty()) {
             return
@@ -315,7 +317,7 @@ class BvHPointLightSecondPassExtension(
             deferredRenderingBuffer.finalBuffer.use(false)
             graphicsApi.blend = false
             val camera = renderState[primaryCameraStateHolder.camera]
-            drawLines(
+            graphicsApi.drawLines(
                 programManager,
                 linesProgram,
                 lineVertices,

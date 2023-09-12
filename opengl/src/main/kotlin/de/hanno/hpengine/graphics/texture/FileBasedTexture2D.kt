@@ -13,10 +13,10 @@ data class FileBasedTexture2D(
     val backingTexture: OpenGLTexture2D
 ) : Texture2D by backingTexture {
 
-    context(GraphicsApi)
     fun uploadAsync() {
         val bufferedImage = ImageIO.read(file).apply { DDSConverter.run { rescaleToNextPowerOfTwo() } }
         backingTexture.uploadAsync(
+            backingTexture.graphicsApi,
             bufferedImage,
             backingTexture.internalFormat == InternalTextureFormat.SRGB8_ALPHA8_EXT,
             backingTexture.internalFormat
@@ -25,14 +25,14 @@ data class FileBasedTexture2D(
 
     companion object {
 
-        context(GraphicsApi)
         operator fun invoke(
+            graphicsApi: GraphicsApi,
             path: String,
             directory: AbstractDirectory,
             srgba: Boolean = false
-        ) = invoke(path, directory.resolve(path), srgba)
+        ) = invoke(graphicsApi, path, directory.resolve(path), srgba)
 
-        context(GraphicsApi)
-        operator fun invoke(path: String, file: File, srgba: Boolean = false) = OpenGLTexture2D(file, path, srgba)
+        operator fun invoke(
+            graphicsApi: GraphicsApi, path: String, file: File, srgba: Boolean = false) = OpenGLTexture2D(graphicsApi, file, path, srgba)
     }
 }

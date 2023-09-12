@@ -11,8 +11,8 @@ import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import org.joml.Vector4f
 
-context(GraphicsApi)
 class CubeMapArrayRenderTarget(
+    private val graphicsApi: GraphicsApi,
     renderTarget: BackBufferRenderTarget<CubeMapArray>
 ) : BackBufferRenderTarget<CubeMapArray> by renderTarget {
 
@@ -22,7 +22,7 @@ class CubeMapArrayRenderTarget(
     init {
         for (cubeMapArrayIndex in textures.indices) {
             val cma = textures[cubeMapArrayIndex]
-            onGpu {
+            graphicsApi.onGpu {
                 bindTexture(cma)
                 for (cubeMapIndex in 0 until cma.dimension.depth) {
                     val cubeMapView = createView(cma, cubeMapIndex)
@@ -33,11 +33,11 @@ class CubeMapArrayRenderTarget(
                 }
             }
         }
-        register(this)
+        graphicsApi.register(this)
     }
 
     override fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int) {
-        framebufferTextureLayer(
+        graphicsApi.framebufferTextureLayer(
             attachmentIndex,
             textureId,
             mipmap,
@@ -47,7 +47,7 @@ class CubeMapArrayRenderTarget(
 
     fun resetAttachments() {
         for (i in textures.indices) {
-            framebufferTextureLayer(i, 0, 0, 0)
+            graphicsApi.framebufferTextureLayer(i, 0, 0, 0)
         }
     }
 
@@ -58,14 +58,15 @@ class CubeMapArrayRenderTarget(
 
     companion object {
 
-        context(GraphicsApi)
         operator fun invoke(
+            graphicsApi: GraphicsApi,
             width: Int, height: Int,
             name: String, clear: Vector4f,
             vararg cubeMapArray: CubeMapArray
         ) = CubeMapArrayRenderTarget(
-            RenderTarget(
-                FrameBuffer(createDepthBuffer(width, height, cubeMapArray.size)),
+            graphicsApi,
+            graphicsApi.RenderTarget(
+                graphicsApi.FrameBuffer(createDepthBuffer(graphicsApi, width, height, cubeMapArray.size)),
                 width,
                 height,
                 cubeMapArray.toList(),
@@ -74,8 +75,8 @@ class CubeMapArrayRenderTarget(
             )
         )
 
-        context(GraphicsApi)
         fun createDepthBuffer(
+            graphicsApi: GraphicsApi,
             width: Int,
             height: Int,
             depth: Int
@@ -83,7 +84,7 @@ class CubeMapArrayRenderTarget(
             val dimension = TextureDimension(width, height, depth)
             val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
             return DepthBuffer(
-                CubeMapArray(
+                graphicsApi.CubeMapArray(
                     dimension,
                     filterConfig,
                     InternalTextureFormat.DEPTH_COMPONENT24,

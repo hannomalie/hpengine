@@ -22,11 +22,10 @@ import de.hanno.hpengine.graphics.texture.UploadState
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils.createFloatBuffer
 
-context(GraphicsApi)
-sealed class FirstPassUniforms: Uniforms() {
-    var materials by SSBO("Material", 1, PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
-    var entities by SSBO("Entity", 3, PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
-    var entityOffsets by SSBO("int", 4, PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
+sealed class FirstPassUniforms(graphicsApi: GraphicsApi): Uniforms() {
+    var materials by SSBO("Material", 1, graphicsApi.PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
+    var entities by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
+    var entityOffsets by SSBO("int", 4, graphicsApi.PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
     var useRainEffect by BooleanType(false)
     var rainEffect by FloatType(0f)
     var viewMatrix by Mat4(createTransformBuffer())
@@ -47,14 +46,12 @@ sealed class FirstPassUniforms: Uniforms() {
 }
 fun createTransformBuffer() = createFloatBuffer(16).apply { Transform().get(this) }
 
-context(GraphicsApi)
-open class StaticFirstPassUniforms: FirstPassUniforms() {
-    var vertices by SSBO("VertexPacked", 7, PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
+open class StaticFirstPassUniforms(graphicsApi: GraphicsApi): FirstPassUniforms(graphicsApi) {
+    var vertices by SSBO("VertexPacked", 7, graphicsApi.PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
 }
-context(GraphicsApi)
-open class AnimatedFirstPassUniforms: FirstPassUniforms() {
-    var joints by SSBO("mat4", 6, PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type))
-    var vertices by SSBO("VertexAnimatedPacked", 7, PersistentShaderStorageBuffer(AnimatedVertexStruktPacked.sizeInBytes).typed(
+open class AnimatedFirstPassUniforms(graphicsApi: GraphicsApi): FirstPassUniforms(graphicsApi) {
+    var joints by SSBO("mat4", 6, graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type))
+    var vertices by SSBO("VertexAnimatedPacked", 7, graphicsApi.PersistentShaderStorageBuffer(AnimatedVertexStruktPacked.sizeInBytes).typed(
             AnimatedVertexStruktPacked.type
         )
     )

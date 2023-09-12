@@ -31,6 +31,9 @@ dependencies {
 
     ksp("de.hanno.struktgen:processor:1.0.0-SNAPSHOT")
 
+    api("io.insert-koin:koin-annotations:1.2.2")
+    ksp("io.insert-koin:koin-ksp-compiler:1.2.2")
+
     testImplementation(project(":glfw"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testImplementation("io.kotest:kotest-runner-junit5:5.5.4")

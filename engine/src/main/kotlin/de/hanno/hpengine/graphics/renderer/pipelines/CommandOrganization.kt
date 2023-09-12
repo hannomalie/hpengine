@@ -4,12 +4,11 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 
-context(GraphicsApi)
-class CommandOrganization {
+class CommandOrganization(graphicsApi: GraphicsApi) {
     var commandCount = 0
     var filteredRenderBatches: List<RenderBatch> = emptyList()
-    val commandBuffer = CommandBuffer(10000)
+    val commandBuffer = CommandBuffer(graphicsApi, 10000)
 
-    val entityOffsetBuffer = OpenGLIndexBuffer(10000)
-    val drawCountBuffer = AtomicCounterBuffer()
+    val entityOffsetBuffer = OpenGLIndexBuffer(graphicsApi, 10000)
+    val drawCountBuffer = graphicsApi.AtomicCounterBuffer()
 }

@@ -13,12 +13,15 @@ import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.jetbrains.kotlin.config.Services
+import org.koin.core.annotation.Single
 import java.io.File
 
 
 class KotlinComponent : Component() {
     lateinit var codeSource: CodeSource
 }
+
+@Single
 @All(KotlinComponent::class)
 class KotlinComponentSystem(
     private val fileMonitor: FileMonitor,

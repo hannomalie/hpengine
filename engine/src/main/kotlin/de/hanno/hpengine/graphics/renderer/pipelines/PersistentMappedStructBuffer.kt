@@ -14,12 +14,12 @@ import org.lwjgl.opengl.*
 import struktgen.api.*
 import java.nio.ByteBuffer
 
-context(GraphicsApi)
 class PersistentMappedBufferAllocator(
+    val graphicsApi: GraphicsApi,
     val target: BufferTarget = BufferTarget.ShaderStorage
 ) : Allocator<GpuBuffer> {
 
-    override fun allocate(capacityInBytes: Int, current: GpuBuffer?): GpuBuffer = onGpu {
+    override fun allocate(capacityInBytes: Int, current: GpuBuffer?): GpuBuffer = graphicsApi.onGpu {
         require(capacityInBytes > 0) { "Cannot allocate buffer of size 0!" }
 
         PersistentShaderStorageBuffer(capacityInBytes).apply {
@@ -40,10 +40,10 @@ class PersistentMappedBufferAllocator(
 }
 
 
-context(GraphicsApi)
 fun CommandBuffer(
+    graphicsApi: GraphicsApi,
     size: Int = 1000
-) = PersistentShaderStorageBuffer(
+) = graphicsApi.PersistentShaderStorageBuffer(
     size * DrawElementsIndirectCommandStrukt.type.sizeInBytes
 ).typed(
     DrawElementsIndirectCommandStrukt.type
@@ -55,8 +55,7 @@ interface IntStrukt : Strukt {
     companion object
 }
 
-context(GraphicsApi)
-fun OpenGLIndexBuffer(size: Int = 1000) = PersistentMappedBuffer(
+fun OpenGLIndexBuffer(graphicsApi: GraphicsApi, size: Int = 1000) = graphicsApi.PersistentMappedBuffer(
     BufferTarget.ElementArray, size * IntStrukt.sizeInBytes
 ).typed(IntStrukt.type)
 

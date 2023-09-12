@@ -3,6 +3,7 @@ package de.hanno.hpengine.graphics.renderer.extensions
 
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.extension.SkyboxRenderExtension
 import de.hanno.hpengine.graphics.feature.BindlessTextures
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
@@ -19,9 +20,10 @@ import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector3f
+import org.koin.core.annotation.Single
 import struktgen.api.forIndex
 
-context(GPUProfiler, GraphicsApi)
+@Single(binds = [DirectionalLightSecondPassExtension::class, DeferredRenderExtension::class])
 class DirectionalLightSecondPassExtension(
     private val config: Config,
     private val programManager: ProgramManager,
@@ -32,13 +34,13 @@ class DirectionalLightSecondPassExtension(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
     // TODO: Remove all the creations of fullscreenbuffer, so that it is shared and bound once?
-    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
+    private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
     private val secondPassDirectionalProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_fragment.glsl"))
     )
 
-    override fun renderSecondPassFullScreen(renderState: RenderState) {
+    override fun renderSecondPassFullScreen(renderState: RenderState): Unit = graphicsApi.run {
         profiled("Directional light") {
 
             val directionalLightState = renderState[directionalLightStateHolder.lightState]

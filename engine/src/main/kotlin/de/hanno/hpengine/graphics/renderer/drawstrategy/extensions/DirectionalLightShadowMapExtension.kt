@@ -13,6 +13,7 @@ import com.artemis.World
 import de.hanno.hpengine.artemis.model.EntitiesStateHolder
 
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.extension.SkyboxRenderExtension
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.state.RenderStateContext
@@ -42,10 +43,14 @@ import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector4f
+import org.koin.core.annotation.Single
 import struktgen.api.forIndex
 
-context(GraphicsApi, RenderStateContext, GPUProfiler)
+
+@Single(binds = [DirectionalLightShadowMapExtension::class, DeferredRenderExtension::class])
 class DirectionalLightShadowMapExtension(
+    private val graphicsApi: GraphicsApi,
+    private val renderStateContext: RenderStateContext,
     private val config: Config,
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
@@ -55,13 +60,14 @@ class DirectionalLightShadowMapExtension(
 
     private var forceRerender = true
 
-    val renderTarget = RenderTarget(
-        OpenGLFrameBuffer(DepthBuffer(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
+    val renderTarget = graphicsApi.RenderTarget(
+        OpenGLFrameBuffer(graphicsApi, graphicsApi.DepthBuffer(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
         SHADOWMAP_RESOLUTION,
         SHADOWMAP_RESOLUTION,
 //                Reflective shadowmaps?
 //                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
         listOf(ColorAttachmentDefinition("Shadow", InternalTextureFormat.RGBA16F, TextureFilterConfig(MinFilter.LINEAR))).toTextures(
+            graphicsApi,
             SHADOWMAP_RESOLUTION,
             SHADOWMAP_RESOLUTION
         ),
@@ -74,20 +80,20 @@ class DirectionalLightShadowMapExtension(
     private val staticDirectionalShadowPassProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/directional_shadowmap_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/shadowmap_fragment.glsl")),
-        StaticDirectionalShadowUniforms(),
+        StaticDirectionalShadowUniforms(graphicsApi),
         Defines()
     )
     private val animatedDirectionalShadowPassProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/directional_shadowmap_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/shadowmap_fragment.glsl")),
-        AnimatedDirectionalShadowUniforms(),
+        AnimatedDirectionalShadowUniforms(graphicsApi),
         Defines(Define("ANIMATED", true)),
     )
 
-    private val staticPipeline = renderState.registerState {
+    private val staticPipeline = renderStateContext.renderState.registerState {
         DirectionalShadowMapPipeline(staticDirectionalShadowPassProgram)
     }
-    private val animatedPipeline = renderState.registerState {
+    private val animatedPipeline = renderStateContext.renderState.registerState {
         DirectionalShadowMapPipeline(animatedDirectionalShadowPassProgram)
     }
 
@@ -95,38 +101,40 @@ class DirectionalLightShadowMapExtension(
         private var verticesCount = 0
         private var entitiesCount = 0
 
-        fun draw(renderState: RenderState) = profiled("Actual draw entities") {
-            verticesCount = 0
-            entitiesCount = 0
-            val entitiesState = renderState[entitiesStateHolder.entitiesState]
-            val program = directionalShadowPassProgram
-            val vertexIndexBuffer = entitiesState.selectVertexIndexBuffer(program.uniforms)
+        fun draw(renderState: RenderState) = graphicsApi.run {
+            profiled("Actual draw entities") {
+                verticesCount = 0
+                entitiesCount = 0
+                val entitiesState = renderState[entitiesStateHolder.entitiesState]
+                val program = directionalShadowPassProgram
+                val vertexIndexBuffer = entitiesState.selectVertexIndexBuffer(program.uniforms)
 
-            vertexIndexBuffer.indexBuffer.bind()
+                vertexIndexBuffer.indexBuffer.bind()
 
-            program.use()
-            program.uniforms.apply {
-                materials = entitiesState.materialBuffer
-                directionalLightState = renderState[directionalLightStateHolder.lightState]
-                entities = entitiesState.entitiesBuffer
-                when (this) {
-                    is StaticDirectionalShadowUniforms -> vertices = vertexIndexBuffer.vertexStructArray
-                    is AnimatedDirectionalShadowUniforms -> {
-                        vertices = vertexIndexBuffer.vertexStructArray
-                        joints = entitiesState.jointsBuffer
+                program.use()
+                program.uniforms.apply {
+                    materials = entitiesState.materialBuffer
+                    directionalLightState = renderState[directionalLightStateHolder.lightState]
+                    entities = entitiesState.entitiesBuffer
+                    when (this) {
+                        is StaticDirectionalShadowUniforms -> vertices = vertexIndexBuffer.vertexStructArray
+                        is AnimatedDirectionalShadowUniforms -> {
+                            vertices = vertexIndexBuffer.vertexStructArray
+                            joints = entitiesState.jointsBuffer
+                        }
                     }
+                    entityBaseIndex = 0
+                    indirect = false
                 }
-                entityBaseIndex = 0
-                indirect = false
-            }
 
-            val shadowCasters = entitiesState.getRenderBatches(program.uniforms).filter { it.isShadowCasting }
-            for (batch in shadowCasters) {
-                program.uniforms.entityIndex = batch.entityBufferIndex
-                program.bind()
-                vertexIndexBuffer.indexBuffer.draw(batch.drawElementsIndirectCommand, false, PrimitiveType.Triangles, RenderingMode.Fill)
-                verticesCount += batch.vertexCount
-                entitiesCount += 1
+                val shadowCasters = entitiesState.getRenderBatches(program.uniforms).filter { it.isShadowCasting }
+                for (batch in shadowCasters) {
+                    program.uniforms.entityIndex = batch.entityBufferIndex
+                    program.bind()
+                    vertexIndexBuffer.indexBuffer.draw(batch.drawElementsIndirectCommand, false, PrimitiveType.Triangles, RenderingMode.Fill)
+                    verticesCount += batch.vertexCount
+                    entitiesCount += 1
+                }
             }
         }
 
@@ -152,7 +160,7 @@ class DirectionalLightShadowMapExtension(
         }
     }
 
-    override fun renderZeroPass(renderState: RenderState) {
+    override fun renderZeroPass(renderState: RenderState) = graphicsApi.run {
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         profiled("Directional shadowmap") {
             val needsRerender = forceRerender ||
@@ -167,7 +175,7 @@ class DirectionalLightShadowMapExtension(
         }
     }
 
-    private fun drawShadowMap(renderState: RenderState) {
+    private fun drawShadowMap(renderState: RenderState) = graphicsApi.run {
         blend = false
         depthMask = true
         depthTest = true
@@ -189,35 +197,32 @@ class DirectionalLightShadowMapExtension(
     }
 }
 
-context(GraphicsApi)
-sealed class DirectionalShadowUniforms() : Uniforms() {
-    var materials by SSBO("Material", 1, PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
+sealed class DirectionalShadowUniforms(graphicsApi: GraphicsApi) : Uniforms() {
+    var materials by SSBO("Material", 1, graphicsApi.PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
     var directionalLightState by SSBO(
-        "DirectionalLightState", 2, PersistentShaderStorageBuffer(1).typed(DirectionalLightState.type)
+        "DirectionalLightState", 2, graphicsApi.PersistentShaderStorageBuffer(1).typed(DirectionalLightState.type)
     )
-    var entities by SSBO("Entity", 3, PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
-    var entityOffsets by SSBO("int", 4, PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
+    var entities by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
+    var entityOffsets by SSBO("int", 4, graphicsApi.PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
 
     var indirect by BooleanType(true)
     var entityIndex by IntType(0)
     var entityBaseIndex by IntType(0)
 }
 
-context(GraphicsApi)
-class AnimatedDirectionalShadowUniforms : DirectionalShadowUniforms() {
+class AnimatedDirectionalShadowUniforms(graphicsApi: GraphicsApi) : DirectionalShadowUniforms(graphicsApi) {
     var joints by SSBO(
         "mat4",
         6,
-        PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
+        graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
     )
     var vertices by SSBO(
-        "VertexAnimatedPacked", 7, PersistentShaderStorageBuffer(
+        "VertexAnimatedPacked", 7, graphicsApi.PersistentShaderStorageBuffer(
             AnimatedVertexStruktPacked.sizeInBytes
         ).typed(AnimatedVertexStruktPacked.type)
     )
 }
 
-context(GraphicsApi)
-class StaticDirectionalShadowUniforms : DirectionalShadowUniforms() {
-    var vertices by SSBO("VertexPacked", 7, PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
+class StaticDirectionalShadowUniforms(graphicsApi: GraphicsApi) : DirectionalShadowUniforms(graphicsApi) {
+    var vertices by SSBO("VertexPacked", 7, graphicsApi.PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
 }

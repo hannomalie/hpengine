@@ -32,8 +32,8 @@ import java.nio.FloatBuffer
 import java.util.HashSet
 
 
-context(GraphicsApi)
 class EnvironmentSampler(
+    private val graphicsApi: GraphicsApi,
     private val transform: Transform,
     probe: EnvironmentProbeComponent,
     width: Int, height: Int, probeIndex: Int,
@@ -116,7 +116,7 @@ class EnvironmentSampler(
     val renderTarget: RenderTarget2D
     val camera: Camera
 
-    var gpuContext = this@GraphicsApi
+    var gpuContext = graphicsApi
     val config: Config
     val textureManager: OpenGLTextureManager
 
@@ -138,7 +138,7 @@ class EnvironmentSampler(
         viewProjectionMatrixAsBuffer: FloatBuffer
     ) {
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
-        program.use()
+        graphicsApi.run { program.use() }
         bindShaderSpecificsPerCubeMapSide(
             renderState,
             viewMatrixAsBuffer,
@@ -245,28 +245,29 @@ class EnvironmentSampler(
         val cubeMapCamInitialOrientation = Quaternionf().identity()
         transform.rotate(cubeMapCamInitialOrientation)
 
-        cubeMapView = createView(cubeMapArrayRenderTarget.getCubeMapArray(0), probeIndex).id
-        cubeMapView1 = createView(cubeMapArrayRenderTarget.getCubeMapArray(1), probeIndex).id
-        cubeMapView2 = createView(cubeMapArrayRenderTarget.getCubeMapArray(2), probeIndex).id
+        cubeMapView = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(0), probeIndex).id
+        cubeMapView1 = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(1), probeIndex).id
+        cubeMapView2 = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(2), probeIndex).id
 
         val diffuseInternalFormat = cubeMapArrayRenderTarget.getCubeMapArray(3).internalFormat
         for (faceIndex in 0..5) {
-            cubeMapFaceViews[0][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(0), probeIndex, faceIndex).id
-            cubeMapFaceViews[1][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(1), probeIndex, faceIndex).id
-            cubeMapFaceViews[2][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(2), probeIndex, faceIndex).id
-            cubeMapFaceViews[3][faceIndex] = createView(cubeMapArrayRenderTarget.getCubeMapArray(3), probeIndex, faceIndex).id
+            cubeMapFaceViews[0][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(0), probeIndex, faceIndex).id
+            cubeMapFaceViews[1][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(1), probeIndex, faceIndex).id
+            cubeMapFaceViews[2][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(2), probeIndex, faceIndex).id
+            cubeMapFaceViews[3][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(3), probeIndex, faceIndex).id
         }
-        renderTarget = RenderTarget(
-            FrameBuffer(DepthBuffer(RESOLUTION, RESOLUTION)),
+        renderTarget = graphicsApi.RenderTarget(
+            graphicsApi.FrameBuffer(graphicsApi.DepthBuffer(RESOLUTION, RESOLUTION)),
             RESOLUTION, RESOLUTION,
             listOf(ColorAttachmentDefinition("Environment Diffuse", diffuseInternalFormat)).toTextures(
+                graphicsApi,
                 RESOLUTION,
                 RESOLUTION
             ),
             "Environment Sampler",
             Vector4f(),
         )
-        fullscreenBuffer = QuadVertexBuffer()
+        fullscreenBuffer = QuadVertexBuffer(graphicsApi)
         fullscreenBuffer.upload()
     }
 }

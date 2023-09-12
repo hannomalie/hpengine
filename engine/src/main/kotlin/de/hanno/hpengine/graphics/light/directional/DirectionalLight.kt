@@ -23,12 +23,12 @@ import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 import struktgen.api.forIndex
 import struktgen.api.get
 
 
-context(GraphicsApi, RenderStateContext)
 @All(DirectionalLightComponent::class, TransformComponent::class)
 class DirectionalLightSystem(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
@@ -103,10 +103,13 @@ class DirectionalLightSystem(
 }
 
 
-context(GraphicsApi, RenderStateContext)
-class DirectionalLightStateHolder {
-    val lightState = renderState.registerState {
-        PersistentShaderStorageBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type).apply {
+@Single
+class DirectionalLightStateHolder(
+    private val graphicsApi: GraphicsApi,
+    private val renderStateContext: RenderStateContext,
+) {
+    val lightState = renderStateContext.renderState.registerState {
+        graphicsApi.PersistentShaderStorageBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type).apply {
             forIndex(0) {
                 it.shadowMapId = -1
                 it.shadowMapHandle = -1L
@@ -114,7 +117,7 @@ class DirectionalLightStateHolder {
 
         }
     }
-    val directionalLightHasMovedInCycle = renderState.registerState { 0L }
+    val directionalLightHasMovedInCycle = renderStateContext.renderState.registerState { 0L }
 }
 
 fun World.addDirectionalLight() {

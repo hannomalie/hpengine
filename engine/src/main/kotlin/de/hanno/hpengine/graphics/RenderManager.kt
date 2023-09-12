@@ -13,10 +13,12 @@ import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.ressources.FileBasedCodeSource
+import org.koin.core.annotation.Single
 import java.util.concurrent.atomic.AtomicBoolean
 
-context(GraphicsApi)
+@Single
 class RenderManager(
+    private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val input: Input,
     private val window: Window,
@@ -30,7 +32,7 @@ class RenderManager(
     private val gpuProfiler: GPUProfiler,
 ) : BaseSystem() {
 
-    private val debugBuffer = QuadVertexBuffer(QuadVertexBuffer.quarterScreenVertices)
+    private val debugBuffer = QuadVertexBuffer(graphicsApi, QuadVertexBuffer.quarterScreenVertices)
 
     private val drawToQuadProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/fullscreen_quad_vertex.glsl")),
@@ -45,7 +47,7 @@ class RenderManager(
     var renderSystems: MutableList<RenderSystem> = _renderSystems.distinct().toMutableList()
 
     private val textureRenderer = SimpleTextureRenderer(
-        this@GraphicsApi,
+        graphicsApi,
         config,
         finalOutput.texture2D,
         programManager,
@@ -65,86 +67,88 @@ class RenderManager(
 
     private fun frame() {
         gpuProfiler.run {
-            rendering.getAndSet(true)
-            try {
-                renderStateContext.renderState.readLocked { currentReadState ->
+            graphicsApi.run {
+                rendering.getAndSet(true)
+                try {
+                    renderStateContext.renderState.readLocked { currentReadState ->
 
-                    val renderSystems = profiled("determineRenderSystems") {
-                        when (val renderMode = renderMode) {
-                            RenderMode.Normal -> {
-                                renderSystems.filter {
-                                    renderSystemsConfig.run { it.enabled }
+                        val renderSystems = profiled("determineRenderSystems") {
+                            when (val renderMode = renderMode) {
+                                RenderMode.Normal -> {
+                                    renderSystems.filter {
+                                        renderSystemsConfig.run { it.enabled }
+                                    }
                                 }
-                            }
 
-                            is RenderMode.SingleFrame -> {
-                                renderSystemsConfig.run {
-                                    val (singleStepSystems, continuousSystems) = renderSystems.filter { it.enabled }.partition {
-                                        it.supportsSingleStep
-                                    }
-                                    val systemsToExecute = continuousSystems + if (renderMode.frameRequested.get()) {
-                                        singleStepSystems
-                                    } else {
-                                        emptyList() // TODO: Check whether this still works
-                                    }
+                                is RenderMode.SingleFrame -> {
+                                    renderSystemsConfig.run {
+                                        val (singleStepSystems, continuousSystems) = renderSystems.filter { it.enabled }.partition {
+                                            it.supportsSingleStep
+                                        }
+                                        val systemsToExecute = continuousSystems + if (renderMode.frameRequested.get()) {
+                                            singleStepSystems
+                                        } else {
+                                            emptyList() // TODO: Check whether this still works
+                                        }
 
-                                    systemsToExecute.apply {
-                                        renderMode.frameRequested.getAndSet(false)
+                                        systemsToExecute.apply {
+                                            renderMode.frameRequested.getAndSet(false)
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    profiled("renderSystems") {
-                        renderSystems.groupBy { it.sharedRenderTarget }
-                            .forEach { (renderTarget, renderSystems) ->
-                                val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                renderTarget?.use(clear)
-                                renderSystems.forEach { renderSystem ->
-                                    renderSystem.render(currentReadState)
+                        profiled("renderSystems") {
+                            renderSystems.groupBy { it.sharedRenderTarget }
+                                .forEach { (renderTarget, renderSystems) ->
+                                    val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
+                                    renderTarget?.use(clear)
+                                    renderSystems.forEach { renderSystem ->
+                                        renderSystem.render(currentReadState)
+                                    }
                                 }
-                            }
-                    }
+                        }
 
-                    profiled("present") {
-                        window.frontBuffer.use(true)
-                        textureRenderer.drawToQuad(
-                            finalOutput.texture2D,
-                            mipMapLevel = finalOutput.mipmapLevel
-                        )
-                        debugOutput.texture2D?.let { debugOutputTexture ->
+                        profiled("present") {
+                            window.frontBuffer.use(graphicsApi, true)
                             textureRenderer.drawToQuad(
-                                debugOutputTexture,
-                                buffer = debugBuffer,
-                                program = drawToDebugQuadProgram,
-                                mipMapLevel = debugOutput.mipmapLevel
+                                finalOutput.texture2D,
+                                mipMapLevel = finalOutput.mipmapLevel
                             )
+                            debugOutput.texture2D?.let { debugOutputTexture ->
+                                textureRenderer.drawToQuad(
+                                    debugOutputTexture,
+                                    buffer = debugBuffer,
+                                    program = drawToDebugQuadProgram,
+                                    mipMapLevel = debugOutput.mipmapLevel
+                                )
+                            }
+                        }
+
+                        profiled("checkCommandSyncs") {
+                            checkCommandSyncs()
+                        }
+
+                        profiled("finishFrame") {
+                            finishFrame(currentReadState)
+                            renderSystems.forEach {
+                                it.afterFrameFinished()
+                            }
+                        }
+                        profiled("finish") {
+                            finish()
+                        }
+                        profiled("swapBuffers") {
+                            window.swapBuffers()
                         }
                     }
 
-                    profiled("checkCommandSyncs") {
-                        checkCommandSyncs()
-                    }
-
-                    profiled("finishFrame") {
-                        finishFrame(currentReadState)
-                        renderSystems.forEach {
-                            it.afterFrameFinished()
-                        }
-                    }
-                    profiled("finish") {
-                        finish()
-                    }
-                    profiled("swapBuffers") {
-                        window.swapBuffers()
-                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    rendering.getAndSet(false)
                 }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                rendering.getAndSet(false)
             }
         }
     }
@@ -160,6 +164,7 @@ class RenderManager(
 
 }
 
+@Single
 class RenderSystemsConfig(renderSystems: List<RenderSystem>) {
     private val renderSystemsEnabled = renderSystems.distinct().associateWith { true }.toMutableMap()
     var RenderSystem.enabled: Boolean

@@ -106,6 +106,8 @@ dependencies {
 
     val koinVersion= "3.1.1"
     api("io.insert-koin:koin-core:$koinVersion")
+    api("io.insert-koin:koin-annotations:1.2.2")
+    ksp("io.insert-koin:koin-ksp-compiler:1.2.2")
 
     api("net.onedaybeard.artemis:artemis-odb:2.3.0")
     api("net.onedaybeard.artemis:artemis-odb-serializer-json:2.3.0")

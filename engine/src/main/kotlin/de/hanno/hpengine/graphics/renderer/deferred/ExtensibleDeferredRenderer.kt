@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics.renderer
+package de.hanno.hpengine.graphics.renderer.deferred
 
 import com.artemis.World
 import de.hanno.hpengine.artemis.model.EntitiesStateHolder
@@ -20,13 +20,19 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.feature.BindlessTextures
+import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import org.koin.core.annotation.Single
 
-context(GraphicsApi, de.hanno.hpengine.graphics.state.RenderStateContext, de.hanno.hpengine.graphics.profiling.GPUProfiler)
+@Single(binds = [RenderSystem::class])
 class ExtensibleDeferredRenderer(
+    private val graphicsApi: GraphicsApi,
+    private val renderStateContext: RenderStateContext,
+    private val gpuProfiler: GPUProfiler,
     private val window: Window,
     private val config: Config,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -46,15 +52,15 @@ class ExtensibleDeferredRenderer(
 
     override val sharedRenderTarget = deferredRenderingBuffer.gBuffer
 
-    val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, this@GraphicsApi, deferredRenderingBuffer, environmentProbesStateHolder, primaryCameraStateHolder)
-    val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, this@GraphicsApi, deferredRenderingBuffer, primaryCameraStateHolder)
+    val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, graphicsApi, deferredRenderingBuffer, environmentProbesStateHolder, primaryCameraStateHolder)
+    val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, graphicsApi, deferredRenderingBuffer, primaryCameraStateHolder)
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(),
-        StaticFirstPassUniforms()
+        StaticFirstPassUniforms(graphicsApi)
     )
 
     val simpleColorProgramAnimated = programManager.getProgram(
@@ -62,17 +68,17 @@ class ExtensibleDeferredRenderer(
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(Define("ANIMATED", true)),
-        AnimatedFirstPassUniforms()
+        AnimatedFirstPassUniforms(graphicsApi)
     )
 
     private val useIndirectRendering
-        get() = config.performance.isIndirectRendering && isSupported(BindlessTextures)
+        get() = config.performance.isIndirectRendering && graphicsApi.isSupported(BindlessTextures)
 
-    val indirectPipeline: StateRef<GPUCulledPipeline> = renderState.registerState {
-        GPUCulledPipeline(config, programManager, textureManager, deferredRenderingBuffer, true, entitiesStateHolder, primaryCameraStateHolder)
+    val indirectPipeline: StateRef<GPUCulledPipeline> = renderStateContext.renderState.registerState {
+        GPUCulledPipeline(graphicsApi, config, programManager, textureManager, deferredRenderingBuffer, true, entitiesStateHolder, primaryCameraStateHolder)
     }
-    private val staticDirectPipeline: StateRef<DirectFirstPassPipeline> = renderState.registerState {
-        object: DirectFirstPassPipeline(config, simpleColorProgramStatic, entitiesStateHolder, primaryCameraStateHolder, textureManager.defaultTexture) {
+    private val staticDirectPipeline: StateRef<DirectFirstPassPipeline> = renderStateContext.renderState.registerState {
+        object: DirectFirstPassPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, primaryCameraStateHolder, textureManager.defaultTexture) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot { it.canBeRenderedInIndirectBatch }
             } else {
@@ -82,8 +88,8 @@ class ExtensibleDeferredRenderer(
             }
         }
     }
-    private val animatedDirectPipeline: StateRef<DirectFirstPassPipeline> = renderState.registerState {
-        object: DirectFirstPassPipeline(config, simpleColorProgramAnimated,entitiesStateHolder, primaryCameraStateHolder, textureManager.defaultTexture) {
+    private val animatedDirectPipeline: StateRef<DirectFirstPassPipeline> = renderStateContext.renderState.registerState {
+        object: DirectFirstPassPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, primaryCameraStateHolder, textureManager.defaultTexture) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
                 this[entitiesStateHolder.entitiesState].renderBatchesAnimated.filterNot { it.canBeRenderedInIndirectBatch }
             } else {
@@ -97,7 +103,7 @@ class ExtensibleDeferredRenderer(
     }
 
     override fun update(deltaSeconds: Float) {
-        val currentWriteState = renderState.currentWriteState
+        val currentWriteState = renderStateContext.renderState.currentWriteState
 
         preparePipelines(currentWriteState)
 
@@ -117,11 +123,13 @@ class ExtensibleDeferredRenderer(
         extensions.forEach { it.extract(renderState, world) }
     }
 
-    override fun render(renderState: RenderState): Unit = profiled("DeferredRendering") {
-        actualRender(renderState)
+    override fun render(renderState: RenderState): Unit = graphicsApi.run {
+        profiled("DeferredRendering") {
+            actualRender(renderState)
+        }
     }
 
-    private fun actualRender(renderState: RenderState) {
+    private fun actualRender(renderState: RenderState): Unit = graphicsApi.run {
 
         for (extension in extensions) {
             profiled(extension.javaClass.simpleName) {
@@ -184,7 +192,7 @@ class ExtensibleDeferredRenderer(
             }
         }
 
-        window.frontBuffer.use(false)
+        window.frontBuffer.use(graphicsApi, false)
         combinePassExtension.renderCombinePass(renderState)
         deferredRenderingBuffer.use(false)
 
@@ -206,6 +214,7 @@ class ExtensibleDeferredRenderer(
     }
 }
 
+@Single
 class DeferredRenderExtensionConfig(val renderExtensions: List<DeferredRenderExtension>) {
     private val renderSystemsEnabled = renderExtensions.distinct().associateWith { true }.toMutableMap()
     var DeferredRenderExtension.enabled: Boolean

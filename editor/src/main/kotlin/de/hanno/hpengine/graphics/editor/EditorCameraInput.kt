@@ -15,6 +15,7 @@ import de.hanno.hpengine.system.Extractor
 import net.mostlyoriginal.api.Singleton
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 
 
@@ -46,6 +47,7 @@ class EditorCameraInputComponent: Component() {
     var cameraControlsEnabled = true
 }
 
+@Single(binds = [BaseSystem::class, EditorCameraInputSystem::class])
 class EditorCameraInputSystem(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): BaseSystem(), Extractor {

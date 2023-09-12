@@ -8,6 +8,7 @@ import de.hanno.hpengine.artemis.OceanSurfaceComponent
 import de.hanno.hpengine.artemis.OceanWaterComponent
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.extension.SkyboxRenderExtension
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.OpenGLContext.Companion.RED_BUFFER
@@ -20,11 +21,13 @@ import de.hanno.hpengine.graphics.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
 import kotlin.math.ln
@@ -32,8 +35,10 @@ import kotlin.math.max
 
 private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
 
-context(GraphicsApi)
+
+@Single(binds = [OceanWaterRenderSystem::class, RenderSystem::class])
 class OceanWaterRenderSystem(
+    private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val renderStateContext: RenderStateContext,
     private val programManager: ProgramManager,
@@ -50,8 +55,8 @@ class OceanWaterRenderSystem(
 
     private fun createRandomTexture(): Texture2D = listOf(ColorAttachmentDefinition("Random",
         RGBA32F
-    )).toTextures(N, N).first().apply {
-        onGpu {
+    )).toTextures(graphicsApi, N, N).first().apply {
+        graphicsApi.onGpu {
             val buffer = BufferUtils.createByteBuffer(Float.SIZE_BYTES * dimension.width * dimension.height * 4)
             val floatBuffer = buffer.asFloatBuffer()
             val random = java.util.Random()
@@ -80,39 +85,39 @@ class OceanWaterRenderSystem(
 //        RGBA32F, dimension,
 //        defaultTextureFilterConfig
 //    )
-    val displacementMap = listOf(ColorAttachmentDefinition("Displacement", RGBA32F)).toTextures(N, N).first()
+    val displacementMap = listOf(ColorAttachmentDefinition("Displacement", RGBA32F)).toTextures(graphicsApi, N, N).first()
 //    val displacementMapX = allocateTexture(RGBA32F, dimension)
 //    val displacementMapY = allocateTexture(RGBA32F, dimension)
 //    val displacementMapZ = allocateTexture(RGBA32F, dimension)
-    val displacementMapX = listOf(ColorAttachmentDefinition("DisplacementX", RGBA32F)).toTextures(N, N).first()
-    val displacementMapY = listOf(ColorAttachmentDefinition("DisplacementY", RGBA32F)).toTextures(N, N).first()
-    val displacementMapZ = listOf(ColorAttachmentDefinition("DisplacementZ", RGBA32F)).toTextures(N, N).first()
+    val displacementMapX = listOf(ColorAttachmentDefinition("DisplacementX", RGBA32F)).toTextures(graphicsApi, N, N).first()
+    val displacementMapY = listOf(ColorAttachmentDefinition("DisplacementY", RGBA32F)).toTextures(graphicsApi, N, N).first()
+    val displacementMapZ = listOf(ColorAttachmentDefinition("DisplacementZ", RGBA32F)).toTextures(graphicsApi, N, N).first()
 //    val normalMap = allocateTexture(
 //        RGBA32F, dimension,
 //        defaultTextureFilterConfig
 //    )
-    val normalMap = listOf(ColorAttachmentDefinition("Normals", RGBA32F)).toTextures(N, N).first()
+    val normalMap = listOf(ColorAttachmentDefinition("Normals", RGBA32F)).toTextures(graphicsApi, N, N).first()
 //    val albedoMap = allocateTexture(
 //        RGBA32F, dimension,
 //        defaultTextureFilterConfig
 //    )
-    val albedoMap = listOf(ColorAttachmentDefinition("Color", RGBA32F)).toTextures(N, N).first()
+    val albedoMap = listOf(ColorAttachmentDefinition("Color", RGBA32F)).toTextures(graphicsApi, N, N).first()
 //    val roughnessMap = allocateTexture(
 //        RGBA32F, dimension,
 //        defaultTextureFilterConfig
 //    )
-    val roughnessMap = listOf(ColorAttachmentDefinition("Roughness", RGBA32F)).toTextures(N, N).first()
+    val roughnessMap = listOf(ColorAttachmentDefinition("Roughness", RGBA32F)).toTextures(graphicsApi, N, N).first()
 
-    val debugMap = listOf(ColorAttachmentDefinition("Color", RGBA32F)).toTextures(N, N).first().apply {
-        clearTexImage(id, Format.RGBA, 0, TexelComponentType.Float, RED_BUFFER)
+    val debugMap = listOf(ColorAttachmentDefinition("Color", RGBA32F)).toTextures(graphicsApi, N, N).first().apply {
+        graphicsApi.clearTexImage(id, Format.RGBA, 0, TexelComponentType.Float, RED_BUFFER)
     }
-    private val pingPongMapX = listOf(ColorAttachmentDefinition("PingPongX", RGBA32F)).toTextures(N, N).first()
-    private val pingPongMapY = listOf(ColorAttachmentDefinition("PingPongY", RGBA32F)).toTextures(N, N).first()
-    private val pingPongMapZ = listOf(ColorAttachmentDefinition("PingPongZ", RGBA32F)).toTextures(N, N).first()
+    private val pingPongMapX = listOf(ColorAttachmentDefinition("PingPongX", RGBA32F)).toTextures(graphicsApi, N, N).first()
+    private val pingPongMapY = listOf(ColorAttachmentDefinition("PingPongY", RGBA32F)).toTextures(graphicsApi, N, N).first()
+    private val pingPongMapZ = listOf(ColorAttachmentDefinition("PingPongZ", RGBA32F)).toTextures(graphicsApi, N, N).first()
 
-    private val tildeHktDyMap = listOf(ColorAttachmentDefinition("tildeHktDyMap", RGBA32F)).toTextures(N, N).first()
-    private val tildeHktDxMap = listOf(ColorAttachmentDefinition("tildeHktDxMap", RGBA32F)).toTextures(N, N).first()
-    private val tildeHktDzMap = listOf(ColorAttachmentDefinition("tildeHktDzMap", RGBA32F)).toTextures(N, N).first()
+    private val tildeHktDyMap = listOf(ColorAttachmentDefinition("tildeHktDyMap", RGBA32F)).toTextures(graphicsApi, N, N).first()
+    private val tildeHktDxMap = listOf(ColorAttachmentDefinition("tildeHktDxMap", RGBA32F)).toTextures(graphicsApi, N, N).first()
+    private val tildeHktDzMap = listOf(ColorAttachmentDefinition("tildeHktDzMap", RGBA32F)).toTextures(graphicsApi, N, N).first()
     data class TildeMapHelper(val tildeMap: Texture2D, val displacementMap: Texture2D, val pingPongMap: Texture2D)
     val tildeMapHelpers = listOf(
         TildeMapHelper(tildeHktDyMap, displacementMapY, pingPongMapY),
@@ -123,11 +128,11 @@ class OceanWaterRenderSystem(
         TildeMapHelper(tildeHktDzMap, displacementMapZ, pingPongMapZ),
     )
 
-    private val h0kMap = listOf(ColorAttachmentDefinition("h0kMap", RGBA32F)).toTextures(N, N).first()
-    private val h0MinuskMap = listOf(ColorAttachmentDefinition("h0MinuskMap", RGBA32F)).toTextures(N, N).first()
+    private val h0kMap = listOf(ColorAttachmentDefinition("h0kMap", RGBA32F)).toTextures(graphicsApi, N, N).first()
+    private val h0MinuskMap = listOf(ColorAttachmentDefinition("h0MinuskMap", RGBA32F)).toTextures(graphicsApi, N, N).first()
     private val log2N = (ln(N.toFloat()) / ln(2.0f)).toInt()
-    private val twiddleIndicesMap = listOf(ColorAttachmentDefinition("h0kMap", RGBA32F)).toTextures(log2N, N).first()
-    private val bitReversedIndices = PersistentShaderStorageBuffer(N * IntStrukt.sizeInBytes).typed(IntStrukt.type).apply {
+    private val twiddleIndicesMap = listOf(ColorAttachmentDefinition("h0kMap", RGBA32F)).toTextures(graphicsApi, log2N, N).first()
+    private val bitReversedIndices = graphicsApi.PersistentShaderStorageBuffer(N * IntStrukt.sizeInBytes).typed(IntStrukt.type).apply {
         initBitReversedIndices(N).forEachIndexed { index, value ->
             typedBuffer.forIndex(index) { it.value = value }
         }
@@ -141,7 +146,7 @@ class OceanWaterRenderSystem(
     private val mergeDisplacementMapsShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/merge_displacement_maps_compute.glsl").toCodeSource())
 
     init {
-        onGpu {
+        graphicsApi.onGpu {
             twiddleIndicesShader.use()
             twiddleIndicesShader.setUniform("N", N)
             bindImageTexture(
@@ -193,7 +198,7 @@ class OceanWaterRenderSystem(
     }
 
     private var seconds = 0.0f
-    override fun render(renderState: RenderState) {
+    override fun render(renderState: RenderState): Unit = graphicsApi.run {
         val components = listOf<OceanWaterComponent>()
         if(components.isEmpty()) return
         val oceanWaterComponent = components.first()

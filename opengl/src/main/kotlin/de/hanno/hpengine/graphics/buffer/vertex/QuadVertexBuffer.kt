@@ -13,10 +13,11 @@ private val DEFAULTCHANNELS = EnumSet.of(
 
 object QuadVertexBuffer {
 
-    context(GraphicsApi)
     operator fun invoke(
+        graphicsApi: GraphicsApi,
         values: FloatArray = fullScreenVertices,
     ) = VertexBufferImpl(
+        graphicsApi,
         DEFAULTCHANNELS,
         values
     )

@@ -11,14 +11,15 @@ import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-context(FileMonitor, GraphicsApi)
 class OpenGlProgramManager(
+    private val graphicsApi: GraphicsApi,
+    private val fileMonitor: FileMonitor,
     override val config: Config,
 ) : BaseSystem(), ProgramManager {
 
     private var programsCache: MutableList<Program<*>> = CopyOnWriteArrayList()
 
-    private val programChangeListener = ProgramChangeListenerManager()
+    private val programChangeListener = ProgramChangeListenerManager(fileMonitor)
 
     override fun List<UniformDelegate<*>>.toUniformDeclaration() = joinToString("\n") {
         when (it) {
@@ -42,13 +43,13 @@ class OpenGlProgramManager(
         codeSource: FileBasedCodeSource,
         defines: Defines,
         uniforms: Uniforms?
-    ): ComputeProgramImpl = ComputeProgramImpl(ComputeShader(this@GraphicsApi, codeSource, defines), this@GraphicsApi, this@FileMonitor).apply {
+    ): ComputeProgramImpl = ComputeProgramImpl(ComputeShader(graphicsApi, codeSource, defines), graphicsApi, fileMonitor).apply {
         programsCache.add(this).apply {
             programChangeListener.run {
-                reregisterListener { reload() }
+                reregisterListener { graphicsApi.run { reload() } }
             }
         }
-        load()
+        graphicsApi.run { load() }
     }
 
     override fun <T : Uniforms> getProgram(
@@ -68,26 +69,28 @@ class OpenGlProgramManager(
         tesselationControlShaderSource: CodeSource?,
         tesselationEvaluationShaderSource: CodeSource?,
         defines: Defines,
-        uniforms: T): ProgramImpl<T> = ProgramImpl(
-            vertexShader = VertexShader(this@GraphicsApi, vertexShaderSource, defines),
-            fragmentShader = fragmentShaderSource?.let { FragmentShader(this@GraphicsApi, it, defines) },
-            geometryShader = geometryShaderSource?.let { GeometryShader(this@GraphicsApi, it, defines) },
-            tesselationControlShader = tesselationControlShaderSource?.let { TesselationControlShader(this@GraphicsApi, it, defines) },
-            tesselationEvaluationShader = tesselationEvaluationShaderSource?.let { TesselationEvaluationShader(this@GraphicsApi, it, defines) },
+        uniforms: T): ProgramImpl<T> = graphicsApi.run {
+        ProgramImpl(
+            vertexShader = VertexShader(graphicsApi, vertexShaderSource, defines),
+            fragmentShader = fragmentShaderSource?.let { FragmentShader(graphicsApi, it, defines) },
+            geometryShader = geometryShaderSource?.let { GeometryShader(graphicsApi, it, defines) },
+            tesselationControlShader = tesselationControlShaderSource?.let { TesselationControlShader(graphicsApi, it, defines) },
+            tesselationEvaluationShader = tesselationEvaluationShaderSource?.let { TesselationEvaluationShader(graphicsApi, it, defines) },
             defines = defines,
             uniforms = uniforms,
-            graphicsApi = this@GraphicsApi,
-            fileMonitor = this@FileMonitor,
+            graphicsApi = graphicsApi,
+            fileMonitor = fileMonitor,
         ).apply {
             load()
             programsCache.add(this)
             programChangeListener.run {
-                reregisterListener { reload() }
+            reregisterListener { reload() }
             }
         }
+    }
 
     override fun getComputeProgram(codeSource: CodeSource): ComputeProgramImpl = ComputeProgramImpl(
-        ComputeShader(this@GraphicsApi, codeSource, Defines()), this@GraphicsApi, this@FileMonitor,
+        ComputeShader(graphicsApi, codeSource, Defines()), graphicsApi, fileMonitor,
     )
 
     var programsSourceCache: WeakHashMap<Shader, Int> = WeakHashMap()

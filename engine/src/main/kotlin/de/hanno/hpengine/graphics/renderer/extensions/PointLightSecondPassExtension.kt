@@ -16,7 +16,6 @@ import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 
-context(GPUProfiler, GraphicsApi)
 class PointLightSecondPassExtension(
     private val graphicsApi: GraphicsApi,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -30,7 +29,7 @@ class PointLightSecondPassExtension(
     private val secondPassPointComputeProgram =
         programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_compute.glsl"))
 
-    override fun renderSecondPassFullScreen(renderState: RenderState) {
+    override fun renderSecondPassFullScreen(renderState: RenderState): Unit = graphicsApi.run {
         if (renderState[pointLightStateHolder.lightState].pointLights.isEmpty()) {
             return
         }

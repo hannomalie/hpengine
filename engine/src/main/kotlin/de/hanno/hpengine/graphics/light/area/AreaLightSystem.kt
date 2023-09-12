@@ -40,6 +40,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Matrix4f
 import org.joml.Vector4f
+import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
 import struktgen.api.get
@@ -47,7 +48,6 @@ import java.util.ArrayList
 import kotlin.math.min
 
 // TODO: Implement autoadd for transform
-context(GraphicsApi)
 @All(AreaLightComponent::class, TransformComponent::class)
 class AreaLightSystem(
     private val graphicsApi: GraphicsApi,
@@ -66,10 +66,11 @@ class AreaLightSystem(
     lateinit var areaLightComponentComponentMapper: ComponentMapper<AreaLightComponent>
 
     private val mapRenderTarget = CubeMapRenderTarget(
-        RenderTarget(
-            FrameBuffer(
+        graphicsApi,
+        graphicsApi.RenderTarget(
+            graphicsApi.FrameBuffer(
                 DepthBuffer(
-                    CubeMap(
+                    graphicsApi.CubeMap(
                         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
                         InternalTextureFormat.DEPTH_COMPONENT24,
                         TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
@@ -85,7 +86,7 @@ class AreaLightSystem(
                     RGBA32F,
                     TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
                 )
-            ).toCubeMaps(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
+            ).toCubeMaps(graphicsApi, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
             "AreaLight Shadow",
             Vector4f(),
         )
@@ -96,7 +97,7 @@ class AreaLightSystem(
         config.EngineAsset("shaders/shadowmap_fragment.glsl").toCodeSource(),
         null,
         Defines(),
-        AreaShadowPassUniforms()
+        AreaShadowPassUniforms(graphicsApi)
     )
     private val areaLightDepthMaps = ArrayList<Int>().apply {
         graphicsApi.onGpu {
@@ -128,7 +129,7 @@ class AreaLightSystem(
         }
     }
 
-    fun renderAreaLightShadowMaps(renderState: RenderState) = gpuProfiler.run {
+    fun renderAreaLightShadowMaps(renderState: RenderState) = graphicsApi.run {
         val lightState = renderState[areaLightStateHolder.lightState]
         val areaLights = lightState.lights
         if (areaLights.isEmpty()) return
@@ -221,16 +222,17 @@ class AreaLightSystem(
 
 }
 
-context(GraphicsApi)
-class AreaShadowPassUniforms : Uniforms() {
-    var entitiesBuffer by SSBO("Entity", 3, PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
+class AreaShadowPassUniforms(graphicsApi: GraphicsApi) : Uniforms() {
+    var entitiesBuffer by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 }
 
-context(GraphicsApi, RenderStateContext)
-class AreaLightStateHolder {
-    val lightState = renderState.registerState {
+@Single
+class AreaLightStateHolder(
+    renderStateContext: RenderStateContext
+) {
+    val lightState = renderStateContext.renderState.registerState {
         AreaLightsState()
     }
 }

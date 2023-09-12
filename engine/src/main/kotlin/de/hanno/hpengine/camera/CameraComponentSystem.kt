@@ -7,6 +7,7 @@ import com.artemis.hackedOutComponents
 import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.extension.SkyboxRenderExtension
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.drawLines
@@ -21,18 +22,21 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
+import org.koin.core.annotation.Single
 
-context(GraphicsApi, RenderStateContext)
+@Single(binds = [CameraRenderExtension::class, DeferredRenderExtension::class])
 class CameraRenderExtension(
+    private val graphicsApi: GraphicsApi,
+    renderStateContext: RenderStateContext,
     private val config: Config,
     private val programManager: ProgramManager,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : DeferredRenderExtension {
 
-    private val frustumLines = renderState.registerState { mutableListOf<Vector3fc>() }
-    private val lineVertices: TypedGpuBuffer<Vector4fStrukt> = PersistentShaderStorageBuffer(24 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
+    private val frustumLines = renderStateContext.renderState.registerState { mutableListOf<Vector3fc>() }
+    private val lineVertices: TypedGpuBuffer<Vector4fStrukt> = graphicsApi.PersistentShaderStorageBuffer(24 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
-        val uniforms = LinesProgramUniforms()
+        val uniforms = LinesProgramUniforms(graphicsApi)
         getProgram(
             StringBasedCodeSource(
                 "mvp_vertex_vec4", """
@@ -75,7 +79,7 @@ class CameraRenderExtension(
         if (config.debug.isDrawCameras) {
             val camera = renderState[primaryCameraStateHolder.camera]
 
-            drawLines(
+            graphicsApi.drawLines(
                 programManager,
                 linesProgram,
                 lineVertices,

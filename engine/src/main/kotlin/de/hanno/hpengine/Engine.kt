@@ -24,11 +24,10 @@ import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
-import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
+import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.extensions.ReflectionProbeManager
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.RenderSystem
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialManager
@@ -49,8 +48,8 @@ import net.mostlyoriginal.api.SingletonPlugin
 import org.joml.Vector3f
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
-import org.koin.dsl.binds
 import org.koin.dsl.module
+import org.koin.ksp.generated.defaultModule
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.io.File
 import java.util.concurrent.Executors
@@ -60,15 +59,12 @@ import kotlin.math.min
 
 
 class Engine(
-    config: Config,
     modules: List<Module> = emptyList(),
-    afterInit: Engine.() -> Unit = { world.loadDemoScene() }) // TODO: Change callsites to use new method simulate to block
+    afterInit: Engine.() -> Unit = { world.loadDemoScene() }
+) // TODO: Change callsites to use new method simulate to block
 {
-    private val configModule = module {
-        single { config } binds arrayOf(Config::class, Config::class)
-    }
     val application = startKoin {
-        modules(configModule, baseModule)
+        modules(apiModule, defaultModule, engineModule, openglModule)
         modules(modules)
     }
     private val koin = application.koin
@@ -83,17 +79,16 @@ class Engine(
 
     private val openGlProgramManager: OpenGlProgramManager = koin.get()
     private val textureManager: TextureManagerBaseSystem = koin.get()
-    val modelSystem = graphicsApi.run {
-        ModelSystem(
-            config,
-            koin.get(),
-            MaterialManager(config, koin.get(), koin.get(), koin.get()),
-            koin.get(),
-            EntityBuffer(),
-            koin.get(),
-            koin.get(),
-        )
-    }
+    val modelSystem =ModelSystem(
+        graphicsApi,
+        config,
+        koin.get(),
+        MaterialManager(config, koin.get(), koin.get(), koin.get()),
+        koin.get(),
+        EntityBuffer(),
+        koin.get(),
+        koin.get(),
+    )
     val entityLinkManager = EntityLinkManager()
     val directionalLightSystem = graphicsApi.run {
         renderStateContext.run {
@@ -108,19 +103,13 @@ class Engine(
         SkyBoxSystem(),
         CycleSystem(koin.get()),
         directionalLightSystem,
-        graphicsApi.run {
-            renderStateContext.run {
-                PointLightSystem(config, koin.get(), koin.get(), koin.get()).apply {
-                    renderManager.renderSystems.add(this)
-                }
-            }
+        PointLightSystem(graphicsApi, renderStateContext, config, koin.get(), koin.get(), koin.get()).apply {
+            renderManager.renderSystems.add(this)
         },
-        graphicsApi.run {
-            profiler.run {
-                AreaLightSystem(graphicsApi, koin.get(), config, koin.get(), koin.get(), koin.get(), koin.get()).apply {
-                    renderManager.renderSystems.add(this)
-                }
-            }
+        AreaLightSystem(
+            graphicsApi, koin.get(), config, koin.get(), koin.get(), koin.get(), koin.get()
+        ).apply {
+            renderManager.renderSystems.add(this)
         },
         MaterialManager(config, koin.get(), koin.get(), koin.get()),
         openGlProgramManager,
@@ -130,11 +119,7 @@ class Engine(
         SpatialComponentSystem(),
         InvisibleComponentSystem(),
         GiVolumeSystem(koin.get()),
-        graphicsApi.run {
-            renderStateContext.run {
-                PhysicsManager(config, koin.get(), primaryCameraStateHolder = koin.get())
-            }
-        },
+        PhysicsManager(koin.get(), config, koin.get(), primaryCameraStateHolder = koin.get()),
         ReflectionProbeManager(config),
         koin.get<KotlinComponentSystem>(),
         CameraSystem(),
@@ -236,7 +221,13 @@ class Engine(
                 ),
             )
 
-            val engine = Engine(config)
+            val engine = Engine(modules = listOf(
+                module {
+                    single { config }
+                    single { config.gameDir }
+                    single { config.engineDir }
+                }
+            ))
         }
 
     }

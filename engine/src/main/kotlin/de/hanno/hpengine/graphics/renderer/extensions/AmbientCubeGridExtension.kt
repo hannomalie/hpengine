@@ -39,7 +39,6 @@ import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
 import java.nio.FloatBuffer
 
-context(GraphicsApi, GPUProfiler)
 class ProbeRenderer(
     private val graphicsApi: GraphicsApi,
     config: Config,
@@ -110,10 +109,11 @@ class ProbeRenderer(
         Uniforms.Empty
     )
 
-    val cubeMapRenderTarget = RenderTarget(
-        frameBuffer = FrameBuffer(
+    val cubeMapRenderTarget = graphicsApi.RenderTarget(
+        frameBuffer = graphicsApi.FrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
+                    graphicsApi,
                     TextureDimension(probeResolution, probeResolution),
                     TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
                     InternalTextureFormat.DEPTH_COMPONENT24,
@@ -125,12 +125,12 @@ class ProbeRenderer(
         height = probeResolution,
         textures = listOf(
             ColorAttachmentDefinition("Probes", RGBA16F, TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR))
-        ).toCubeMaps(probeResolution, probeResolution),
+        ).toCubeMaps(graphicsApi, probeResolution, probeResolution),
         name = "Probes",
         clear = Vector4f(),
     )
 
-    fun renderProbes(renderState: RenderState, probeStartIndex: Int, probesPerFrame: Int) {
+    fun renderProbes(renderState: RenderState, probeStartIndex: Int, probesPerFrame: Int) = graphicsApi.run {
         val worldAABBState = renderState[worldAABBStateHolder.worldAABBState]
         if (sceneMin != worldAABBState.min || sceneMax != worldAABBState.max) {
             sceneMin.set(worldAABBState.min)

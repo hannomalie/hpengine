@@ -17,14 +17,14 @@ data class OpenGLTexture3D(
     override var uploadState: UploadState
 ) : Texture3D {
     companion object {
-        context(GraphicsApi)
         operator fun invoke(
+            graphicsApi: GraphicsApi,
             dimension: TextureDimension3D,
             filterConfig: TextureFilterConfig,
             internalFormat: InternalTextureFormat,
             wrapMode: WrapMode = WrapMode.Repeat
         ): OpenGLTexture3D {
-            val (textureId, handle) = allocateTexture(
+            val (textureId, handle) = graphicsApi.allocateTexture(
                 UploadInfo.Texture3DUploadInfo(
                     dimension,
                     internalFormat = internalFormat,

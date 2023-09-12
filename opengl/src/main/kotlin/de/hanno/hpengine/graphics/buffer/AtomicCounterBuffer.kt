@@ -5,8 +5,7 @@ import de.hanno.hpengine.graphics.constants.BufferTarget
 import org.lwjgl.opengl.ARBIndirectParameters
 import org.lwjgl.opengl.GL15
 
-context(GraphicsApi)
-fun AtomicCounterBuffer(size: Int = 1): AtomicCounterBuffer {
+fun GraphicsApi.AtomicCounterBuffer(size: Int = 1): AtomicCounterBuffer {
     val underlying = PersistentMappedBuffer(
         BufferTarget.ElementArray,
         size * Integer.BYTES,

@@ -14,13 +14,14 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
-context(GraphicsApi)
 class VertexBufferImpl(
+    private val graphicsApi: GraphicsApi,
     _channels: EnumSet<DataChannels>,
     values: FloatArray
 ) : GpuBuffer, VertexBuffer {
 
     private val gpuBuffer = PersistentMappedBuffer(
+        graphicsApi,
         BufferTarget.Array,
         values.size * java.lang.Float.BYTES
     )
@@ -36,8 +37,8 @@ class VertexBufferImpl(
     override val verticesCount: Int = calculateVerticesCount(buffer, channels)
     val triangleCount: Int = verticesCount / 3
 
-    private var vertexArrayObject: VertexArrayObject = onGpu {
-        VertexArrayObject.getForChannels(channels)
+    private var vertexArrayObject: VertexArrayObject = graphicsApi.onGpu {
+        VertexArrayObject.getForChannels(graphicsApi, channels)
     }
 
     init {
@@ -74,10 +75,10 @@ class VertexBufferImpl(
     override fun upload(): CompletableFuture<VertexBuffer> {
         buffer.rewind()
         val future = CompletableFuture<VertexBuffer>()
-        onGpu {
+        graphicsApi.onGpu {
             bind()
 //             Don't remove this, will break things
-            vertexArrayObject = VertexArrayObject.getForChannels(channels)
+            vertexArrayObject = VertexArrayObject.getForChannels(graphicsApi, channels)
             future.complete(this@VertexBufferImpl)
         }
         return future
@@ -128,6 +129,7 @@ fun GraphicsApi.createSixDebugBuffers() = onGpu {
             val widthDiv = width / 6f
             for (i in 0..5) {
                 val quadVertexBuffer = QuadVertexBuffer(
+                    this@createSixDebugBuffers,
                     QuadVertexBuffer.getPositionsAndTexCoords(
                         Vector2f(-1f + i * widthDiv, -1f),
                         Vector2f(-1 + (i + 1) * widthDiv, height)

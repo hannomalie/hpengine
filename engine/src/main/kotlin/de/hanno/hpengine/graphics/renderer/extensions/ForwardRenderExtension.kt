@@ -21,10 +21,12 @@ import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.ressources.FileBasedCodeSource
+import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 
-context(GraphicsApi)
+@Single(binds = [ForwardRenderExtension::class, DeferredRenderExtension::class])
 class ForwardRenderExtension(
+    private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val programManager: ProgramManager,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -40,11 +42,11 @@ class ForwardRenderExtension(
     val programStatic = programManager.getProgram(
         firstpassDefaultVertexshaderSource,
         firstpassDefaultFragmentshaderSource,
-        StaticFirstPassUniforms(),
+        StaticFirstPassUniforms(graphicsApi),
         Defines()
     )
 
-    override fun renderFirstPass(renderState: RenderState) {
+    override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
         deferredRenderingBuffer.forwardBuffer.use(false)
 
         clearColorBuffer(0, floatArrayOf(0f, 0f, 0f, 0f))

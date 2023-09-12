@@ -22,9 +22,10 @@ import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import org.koin.core.annotation.Single
 import struktgen.api.forIndex
 
-context(GPUProfiler)
+@Single(binds = [AOScatteringExtension::class, DeferredRenderExtension::class])
 class AOScatteringExtension(
     private val config: Config,
     private val graphicsApi: GraphicsApi,
@@ -36,7 +37,7 @@ class AOScatteringExtension(
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
-    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
+    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer(graphicsApi) }
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(
         config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),

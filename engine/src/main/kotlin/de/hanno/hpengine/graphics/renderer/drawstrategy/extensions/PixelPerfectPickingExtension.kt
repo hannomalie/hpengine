@@ -11,11 +11,13 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.input.MouseClickListener
 import org.joml.Vector2f
 import org.joml.Vector2i
+import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 
-context(GraphicsApi)
+@Single(binds = [PixelPerfectPickingExtension::class, DeferredRenderExtension::class])
 class PixelPerfectPickingExtension(
+    private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val input: Input,
     private val listeners: List<OnClickListener>,
@@ -33,7 +35,7 @@ class PixelPerfectPickingExtension(
         renderState: RenderState
     ) {
         mouseClickListener.consumeClick {
-            readBuffer(4)
+            graphicsApi.readBuffer(4)
             floatBuffer.rewind()
             val ratio = Vector2f(
                 config.width.toFloat() / window.width.toFloat(),
@@ -41,7 +43,7 @@ class PixelPerfectPickingExtension(
             )
             val adjustedX = (input.getMouseX() * ratio.x).toInt()
             val adjustedY = (input.getMouseY() * ratio.y).toInt()
-            readPixels(adjustedX, adjustedY, 1, 1, Format.RGBA, floatBuffer)
+            graphicsApi.readPixels(adjustedX, adjustedY, 1, 1, Format.RGBA, floatBuffer)
             try {
                 val entityId = floatBuffer[0].toInt()
                 val entityBufferIndex = floatBuffer[1].toInt()

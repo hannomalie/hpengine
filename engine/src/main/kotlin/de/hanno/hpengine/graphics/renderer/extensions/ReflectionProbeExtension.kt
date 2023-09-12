@@ -11,6 +11,7 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.extension.SkyboxRenderExtension
 import de.hanno.hpengine.graphics.feature.BindlessTextures
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.state.RenderStateContext
@@ -41,6 +42,7 @@ import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
+import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
 import java.nio.FloatBuffer
@@ -59,9 +61,9 @@ class ReflectionProbeManager(val config: Config) : BaseEntitySystem() {
     }
 }
 
-context(GraphicsApi, RenderStateContext)
-class ReflectionProbesStateHolder {
-    val probesState = renderState.registerState {
+@Single
+class ReflectionProbesStateHolder(renderStateContext: RenderStateContext) {
+    val probesState = renderStateContext.renderState.registerState {
         ReflectionProbesState()
     }
 }
@@ -73,18 +75,19 @@ class ReflectionProbeState {
     val halfExtents = Vector3f()
 }
 
-context(GraphicsApi)
-class ReflectionProbeRenderState {
+class ReflectionProbeRenderState(graphicsApi: GraphicsApi) {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
-    val probeMinMaxStructBuffer = onGpu {
+    val probeMinMaxStructBuffer = graphicsApi.onGpu {
         PersistentShaderStorageBuffer(Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     }
     val probePositions = mutableListOf<Vector3f>()
 }
 
-context(GraphicsApi, RenderStateContext, GPUProfiler)
+@Single(binds = [ReflectionProbeRenderExtension::class, DeferredRenderExtension::class])
 class ReflectionProbeRenderExtension(
+    private val graphicsApi: GraphicsApi,
+    private val renderStateContext: RenderStateContext,
     private val config: Config,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val textureManager: TextureManager,
@@ -95,14 +98,14 @@ class ReflectionProbeRenderExtension(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val reflectionProbesStateHolder: ReflectionProbesStateHolder,
 ) : DeferredRenderExtension {
-    private val fullscreenBuffer = QuadVertexBuffer()
+    private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
     override val renderPriority = 3000
 
-    private val reflectionProbeRenderState = renderState.registerState {
-        ReflectionProbeRenderState()
+    private val reflectionProbeRenderState = renderStateContext.renderState.registerState {
+        ReflectionProbeRenderState(graphicsApi)
     }
     private val linesProgram = programManager.run {
-        val uniforms = LinesProgramUniforms()
+        val uniforms = LinesProgramUniforms(graphicsApi)
         getProgram(
             StringBasedCodeSource(
                 "mvp_vertex_vec4", """
@@ -150,6 +153,7 @@ class ReflectionProbeRenderExtension(
             TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR)
         )
     ).toCubeMapArrays(
+        graphicsApi,
         probeResolution,
         probeResolution,
         maxReflectionProbes
@@ -157,7 +161,7 @@ class ReflectionProbeRenderExtension(
 
     private var renderedInCycle: Long = -1
     val probeRenderers = (0 until cubeMapArray.dimension.depth).map {
-        ReflectionProbeRenderer(config, programManager, createView(cubeMapArray, it), it)
+        ReflectionProbeRenderer(graphicsApi, config, programManager, graphicsApi.createView(cubeMapArray, it), it)
     }
 
     val evaluateProbeProgram = programManager.getProgram(
@@ -202,8 +206,8 @@ class ReflectionProbeRenderExtension(
 
     }
 
-    private val lineVertices = PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
-    override fun renderEditor(renderState: RenderState) {
+    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    override fun renderEditor(renderState: RenderState): Unit = graphicsApi.run {
 
         if (config.debug.isEditorOverlay) {
             val linePoints = (0 until renderState[reflectionProbeRenderState].probeCount).flatMap {
@@ -261,7 +265,7 @@ class ReflectionProbeRenderExtension(
         }
     }
 
-    override fun renderSecondPassFullScreen(renderState: RenderState) {
+    override fun renderSecondPassFullScreen(renderState: RenderState): Unit = graphicsApi.run {
 
         val currentReflectionProbeRenderState = renderState[reflectionProbeRenderState]
         val directionalLightState = renderState[directionalLightStateHolder.lightState]
@@ -299,7 +303,7 @@ class ReflectionProbeRenderExtension(
 
     }
 
-    fun ReflectionProbeRenderer.renderProbes(renderState: RenderState, startIndex: Int, probesPerFrame: Int) {
+    fun ReflectionProbeRenderer.renderProbes(renderState: RenderState, startIndex: Int, probesPerFrame: Int): Unit = graphicsApi.run {
         val currentReflectionProbeRenderState = renderState[reflectionProbeRenderState]
         if (currentReflectionProbeRenderState.probeCount == 0) return
 
@@ -381,8 +385,8 @@ class ReflectionProbeRenderExtension(
     }
 }
 
-context(GraphicsApi)
 class ReflectionProbeRenderer(
+    private val graphicsApi: GraphicsApi,
     val config: Config,
     val programManager: ProgramManager,
     val cubeMap: CubeMap,
@@ -398,10 +402,11 @@ class ReflectionProbeRenderer(
         Uniforms.Empty
     )
 
-    val cubeMapRenderTarget = RenderTarget(
-        frameBuffer = FrameBuffer(
+    val cubeMapRenderTarget = graphicsApi.RenderTarget(
+        frameBuffer = graphicsApi.FrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
+                    graphicsApi,
                     TextureDimension(cubeMap.dimension.width, cubeMap.dimension.height),
                     TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
                     InternalTextureFormat.DEPTH_COMPONENT24,

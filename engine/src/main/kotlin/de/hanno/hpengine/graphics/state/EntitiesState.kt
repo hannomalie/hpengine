@@ -19,9 +19,8 @@ import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.scene.VertexStruktPacked
 import java.util.HashMap
 
-context(GraphicsApi)
-class EntitiesState {
-    private val ssboAllocator = PersistentMappedBufferAllocator()
+class EntitiesState(graphicsApi: GraphicsApi) {
+    private val ssboAllocator = PersistentMappedBufferAllocator(graphicsApi)
 
     val cash: MutableMap<BatchKey, RenderBatch> = HashMap()
     var entityMovedInCycle: Long = -1
@@ -32,11 +31,11 @@ class EntitiesState {
     var componentAddedInCycle: Long = -1
     var renderBatchesStatic = RenderBatches()
     var renderBatchesAnimated = RenderBatches()
-    var vertexIndexBufferStatic = VertexIndexBuffer(VertexStruktPacked.type, 10)
-    var vertexIndexBufferAnimated = VertexIndexBuffer(AnimatedVertexStruktPacked.type, 10)
+    var vertexIndexBufferStatic = VertexIndexBuffer(graphicsApi, VertexStruktPacked.type, 10)
+    var vertexIndexBufferAnimated = VertexIndexBuffer(graphicsApi, AnimatedVertexStruktPacked.type, 10)
 
-    var entitiesBuffer = PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
-    var jointsBuffer = PersistentShaderStorageBuffer(Matrix4fStrukt.type.sizeInBytes).typed(Matrix4fStrukt.type)
-    val materialBuffer = PersistentShaderStorageBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
+    var entitiesBuffer = graphicsApi.PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
+    var jointsBuffer = graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.type.sizeInBytes).typed(Matrix4fStrukt.type)
+    val materialBuffer = graphicsApi.PersistentShaderStorageBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
 
 }

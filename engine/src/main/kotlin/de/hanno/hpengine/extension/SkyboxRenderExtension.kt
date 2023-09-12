@@ -14,9 +14,12 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import org.koin.core.annotation.Single
 
-context(GraphicsApi, RenderStateContext)
+@Single(binds = [SkyboxRenderExtension::class, DeferredRenderExtension::class])
 class SkyboxRenderExtension(
+    private val graphicsApi: GraphicsApi,
+    private val renderStateContext: RenderStateContext,
     private val config: Config,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val programManager: ProgramManager,
@@ -26,7 +29,7 @@ class SkyboxRenderExtension(
 ) : DeferredRenderExtension {
 
     init {
-        bindTexture(
+        graphicsApi.bindTexture(
             6,
             TextureTarget.TEXTURE_CUBE_MAP,
             textureManager.cubeMap.id
@@ -36,7 +39,7 @@ class SkyboxRenderExtension(
     private val secondPassReflectionProgram = programManager.getComputeProgram(
         config.EngineAsset("shaders/second_pass_skybox_reflection.glsl")
     )
-    val skyBoxTexture = renderState.registerState {
+    val skyBoxTexture = renderStateContext.renderState.registerState {
         textureManager.cubeMap.id
     }
 
@@ -45,7 +48,7 @@ class SkyboxRenderExtension(
 //        renderState[skyBoxTexture].value = it.id
     }
 
-    override fun renderSecondPassFullScreen(renderState: RenderState) {
+    override fun renderSecondPassFullScreen(renderState: RenderState) = graphicsApi.run {
         bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
         bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
         bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)

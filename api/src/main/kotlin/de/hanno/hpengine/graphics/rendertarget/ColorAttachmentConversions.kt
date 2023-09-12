@@ -4,14 +4,17 @@ package de.hanno.hpengine.graphics.rendertarget
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.WrapMode
-import de.hanno.hpengine.graphics.texture.*
+import de.hanno.hpengine.graphics.texture.CubeMap
+import de.hanno.hpengine.graphics.texture.Texture2D
+import de.hanno.hpengine.graphics.texture.TextureDimension
+import de.hanno.hpengine.graphics.texture.UploadState
 
-context(GraphicsApi)
 fun List<ColorAttachmentDefinition>.toTextures(
+    graphicsApi: GraphicsApi,
     width: Int,
     height: Int
 ): List<Texture2D> = map {
-    Texture2D(
+    graphicsApi.Texture2D(
         TextureDimension(width, height),
         TextureTarget.TEXTURE_2D,
         it.internalFormat,
@@ -21,9 +24,11 @@ fun List<ColorAttachmentDefinition>.toTextures(
     )
 }
 
-context(GraphicsApi)
-fun List<ColorAttachmentDefinition>.toCubeMaps(width: Int, height: Int): List<CubeMap> = map {
-    CubeMap(
+fun List<ColorAttachmentDefinition>.toCubeMaps(
+    graphicsApi: GraphicsApi,
+    width: Int, height: Int
+): List<CubeMap> = map {
+    graphicsApi.CubeMap(
         dimension = TextureDimension(width, height),
         textureFilterConfig = it.textureFilter,
         internalFormat = it.internalFormat,
@@ -31,13 +36,13 @@ fun List<ColorAttachmentDefinition>.toCubeMaps(width: Int, height: Int): List<Cu
     )
 }
 
-context(GraphicsApi)
 fun List<ColorAttachmentDefinition>.toCubeMapArrays(
+    graphicsApi: GraphicsApi,
     width: Int,
     height: Int,
     depth: Int
 ) = map {
-    CubeMapArray(
+    graphicsApi.CubeMapArray(
         TextureDimension(width, height, depth),
         it.textureFilter,
         it.internalFormat,

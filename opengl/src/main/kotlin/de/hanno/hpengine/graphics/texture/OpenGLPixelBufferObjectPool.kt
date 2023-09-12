@@ -9,12 +9,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 
-context(GraphicsApi, GPUProfiler, Config)
-class OpenGLPixelBufferObjectPool: PixelBufferObjectPool {
+class OpenGLPixelBufferObjectPool(
+    private val graphicsApi: GraphicsApi,
+    private val config: Config,
+): PixelBufferObjectPool {
     private val buffers = listOf(
-        OpenGLPixelBufferObject(),
-        OpenGLPixelBufferObject(),
-        OpenGLPixelBufferObject(),
+        OpenGLPixelBufferObject(graphicsApi, config),
+        OpenGLPixelBufferObject(graphicsApi, config),
+        OpenGLPixelBufferObject(graphicsApi, config),
     )
     private val currentBuffer = AtomicInteger(0)
     private val queue = PriorityBlockingQueue(10000, TaskComparator)
@@ -46,9 +48,12 @@ class OpenGLPixelBufferObjectPool: PixelBufferObjectPool {
                 info.data.reversed().forEachIndexed { index, textureData ->
                     val level = info.data.size - 1 - index
                     queue.put(Task(level) { pbo ->
+//                        TODO: Reuse causes flickering and textures are not loaded properly anymore
 //                        pbo.upload(texture, level, info, textureData)
                         OpenGLPixelBufferObject(
-                            OpenGLGpuBuffer(BufferTarget.PixelUnpack, textureData.width * textureData.height * 4)
+                            graphicsApi,
+                            config,
+                            OpenGLGpuBuffer(graphicsApi, BufferTarget.PixelUnpack, textureData.width * textureData.height * 4)
                         ).apply {
                             upload(texture, level, info, textureData)
                             delete()

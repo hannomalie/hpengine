@@ -7,9 +7,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
-import de.hanno.hpengine.extension.deferredRendererModule
-import de.hanno.hpengine.extension.simpleForwardRendererModule
 import de.hanno.hpengine.graphics.editor.editorModule
+import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
 import de.hanno.hpengine.loadScene
 import de.hanno.hpengine.transform.AABBData
 import org.joml.Vector3f
@@ -27,11 +26,13 @@ fun main() {
         ),
     )
 
-    val engine = Engine(config, listOf(
-        deferredRendererModule,
-//        simpleForwardRendererModule,
-        editorModule,
-    ))
+    val engine = Engine(
+        listOf(
+            deferredRendererModule,
+    //        simpleForwardRendererModule,
+            editorModule,
+        )
+    )
     CompletableFuture.supplyAsync {
         Thread.sleep(5000)
         engine.world.loadScene {

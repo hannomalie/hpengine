@@ -1,26 +1,24 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
 import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
-import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.profiled
+import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.constants.Capability
 import de.hanno.hpengine.graphics.constants.TextureTarget
+import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.texture.TextureManager
-import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.graphics.profiling.GPUProfiler
 
-context(GPUProfiler)
 class CombinePassRenderExtension(private val config: Config,
                                  private val programManager: ProgramManager,
                                  private val textureManager: TextureManager,
@@ -30,7 +28,7 @@ class CombinePassRenderExtension(private val config: Config,
                                  private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
 
-    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
+    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer(graphicsApi) }
     private val combineProgram = programManager.getProgram(
         config.EngineAsset("shaders/combine_pass_vertex.glsl").toCodeSource(),
         config.EngineAsset("shaders/combine_pass_fragment.glsl").toCodeSource(),

@@ -4,16 +4,21 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.texture.*
 import imgui.ImGui
 
-context(ImGuiEditor, GraphicsApi)
-fun textureManagerGrid(textureManagerBaseSystem: TextureManagerBaseSystem) {
+fun textureManagerGrid(
+    graphicsApi: GraphicsApi,
+    textureManagerBaseSystem: TextureManagerBaseSystem
+) {
     if (ImGui.button("Reload all")) {
         textureManagerBaseSystem.textures.values.filterIsInstance<FileBasedTexture2D>().forEach {
-            it.uploadAsync()
+            graphicsApi.run { it.uploadAsync() }
         }
     }
 }
-context(ImGuiEditor, GraphicsApi)
-fun textureGrid(key: String, texture: Texture) {
+fun textureGrid(
+    graphicsApi: GraphicsApi,
+    key: String,
+    texture: Texture
+) {
     ImGui.text(key)
     if (ImGui.beginCombo("UploadState", texture.uploadState.toString())) {
         val states = listOf(
@@ -34,7 +39,7 @@ fun textureGrid(key: String, texture: Texture) {
     }
     if (ImGui.button("Load")) {
         if(texture is FileBasedTexture2D) {
-            texture.uploadAsync()
+            graphicsApi.run { texture.uploadAsync() }
         }
     }
 

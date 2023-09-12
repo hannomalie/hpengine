@@ -42,17 +42,17 @@ import javax.vecmath.Matrix4f
 import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
 
-context(GraphicsApi, RenderStateContext)
 @All(PhysicsComponent::class)
 class PhysicsManager(
+    private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val programManager: ProgramManager,
     gravity: Vector3f = Vector3f(0f, -20f, 0f),
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : BaseEntitySystem(), RenderSystem {
-    private val lineVertices = PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
-        val uniforms = LinesProgramUniforms()
+        val uniforms = LinesProgramUniforms(graphicsApi)
         getProgram(
             StringBasedCodeSource(
                 "mvp_vertex_vec4", """
@@ -177,7 +177,7 @@ class PhysicsManager(
         if (config.debug.isDrawLines) {
             val camera = renderState[primaryCameraStateHolder.camera]
             debugDrawWorld()
-            drawLines(
+            graphicsApi.drawLines(
                 programManager,
                 linesProgram,
                 lineVertices,

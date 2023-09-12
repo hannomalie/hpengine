@@ -9,8 +9,9 @@ import java.io.File
 
 data class ProgramChangeListener(val program: Program<*>, val listener: FileAlterationListenerAdaptor)
 
-context(FileMonitor, GraphicsApi)
-class ProgramChangeListenerManager {
+class ProgramChangeListenerManager(
+    private val fileMonitor: FileMonitor,
+) {
 
     private val programChangeListeners: MutableList<ProgramChangeListener> = mutableListOf()
 
@@ -25,7 +26,7 @@ class ProgramChangeListenerManager {
             .filterIsInstance<FileBasedCodeSource>()
             .flatMap { listOf(it.file) + it.includedFiles}
 
-        val listener = registerFileChangeListener(
+        val listener = fileMonitor.registerFileChangeListener(
             shaderFiles,
 //            { file -> file.name.startsWith("global") }
         ) { file ->
@@ -38,7 +39,7 @@ class ProgramChangeListenerManager {
     fun Program<*>.removeOldListeners() {
         val listeners = programChangeListeners.filter { it.program == this }
         listeners.forEach {
-            unregisterListener(it.listener)
+            fileMonitor.unregisterListener(it.listener)
         }
         programChangeListeners.removeAll(listeners)
     }

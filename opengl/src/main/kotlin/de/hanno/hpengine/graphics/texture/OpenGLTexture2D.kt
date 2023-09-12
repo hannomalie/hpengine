@@ -21,8 +21,8 @@ import javax.imageio.ImageIO
 
 val compressInternal = true
 
-context(GraphicsApi)
 data class OpenGLTexture2D(
+    val graphicsApi: GraphicsApi,
     override val dimension: TextureDimension2D,
     override val id: Int,
     override val target: TextureTarget,
@@ -34,12 +34,11 @@ data class OpenGLTexture2D(
 ) : Texture2D {
 
     fun delete() {
-        delete(this)
+        graphicsApi.delete(this)
     }
     companion object {
 
-        context(GraphicsApi)
-        operator fun invoke(file: File, path: String = file.absolutePath, srgba: Boolean = false): FileBasedTexture2D {
+        operator fun invoke(graphicsApi: GraphicsApi, file: File, path: String = file.absolutePath, srgba: Boolean = false): FileBasedTexture2D {
             require(file.exists()) { "File ${file.absolutePath} must exist!" }
             require(file.isFile) { "File ${file.absolutePath} is not a file!" }
 
@@ -54,6 +53,7 @@ data class OpenGLTexture2D(
                 val compressedTextures = true
                 if (compressedTextures) {
                     OpenGLTexture2D(
+                        graphicsApi,
                         UploadInfo.CompleteTexture2DUploadInfo(
                             TextureDimension(ddsImage.width, ddsImage.height),
                             ddsImage.allMipMaps.map { it.data },
@@ -65,6 +65,7 @@ data class OpenGLTexture2D(
                     )
                 } else {
                     OpenGLTexture2D(
+                        graphicsApi,
                         DDSUtil.decompressTexture(
                             ddsImage.getMipMap(0).data,
                             ddsImage.width,
@@ -77,6 +78,7 @@ data class OpenGLTexture2D(
                     )
                 }
             } else OpenGLTexture2D(
+                graphicsApi,
                 ImageIO.read(file).apply { DDSConverter.run { rescaleToNextPowerOfTwo() } },
                 srgba
             )
@@ -88,8 +90,10 @@ data class OpenGLTexture2D(
             )
         }
 
-        context(GraphicsApi)
-        operator fun invoke(image: BufferedImage, srgba: Boolean = false): OpenGLTexture2D {
+        operator fun invoke(
+            graphicsApi: GraphicsApi,
+            image: BufferedImage, srgba: Boolean = false
+        ): OpenGLTexture2D {
             val internalFormat = if (compressInternal) {
                 if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else COMPRESSED_RGBA_S3TC_DXT5_EXT
             } else {
@@ -97,18 +101,19 @@ data class OpenGLTexture2D(
             }
 
             return OpenGLTexture2D(
+                graphicsApi,
                 UploadInfo.SimpleTexture2DUploadInfo(
                     TextureDimension(image.width, image.height), null, false, srgba,
                     internalFormat = internalFormat,
                     textureFilterConfig = TextureFilterConfig(),
                 )
             ).apply {
-                uploadAsync(image, srgba, internalFormat)
+                uploadAsync(graphicsApi, image, srgba, internalFormat)
             }
         }
 
-        context(GraphicsApi)
         internal fun OpenGLTexture2D.uploadAsync(
+            graphicsApi: GraphicsApi,
             image: BufferedImage,
             srgba: Boolean,
             internalFormat: InternalTextureFormat
@@ -137,7 +142,7 @@ data class OpenGLTexture2D(
                     mipMapCount,
                 )
 
-                upload(info)
+                upload(graphicsApi, info)
             }
         }
 
@@ -164,18 +169,19 @@ data class OpenGLTexture2D(
             return buffer
         }
 
-        context(GraphicsApi)
         operator fun invoke(
+            graphicsApi: GraphicsApi,
             info: Texture2DUploadInfo,
             textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
             wrapMode: WrapMode = WrapMode.Repeat
-        ) = onGpu {
+        ) = graphicsApi.onGpu {
             val textureAllocationData = allocateTexture(
                 info,
                 TextureTarget.TEXTURE_2D,
                 wrapMode
             )
             OpenGLTexture2D(
+                graphicsApi,
                 info.dimension,
                 textureAllocationData.textureId,
                 TextureTarget.TEXTURE_2D,
@@ -187,23 +193,20 @@ data class OpenGLTexture2D(
             )
         }
 
-        context(GraphicsApi)
-        internal fun OpenGLTexture2D.upload(info: Texture2DUploadInfo) {
+        internal fun OpenGLTexture2D.upload(graphicsApi: GraphicsApi, info: Texture2DUploadInfo) {
             val usePbo = true // the current state of texture streaming doesn't make pbos feasible
             if (usePbo) {
-                uploadWithPixelBuffer(info)
+                uploadWithPixelBuffer(graphicsApi, info)
             } else {
-                uploadWithoutPixelBuffer(info)
+                uploadWithoutPixelBuffer(graphicsApi, info)
             }
         }
 
-        context(GraphicsApi)
-        private fun OpenGLTexture2D.uploadWithPixelBuffer(info: Texture2DUploadInfo) {
-            pixelBufferObjectPool.scheduleUpload(info, this)
+        private fun OpenGLTexture2D.uploadWithPixelBuffer(graphicsApi: GraphicsApi, info: Texture2DUploadInfo) {
+            graphicsApi.pixelBufferObjectPool.scheduleUpload(info, this)
         }
 
-        context(GraphicsApi)
-        private fun OpenGLTexture2D.uploadWithoutPixelBuffer(info: Texture2DUploadInfo) = onGpu {
+        private fun OpenGLTexture2D.uploadWithoutPixelBuffer(graphicsApi: GraphicsApi, info: Texture2DUploadInfo) = graphicsApi.onGpu {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
 
             val data = when(info) {

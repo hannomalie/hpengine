@@ -9,8 +9,8 @@ import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import org.joml.Vector4f
 import kotlin.math.max
 
-context(GraphicsApi)
 class RenderTargetImpl<T : Texture>(
+    private val graphicsApi: GraphicsApi,
     override val frameBuffer: FrameBuffer,
     override val width: Int = 1280,
     override val height: Int = 720,
@@ -33,7 +33,7 @@ class RenderTargetImpl<T : Texture>(
     override val factorsForDebugRendering = textures.map { 1f }.toMutableList()
 
     init {
-        onGpu {
+        graphicsApi.onGpu {
             bindFrameBuffer(frameBuffer)
 
             // TODO: This is broken, reimplement
@@ -57,7 +57,7 @@ class RenderTargetImpl<T : Texture>(
             clearColor(clear.x, clear.y, clear.z, clear.w)
         }
 
-        register(this)
+        graphicsApi.register(this)
     }
 
     override val renderedTexture: Int
@@ -96,7 +96,7 @@ class RenderTargetImpl<T : Texture>(
 //        resizeTextures(gpuContext)
 //    }
 
-    override fun use(clear: Boolean) = onGpu {
+    override fun use(clear: Boolean) = graphicsApi.onGpu {
         bindFrameBuffer(frameBuffer)
         viewPort(0, 0, width, height)
         if (clear) {
@@ -105,7 +105,7 @@ class RenderTargetImpl<T : Texture>(
     }
 
     override fun setTargetTexture(textureID: Int, index: Int, mipMapLevel: Int) {
-        framebufferTexture(index, textureID, mipMapLevel)
+        graphicsApi.framebufferTexture(index, textureID, mipMapLevel)
     }
 
     /**
@@ -115,7 +115,7 @@ class RenderTargetImpl<T : Texture>(
      * @param mipmap          the mipmap level that should be bound
      */
     override fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int) {
-        framebufferTexture(
+        graphicsApi.framebufferTexture(
             attachmentIndex,
             TextureTarget.TEXTURE_CUBE_MAP,
             index,
@@ -125,7 +125,7 @@ class RenderTargetImpl<T : Texture>(
     }
 
     override fun unUse() {
-        bindFrameBuffer(0)
+        graphicsApi.bindFrameBuffer(0)
     }
 
     override fun getRenderedTexture(index: Int): Int {
@@ -137,6 +137,6 @@ class RenderTargetImpl<T : Texture>(
     }
 
     override fun setTargetTextureArrayIndex(textureId: Int, layer: Int) {
-        framebufferTextureLayer(0, textureId, 0, layer)
+        graphicsApi.framebufferTextureLayer(0, textureId, 0, layer)
     }
 }

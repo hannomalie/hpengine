@@ -27,13 +27,14 @@ open class SimpleTextureRenderer(
     private val programManager: ProgramManager,
     private val frontBuffer: FrontBufferTarget,
 ) : RenderSystem {
-    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer() }
+    private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer(graphicsApi) }
     val sixDebugBuffers: List<VertexBuffer> = graphicsApi.run {
         val height = -2f / 3f
         val width = 2f
         val widthDiv = width / 6f
         (0..5).map {
             QuadVertexBuffer(
+                graphicsApi,
                 QuadVertexBuffer.getPositionsAndTexCoords(
                     Vector2f(-1f + it * widthDiv, -1f),
                     Vector2f(-1 + (it + 1) * widthDiv, height)
@@ -86,7 +87,7 @@ open class SimpleTextureRenderer(
     ) {
         if (cubeMapArrayRenderTarget == null) return
         graphicsApi.run {
-            renderTarget.use(true)
+            renderTarget.use(graphicsApi, true)
         }
 
         (0..5).map { faceIndex ->

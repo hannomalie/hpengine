@@ -2,6 +2,8 @@ package de.hanno.hpengine.config
 
 import de.hanno.hpengine.directory.*
 import org.joml.Vector3f
+import org.koin.core.annotation.Single
+import java.io.File
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
 
@@ -10,6 +12,7 @@ import kotlin.reflect.KProperty
 @Target(AnnotationTarget.PROPERTY)
 annotation class Button
 
+@Single
 data class Config(
     var quality: QualityConfig = QualityConfig(),
     var debug: DebugConfig = DebugConfig(),
@@ -17,8 +20,8 @@ data class Config(
     var performance: PerformanceConfig = PerformanceConfig(),
     var profiling: ProfilingConfig = ProfilingConfig(),
     var directories: Directories = Directories(
-        Directories.ENGINEDIR_NAME,
-        Directories.GAMEDIR_NAME
+        EngineDirectory(File(Directories.ENGINEDIR_NAME)),
+        GameDirectory(File(Directories.GAMEDIR_NAME), null),
     ),
     var width: Int = 1920,
     var height: Int = 1080,

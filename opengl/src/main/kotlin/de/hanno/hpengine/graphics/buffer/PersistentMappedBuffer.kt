@@ -13,8 +13,8 @@ import org.lwjgl.opengl.GL44
 import org.lwjgl.opengl.GL45.glCopyNamedBufferSubData
 import java.nio.ByteBuffer
 
-context(GraphicsApi)
 class PersistentMappedBuffer(
+    private val graphicsApi: GraphicsApi,
     override var target: BufferTarget,
     capacityInBytes: Int = 1024
 ) : GpuBuffer {
@@ -23,7 +23,7 @@ class PersistentMappedBuffer(
             val oldBufferDefinition = bufferDefinition
             oldBufferDefinition.copyTo(value)
             field = value
-            onGpu { glDeleteBuffers(oldBufferDefinition.id) }
+            graphicsApi.onGpu { glDeleteBuffers(oldBufferDefinition.id) }
         }
 
     override val id: Int get() = bufferDefinition.id
@@ -38,7 +38,7 @@ class PersistentMappedBuffer(
 
         val needsResize = buffer.capacity() < capacityInBytes
         if (needsResize) {
-            val newBufferDefinition = onGpu {
+            val newBufferDefinition = graphicsApi.onGpu {
                 createBuffer(capacityInBytes)
             }
             bufferDefinition = newBufferDefinition
@@ -49,12 +49,12 @@ class PersistentMappedBuffer(
         buffer.put(src)
     }
     private fun BufferDefinition.copyTo(newBuffer: BufferDefinition) {
-        onGpu {
+        graphicsApi.onGpu {
             glCopyNamedBufferSubData(this.id, newBuffer.id, 0, 0, this.buffer.capacity().toLong())
         }
     }
 
-    private fun createBuffer(capacityInBytes: Int): BufferDefinition = onGpu {
+    private fun createBuffer(capacityInBytes: Int): BufferDefinition = graphicsApi.onGpu {
         val id = glGenBuffers()
         glBindBuffer(target.glValue, id)
         GL44.glBufferStorage(target.glValue, capacityInBytes.toLong(), flags)
@@ -68,12 +68,12 @@ class PersistentMappedBuffer(
 
         BufferDefinition(id, byteBuffer)
     }
-    override fun bind() = onGpu {
+    override fun bind() = graphicsApi.onGpu {
         glBindBuffer(target.glValue, id)
     }
 
-    override fun unbind() = onGpu { glBindBuffer(target.glValue, 0) }
-    override fun delete() = onGpu {
+    override fun unbind() = graphicsApi.onGpu { glBindBuffer(target.glValue, 0) }
+    override fun delete() = graphicsApi.onGpu {
         glDeleteBuffers(id)
     }
 

@@ -8,20 +8,18 @@ import de.hanno.hpengine.graphics.constants.BufferTarget
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.glValue
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.profiling.GPUProfiler
-import de.hanno.hpengine.graphics.sync.GpuCommandSync
-import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL21.*
 import org.lwjgl.opengl.GL45.glCompressedTextureSubImage2D
 import org.lwjgl.opengl.GL45.glTextureSubImage2D
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 
-
-context(GraphicsApi, GPUProfiler, Config)
-// strange nullable primary constructor param because of compiler issues with context receivers
-class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
-    private val buffer = _buffer ?: GpuBuffer(BufferTarget.PixelUnpack, 5_000_000)
+class OpenGLPixelBufferObject(
+    private val graphicsApi: GraphicsApi,
+    private val config: Config,
+    _buffer: GpuBuffer? = null
+): PixelBufferObject {
+    private val buffer = _buffer ?: graphicsApi.GpuBuffer(BufferTarget.PixelUnpack, 5_000_000)
     var uploading = AtomicBoolean(false)
 
     override fun upload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D) {
@@ -38,7 +36,7 @@ class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
                     buffer.put(data)
 
                     val level = index
-                    onGpu {
+                    graphicsApi.onGpu {
                         buffer.bind()
                         if (info.dataCompressed) {
                             glCompressedTextureSubImage2D(texture.id, level, 0, 0, currentWidth, currentHeight, info.internalFormat.glValue, data.capacity(), 0)
@@ -61,7 +59,7 @@ class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
                     buffer.buffer.put(data)
                     buffer.buffer.rewind()
 
-                    onGpu {
+                    graphicsApi.onGpu {
                         bindTexture(TextureTarget.TEXTURE_2D, texture.id)
                         buffer.bind()
                         if (info.dataCompressed) {
@@ -91,7 +89,7 @@ class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
         level: Int,
         info: UploadInfo.Texture2DUploadInfo,
         lazyTextureData: LazyTextureData
-    ) {
+    ): Unit = graphicsApi.run {
         uploading.getAndSet(true)
         val dataProvider = lazyTextureData.dataProvider
         val width = lazyTextureData.width
@@ -105,13 +103,13 @@ class OpenGLPixelBufferObject(_buffer: GpuBuffer? = null): PixelBufferObject {
         val capacity = data.capacity()
         val textureId = texture.id
 
-        if (debug.simulateSlowTextureStreaming) {
+        if (config.debug.simulateSlowTextureStreaming) {
             println("Uploaded level $level")
             Thread.sleep((level * 100).toLong())
         }
 
-//        onGpu {
-        (backgroundContext ?: this@GraphicsApi).onGpu {
+//        graphicsApi.onGpu {
+        (backgroundContext ?: this).onGpu {
             profiled("textureSubImage") {
 //                buffer.bind()
                 glBindBuffer(buffer.target.glValue, buffer.id)

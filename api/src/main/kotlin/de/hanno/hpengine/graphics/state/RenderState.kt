@@ -7,9 +7,8 @@ interface IRenderState {
     var gpuCommandSync: GpuCommandSync
 }
 
-context(GraphicsApi)
 class RenderState(
-    private val dummy: Unit = Unit // need dummy for now, because context receiver resolution bug
+    private val graphicsApi: GraphicsApi,
 ) : IRenderState {
 
     val customState = CustomStates()
@@ -17,7 +16,7 @@ class RenderState(
     var cycle: Long = 0
     var time = System.currentTimeMillis()
     var deltaSeconds: Float = 0.1f
-    override var gpuCommandSync: GpuCommandSync = createCommandSync()
+    override var gpuCommandSync: GpuCommandSync = graphicsApi.createCommandSync()
 
     val gpuHasFinishedUsingIt get() = gpuCommandSync.isSignaled
 

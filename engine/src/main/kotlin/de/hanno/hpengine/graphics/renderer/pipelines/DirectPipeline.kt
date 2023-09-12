@@ -24,8 +24,8 @@ import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
-context(GraphicsApi, GPUProfiler)
 open class DirectFirstPassPipeline(
+    private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val program: Program<out FirstPassUniforms>,
     private val entitiesStateHolder: EntitiesStateHolder,
@@ -53,18 +53,20 @@ open class DirectFirstPassPipeline(
     }
     open fun RenderState.selectVertexIndexBuffer(): VertexIndexBuffer<*> = this[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
 
-    fun draw(renderState: RenderState) = profiled("Actual draw entities") {
+    fun draw(renderState: RenderState): Unit = graphicsApi.run {
+        profiled("Actual draw entities") {
 
-        val mode = if (config.debug.isDrawLines) Lines else Fill
-        val vertexIndexBuffer = renderState.selectVertexIndexBuffer()
+            val mode = if (config.debug.isDrawLines) Lines else Fill
+            val vertexIndexBuffer = renderState.selectVertexIndexBuffer()
 
-        vertexIndexBuffer.indexBuffer.bind()
+            vertexIndexBuffer.indexBuffer.bind()
 
-        val entitiesState = renderState[entitiesStateHolder.entitiesState]
-        val camera = renderState[primaryCameraStateHolder.camera]
+            val entitiesState = renderState[entitiesStateHolder.entitiesState]
+            val camera = renderState[primaryCameraStateHolder.camera]
 
-        drawCustomProgramBatches(camera, entitiesState, renderState, vertexIndexBuffer, mode)
-        drawDefaultProgramBatches(camera, entitiesState, renderState, vertexIndexBuffer, mode)
+            drawCustomProgramBatches(camera, entitiesState, renderState, vertexIndexBuffer, mode)
+            drawDefaultProgramBatches(camera, entitiesState, renderState, vertexIndexBuffer, mode)
+        }
     }
 
     private fun drawDefaultProgramBatches(
@@ -73,7 +75,7 @@ open class DirectFirstPassPipeline(
         renderState: RenderState,
         vertexIndexBuffer: VertexIndexBuffer<*>,
         mode: RenderingMode
-    ) {
+    ) = graphicsApi.run {
         program.use()
         val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
         val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
@@ -135,7 +137,7 @@ open class DirectFirstPassPipeline(
         renderState: RenderState,
         vertexIndexBuffer: VertexIndexBuffer<*>,
         mode: RenderingMode
-    ) {
+    ) = graphicsApi.run {
         val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
 
         for (groupedBatches in batchesWithOwnProgram) {

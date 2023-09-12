@@ -28,9 +28,9 @@ import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 
-context(GraphicsApi)
 class OpenGLTextureManager(
     val config: Config,
+    private val graphicsApi: GraphicsApi,
     programManager: OpenGlProgramManager,
 ) : TextureManagerBaseSystem() {
 
@@ -111,13 +111,13 @@ class OpenGLTextureManager(
         srgba: Boolean = false,
         directory: AbstractDirectory = config.directories.gameDir
     ) = textures.ifAbsentPutInSingleThreadContext(resourceName) {
-        FileBasedTexture2D(resourceName, directory, srgba)
+        FileBasedTexture2D(graphicsApi, resourceName, directory, srgba)
     }
 
     fun getTexture(
         resourceName: String, srgba: Boolean = false, file: File
     ) = textures.ifAbsentPutInSingleThreadContext(resourceName) {
-        FileBasedTexture2D(resourceName, file, srgba)
+        FileBasedTexture2D(graphicsApi, resourceName, file, srgba)
     }
 
     private inline fun <T> MutableMap<String, T>.ifAbsentPutInSingleThreadContext(
@@ -192,7 +192,7 @@ class OpenGLTextureManager(
 
     fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-            ?: FileBasedOpenGLCubeMap(resourceName, file, srgba)
+            ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, file, srgba)
 
         textures[resourceName + "_cube"] = tex
         return tex
@@ -200,7 +200,7 @@ class OpenGLTextureManager(
 
     fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-            ?: FileBasedOpenGLCubeMap(resourceName, files, srgba)
+            ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, files, srgba)
 
         textures[resourceName + "_cube"] = tex
         return tex
@@ -258,9 +258,7 @@ class OpenGLTextureManager(
 
     }
 
-    fun copyCubeMap(sourceTexture: CubeMap): Int {
-        return this@GraphicsApi.copyCubeMap(sourceTexture).id
-    }
+    fun copyCubeMap(sourceTexture: CubeMap): Int = graphicsApi.copyCubeMap(sourceTexture).id
 
     //TODO: Add texture filters as params
     fun getCubeMap(width: Int, height: Int, internalTextureFormat: InternalTextureFormat): Texture {
@@ -282,7 +280,7 @@ class OpenGLTextureManager(
         target: TextureTarget,
         depth: Int = 1
     ): Texture = when(target) {
-        TEXTURE_2D -> Texture2D(
+        TEXTURE_2D -> graphicsApi.Texture2D(
             TextureDimension2D(width, height),
             target,
             internalFormat,
@@ -290,7 +288,7 @@ class OpenGLTextureManager(
             WrapMode.Repeat,
             UploadState.Uploaded
         )
-        TEXTURE_CUBE_MAP -> CubeMap(
+        TEXTURE_CUBE_MAP -> graphicsApi.CubeMap(
             TextureDimension2D(width, height),
             internalFormat,
             TextureFilterConfig(),
@@ -308,6 +306,7 @@ class OpenGLTextureManager(
         magFilter: MagFilter,
         wrapMode: WrapMode
     ): OpenGLTexture3D = OpenGLTexture3D(
+        graphicsApi,
         TextureDimension(gridResolution, gridResolution, gridResolution),
         TextureFilterConfig(minFilter, magFilter),
         internalFormat,
@@ -323,7 +322,7 @@ class OpenGLTextureManager(
         }
         val finalWidth = width
         val finalHeight = height
-        onGpu {
+        graphicsApi.onGpu {
             blur2dProgramSeparableHorizontal.use()
             bindTexture(0, TEXTURE_2D, sourceTexture)
             bindImageTexture(
@@ -367,7 +366,7 @@ class OpenGLTextureManager(
         }
         val finalWidth = width
         val finalHeight = height
-        onGpu {
+        graphicsApi.onGpu {
             blur2dProgramSeparableHorizontal.use()
             bindTexture(0, TEXTURE_2D, sourceTexture)
             bindImageTexture(

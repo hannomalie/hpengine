@@ -22,7 +22,7 @@ fun main() {
         ),
     )
 
-    Engine(config) {
+    Engine {
         world.loadScene {
             addAnimatedModelEntity("Hellknight",
                 "assets/models/doom3monster/monster.md5mesh",

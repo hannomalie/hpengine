@@ -4,9 +4,11 @@ import de.hanno.hpengine.config.Config
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import org.apache.commons.io.monitor.FileAlterationMonitor
 import org.apache.commons.io.monitor.FileAlterationObserver
+import org.koin.core.annotation.Single
 import java.io.File
 
 
+@Single
 class FileMonitor(val config: Config) {
 
     private val monitor = FileAlterationMonitor(500).apply {

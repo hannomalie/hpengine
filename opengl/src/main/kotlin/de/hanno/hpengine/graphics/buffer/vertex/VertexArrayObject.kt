@@ -7,17 +7,17 @@ import org.lwjgl.opengl.*
 import java.util.*
 
 
-context(GraphicsApi)
 class VertexArrayObject(
+    private val graphicsApi: GraphicsApi,
     private val channels: EnumSet<DataChannels>
 ) {
 
-    var id = onGpu { GL30.glGenVertexArrays() }
+    var id = graphicsApi.onGpu { GL30.glGenVertexArrays() }
     init {
         setUpAttributes()
     }
 
-    private fun setUpAttributes() = onGpu {
+    private fun setUpAttributes() = graphicsApi.onGpu {
         bind()
         var currentOffset = 0
         for (channel in channels) {
@@ -28,15 +28,14 @@ class VertexArrayObject(
         }
     }
 
-    fun bind() = onGpu {
+    fun bind() = graphicsApi.onGpu {
         GL30.glBindVertexArray(id)
     }
 
     fun delete() = GL30.glDeleteVertexArrays(id)
 
     companion object {
-        context(GraphicsApi)
-        fun getForChannels(channels: EnumSet<DataChannels>) = VertexArrayObject(channels)
+        fun getForChannels(graphicsApi: GraphicsApi, channels: EnumSet<DataChannels>) = VertexArrayObject(graphicsApi, channels)
 
         private val cache = HashMap<EnumSet<DataChannels>, Int>()
 

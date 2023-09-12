@@ -11,8 +11,8 @@ import org.lwjgl.opengl.GL44
 import org.lwjgl.opengl.GL45.glCopyNamedBufferSubData
 import java.nio.ByteBuffer
 
-context(GraphicsApi)
 class OpenGLGpuBuffer(
+    private val graphicsApi: GraphicsApi,
     override var target: BufferTarget,
     capacityInBytes: Int = 1024
 ) : GpuBuffer {
@@ -22,7 +22,7 @@ class OpenGLGpuBuffer(
             val oldBufferDefinition = bufferDefinition
             oldBufferDefinition.copyTo(value)
             field = value
-            onGpu { glDeleteBuffers(oldBufferDefinition.id) }
+            graphicsApi.onGpu { glDeleteBuffers(oldBufferDefinition.id) }
         }
 
     override val id: Int get() = bufferDefinition.id
@@ -45,11 +45,11 @@ class OpenGLGpuBuffer(
         }
     }
 
-    private fun BufferDefinition.copyTo(newBuffer: BufferDefinition) = onGpu {
+    private fun BufferDefinition.copyTo(newBuffer: BufferDefinition) = graphicsApi.onGpu {
         glCopyNamedBufferSubData(this.id, newBuffer.id, 0, 0, this.buffer.capacity().toLong())
     }
 
-    private fun createBuffer(capacityInBytes: Int): BufferDefinition = onGpu {
+    private fun createBuffer(capacityInBytes: Int): BufferDefinition = graphicsApi.onGpu {
         val id = glGenBuffers()
         glBindBuffer(target.glValue, id)
         GL44.glBufferStorage(target.glValue, capacityInBytes.toLong(), flags)
@@ -63,16 +63,16 @@ class OpenGLGpuBuffer(
 
         BufferDefinition(id, byteBuffer)
     }
-    override fun bind() = onGpu {
+    override fun bind() = graphicsApi.onGpu {
         glBindBuffer(target.glValue, id)
     }
 
-    override fun unbind() = onGpu { glBindBuffer(target.glValue, 0) }
-    override fun delete() = onGpu {
+    override fun unbind() = graphicsApi.onGpu { glBindBuffer(target.glValue, 0) }
+    override fun delete() = graphicsApi.onGpu {
         glDeleteBuffers(id)
     }
 
-    override fun map(): Unit = onGpu {
+    override fun map(): Unit = graphicsApi.onGpu {
         bind()
         GL30.glMapBufferRange(
             target.glValue,
@@ -81,7 +81,7 @@ class OpenGLGpuBuffer(
         )!!
     }
 
-    override fun unmap(): Unit = onGpu {
+    override fun unmap(): Unit = graphicsApi.onGpu {
         bind()
         GL30.glUnmapBuffer(target.glValue)
     }

@@ -52,11 +52,11 @@ import struktgen.api.typed
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 
-context(GraphicsApi)
 @One(
     ModelComponent::class,
 )
 class ModelSystem(
+    private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val textureManager: OpenGLTextureManager,
     private val materialManager: MaterialManager,
@@ -77,8 +77,8 @@ class ModelSystem(
     lateinit var instancesComponentMapper: ComponentMapper<InstancesComponent>
     lateinit var spatialComponentMapper: ComponentMapper<SpatialComponent>
 
-    val vertexIndexBufferStatic = VertexIndexBuffer(VertexStruktPacked.type, 10)
-    val vertexIndexBufferAnimated = VertexIndexBuffer(AnimatedVertexStruktPacked.type, 10)
+    val vertexIndexBufferStatic = VertexIndexBuffer(graphicsApi, VertexStruktPacked.type, 10)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(graphicsApi, AnimatedVertexStruktPacked.type, 10)
 
     val joints: MutableList<Matrix4f> = CopyOnWriteArrayList()
 
@@ -169,7 +169,7 @@ class ModelSystem(
                         programCache[programDescription] =
                             programManager.getFirstPassProgram(
                                 programDescription,
-                                StaticFirstPassUniforms()
+                                StaticFirstPassUniforms(graphicsApi)
                             ) as ProgramImpl<FirstPassUniforms>
                     }
                 }

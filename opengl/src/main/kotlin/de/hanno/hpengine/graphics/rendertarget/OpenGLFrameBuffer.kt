@@ -12,12 +12,14 @@ import org.lwjgl.opengl.GL32
 class OpenGLFrameBuffer(override val frameBuffer: Int, override val depthBuffer: DepthBuffer<*>?) : FrameBuffer {
 
     companion object {
-        context(GraphicsApi)
-        operator fun invoke(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer(
-            frameBuffer = onGpu { glGenFramebuffers() },
+        operator fun invoke(
+            graphicsApi: GraphicsApi,
+            depthBuffer: DepthBuffer<*>?
+        ) = OpenGLFrameBuffer(
+            frameBuffer = graphicsApi.onGpu { glGenFramebuffers() },
             depthBuffer = depthBuffer
         ).apply {
-            onGpu {
+            graphicsApi.onGpu {
                 bindFrameBuffer(this)
                 val renderBuffer = glGenRenderbuffers()
                 glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)

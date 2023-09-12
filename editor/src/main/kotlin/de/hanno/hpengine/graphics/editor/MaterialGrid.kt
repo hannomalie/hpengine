@@ -4,8 +4,7 @@ import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.model.material.Material
 import imgui.ImGui
 
-context(ImGuiEditor)
-fun materialGrid(material: Material) {
+fun ImGuiEditor.materialGrid(material: Material) {
     ImGui.text(material.name)
     val colors = floatArrayOf(
         material.diffuse.x,
@@ -84,5 +83,5 @@ fun materialGrid(material: Material) {
     if (ImGui.checkbox("CastShadows", material.isShadowCasting)) {
         material.isShadowCasting = !material.isShadowCasting
     }
-    textureSelection(material)
+    textureSelection(this, material)
 }

@@ -13,6 +13,5 @@ interface RenderTarget {
 interface FrontBufferTarget: RenderTarget {
     override val name: String get() = "FrontBufferTarget"
 
-    context(GraphicsApi)
-    fun use(clear: Boolean)
+    fun use(graphicsApi: GraphicsApi, clear: Boolean)
 }

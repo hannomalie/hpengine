@@ -20,8 +20,9 @@ import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiWindowFlags
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
-context(GraphicsApi, RenderStateContext)
 fun ImGuiEditor.rightPanel(
+    graphicsApi: GraphicsApi,
+    renderStateContext: RenderStateContext,
     screenWidth: Float,
     rightPanelWidth: Float,
     screenHeight: Float,
@@ -92,11 +93,11 @@ fun ImGuiEditor.rightPanel(
                     }
                     is ReflectionProbeSelection -> tab("Entity") { }
                     is TextureSelection -> tab("Entity") {
-                        textureGrid(selection.path, selection.texture)
+                        textureGrid(graphicsApi, selection.path, selection.texture)
                     }
                     Selection.None -> tab("Entity") { }
                     is TextureManagerSelection -> tab("Entity") {
-                        textureManagerGrid(selection.textureManagerBaseSystem)
+                        textureManagerGrid(graphicsApi, selection.textureManagerBaseSystem)
                     }
                 }.let {}
 
@@ -134,7 +135,7 @@ fun ImGuiEditor.rightPanel(
 //                    }
                 }
                 configTab(config, window)
-                renderTab(gpuProfiler)
+                renderTab(window, this@rightPanel, renderStateContext, graphicsApi, gpuProfiler)
                 tab("Editor") {
                     if (ImGui.beginCombo("Selection Mode", editorConfig.selectionMode.toString())) {
                         SelectionMode.values().forEach {

@@ -32,7 +32,7 @@ fun main() {
         ),
     )
 
-    Engine(config) {
+    Engine {
         world.loadScene {
             edit(create()).apply {
                 create(OceanWaterComponent::class.java).apply {

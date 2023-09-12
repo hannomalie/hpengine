@@ -18,14 +18,14 @@ data class OpenGLCubeMap(
 ) : CubeMap {
     companion object {
 
-        context(GraphicsApi)
         operator fun invoke(
+            graphicsApi: GraphicsApi,
             dimension: TextureDimension2D,
             filterConfig: TextureFilterConfig,
             internalFormat: InternalTextureFormat,
             wrapMode: WrapMode = WrapMode.Repeat,
         ): OpenGLCubeMap {
-            val (textureId, handle) = allocateTexture(
+            val (textureId, handle) = graphicsApi.allocateTexture(
                 UploadInfo.Texture2DUploadInfo(dimension, internalFormat = internalFormat, textureFilterConfig = filterConfig),
                 TextureTarget.TEXTURE_CUBE_MAP,
                 wrapMode

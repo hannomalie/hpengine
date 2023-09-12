@@ -25,15 +25,16 @@ import de.hanno.hpengine.math.createPerspective
 import struktgen.api.forIndex
 
 // TODO: Autoadd Transform
-context(GraphicsApi, RenderStateContext)
 @All(PointLightComponent::class, TransformComponent::class)
 class PointLightSystem(
+    private val graphicsApi: GraphicsApi,
+    private val renderStateContext: RenderStateContext,
     config: Config,
     programManager: ProgramManager,
     pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
 ): BaseEntitySystem(), RenderSystem, Extractor {
-    private var gpuPointLights = PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
+    private var gpuPointLights = graphicsApi.PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
@@ -44,12 +45,13 @@ class PointLightSystem(
 
     val shadowMapStrategy = if (config.quality.isUseDpsm) {
             DualParaboloidShadowMapStrategy(
+                graphicsApi,
                 this,
                 programManager,
                 config
             )
         } else {
-            CubeShadowMapStrategy(config, programManager)
+            CubeShadowMapStrategy(graphicsApi, config, programManager)
         }
 
     private var shadowMapsRenderedInCycle: Long = -1

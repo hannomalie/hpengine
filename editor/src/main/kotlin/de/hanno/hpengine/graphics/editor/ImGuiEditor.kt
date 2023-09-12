@@ -43,6 +43,7 @@ import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImInt
 import org.joml.Vector2i
+import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 
 interface ImGuiEditorExtension {
@@ -51,6 +52,7 @@ interface ImGuiEditorExtension {
 
 data class EntityClicked(val coordinates: Vector2i, val indices: Indices)
 
+@Single(binds = [EntityClickListener::class, OnClickListener::class])
 class EntityClickListener : OnClickListener {
     var clickState: EntityClicked? = null
     override fun onClick(coordinates: Vector2i, indices: Indices) = indices.run {
@@ -71,8 +73,10 @@ class EntityClickListener : OnClickListener {
 enum class SelectionMode { Entity, Mesh; }
 data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
 
-context(GraphicsApi, RenderStateContext)
+@Single(binds = [BaseSystem::class, RenderSystem::class])
 class ImGuiEditor(
+    private val graphicsApi: GraphicsApi,
+    private val renderStateContext: RenderStateContext,
     internal val window: Window,
     internal val textureManager: TextureManagerBaseSystem,
     internal val finalOutput: FinalOutput,
@@ -95,13 +99,15 @@ class ImGuiEditor(
     private var editorConfig = EditorConfig()
 
     val renderTarget = RenderTarget2D(
+        graphicsApi,
         RenderTargetImpl(
-            OpenGLFrameBuffer(null),
+            graphicsApi,
+            OpenGLFrameBuffer(graphicsApi, null),
             config.width,
             config.height,
             listOf(
                 ColorAttachmentDefinition("Color", RGBA16F, TextureFilterConfig(MinFilter.LINEAR))
-            ).toTextures(config.width, config.height),
+            ).toTextures(graphicsApi, config.width, config.height),
             "Final Editor Image",
         )
     ).apply {
@@ -117,7 +123,7 @@ class ImGuiEditor(
     data class TextureOutputSelection(val identifier: String, val texture: Texture2D)
 
     val textureOutputOptions: List<TextureOutputSelection>
-        get() = registeredRenderTargets.flatMap { target ->
+        get() = graphicsApi.registeredRenderTargets.flatMap { target ->
             target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
                 TextureOutputSelection(target.name + "[$index]", texture)
             } + ((target.frameBuffer.depthBuffer?.texture as? Texture2D)?.let { TextureOutputSelection(target.name + "[depth]", it) })
@@ -134,7 +140,7 @@ class ImGuiEditor(
     lateinit var artemisWorld: World
 
     init {
-        onGpu {
+        graphicsApi.onGpu {
             ImGui.createContext()
             ImGui.getIO().apply {
 //                addConfigFlags(ImGuiConfigFlags.ViewportsEnable)
@@ -143,12 +149,12 @@ class ImGuiEditor(
         }
     }
 
-    private val imGuiImplGlfw = onGpu {
+    private val imGuiImplGlfw = graphicsApi.onGpu {
         ImGuiImplGlfw().apply {
             init(window.handle, true)
         }
     }
-    private val imGuiImplGl3 = onGpu {
+    private val imGuiImplGl3 = graphicsApi.onGpu {
         ImGuiImplGl3().apply {
             init(glslVersion)
         }
@@ -192,7 +198,7 @@ class ImGuiEditor(
                 }
             }
         }
-        polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
+        graphicsApi.polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
         renderTarget.use(true)
         imGuiImplGlfw.newFrame()
         ImGui.getIO().setDisplaySize(renderTarget.width.toFloat(), renderTarget.height.toFloat())
@@ -232,7 +238,7 @@ class ImGuiEditor(
                 leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
             }
 
-            rightPanel(screenWidth, rightPanelWidth, screenHeight, editorConfig)
+            rightPanel(graphicsApi, renderStateContext, screenWidth, rightPanelWidth, screenHeight, editorConfig)
 
             editorExtensions.forEach {
                 try {

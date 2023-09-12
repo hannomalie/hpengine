@@ -22,7 +22,7 @@ fun main() {
         ),
     )
 
-    Engine(config) {
+    Engine {
         world.loadScene {
             edit(create()).apply {
                 create(KotlinComponent::class.java).apply {

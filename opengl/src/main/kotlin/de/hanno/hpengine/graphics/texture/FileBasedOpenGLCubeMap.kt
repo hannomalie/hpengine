@@ -20,15 +20,15 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
 
-context(GraphicsApi)
 data class FileBasedOpenGLCubeMap(
+    private val graphicsApi: GraphicsApi,
     val path: String,
     val backingTexture: CubeMap,
     val files: List<File>,
     val isBgrFormat: Boolean = false
 ) : CubeMap by backingTexture {
 
-    constructor(path: String, backingTexture: CubeMap, vararg file: File) : this(path, backingTexture, file.toList())
+    constructor(graphicsApi: GraphicsApi, path: String, backingTexture: CubeMap, vararg file: File) : this(graphicsApi, path, backingTexture, file.toList())
 
     init {
         require(files.isNotEmpty()) { "Cannot create CubeMap without any files!" }
@@ -65,7 +65,7 @@ data class FileBasedOpenGLCubeMap(
         }
     }
 
-    fun upload(cubeMapFaceTarget: Int, buffer: ByteBuffer) = onGpu {
+    fun upload(cubeMapFaceTarget: Int, buffer: ByteBuffer) = graphicsApi.onGpu {
         GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
         GL11.glTexSubImage2D(
             cubeMapFaceTarget,
@@ -80,7 +80,7 @@ data class FileBasedOpenGLCubeMap(
         )
     }
 
-    fun upload(info: UploadInfo.CubeMapUploadInfo) = onGpu {
+    fun upload(info: UploadInfo.CubeMapUploadInfo) = graphicsApi.onGpu {
         bindTexture(this)
 
         upload(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, info.buffers[0])
@@ -97,12 +97,12 @@ data class FileBasedOpenGLCubeMap(
 
     companion object {
 
-        context(GraphicsApi)
         operator fun invoke(
+            graphicsApi: GraphicsApi,
             path: String,
             files: List<File>,
             srgba: Boolean = false
-        ): FileBasedOpenGLCubeMap {
+        ): FileBasedOpenGLCubeMap = graphicsApi.run {
             val internalFormat = if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else COMPRESSED_RGBA_S3TC_DXT5_EXT
 
             val bufferedImage: BufferedImage = ImageIO.read(files.first())
@@ -113,8 +113,9 @@ data class FileBasedOpenGLCubeMap(
             val isBgrFormat = bufferedImage.isBgrFormat
 
             val fileBasedCubeMap = FileBasedOpenGLCubeMap(
+                graphicsApi,
                 path,
-                OpenGLCubeMap(tileDimension, TextureFilterConfig(), internalFormat, WrapMode.Repeat),
+                OpenGLCubeMap(graphicsApi, tileDimension, TextureFilterConfig(), internalFormat, WrapMode.Repeat),
                 files,
                 isBgrFormat
             )
@@ -127,12 +128,12 @@ data class FileBasedOpenGLCubeMap(
         private val BufferedImage.isBgrFormat: Boolean
             get() = type == BufferedImage.TYPE_INT_BGR || type == BufferedImage.TYPE_3BYTE_BGR || type == BufferedImage.TYPE_4BYTE_ABGR || type == BufferedImage.TYPE_4BYTE_ABGR_PRE
 
-        context(GraphicsApi)
         operator fun invoke(
+            graphicsApi: GraphicsApi,
             path: String,
             file: File,
             srgba: Boolean = false
-        ): FileBasedOpenGLCubeMap {
+        ): FileBasedOpenGLCubeMap = graphicsApi.run {
             val internalFormat = if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else COMPRESSED_RGBA_S3TC_DXT5_EXT
 
             val bufferedImage: BufferedImage = ImageIO.read(file)
@@ -141,8 +142,9 @@ data class FileBasedOpenGLCubeMap(
             val tileDimension = TextureDimension(width / 4, height / 3)
 
             val fileBasedCubeMap = FileBasedOpenGLCubeMap(
+                graphicsApi,
                 path,
-                OpenGLCubeMap(tileDimension, TextureFilterConfig(), internalFormat, WrapMode.Repeat),
+                OpenGLCubeMap(graphicsApi, tileDimension, TextureFilterConfig(), internalFormat, WrapMode.Repeat),
                 file
             )
 

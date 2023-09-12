@@ -4,9 +4,11 @@ import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.window.Window
 import org.joml.Vector2i
+import org.koin.core.annotation.Single
 
 import org.lwjgl.glfw.GLFW.*
 
+@Single
 class Input(
     private val window: Window
 ) {

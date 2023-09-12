@@ -9,6 +9,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABB
 import org.joml.Vector3f
+import org.koin.core.annotation.Single
 
 @All(TransformComponent::class, SpatialComponent::class)
 class WorldAABB(
@@ -28,9 +29,11 @@ class WorldAABB(
     override fun processSystem() { }
 }
 
-context(de.hanno.hpengine.graphics.GraphicsApi, RenderStateContext)
-class WorldAABBStateHolder {
-    val worldAABBState = renderState.registerState {
+@Single
+class WorldAABBStateHolder(
+    renderStateContext: RenderStateContext
+) {
+    val worldAABBState = renderStateContext.renderState.registerState {
         MinMax(min = Vector3f(), max = Vector3f())
     }
 }

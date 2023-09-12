@@ -14,8 +14,7 @@ import struktgen.api.forIndex
 import java.nio.FloatBuffer
 import kotlin.math.min
 
-context(GraphicsApi)
-fun drawLines(
+fun GraphicsApi.drawLines(
     programManager: ProgramManager,
     linesProgram: Program<LinesProgramUniforms>,
     vertices: TypedGpuBuffer<Vector4fStrukt>,
@@ -51,8 +50,7 @@ fun TypedGpuBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector3fc>) {
     }
 }
 
-context(GraphicsApi)
-fun drawLines(
+fun GraphicsApi.drawLines(
     linesProgram: Program<LinesProgramUniforms>,
     vertices: TypedGpuBuffer<Vector4fStrukt>,
     lineWidth: Float = 5f,

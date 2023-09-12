@@ -54,8 +54,8 @@ class OpenGLContext private constructor(
     init {
         onGpu {
             // TODO: Test whether this does what it is intended to do: binding dummy vertex and index buffers
-            VertexBufferImpl(EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).bind()
-            OpenGLIndexBuffer().bind()
+            VertexBufferImpl(this, EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).bind()
+            OpenGLIndexBuffer(this).bind()
 
             cullFace = true
             depthMask = true
@@ -92,6 +92,7 @@ class OpenGLContext private constructor(
         val textureAllocationData = allocateTexture(info, TextureTarget.TEXTURE_2D, wrapMode)
 
         return OpenGLTexture2D(
+            this,
             dimension,
             textureAllocationData.textureId,
             target,
@@ -108,18 +109,15 @@ class OpenGLContext private constructor(
         textureFilterConfig: TextureFilterConfig,
         wrapMode: WrapMode,
     ) = OpenGLCubeMap(
+        this,
         dimension = dimension,
         filterConfig = textureFilterConfig,
         internalFormat = internalFormat,
         wrapMode = wrapMode,
     )
 
-    override fun FrameBuffer(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer.invoke(depthBuffer)
-    override val pixelBufferObjectPool = config.run {
-        profiler.run {
-            OpenGLPixelBufferObjectPool()
-        }
-    }
+    override fun FrameBuffer(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer.invoke(this, depthBuffer)
+    override val pixelBufferObjectPool = OpenGLPixelBufferObjectPool(this, config)
 
     override fun createView(texture: CubeMapArray, cubeMapIndex: Int): CubeMap {
         val viewTextureId = onGpu { glGenTextures() }
@@ -615,6 +613,7 @@ class OpenGLContext private constructor(
         bufferTarget: BufferTarget,
         capacityInBytes: Int
     ): PersistentMappedBuffer = de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer(
+        this,
         bufferTarget,
         capacityInBytes,
     )
@@ -623,6 +622,7 @@ class OpenGLContext private constructor(
         bufferTarget: BufferTarget,
         capacityInBytes: Int
     ) = OpenGLGpuBuffer(
+        this,
         bufferTarget,
         capacityInBytes
     )
@@ -1072,7 +1072,7 @@ class OpenGLContext private constructor(
         textures: List<Texture2D>,
         name: String,
         clear: Vector4f,
-    ) = RenderTarget2D(RenderTargetImpl(frameBuffer, width, height, textures, name, clear))
+    ) = RenderTarget2D(this, RenderTargetImpl(this, frameBuffer, width, height, textures, name, clear))
 
     override fun <T : Texture> RenderTarget(
         frameBuffer: FrameBuffer,
@@ -1082,6 +1082,7 @@ class OpenGLContext private constructor(
         name: String,
         clear: Vector4f,
     ) = RenderTargetImpl(
+        this,
         frameBuffer,
         width,
         height,
@@ -1098,7 +1099,7 @@ class OpenGLContext private constructor(
         name: String,
         clear: Vector4f,
     ) = CubeMapArrayRenderTarget(
-        RenderTargetImpl(frameBuffer, width, height, textures, name, clear)
+        this, RenderTargetImpl(this, frameBuffer, width, height, textures, name, clear)
     )
 
     override fun RenderTarget(
@@ -1109,7 +1110,7 @@ class OpenGLContext private constructor(
         name: String,
         clear: Vector4f,
     ) = CubeMapRenderTarget(
-        RenderTargetImpl(frameBuffer, width, height, textures, name, clear)
+        this, RenderTargetImpl(this, frameBuffer, width, height, textures, name, clear)
     )
 
     override fun CubeMapArray(

@@ -4,8 +4,8 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderMode
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.TabBar
-import de.hanno.hpengine.graphics.imgui.dsl.Window
-import de.hanno.hpengine.graphics.renderer.ExtensibleDeferredRenderer
+import de.hanno.hpengine.graphics.imgui.dsl.TreeNode.text
+import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.pipelines.GPUCulledPipeline
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import imgui.ImGui
@@ -14,13 +14,18 @@ import struktgen.api.forEach
 import struktgen.api.forIndex
 import java.nio.IntBuffer
 
-context(Window, ImGuiEditor, RenderStateContext, GraphicsApi)
-fun TabBar.renderTab(gpuProfiler: GPUProfiler) {
+fun TabBar.renderTab(
+    window: de.hanno.hpengine.graphics.window.Window,
+    editor: ImGuiEditor,
+    renderStateContext: RenderStateContext,
+    graphicsApi: GraphicsApi,
+    gpuProfiler: GPUProfiler
+) {
     tab("Render") {
-        text("FPS: ${fpsCounter.fps}") {}
+        text("FPS: ${editor.fpsCounter.fps}") {}
         text(gpuProfiler.currentTimings)
 
-        val renderManager = artemisWorld.getSystem(de.hanno.hpengine.graphics.RenderManager::class.java)!!
+        val renderManager = editor.artemisWorld.getSystem(de.hanno.hpengine.graphics.RenderManager::class.java)!!
         val renderMode = renderManager.renderMode
         if (ImGui.button("Use ${if (renderMode is RenderMode.Normal) "Single Step" else "Normal"}")) {
             renderManager.renderMode = when (renderMode) {
@@ -36,11 +41,11 @@ fun TabBar.renderTab(gpuProfiler: GPUProfiler) {
 
         renderManager.renderSystems
             .firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.apply {
-                val currentReadState = renderState.currentReadState
+                val currentReadState = renderStateContext.renderState.currentReadState
                 var counter = 0
                 when (val indirectPipeline = currentReadState[indirectPipeline]) {
                     is GPUCulledPipeline -> {
-                        finish()
+                        graphicsApi.finish()
                         val commandOrganization = indirectPipeline.commandOrganizationStatic
                         val batchCount = commandOrganization.filteredRenderBatches.size
                         val commandCount = commandOrganization.drawCountsCompacted.buffer.getInt(0)

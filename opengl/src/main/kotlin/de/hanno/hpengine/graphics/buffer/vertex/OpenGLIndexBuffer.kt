@@ -6,14 +6,17 @@ import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import java.nio.IntBuffer
 
-context(GraphicsApi)
-fun OpenGLIndexBuffer(): IndexBuffer {
-    val underlying = PersistentMappedBuffer(BufferTarget.ElementArray, 10 * Int.SIZE_BYTES)
+fun OpenGLIndexBuffer(
+    graphicsApi: GraphicsApi,
+): IndexBuffer {
+    val underlying = graphicsApi.PersistentMappedBuffer(BufferTarget.ElementArray, 10 * Int.SIZE_BYTES)
     return object: IndexBuffer, GpuBuffer by underlying {}
 }
 
-context(GraphicsApi)
-fun OpenGLIndexBuffer(intBuffer: IntBuffer): IndexBuffer = OpenGLIndexBuffer().apply {
+fun OpenGLIndexBuffer(
+    graphicsApi: GraphicsApi,
+    intBuffer: IntBuffer
+): IndexBuffer = OpenGLIndexBuffer(graphicsApi).apply {
     ensureCapacityInBytes(intBuffer.capacity())
     buffer.asIntBuffer().put(intBuffer)
 }

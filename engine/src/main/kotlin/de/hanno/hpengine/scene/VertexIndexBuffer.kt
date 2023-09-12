@@ -9,10 +9,15 @@ import org.lwjgl.BufferUtils
 import struktgen.api.Strukt
 import struktgen.api.StruktType
 
-context(GraphicsApi)
-class VertexIndexBuffer<T: Strukt>(val type: StruktType<T>, indexBufferSizeInIntsCount: Int): IVertexIndexBuffer<T> {
+class VertexIndexBuffer<T: Strukt>(
+    graphicsApi: GraphicsApi,
+    val type: StruktType<T>, indexBufferSizeInIntsCount: Int
+): IVertexIndexBuffer<T> {
 
-    override var indexBuffer: IndexBuffer = OpenGLIndexBuffer(BufferUtils.createIntBuffer(indexBufferSizeInIntsCount))
+    override var indexBuffer: IndexBuffer = OpenGLIndexBuffer(
+        graphicsApi,
+        BufferUtils.createIntBuffer(indexBufferSizeInIntsCount)
+    )
     // TODO: It's invalid to use a single index for two vertex arrays, move animated vertex array out of here
     private var currentBaseVertex = 0
     private var currentIndexOffset = 0
@@ -30,5 +35,5 @@ class VertexIndexBuffer<T: Strukt>(val type: StruktType<T>, indexBufferSizeInInt
         currentIndexOffset = 0
     }
 
-    override var vertexStructArray: TypedGpuBuffer<T> = PersistentShaderStorageBuffer(type.sizeInBytes).typed(type)
+    override var vertexStructArray: TypedGpuBuffer<T> = graphicsApi.PersistentShaderStorageBuffer(type.sizeInBytes).typed(type)
 }

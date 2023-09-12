@@ -88,8 +88,8 @@ fun GpuBuffer.drawInstancedBaseVertex(
     return instanceCount * (indexCount / 3)
 }
 
-context(GPUProfiler, GraphicsApi)
 fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
+    graphicsApi: GraphicsApi,
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
     drawCount: Long = 0,
@@ -98,6 +98,7 @@ fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
 ) = when (mode) {
     RenderingMode.Lines -> drawElementsIndirect(indexBuffer, commandBuffer, maxDrawCount, mode)
     RenderingMode.Fill -> drawElementsIndirectCount(
+        graphicsApi,
         indexBuffer,
         commandBuffer,
         drawCountBuffer,
@@ -107,8 +108,8 @@ fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
     )
 }
 
-context(GPUProfiler, GraphicsApi)
 fun drawElementsIndirectCount(
+    graphicsApi: GraphicsApi,
     indexBuffer: GpuBuffer,
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
@@ -125,9 +126,7 @@ fun drawElementsIndirectCount(
         RenderingMode.Lines -> GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
         RenderingMode.Fill -> GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
     }
-    profiled("glMultiDrawElementsIndirectCountARB") {
-        glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, maxDrawCount, 0)
-    }
+    glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, maxDrawCount, 0)
     drawCountBuffer.unbind()
     indexBuffer.unbind()
 }

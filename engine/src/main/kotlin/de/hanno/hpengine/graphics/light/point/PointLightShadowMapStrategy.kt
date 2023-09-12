@@ -17,6 +17,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.ressources.FileBasedCodeSource
@@ -29,8 +30,8 @@ interface PointLightShadowMapStrategy {
     fun bindTextures()
 }
 
-context(GraphicsApi)
 class CubeShadowMapStrategy(
+    private val graphicsApi: GraphicsApi,
     config: Config,
     programManager: ProgramManager
 ): PointLightShadowMapStrategy {
@@ -43,7 +44,7 @@ class CubeShadowMapStrategy(
         Uniforms.Empty
     )
 
-    val cubeMapArray = CubeMapArray(
+    val cubeMapArray = graphicsApi.CubeMapArray(
         TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
         TextureFilterConfig(MinFilter.NEAREST),
         RGBA16F,
@@ -61,7 +62,7 @@ class CubeShadowMapStrategy(
     // TODO: Remove CubeMapArrayRenderTarget to new api
 
     override fun bindTextures() {
-        bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
+        graphicsApi.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
     }
 
     override fun renderPointLightShadowMaps(renderState: RenderState) {
@@ -135,8 +136,8 @@ class CubeShadowMapStrategy(
     }
 }
 
-context(GraphicsApi)
 class DualParaboloidShadowMapStrategy(
+    private val graphicsApi: GraphicsApi,
     private val pointLightSystem: PointLightSystem,
     programManager: ProgramManager,
     val config: Config
@@ -152,9 +153,10 @@ class DualParaboloidShadowMapStrategy(
     var pointLightDepthMapsArrayBack: Int = 0
 
     private val textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
-    private val renderTarget = RenderTarget(
+    private val renderTarget = graphicsApi.RenderTarget(
         frameBuffer = OpenGLFrameBuffer(
-            DepthBuffer(
+            graphicsApi,
+            graphicsApi.DepthBuffer(
                 AREALIGHT_SHADOWMAP_RESOLUTION,
                 AREALIGHT_SHADOWMAP_RESOLUTION
             )
@@ -163,6 +165,7 @@ class DualParaboloidShadowMapStrategy(
         height = AREALIGHT_SHADOWMAP_RESOLUTION,
         textures = listOf(
             OpenGLTexture2D(
+                graphicsApi,
                 info = Texture2DUploadInfo(
                     TextureDimension(
                         AREALIGHT_SHADOWMAP_RESOLUTION,
@@ -188,13 +191,13 @@ class DualParaboloidShadowMapStrategy(
             RGBA16F,
             textureFilterConfig = textureFilterConfig
         )
-        pointLightDepthMapsArrayFront = allocateTexture(
+        pointLightDepthMapsArrayFront = graphicsApi.allocateTexture(
             texture3DUploadInfo,
             TEXTURE_2D_ARRAY,
             ClampToEdge
         ).textureId
 
-        pointLightDepthMapsArrayBack = allocateTexture(
+        pointLightDepthMapsArrayBack = graphicsApi.allocateTexture(
             texture3DUploadInfo,
             TEXTURE_2D_ARRAY,
             ClampToEdge
@@ -202,8 +205,8 @@ class DualParaboloidShadowMapStrategy(
     }
 
     override fun bindTextures() {
-        bindTexture(6, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
-        bindTexture(7, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
+        graphicsApi.bindTexture(6, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
+        graphicsApi.bindTexture(7, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
     }
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
