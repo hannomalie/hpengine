@@ -1,17 +1,14 @@
 package de.hanno.hpengine.graphics.renderer.deferred
 
 import com.artemis.World
-import de.hanno.hpengine.artemis.model.EntitiesStateHolder
-import de.hanno.hpengine.artemis.EnvironmentProbesStateHolder
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.DepthFunc
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.constants.RenderingMode
-import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.extensions.CombinePassRenderExtension
-import de.hanno.hpengine.graphics.renderer.extensions.PostProcessingExtension
+import de.hanno.hpengine.graphics.renderer.deferred.extensions.CombinePassRenderExtension
+import de.hanno.hpengine.graphics.renderer.deferred.extensions.PostProcessingExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
@@ -19,6 +16,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.Facing
+import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
 import de.hanno.hpengine.graphics.feature.BindlessTextures
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.state.RenderStateContext

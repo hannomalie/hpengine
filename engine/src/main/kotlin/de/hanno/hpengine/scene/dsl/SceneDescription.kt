@@ -35,5 +35,4 @@ data class AnimatedModelComponentDescription(
 ): ModelComponentDescription()
 enum class Directory { Game, Engine }
 
-data class CustomComponentDescription(val update: (Float) -> Unit): ComponentDescription
 class OceanWaterDescription: ComponentDescription

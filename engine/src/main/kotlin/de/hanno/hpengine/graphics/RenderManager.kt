@@ -16,7 +16,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.koin.core.annotation.Single
 import java.util.concurrent.atomic.AtomicBoolean
 
-@Single
+@Single(binds = [BaseSystem::class, RenderManager::class])
 class RenderManager(
     private val graphicsApi: GraphicsApi,
     private val config: Config,

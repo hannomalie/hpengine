@@ -10,6 +10,7 @@ import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
 import de.hanno.hpengine.graphics.renderer.forward.simpleForwardRendererModule
 import de.hanno.hpengine.loadScene
+import de.hanno.hpengine.opengl.openglModule
 import org.koin.dsl.module
 import java.io.File
 
@@ -26,6 +27,7 @@ fun main() {
 
     val engine = Engine(
         listOf(
+            openglModule,
             deferredRendererModule,
 //            simpleForwardRendererModule,
             editorModule,

@@ -5,7 +5,6 @@ import com.artemis.*
 import com.artemis.annotations.All
 import com.artemis.annotations.Wire
 import de.hanno.hpengine.WorldPopulator
-import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
@@ -18,7 +17,6 @@ import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.buffer.typed
-import de.hanno.hpengine.graphics.state.DirectionalLightState
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -26,9 +24,9 @@ import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 import struktgen.api.forIndex
-import struktgen.api.get
 
 
+@Single(binds = [BaseSystem::class, DirectionalLightSystem::class])
 @All(DirectionalLightComponent::class, TransformComponent::class)
 class DirectionalLightSystem(
     private val directionalLightStateHolder: DirectionalLightStateHolder,

@@ -9,6 +9,6 @@ class CommandOrganization(graphicsApi: GraphicsApi) {
     var filteredRenderBatches: List<RenderBatch> = emptyList()
     val commandBuffer = CommandBuffer(graphicsApi, 10000)
 
-    val entityOffsetBuffer = OpenGLIndexBuffer(graphicsApi, 10000)
+    val entityOffsetBuffer = IndexBuffer(graphicsApi, 10000)
     val drawCountBuffer = graphicsApi.AtomicCounterBuffer()
 }

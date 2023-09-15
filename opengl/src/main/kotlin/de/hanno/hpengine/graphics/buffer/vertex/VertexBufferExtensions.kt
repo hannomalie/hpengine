@@ -6,12 +6,11 @@ import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
-import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.glValue
-import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.scene.IVertexIndexBuffer
-import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import org.lwjgl.opengl.ARBIndirectParameters.glMultiDrawElementsIndirectCountARB
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL42

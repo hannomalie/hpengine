@@ -2,18 +2,18 @@ package de.hanno.hpengine.graphics.editor
 
 import com.artemis.Component
 import de.hanno.hpengine.component.CameraComponent
-import de.hanno.hpengine.artemis.GiVolumeComponent
-import de.hanno.hpengine.artemis.OceanWaterComponent
+import de.hanno.hpengine.graphics.light.gi.GiVolumeComponent
 import de.hanno.hpengine.component.TransformComponent
-import de.hanno.hpengine.graphics.renderer.extensions.ReflectionProbe
+import de.hanno.hpengine.graphics.renderer.deferred.ReflectionProbe
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.model.Mesh
 import de.hanno.hpengine.model.Model
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.ocean.OceanWaterComponent
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.artemis.model.ModelComponent as ModelComponentArtemis
+import de.hanno.hpengine.model.ModelComponent as ModelComponentArtemis
 
 sealed class Selection {
     object None: Selection()

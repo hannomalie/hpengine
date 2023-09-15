@@ -5,17 +5,13 @@ import AreaLightStruktImpl.Companion.type
 import EntityStruktImpl.Companion.type
 import InternalTextureFormat.RGBA32F
 import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
 
-import de.hanno.hpengine.artemis.AreaLightComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.EntityStrukt
-import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.shader.Mat4
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -25,16 +21,16 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.buffers.safePut
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.artemis.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.enlarge
+import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.rendertarget.*
-import de.hanno.hpengine.graphics.state.PointLightStateHolder
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
@@ -49,6 +45,7 @@ import kotlin.math.min
 
 // TODO: Implement autoadd for transform
 @All(AreaLightComponent::class, TransformComponent::class)
+@Single(binds = [BaseSystem::class, AreaLightSystem::class])
 class AreaLightSystem(
     private val graphicsApi: GraphicsApi,
     programManager: ProgramManager,

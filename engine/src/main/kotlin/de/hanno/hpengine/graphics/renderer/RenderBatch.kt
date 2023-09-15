@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer
 
-import de.hanno.hpengine.graphics.renderer.pipelines.DrawElementsIndirectCommand
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.model.Update

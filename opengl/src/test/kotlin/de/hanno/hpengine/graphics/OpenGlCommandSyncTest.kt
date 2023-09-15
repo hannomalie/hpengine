@@ -10,10 +10,10 @@ class OpenGlCommandSyncTest {
         val openGLContext = createOpenGLContext()
         val signaled = AtomicBoolean(false)
 
-        val commandSync = openGLContext.CommandSync { signaled.getAndSet(true) }
+        val commandSync = openGLContext.second.CommandSync { signaled.getAndSet(true) }
 
         commandSync.isSignaled shouldBe false
-        openGLContext.checkCommandSyncs()
+        openGLContext.second.checkCommandSyncs()
         commandSync.isSignaled shouldBe true
     }
 }

@@ -1,12 +1,12 @@
 package scenes
 
 import de.hanno.hpengine.Engine
-import de.hanno.hpengine.artemis.KotlinComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
+import de.hanno.hpengine.kotlin.KotlinComponent
 import de.hanno.hpengine.loadScene
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import java.io.File

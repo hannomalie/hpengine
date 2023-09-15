@@ -10,7 +10,7 @@ import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBufferImpl
 import de.hanno.hpengine.graphics.constants.BufferTarget
-import org.lwjgl.opengl.*
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import struktgen.api.*
 import java.nio.ByteBuffer
 
@@ -55,7 +55,7 @@ interface IntStrukt : Strukt {
     companion object
 }
 
-fun OpenGLIndexBuffer(graphicsApi: GraphicsApi, size: Int = 1000) = graphicsApi.PersistentMappedBuffer(
+fun IndexBuffer(graphicsApi: GraphicsApi, size: Int = 1000) = graphicsApi.PersistentMappedBuffer(
     BufferTarget.ElementArray, size * IntStrukt.sizeInBytes
 ).typed(IntStrukt.type)
 

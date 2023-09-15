@@ -3,10 +3,11 @@ package de.hanno.hpengine.model.material
 import MaterialStruktImpl.Companion.sizeInBytes
 import MaterialStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
-import de.hanno.hpengine.artemis.model.EntitiesStateHolder
-import de.hanno.hpengine.artemis.model.MaterialComponent
+import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.MaterialComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.material.Material.MAP
@@ -18,15 +19,17 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
 import java.nio.ByteBuffer
-import de.hanno.hpengine.artemis.model.ModelComponent
+import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.UploadState
+import org.koin.core.annotation.Single
 import struktgen.api.forEachIndexed
 
 @One(
     ModelComponent::class,
     MaterialComponent::class,
 )
+@Single(binds=[BaseSystem::class, MaterialManager::class])
 class MaterialManager(
     private val config: Config,
     private val textureManager: OpenGLTextureManager,

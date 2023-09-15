@@ -3,10 +3,8 @@ package de.hanno.hpengine.graphics.renderer.environmentsampler
 
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.component.CameraComponent
-import de.hanno.hpengine.artemis.EnvironmentProbeComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
@@ -14,7 +12,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
-import de.hanno.hpengine.artemis.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.constants.RenderingMode
@@ -23,6 +21,7 @@ import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer.invoke
+import de.hanno.hpengine.graphics.envprobe.EnvironmentProbeComponent
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
@@ -138,24 +137,26 @@ class EnvironmentSampler(
         viewProjectionMatrixAsBuffer: FloatBuffer
     ) {
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
-        graphicsApi.run { program.use() }
-        bindShaderSpecificsPerCubeMapSide(
-            renderState,
-            viewMatrixAsBuffer,
-            projectionMatrixAsBuffer,
-            viewProjectionMatrixAsBuffer,
-            program
-        )
-        for (e in entitiesState.renderBatchesStatic) {
-            if (!isInFrustum(camera.frustum, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
-//				continue;
-            }
-            entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
-                e.drawElementsIndirectCommand,
-                true,
-                PrimitiveType.Triangles,
-                RenderingMode.Fill
+        graphicsApi.run {
+            program.use()
+            bindShaderSpecificsPerCubeMapSide(
+                renderState,
+                viewMatrixAsBuffer,
+                projectionMatrixAsBuffer,
+                viewProjectionMatrixAsBuffer,
+                program
             )
+            for (e in entitiesState.renderBatchesStatic) {
+                if (!isInFrustum(camera.frustum, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
+//				continue;
+                }
+                entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
+                    e.drawElementsIndirectCommand,
+                    true,
+                    PrimitiveType.Triangles,
+                    RenderingMode.Fill
+                )
+            }
         }
     }
 

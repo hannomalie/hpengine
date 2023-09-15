@@ -2,12 +2,10 @@ package de.hanno.hpengine.graphics
 
 import InternalTextureFormat
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
-import de.hanno.hpengine.graphics.buffer.GpuBuffer
-import de.hanno.hpengine.graphics.buffer.OpenGLGpuBuffer
-import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.buffer.*
 import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.VertexBufferImpl
+import de.hanno.hpengine.graphics.buffer.vertex.drawInstancedBaseVertex
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.feature.*
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
@@ -19,6 +17,7 @@ import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.*
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import glValue
@@ -627,6 +626,8 @@ class OpenGLContext private constructor(
         capacityInBytes
     )
 
+    override fun IndexBuffer(graphicsApi: GraphicsApi, intBuffer: IntBuffer) = OpenGLIndexBuffer(graphicsApi, intBuffer)
+
     private fun texParameters(glTarget: Int, wrapMode: WrapMode, filterConfig: TextureFilterConfig) {
         glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, wrapMode.glValue)
         glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, wrapMode.glValue)
@@ -1158,6 +1159,13 @@ class OpenGLContext private constructor(
             )
         )
     }
+
+    override fun IndexBuffer.draw(
+        drawElementsIndirectCommand: DrawElementsIndirectCommand,
+        bindIndexBuffer: Boolean,
+        primitiveType: PrimitiveType,
+        mode: RenderingMode
+    ): TriangleCount = drawInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
 
     companion object {
         private var counter = 0

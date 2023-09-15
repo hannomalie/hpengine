@@ -8,8 +8,8 @@ import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.artemis.*
-import de.hanno.hpengine.artemis.model.ModelComponent
-import de.hanno.hpengine.artemis.model.ModelSystem
+import de.hanno.hpengine.model.ModelComponent
+import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.config.Config

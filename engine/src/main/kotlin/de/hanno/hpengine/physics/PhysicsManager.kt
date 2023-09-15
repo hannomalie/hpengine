@@ -3,6 +3,7 @@ package de.hanno.hpengine.physics
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
 import com.artemis.annotations.All
 import com.bulletphysics.collision.broadphase.DbvtBroadphase
 import com.bulletphysics.collision.dispatch.CollisionDispatcher
@@ -20,11 +21,9 @@ import com.bulletphysics.linearmath.DebugDrawModes
 import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
-import de.hanno.hpengine.artemis.PhysicsComponent
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.renderer.addLine
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.buffer.typed
@@ -34,8 +33,10 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.math.Vector4fStrukt
+import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3fc
+import org.koin.core.annotation.Single
 import java.util.function.Supplier
 import java.util.logging.Logger
 import javax.vecmath.Matrix4f
@@ -43,13 +44,14 @@ import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
 
 @All(PhysicsComponent::class)
+@Single(binds=[BaseSystem::class, RenderSystem::class, PhysicsManager::class])
 class PhysicsManager(
     private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val programManager: ProgramManager,
-    gravity: Vector3f = Vector3f(0f, -20f, 0f),
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : BaseEntitySystem(), RenderSystem {
+    val gravity: Vector3f = Vector3f(0f, -20f, 0f)
     private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms(graphicsApi)

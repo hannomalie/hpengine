@@ -4,7 +4,7 @@ import com.artemis.Component
 import com.artemis.World
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.artemis.*
-import de.hanno.hpengine.artemis.model.ModelSystem
+import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
@@ -14,6 +14,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.visibility.InvisibleComponentSystem
 import imgui.ImGui
 import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiInputTextFlags
@@ -39,7 +40,8 @@ fun ImGuiEditor.rightPanel(
                     null -> tab("Entity") { }
                     is EntitySelection -> {
                         val entity = selection.entity
-                        val invisibleComponentSystem = artemisWorld.getSystem(InvisibleComponentSystem::class.java)
+                        val invisibleComponentSystem = artemisWorld.
+                        getSystem(InvisibleComponentSystem::class.java)
                         val components = selection.components
 
                         when(val entitySelection: EntitySelection = selection) {

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.forward
 
-import de.hanno.hpengine.artemis.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem

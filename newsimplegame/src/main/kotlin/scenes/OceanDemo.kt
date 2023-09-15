@@ -3,8 +3,8 @@ package scenes
 import com.artemis.World
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.artemis.*
-import de.hanno.hpengine.artemis.model.MaterialComponent
-import de.hanno.hpengine.artemis.model.ModelComponent
+import de.hanno.hpengine.model.MaterialComponent
+import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
@@ -14,8 +14,11 @@ import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.loadScene
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.ocean.OceanSurfaceComponent
+import de.hanno.hpengine.ocean.OceanWaterComponent
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
+import de.hanno.hpengine.spatial.SpatialComponent
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc

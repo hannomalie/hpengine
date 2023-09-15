@@ -4,12 +4,20 @@ import io.github.classgraph.ClassGraph
 import io.github.classgraph.Resource
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.createDirectory
+import kotlin.io.path.exists
 
 abstract class AbstractDirectory(val baseDir: File, sourceLocationIsJarFile: Boolean) {
     val usesFileSystem = baseDir.exists() && !sourceLocationIsJarFile
 
+    private val path = Path.of(System.getProperty("java.io.tmpdir"))
+        .resolve("hpengine")
+        .apply { if(!exists()) createDirectory() }
     val tempDir by lazy {
-        Files.createTempDirectory(null).toFile()
+        Files.createTempDirectory(path, null).toFile().apply {
+            deleteOnExit()
+        }
     }
     init {
         if(usesFileSystem) {

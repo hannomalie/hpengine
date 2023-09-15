@@ -5,7 +5,7 @@ import EntityStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
 import InternalTextureFormat.*
-import de.hanno.hpengine.artemis.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 
 import de.hanno.hpengine.camera.Camera
@@ -19,7 +19,6 @@ import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.IndirectCulledDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.constants.*
-import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.shader.Program
@@ -30,10 +29,11 @@ import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
 import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.buffer.vertex.drawElementsIndirectCount
+import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.joml.Vector4f
@@ -491,15 +491,15 @@ class CommandOrganizationGpuCulled(graphicsApi: GraphicsApi) {
     var filteredRenderBatches: List<RenderBatch> = emptyList()
     val commands = CommandBuffer(graphicsApi, 10000)
     val commandsCompacted = CommandBuffer(graphicsApi, 10000)
-    val offsetsForCommand = OpenGLIndexBuffer(graphicsApi)
+    val offsetsForCommand = IndexBuffer(graphicsApi)
 
     val drawCountsCompacted = graphicsApi.AtomicCounterBuffer()
-    val visibilities = OpenGLIndexBuffer(graphicsApi)
-    val commandOffsets = OpenGLIndexBuffer(graphicsApi)
-    val currentCompactedPointers = OpenGLIndexBuffer(graphicsApi)
-    val offsetsCompacted = OpenGLIndexBuffer(graphicsApi)
+    val visibilities = IndexBuffer(graphicsApi)
+    val commandOffsets = IndexBuffer(graphicsApi)
+    val currentCompactedPointers = IndexBuffer(graphicsApi)
+    val offsetsCompacted = IndexBuffer(graphicsApi)
     val entitiesCompacted = graphicsApi.PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
     val entitiesCompactedCounter = graphicsApi.AtomicCounterBuffer()
-    val instanceCountForCommand = OpenGLIndexBuffer(graphicsApi)
+    val instanceCountForCommand = IndexBuffer(graphicsApi)
 }
 

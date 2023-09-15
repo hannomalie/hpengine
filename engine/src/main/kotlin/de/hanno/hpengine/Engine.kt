@@ -5,43 +5,29 @@ import com.artemis.link.EntityLinkManager
 import com.artemis.managers.TagManager
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
-import de.hanno.hpengine.artemis.*
-import de.hanno.hpengine.artemis.model.ModelComponent
-import de.hanno.hpengine.artemis.model.ModelSystem
-import de.hanno.hpengine.component.CameraSystem
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
-import de.hanno.hpengine.cycle.CycleSystem
-import de.hanno.hpengine.extension.*
-import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderManager
+import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
-import de.hanno.hpengine.graphics.light.area.AreaLightSystem
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightSystem
-import de.hanno.hpengine.graphics.light.point.PointLightSystem
-import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
-import de.hanno.hpengine.graphics.renderer.extensions.ReflectionProbeManager
-import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
-import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.input.Input
-import de.hanno.hpengine.model.EntityBuffer
-import de.hanno.hpengine.model.material.MaterialManager
-import de.hanno.hpengine.physics.PhysicsManager
+import de.hanno.hpengine.model.ModelComponent
+import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.scene.AddResourceContext
-import de.hanno.hpengine.scene.WorldAABB
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.graphics.profiling.GPUProfiler
-import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
+import de.hanno.hpengine.spatial.SpatialComponent
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABBData
+import glfwModule
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import net.mostlyoriginal.api.SingletonPlugin
@@ -64,69 +50,23 @@ class Engine(
 ) // TODO: Change callsites to use new method simulate to block
 {
     val application = startKoin {
-        modules(apiModule, defaultModule, engineModule, openglModule)
+        modules(apiModule, glfwModule, defaultModule)
         modules(modules)
     }
     private val koin = application.koin
-    private val graphicsApi: GraphicsApi = koin.get()
-    private val profiler: GPUProfiler = koin.get()
     private val renderStateContext = koin.get<RenderStateContext>()
     private val config = koin.get<Config>()
     private val addResourceContext = koin.get<AddResourceContext>()
     private val window = koin.get<Window>()
     private val input = koin.get<Input>()
-    private val renderManager = koin.get<RenderManager>()
 
-    private val openGlProgramManager: OpenGlProgramManager = koin.get()
-    private val textureManager: TextureManagerBaseSystem = koin.get()
-    val modelSystem =ModelSystem(
-        graphicsApi,
-        config,
-        koin.get(),
-        MaterialManager(config, koin.get(), koin.get(), koin.get()),
-        koin.get(),
-        EntityBuffer(),
-        koin.get(),
-        koin.get(),
-    )
     val entityLinkManager = EntityLinkManager()
-    val directionalLightSystem = graphicsApi.run {
-        renderStateContext.run {
-            DirectionalLightSystem(koin.get())
-        }
-    }
     val systems = listOf(
         entityLinkManager,
-        WorldAABB(koin.get()),
-        renderManager,
-        modelSystem,
-        SkyBoxSystem(),
-        CycleSystem(koin.get()),
-        directionalLightSystem,
-        PointLightSystem(graphicsApi, renderStateContext, config, koin.get(), koin.get(), koin.get()).apply {
-            renderManager.renderSystems.add(this)
-        },
-        AreaLightSystem(
-            graphicsApi, koin.get(), config, koin.get(), koin.get(), koin.get(), koin.get()
-        ).apply {
-            renderManager.renderSystems.add(this)
-        },
-        MaterialManager(config, koin.get(), koin.get(), koin.get()),
-        openGlProgramManager,
-        textureManager,
         TagManager(),
-        CustomComponentSystem(),
-        SpatialComponentSystem(),
-        InvisibleComponentSystem(),
-        GiVolumeSystem(koin.get()),
-        PhysicsManager(koin.get(), config, koin.get(), primaryCameraStateHolder = koin.get()),
-        ReflectionProbeManager(config),
-        koin.get<KotlinComponentSystem>(),
-        CameraSystem(),
     ) + koin.getAll<BaseSystem>()
 
-    val extractors = systems.filterIsInstance<Extractor>()
-    val worldPopulators = systems.filterIsInstance<WorldPopulator>()
+    val extractors = systems.filterIsInstance<Extractor>() // TODO: bind as Extractor, inject properly, this is flawed
 
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
         *(systems.distinct().toTypedArray())
@@ -148,7 +88,7 @@ class Engine(
         // TODO: Remove and make ExtensibleDeferredRenderer initialized as a normal BaseSystem
         koin.getAll<ExtensibleDeferredRenderer>().forEach { it.world = this }
         getSystem(EntityLinkManager::class.java).apply {
-            register(InstanceComponent::class.java, modelSystem)
+//            register(InstanceComponent::class.java, modelSystem) // TODO: Figure out what this did
         }
         process()
     }
@@ -202,7 +142,7 @@ class Engine(
 
         extractors.forEach { it.extract(currentWriteState) }
 
-        renderManager.finishCycle(deltaSeconds)
+        koin.get<RenderManager>().finishCycle(deltaSeconds)
 
         return updateCycle.getAndIncrement()
     }
@@ -222,6 +162,7 @@ class Engine(
             )
 
             val engine = Engine(modules = listOf(
+                openglModule,
                 module {
                     single { config }
                     single { config.gameDir }

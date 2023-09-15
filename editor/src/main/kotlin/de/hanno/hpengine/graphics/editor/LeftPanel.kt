@@ -4,9 +4,9 @@ import com.artemis.Aspect
 import com.artemis.ComponentManager
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.artemis.*
-import de.hanno.hpengine.artemis.model.MaterialComponent
-import de.hanno.hpengine.artemis.model.ModelComponent
-import de.hanno.hpengine.artemis.model.ModelSystem
+import de.hanno.hpengine.model.MaterialComponent
+import de.hanno.hpengine.model.ModelComponent
+import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.artemis.forEach
 import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.component.NameComponent
@@ -15,6 +15,7 @@ import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.ocean.OceanWaterComponent
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance

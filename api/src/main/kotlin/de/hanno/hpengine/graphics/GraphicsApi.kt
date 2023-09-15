@@ -7,6 +7,7 @@ import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import de.hanno.hpengine.graphics.feature.GpuFeature
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.rendertarget.*
@@ -15,6 +16,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import de.hanno.hpengine.graphics.texture.*
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.CodeSource
 import org.joml.Vector4f
 import java.nio.ByteBuffer
@@ -350,7 +352,17 @@ interface GraphicsApi {
     val pixelBufferObjectPool: PixelBufferObjectPool
 
     fun GpuBuffer(bufferTarget: BufferTarget, capacityInBytes: Int): GpuBuffer
+    fun IndexBuffer(graphicsApi: GraphicsApi, intBuffer: IntBuffer): IndexBuffer
+
+    fun IndexBuffer.draw(
+        drawElementsIndirectCommand: DrawElementsIndirectCommand,
+        bindIndexBuffer: Boolean,
+        primitiveType: PrimitiveType,
+        mode: RenderingMode
+    ): TriangleCount
 }
+
+typealias TriangleCount = Int
 
 enum class Access {
     ReadOnly,

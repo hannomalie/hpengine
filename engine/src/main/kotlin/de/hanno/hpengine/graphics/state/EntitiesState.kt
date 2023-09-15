@@ -14,7 +14,7 @@ import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
-import de.hanno.hpengine.scene.BatchKey
+import de.hanno.hpengine.model.BatchKey
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.scene.VertexStruktPacked
 import java.util.HashMap

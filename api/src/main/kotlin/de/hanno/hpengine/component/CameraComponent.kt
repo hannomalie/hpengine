@@ -9,6 +9,7 @@ import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.math.createOrthogonal
 import de.hanno.hpengine.math.createPerspective
 import org.joml.Matrix4f
+import org.koin.core.annotation.Single
 
 class CameraComponent: Component() {
     var near: Float = 0.1f
@@ -78,6 +79,7 @@ class CameraComponent: Component() {
     }
 }
 
+@Single(binds=[BaseSystem::class, CameraSystem::class])
 class CameraSystem: BaseSystem(), WorldPopulator {
     override fun processSystem() { }
     override fun World.populate() {

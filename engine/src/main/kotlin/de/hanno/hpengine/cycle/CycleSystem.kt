@@ -1,12 +1,15 @@
 package de.hanno.hpengine.cycle
 
 import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
 import com.artemis.annotations.All
-import de.hanno.hpengine.artemis.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor
+import org.koin.core.annotation.Single
 
 @All
+@Single(binds=[BaseSystem::class, CycleSystem::class])
 class CycleSystem(
     private val entitiesStateHolder: EntitiesStateHolder,
 ): BaseEntitySystem(), Extractor {
