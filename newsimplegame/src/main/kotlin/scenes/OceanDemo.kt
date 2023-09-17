@@ -2,7 +2,6 @@ package scenes
 
 import com.artemis.World
 import de.hanno.hpengine.Engine
-import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.model.MaterialComponent
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.NameComponent
@@ -11,17 +10,24 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
+import de.hanno.hpengine.graphics.editor.editorModule
+import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
 import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.loadScene
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ocean.OceanSurfaceComponent
-import de.hanno.hpengine.ocean.OceanWaterComponent
+import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.spatial.SpatialComponent
+import de.hanno.hpengine.world.addStaticModelEntity
+import de.hanno.hpengine.world.loadScene
+import glfwModule
+import invoke
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
+import org.koin.dsl.module
 import java.io.File
 
 fun main() {
@@ -35,29 +41,24 @@ fun main() {
         ),
     )
 
-    Engine {
-        world.loadScene {
-            edit(create()).apply {
-                create(OceanWaterComponent::class.java).apply {
-                    windspeed = 130f
-                    waveHeight = 1.2f
-                    timeFactor = 8f
-                }
-                create(NameComponent::class.java).apply {
-                    name = "Ocean"
-                }
+    val engine = Engine(
+        listOf(
+            glfwModule,
+            openglModule,
+            deferredRendererModule,
+//            simpleForwardRendererModule,
+            editorModule,
+            module {
+                single { config }
+                single { config.gameDir }
+                single { config.engineDir }
             }
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f())
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, 2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(-2f, 0f, 0f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, 2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(2f, 0f, 0f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(0f, 0f, -2f))
-            addOceanSurface(application.koin.get<ProgramManager>(), Vector3f(0f, 0f, 2f))
-        }
+        )
+    )
+    engine.world.loadScene {
+        addOceanSurface(engine.systems.firstIsInstance<ProgramManager>(), Vector3f())
     }
+    engine.simulate()
 }
 
 private var oceanSurfaceCounter = 0

@@ -3,6 +3,7 @@ package de.hanno.hpengine.scene
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -17,6 +18,13 @@ class AddResourceContext {
     fun launch(block: () -> Unit) {
         GlobalScope.launch {
             channel.send(block)
+        }
+    }
+
+    suspend fun executeCommands() {
+        while (!channel.isEmpty) {
+            val command = channel.receiveOrNull() ?: break
+            command.invoke()
         }
     }
 }

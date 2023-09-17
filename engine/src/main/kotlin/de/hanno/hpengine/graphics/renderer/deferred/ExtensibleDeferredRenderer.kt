@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.deferred
 
+import com.artemis.BaseSystem
 import com.artemis.World
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
@@ -41,8 +42,7 @@ class ExtensibleDeferredRenderer(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
-): RenderSystem {
-    lateinit var world: World
+): RenderSystem, BaseSystem() {
 
     private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
     private val extensions: List<DeferredRenderExtension>
@@ -117,7 +117,7 @@ class ExtensibleDeferredRenderer(
     }
 
     override fun extract(renderState: RenderState) {
-        if(!::world.isInitialized) return
+        if(world == null) return
         extensions.forEach { it.extract(renderState, world) }
     }
 
@@ -210,6 +210,8 @@ class ExtensibleDeferredRenderer(
             it.printStackTrace()
         }
     }
+
+    override fun processSystem() { }
 }
 
 @Single

@@ -49,8 +49,8 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
 
     api(project(":api"))
+    api(project(":glfw")) // TODO: Can I remove this somehow?
     implementation(project(":opengl"))
-    implementation(project(":glfw")) // TODO: Can I remove this somehow? currently doesn't expose a koin module
 
     api("javax.inject:javax.inject:1")
 

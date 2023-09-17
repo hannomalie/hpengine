@@ -12,7 +12,9 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
+import de.hanno.hpengine.lifecycle.UpdateCycle
 import de.hanno.hpengine.ressources.FileBasedCodeSource
+import de.hanno.hpengine.system.Extractor
 import org.koin.core.annotation.Single
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -30,6 +32,7 @@ class RenderManager(
     private val renderSystemsConfig: RenderSystemsConfig,
     _renderSystems: List<RenderSystem>,
     private val gpuProfiler: GPUProfiler,
+    private val updateCycle: UpdateCycle,
 ) : BaseSystem() {
 
     private val debugBuffer = QuadVertexBuffer(graphicsApi, QuadVertexBuffer.quarterScreenVertices)
@@ -162,6 +165,17 @@ class RenderManager(
         }
     }
 
+    fun extract(extractors: List<Extractor>, deltaSeconds: Float) {
+        val currentWriteState = renderStateContext.renderState.currentWriteState
+        currentWriteState.cycle = updateCycle.cycle.get()
+        currentWriteState.time = System.currentTimeMillis()
+
+        renderSystems.distinct().forEach { it.extract(currentWriteState) }
+
+        extractors.forEach { it.extract(currentWriteState) }
+
+        finishCycle(deltaSeconds)
+    }
 }
 
 @Single

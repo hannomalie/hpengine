@@ -1,17 +1,21 @@
 package scenes
 
-import de.hanno.hpengine.Engine
-import de.hanno.hpengine.addAnimatedModelEntity
-import de.hanno.hpengine.addStaticModelEntity
+import de.hanno.hpengine.Engine.Companion
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
-import de.hanno.hpengine.loadScene
+import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.transform.AABBData
+import de.hanno.hpengine.world.addAnimatedModelEntity
+import de.hanno.hpengine.world.addStaticModelEntity
+import de.hanno.hpengine.world.loadScene
+import glfwModule
+import invoke
 import org.joml.Vector3f
+import org.koin.dsl.module
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
@@ -26,11 +30,17 @@ fun main() {
         ),
     )
 
-    val engine = Engine(
+    val engine = Companion(
         listOf(
+            glfwModule,
+            openglModule,
             deferredRendererModule,
-    //        simpleForwardRendererModule,
             editorModule,
+            module {
+                single { config }
+                single { config.gameDir }
+                single { config.engineDir }
+            }
         )
     )
     CompletableFuture.supplyAsync {

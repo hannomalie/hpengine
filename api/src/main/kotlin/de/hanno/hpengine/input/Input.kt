@@ -1,5 +1,6 @@
 package de.hanno.hpengine.input
 
+import com.artemis.BaseSystem
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.window.Window
@@ -11,7 +12,7 @@ import org.lwjgl.glfw.GLFW.*
 @Single
 class Input(
     private val window: Window
-) {
+): BaseSystem() {
     private val keysPressed = IntArrayList()
     private val keysPressedLastFrame = IntArrayList()
     private val keysReleased = IntArrayList()
@@ -121,4 +122,5 @@ class Input(
     fun getMouseY() = height[0] - mouseY[0].toInt()
     fun getMouseXY() = Vector2i(getMouseX(), getMouseY())
 
+    override fun processSystem() { }
 }

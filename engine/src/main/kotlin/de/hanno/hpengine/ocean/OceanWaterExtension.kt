@@ -195,7 +195,7 @@ class OceanWaterRenderSystem(
 
     private var seconds = 0.0f
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
-        val components = listOf<OceanWaterComponent>()
+        val components = listOf<OceanWaterComponent>() // TODO: Make this possible again
         if(components.isEmpty()) return
         val oceanWaterComponent = components.first()
         if(oceanWaterComponent.windspeed == 0f) { return }

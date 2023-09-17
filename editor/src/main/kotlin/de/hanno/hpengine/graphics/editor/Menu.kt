@@ -1,7 +1,7 @@
 package de.hanno.hpengine.graphics.editor
 
-import de.hanno.hpengine.clear
-import de.hanno.hpengine.loadDemoScene
+import de.hanno.hpengine.world.clear
+import de.hanno.hpengine.world.loadDemoScene
 import imgui.ImGui
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
