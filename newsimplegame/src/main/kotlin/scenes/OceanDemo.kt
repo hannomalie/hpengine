@@ -15,6 +15,7 @@ import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ocean.OceanSurfaceComponent
+import de.hanno.hpengine.ocean.OceanWaterComponent
 import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
@@ -34,10 +35,8 @@ fun main() {
 
     val config = Config(
         directories = Directories(
-//                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
-            EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
-//                    GameDirectory(File(Directories.GAMEDIR_NAME), null)
-            GameDirectory(File("C:\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game"), null)
+            EngineDirectory(File("""D:\workspace\hpengine\engine\src\main\resources\hp""")),
+            GameDirectory(File("""D:\workspace\hpengine\newsimplegame\src\main\resources\game"""), null)
         ),
     )
 
@@ -91,6 +90,7 @@ private fun World.addOceanSurface(programManager: ProgramManager, translation: V
                 uvScale = Vector2f(0.05f)
             )
         }
+        add(OceanWaterComponent())
         create(SpatialComponent::class.java)
         create(OceanSurfaceComponent::class.java)
         create(NameComponent::class.java).apply {

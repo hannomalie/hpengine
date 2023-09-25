@@ -7,7 +7,6 @@ import com.artemis.ComponentManager
 import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
-import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.component.TransformComponent
@@ -29,9 +28,9 @@ import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.output.DebugOutput
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.texture.Texture2D
-import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtensionConfig
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
@@ -83,14 +82,15 @@ class ImGuiEditor(
     internal val debugOutput: DebugOutput,
     internal val config: Config,
     internal val sharedDepthBuffer: SharedDepthBuffer,
-    // TODO: This needs a reference to deferred renderer, which is not good
-//    internal val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
     internal val addResourceContext: AddResourceContext,
     internal val fpsCounter: FPSCounter,
     internal val editorExtensions: List<ImGuiEditorExtension>,
     internal val entityClickListener: EntityClickListener,
     internal val primaryCameraStateHolder: PrimaryCameraStateHolder,
     internal val gpuProfiler: GPUProfiler,
+    internal val deferredRenderExtensionConfig: DeferredRenderExtensionConfig?,
+    internal val renderSystemsConfig: Lazy<RenderSystemsConfig>,
+    internal val renderManager: Lazy<RenderManager>,
 ) : BaseSystem(), RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val formerFinalOutput = finalOutput.texture2D
@@ -238,7 +238,21 @@ class ImGuiEditor(
                 leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
             }
 
-            rightPanel(graphicsApi, renderStateContext, screenWidth, rightPanelWidth, screenHeight, editorConfig)
+            graphicsApi.run {
+                profiled("rightPanel") {
+                    rightPanel(
+                        graphicsApi,
+                        renderStateContext,
+                        screenWidth,
+                        rightPanelWidth,
+                        screenHeight,
+                        editorConfig,
+                        deferredRenderExtensionConfig,
+                        renderSystemsConfig.value,
+                        renderManager.value,
+                    )
+                }
+            }
 
             editorExtensions.forEach {
                 try {

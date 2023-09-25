@@ -14,8 +14,7 @@ class OceanWaterComponent: Component() {
     var waveHeight = 1f
     var choppiness = 1f
 
-    val L: Int
-        get() = (windspeed.pow(2.0f) /9.81f).toInt()
+    val L: Int get() = (windspeed.pow(2.0f) /9.81f).toInt()
 
     var choppy: Boolean
         get() = choppiness != 0f

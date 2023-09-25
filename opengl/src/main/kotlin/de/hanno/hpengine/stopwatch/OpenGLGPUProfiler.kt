@@ -127,9 +127,12 @@ class OpenGLGPUProfiler(private val profilingEnabled: KMutableProperty0<Boolean>
         return builder
     }
 
-    override fun dump(task: ProfilingTask?) {
-        currentTimings = task?.dumpTimings() ?: ""
+    override fun dump(task: ProfilingTask?) = if(task != null) {
+        currentTimings = task.dumpTimings()
         currentAverages = dumpAverages()
+    } else {
+        currentTimings = ""
+        currentAverages = ""
     }
 
 }

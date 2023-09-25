@@ -276,7 +276,6 @@ interface GraphicsApi {
     fun CodeSource.toResultingShaderSource(defines: Defines): String
     fun Shader.reload()
     fun Shader.unload()
-    fun Program<*>.reloadProgram()
     fun Program<*>.load()
     fun Program<*>.unload()
     fun Program<*>.reload()

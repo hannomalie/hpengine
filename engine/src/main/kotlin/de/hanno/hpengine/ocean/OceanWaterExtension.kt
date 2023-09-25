@@ -3,7 +3,6 @@ package de.hanno.hpengine.ocean
 import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
 import InternalTextureFormat.RGBA32F
-import de.hanno.hpengine.model.MaterialComponent
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
@@ -40,6 +39,7 @@ class OceanWaterRenderSystem(
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val oceanWaterSystem: OceanWaterSystem,
 ) : RenderSystem {
     private val N = 512
 
@@ -177,11 +177,14 @@ class OceanWaterRenderSystem(
     }
     override fun extract(renderState: RenderState) {
         // TODO: Implement extraction here
-        val oceanWaterEntities = listOf<Triple<OceanWaterComponent, MaterialComponent, OceanSurfaceComponent>>()
-        if(oceanWaterEntities.isNotEmpty()) {
-            val components = oceanWaterEntities.first()
-            val materialComponent = components.second
-            val oceanSurfaceComponent = components.third
+        val oceanWaterState = renderState[oceanWaterSystem.state]
+        val oceanWaterComponents = oceanWaterState.oceanWaterComponents
+        val materialComponents = oceanWaterState.materialComponents
+        val oceanSurfaceComponents = oceanWaterState.oceanSurfaceComponent
+        if(oceanWaterComponents.isNotEmpty()) {
+            val components = oceanWaterComponents.first()
+            val materialComponent = materialComponents.first()
+            val oceanSurfaceComponent = oceanSurfaceComponents.first()
             if(!oceanSurfaceComponent.mapsSet) {
                 materialComponent.material.let {
                     it.maps.putIfAbsent(Material.MAP.DIFFUSE, albedoMap)
@@ -195,7 +198,7 @@ class OceanWaterRenderSystem(
 
     private var seconds = 0.0f
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
-        val components = listOf<OceanWaterComponent>() // TODO: Make this possible again
+        val components = renderState[oceanWaterSystem.state].oceanWaterComponents
         if(components.isEmpty()) return
         val oceanWaterComponent = components.first()
         if(oceanWaterComponent.windspeed == 0f) { return }

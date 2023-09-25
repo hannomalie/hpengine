@@ -2,6 +2,7 @@ package de.hanno.hpengine
 
 import de.hanno.hpengine.config.*
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.fps.FPSCounterSystem
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
@@ -27,7 +28,7 @@ class ApiModule {
 
     @Single
     fun fpsCounter(fpsCounterSystem: FPSCounterSystem) = fpsCounterSystem.fpsCounter
-    @Single
+    @Single(binds = [RenderSystem::class, FPSCounterSystem::class])
     fun fpsCounterSystem() = FPSCounterSystem()
 }
 val apiModule = ApiModule().module

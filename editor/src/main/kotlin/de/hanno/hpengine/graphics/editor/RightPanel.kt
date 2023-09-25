@@ -3,7 +3,6 @@ package de.hanno.hpengine.graphics.editor
 import com.artemis.Component
 import com.artemis.World
 import com.artemis.managers.TagManager
-import de.hanno.hpengine.artemis.*
 import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
@@ -11,8 +10,11 @@ import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.engine.graphics.imgui.float2Input
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderManager
+import de.hanno.hpengine.graphics.RenderSystemsConfig
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.Window
+import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtensionConfig
 import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.visibility.InvisibleComponentSystem
 import imgui.ImGui
@@ -27,7 +29,10 @@ fun ImGuiEditor.rightPanel(
     screenWidth: Float,
     rightPanelWidth: Float,
     screenHeight: Float,
-    editorConfig: EditorConfig
+    editorConfig: EditorConfig,
+    deferredRenderExtensionConfig: DeferredRenderExtensionConfig?,
+    renderSystemsConfig: RenderSystemsConfig,
+    renderManager: RenderManager
 ) {
     val rightPanelWidthPercentage = 0.2f
     ImGui.setNextWindowPos(screenWidth * (1.0f - rightPanelWidthPercentage), 0f)
@@ -126,18 +131,26 @@ fun ImGuiEditor.rightPanel(
                         }
                     }
                 }
+                tab("RenderSystems") {
+                    renderSystemsConfig.run {
+                        allRenderSystems.forEach {
+                            if (ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
+                                it.enabled = !it.enabled
+                            }
+                        }
+                    }
+                }
                 tab("RenderExtensions") {
-//                     TODO: Make this possible again
-//                    deferredRenderExtensionConfig.run {
-//                        renderExtensions.forEach {
-//                            if (ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
-//                                it.enabled = !it.enabled
-//                            }
-//                        }
-//                    }
+                    deferredRenderExtensionConfig?.run {
+                        renderExtensions.forEach {
+                            if (ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
+                                it.enabled = !it.enabled
+                            }
+                        }
+                    }
                 }
                 configTab(config, window)
-                renderTab(window, this@rightPanel, renderStateContext, graphicsApi, gpuProfiler)
+                renderTab(this@rightPanel, renderStateContext, graphicsApi, gpuProfiler, renderSystemsConfig, renderManager)
                 tab("Editor") {
                     if (ImGui.beginCombo("Selection Mode", editorConfig.selectionMode.toString())) {
                         SelectionMode.values().forEach {

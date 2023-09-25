@@ -22,6 +22,7 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
 import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL32
+import org.lwjgl.opengl.GLUtil
 import org.lwjgl.system.APIUtil
 import java.lang.reflect.Field
 import kotlin.system.exitProcess

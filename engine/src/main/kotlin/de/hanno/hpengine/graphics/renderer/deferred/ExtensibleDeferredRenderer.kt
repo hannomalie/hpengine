@@ -27,7 +27,7 @@ import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.koin.core.annotation.Single
 
-@Single(binds = [RenderSystem::class])
+@Single(binds = [RenderSystem::class, BaseSystem::class])
 class ExtensibleDeferredRenderer(
     private val graphicsApi: GraphicsApi,
     private val renderStateContext: RenderStateContext,

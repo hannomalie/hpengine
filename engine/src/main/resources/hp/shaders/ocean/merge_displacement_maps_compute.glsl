@@ -1,4 +1,4 @@
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout (binding = 0, rgba32f) uniform writeonly image2D displacement;
 layout (binding = 1) uniform sampler2D displacementX;
@@ -35,6 +35,8 @@ void main(void)
     vec3 resultingDisplacement = waveHeight * textureLod(displacementY, uvTextureSpace, 0).xyz;
     resultingDisplacement += choppiness * textureLod(displacementX, uvTextureSpace, 0).xyz;
     resultingDisplacement += choppiness * textureLod(displacementZ, uvTextureSpace, 0).xyz;
+    resultingDisplacement *= 100f;
+
     imageStore(displacement, uv, vec4(resultingDisplacement, 1));
 
     float s01 = waveHeight * textureLod(displacementY, vec2(uv + off.xy)/float(N), 0).x;
@@ -46,6 +48,9 @@ void main(void)
     vec4 bump = vec4( cross(va,vb), 1 );
 
     imageStore(normals, uv, bump);
+    imageStore(normals, uv, vec4(vec3(resultingDisplacement),1));
+
+
     vec4 albedoResult = vec4(diffuseColor,1);
 
     //https://arm-software.github.io/opengl-es-sdk-for-android/ocean_f_f_t.html

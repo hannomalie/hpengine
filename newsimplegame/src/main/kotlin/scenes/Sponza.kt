@@ -7,6 +7,7 @@ import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
+import de.hanno.hpengine.graphics.renderer.forward.simpleForwardRendererModule
 import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
@@ -19,10 +20,8 @@ fun main() {
 
     val config = Config(
         directories = Directories(
-//                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
-            EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
-//                    GameDirectory(File(Directories.GAMEDIR_NAME), null)
-            GameDirectory(File("C:\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game"), null)
+            EngineDirectory(File("""D:\workspace\hpengine\engine\src\main\resources\hp""")),
+            GameDirectory(File("""D:\workspace\hpengine\newsimplegame\src\main\resources\game"""), null)
         ),
     )
 

@@ -72,7 +72,10 @@ data class EngineDirectory(val _baseDir: File): AbstractDirectory(_baseDir, Engi
 
     override fun toAsset(relativePath: String) = EngineAsset(this, relativePath)
 }
-data class GameDirectory(val _baseDir: File, val gameClazz: Class<*>?): AbstractDirectory(_baseDir, gameClazz?.protectionDomain?.codeSource?.location?.path?.toString()?.endsWith("jar") ?: false) {
+data class GameDirectory(val _baseDir: File, val gameClazz: Class<*>?): AbstractDirectory(
+    baseDir = _baseDir,
+    sourceLocationIsJarFile = gameClazz?.protectionDomain?.codeSource?.location?.path?.toString()?.endsWith("jar") ?: false
+) {
     val name = baseDir.name
     val assets by lazy { resolve("assets") }
     val models by lazy { assets.resolve("models") }

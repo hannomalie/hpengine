@@ -98,15 +98,14 @@ class OpenGlProgramManager(
         if(config.debug.isUseFileReloading) {
             programsCache.forEach { program ->
                 program.shaders.forEach { shader ->
-                    if (shader.source is StringBasedCodeSource || shader.source is FileBasedCodeSource || shader.source is WrappedCodeSource) {
+                     if (shader.source is StringBasedCodeSource || shader.source is FileBasedCodeSource || shader.source is WrappedCodeSource) {
                         programsSourceCache.putIfAbsent(shader, shader.source.source.hashCode())
-                        if (shader.source.hasChanged(programsSourceCache[shader]!!)) {
-                            // TODO: Find a better way fot this check
-                            if(program is Reloadable) {
-                                program.reload()
-                                println("Reloaded ${program.name}")
-                                programsSourceCache[shader] = shader.source.source.hashCode()
-                            }
+                         if (shader.source.hasChanged(programsSourceCache[shader]!!)) {
+                             graphicsApi.run {
+//                                 TODO: Make this possible again
+//                                 program.reloadProgram()
+                                 program.reload()
+                             }
                         }
                     }
                 }

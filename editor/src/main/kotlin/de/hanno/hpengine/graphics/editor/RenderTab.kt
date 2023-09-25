@@ -1,7 +1,9 @@
 package de.hanno.hpengine.graphics.editor
 
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.RenderMode
+import de.hanno.hpengine.graphics.RenderSystemsConfig
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.imgui.dsl.TabBar
 import de.hanno.hpengine.graphics.imgui.dsl.TreeNode.text
@@ -15,17 +17,17 @@ import struktgen.api.forIndex
 import java.nio.IntBuffer
 
 fun TabBar.renderTab(
-    window: de.hanno.hpengine.graphics.window.Window,
     editor: ImGuiEditor,
     renderStateContext: RenderStateContext,
     graphicsApi: GraphicsApi,
-    gpuProfiler: GPUProfiler
+    gpuProfiler: GPUProfiler,
+    renderSystemsConfig: RenderSystemsConfig,
+    renderManager: RenderManager
 ) {
     tab("Render") {
-        text("FPS: ${editor.fpsCounter.fps}") {}
+        text("FPS: ${editor.fpsCounter.fps}")
         text(gpuProfiler.currentTimings)
 
-        val renderManager = editor.artemisWorld.getSystem(de.hanno.hpengine.graphics.RenderManager::class.java)!!
         val renderMode = renderManager.renderMode
         if (ImGui.button("Use ${if (renderMode is RenderMode.Normal) "Single Step" else "Normal"}")) {
             renderManager.renderMode = when (renderMode) {
@@ -39,8 +41,9 @@ fun TabBar.renderTab(
             }
         }
 
-        renderManager.renderSystems
-            .firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.apply {
+        val renderCommands = false
+        if(renderCommands) {
+            renderSystemsConfig.renderSystems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.apply {
                 val currentReadState = renderStateContext.renderState.currentReadState
                 var counter = 0
                 when (val indirectPipeline = currentReadState[indirectPipeline]) {
@@ -64,9 +67,9 @@ fun TabBar.renderTab(
 
                         val commandOffsetsCulled =
                             indirectPipeline.commandOrganizationStatic.offsetsCompacted.buffer.asIntBuffer().print(
-                            commandCount,
-                            1
-                        ).take(15)
+                                commandCount,
+                                1
+                            ).take(15)
                         ImGui.text("Command offsets culled: $commandOffsetsCulled")
 
                         ImGui.text("Draw commands: $batchCount")
@@ -87,6 +90,7 @@ fun TabBar.renderTab(
                     }
                 }
             }
+        }
     }
 }
 

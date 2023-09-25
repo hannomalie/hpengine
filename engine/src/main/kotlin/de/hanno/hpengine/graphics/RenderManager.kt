@@ -3,7 +3,6 @@ package de.hanno.hpengine.graphics
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.output.DebugOutput
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
@@ -11,7 +10,6 @@ import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
-import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.lifecycle.UpdateCycle
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.system.Extractor
@@ -22,15 +20,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 class RenderManager(
     private val graphicsApi: GraphicsApi,
     private val config: Config,
-    private val input: Input,
     private val window: Window,
     programManager: ProgramManager,
     private val renderStateContext: RenderStateContext,
     private val finalOutput: FinalOutput,
     private val debugOutput: DebugOutput,
-    private val fpsCounter: FPSCounter,
     private val renderSystemsConfig: RenderSystemsConfig,
-    _renderSystems: List<RenderSystem>,
     private val gpuProfiler: GPUProfiler,
     private val updateCycle: UpdateCycle,
 ) : BaseSystem() {
@@ -46,8 +41,6 @@ class RenderManager(
         FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
     )
     var renderMode: RenderMode = RenderMode.Normal
-    // TODO: Make this read only again
-    var renderSystems: MutableList<RenderSystem> = _renderSystems.distinct().toMutableList()
 
     private val textureRenderer = SimpleTextureRenderer(
         graphicsApi,
@@ -77,11 +70,7 @@ class RenderManager(
 
                         val renderSystems = profiled("determineRenderSystems") {
                             when (val renderMode = renderMode) {
-                                RenderMode.Normal -> {
-                                    renderSystems.filter {
-                                        renderSystemsConfig.run { it.enabled }
-                                    }
-                                }
+                                RenderMode.Normal -> renderSystemsConfig.renderSystems
 
                                 is RenderMode.SingleFrame -> {
                                     renderSystemsConfig.run {
@@ -94,9 +83,8 @@ class RenderManager(
                                             emptyList() // TODO: Check whether this still works
                                         }
 
-                                        systemsToExecute.apply {
-                                            renderMode.frameRequested.getAndSet(false)
-                                        }
+                                        renderMode.frameRequested.getAndSet(false)
+                                        systemsToExecute
                                     }
                                 }
                             }
@@ -106,9 +94,13 @@ class RenderManager(
                             renderSystems.groupBy { it.sharedRenderTarget }
                                 .forEach { (renderTarget, renderSystems) ->
                                     val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                    renderTarget?.use(clear)
+                                    profiled("use rendertarget") {
+                                        renderTarget?.use(clear)
+                                    }
                                     renderSystems.forEach { renderSystem ->
-                                        renderSystem.render(currentReadState)
+                                        profiled(renderSystem.javaClass.simpleName) {
+                                            renderSystem.render(currentReadState)
+                                        }
                                     }
                                 }
                         }
@@ -146,7 +138,6 @@ class RenderManager(
                             window.swapBuffers()
                         }
                     }
-
                 } catch (e: Exception) {
                     e.printStackTrace()
                 } finally {
@@ -160,7 +151,7 @@ class RenderManager(
         while(config.debug.forceSingleThreadedRendering && rendering.get()) {
             Thread.onSpinWait()
         }
-        renderSystems.distinct().forEach {
+        renderSystemsConfig.renderSystems.forEach {
             it.update(world.delta)
         }
     }
@@ -170,20 +161,10 @@ class RenderManager(
         currentWriteState.cycle = updateCycle.cycle.get()
         currentWriteState.time = System.currentTimeMillis()
 
-        renderSystems.distinct().forEach { it.extract(currentWriteState) }
+        renderSystemsConfig.renderSystems.forEach { it.extract(currentWriteState) }
 
         extractors.forEach { it.extract(currentWriteState) }
 
         finishCycle(deltaSeconds)
     }
-}
-
-@Single
-class RenderSystemsConfig(renderSystems: List<RenderSystem>) {
-    private val renderSystemsEnabled = renderSystems.distinct().associateWith { true }.toMutableMap()
-    var RenderSystem.enabled: Boolean
-        get() = renderSystemsEnabled[this] ?: true
-        set(value) {
-            renderSystemsEnabled[this] = value
-        }
 }

@@ -865,19 +865,37 @@ class OpenGLContext private constructor(
         shaderLoadFailed?.let { throw it }
     }
 
-    override fun Shader.reload() {
-        try {
-            load()
-        } catch (_: ShaderLoadException) { }
-    }
-    override fun Shader.unload() {
+    override fun Shader.reload() = try {
+        load()
+    } catch (_: ShaderLoadException) { }
+
+    override fun Shader.unload() = onGpu {
         source.unload()
         GL20.glDeleteShader(id)
     }
 
-    override fun Program<*>.load() {
-        onGpu {
+    override fun Program<*>.load() = onGpu {
+        shaders.forEach {
+            it.load()
+            attach(it)
+        }
+
+        bindShaderAttributeChannels()
+        linkProgram()
+        validateProgram()
+
+        registerUniforms()
+    }
+
+    override fun Program<*>.unload() = onGpu {
+        glDeleteProgram(id)
+        shaders.forEach { it.unload() }
+    }
+
+    override fun Program<*>.reload() = onGpu {
+        try {
             shaders.forEach {
+                detach(it)
                 it.load()
                 attach(it)
             }
@@ -887,48 +905,9 @@ class OpenGLContext private constructor(
             validateProgram()
 
             registerUniforms()
-        }
+        } catch (e: ShaderLoadException) { e.printStackTrace() }
     }
 
-    override fun Program<*>.unload() {
-        onGpu {
-            glDeleteProgram(id)
-            shaders.forEach { it.unload() }
-        }
-    }
-
-    override fun Program<*>.reload() {
-        onGpu {
-            try {
-                shaders.forEach {
-                    it.load()
-                    attach(it)
-                }
-
-                bindShaderAttributeChannels()
-                linkProgram()
-                validateProgram()
-
-                registerUniforms()
-            } catch (_: ShaderLoadException) { }
-        }
-    }
-    // TODO: Make reload not destructive
-    override fun Program<*>.reloadProgram(): Unit = try {
-        onGpu {
-            shaders.forEach {
-                detach(it)
-                it.reload()
-            }
-
-            load()
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-    private fun AbstractProgram<*>.attach(shader: Shader) {
-        glAttachShader(id, shader.id)
-    }
     private fun Program<*>.attach(shader: Shader) {
         glAttachShader(id, shader.id)
     }
@@ -982,67 +961,67 @@ class OpenGLContext private constructor(
             ShaderDefine.getGlobalDefinesString(config) +
             Shader.replaceIncludes(config.directories.engineDir, source, 0).first
 
-    override fun UniformBinding.set(value: Int) {
+    override fun UniformBinding.set(value: Int) = onGpu {
         if (location != -1) {
             GL20.glUniform1i(location, value)
         }
     }
 
-    override fun UniformBinding.set(value: Float) {
+    override fun UniformBinding.set(value: Float) = onGpu {
         if (location != -1) {
             GL20.glUniform1f(location, value)
         }
     }
 
-    override fun UniformBinding.set(value: Long) {
+    override fun UniformBinding.set(value: Long) = onGpu {
         if (location != -1) {
             ARBBindlessTexture.glUniformHandleui64ARB(location, value)
         }
     }
 
-    override operator fun UniformBinding.set(x: Float, y: Float, z: Float) {
+    override operator fun UniformBinding.set(x: Float, y: Float, z: Float) = onGpu {
         if (location != -1) {
             GL20.glUniform3f(location, x, y, z)
         }
     }
 
-    override operator fun UniformBinding.set(x: Float, y: Float) {
+    override operator fun UniformBinding.set(x: Float, y: Float) = onGpu {
         if (location != -1) {
             GL20.glUniform2f(location, x, y)
         }
     }
 
-    override fun UniformBinding.setAsMatrix4(values: FloatBuffer) {
+    override fun UniformBinding.setAsMatrix4(values: FloatBuffer) = onGpu {
         if (location != -1) {
             GL20.glUniformMatrix4fv(location, false, values)
         }
     }
 
-    override fun UniformBinding.setAsMatrix4(values: ByteBuffer) {
+    override fun UniformBinding.setAsMatrix4(values: ByteBuffer) = onGpu {
         if (location != -1) {
             GL20.glUniformMatrix4fv(location, false, values.asFloatBuffer())
         }
     }
 
-    override fun UniformBinding.set(values: LongBuffer) {
+    override fun UniformBinding.set(values: LongBuffer) = onGpu {
         if (location != -1) {
             ARBBindlessTexture.glUniformHandleui64vARB(location, values)
         }
     }
 
-    override fun UniformBinding.setVec3ArrayAsFloatBuffer(values: FloatBuffer) {
+    override fun UniformBinding.setVec3ArrayAsFloatBuffer(values: FloatBuffer) = onGpu {
         if (location != -1) {
             GL20.glUniform3fv(location, values)
         }
     }
 
-    override fun UniformBinding.setFloatArrayAsFloatBuffer(values: FloatBuffer) {
+    override fun UniformBinding.setFloatArrayAsFloatBuffer(values: FloatBuffer) = onGpu {
         if (location != -1) {
             GL20.glUniform1fv(location, values)
         }
     }
 
-    override fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int) {
+    override fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int) = onGpu {
         GL43.glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ)
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS) // TODO: Make this optional
     }
@@ -1056,11 +1035,13 @@ class OpenGLContext private constructor(
             sourceTexture.wrapMode,
         )
 
-        GL43.glCopyImageSubData(
-            sourceTexture.id, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-            targetTexture.id, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-            sourceTexture.dimension.width, sourceTexture.dimension.height, 6
-        )
+        onGpu {
+            GL43.glCopyImageSubData(
+                sourceTexture.id, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+                targetTexture.id, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+                sourceTexture.dimension.width, sourceTexture.dimension.height, 6
+            )
+        }
 
         return targetTexture
     }
