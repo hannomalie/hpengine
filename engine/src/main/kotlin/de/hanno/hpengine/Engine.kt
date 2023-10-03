@@ -1,42 +1,25 @@
 package de.hanno.hpengine
 
-import com.artemis.*
+import com.artemis.BaseSystem
+import com.artemis.World
+import com.artemis.WorldConfigurationBuilder
 import com.artemis.link.EntityLinkManager
 import com.artemis.managers.TagManager
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
-import de.hanno.hpengine.component.NameComponent
-import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.directory.Directories
-import de.hanno.hpengine.directory.EngineDirectory
-import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.lifecycle.UpdateCycle
-import de.hanno.hpengine.model.ModelComponent
-import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.scene.AddResourceContext
-import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
-import de.hanno.hpengine.scene.dsl.Directory
-import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.spatial.SpatialComponent
-import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
-import de.hanno.hpengine.transform.AABBData
-import glfwModule
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.receiveOrNull
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.withContext
 import net.mostlyoriginal.api.SingletonPlugin
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
-import org.joml.Vector3f
-import org.koin.core.context.startKoin
-import org.koin.core.module.Module
-import org.koin.dsl.module
-import org.koin.ksp.generated.defaultModule
 import org.objenesis.strategy.StdInstantiatorStrategy
-import java.io.File
 import java.util.concurrent.Executors
 
 class Engine(
@@ -93,7 +76,7 @@ class Engine(
             world.delta = deltaSeconds
             world.process()
         }
-        renderManager.extract(extractors, deltaSeconds)
+        renderManager.extract(extractors, world.delta)
         updateCycle.cycle.getAndIncrement()
     }
     companion object

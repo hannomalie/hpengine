@@ -6,7 +6,7 @@ import kotlin.math.min
 fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit) {
         runBlocking {
             var currentTimeNs = System.nanoTime()
-            val dtS = 1 / 60.0
+            val dtS = 0.001
 
             while (true) {
                 val newTimeNs = System.nanoTime()
@@ -23,7 +23,6 @@ fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit) {
                         e.printStackTrace()
                     }
                     frameTimeS -= deltaTime
-                    yield()
                 }
             }
         }

@@ -102,14 +102,15 @@ void main()
 //        PN_world = PN_world *0.5f + normalize(perturb_normal(Normal_FS_in, V, 2f*UV + 0.0001f * vec2((time%10000)), normalMap));
         vec3 PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
         out_normalAmbient.xyz = PN_view;
-        vec2 foamUV0 = 8f*(UV + 0.00001f * vec2(time%10000));
-        vec3 foam0 = vec3(clamp(textureLod(normalMap, foamUV0, 5).x - 0.5f, 0.0f, 0.3f));
-        vec2 foamUV1 = 4f*(UV + 0.0001f * vec2(time%10000));
-        vec3 foam1 = vec3(clamp(textureLod(normalMap, foamUV1, 7).x - 0.2f, 0.0f, 0.7f));
-        color.rgb += (foam0 + foam1);
 
-        vec3 displacement = clamp(textureLod(displacementMap, UV, 0).xyz, 0.0f, 0.4f);
-        color.rgb += displacement;
+//        vec2 foamUV0 = 8f*(UV + 0.00001f * vec2(time%10000));
+//        vec3 foam0 = vec3(clamp(textureLod(normalMap, foamUV0, 5).x - 0.5f, 0.0f, 0.3f));
+//        vec2 foamUV1 = 4f*(UV + 0.0001f * vec2(time%10000));
+//        vec3 foam1 = vec3(clamp(textureLod(normalMap, foamUV1, 7).x - 0.2f, 0.0f, 0.7f));
+//        color.rgb += (foam0 + foam1);
+
+        vec3 displacement = clamp(textureLod(displacementMap, UV, 0).xyz, 0.0f, 1.0f);
+        color.rgb += 3*color.rgb*displacement;
     }
     if(hasRoughnessMap) {
         float r = textureLod(roughnessMap, UV, 0).x;

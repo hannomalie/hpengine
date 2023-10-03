@@ -3,12 +3,12 @@ package de.hanno.hpengine.ocean
 import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
 import InternalTextureFormat.RGBA32F
+import com.artemis.BaseSystem
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.OpenGLContext.Companion.RED_BUFFER
-import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.buffer.typed
@@ -20,7 +20,6 @@ import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
-import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
@@ -28,19 +27,15 @@ import struktgen.api.forIndex
 import kotlin.math.ln
 import kotlin.math.max
 
-private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
-
-
-@Single(binds = [OceanWaterRenderSystem::class, RenderSystem::class])
+@Single(binds = [OceanWaterRenderSystem::class, RenderSystem::class, BaseSystem::class])
 class OceanWaterRenderSystem(
     private val graphicsApi: GraphicsApi,
     private val config: Config,
-    private val renderStateContext: RenderStateContext,
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val oceanWaterSystem: OceanWaterSystem,
-) : RenderSystem {
+) : BaseSystem(), RenderSystem {
     private val N = 512
 
     private val dimension = TextureDimension2D(N, N)
@@ -48,7 +43,7 @@ class OceanWaterRenderSystem(
     private val random1 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_1.png", srgba = false, directory = engineDir)
     private val random2 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_2.png", srgba = false, directory = engineDir)
     private val random3 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_3.png", srgba = false, directory = engineDir)
-    private val waterNormalMap = textureManager.getTexture("assets/textures/water_normal_map.jpg", srgba = false, directory = config.engineDir)
+    val waterNormalMap = textureManager.getTexture("assets/textures/water_normal_map.jpg", srgba = false, directory = config.engineDir)
 
     private fun createRandomTexture(): Texture2D = listOf(ColorAttachmentDefinition("Random",
         RGBA32F
@@ -83,26 +78,11 @@ class OceanWaterRenderSystem(
 //        defaultTextureFilterConfig
 //    )
     val displacementMap = listOf(ColorAttachmentDefinition("Displacement", RGBA32F)).toTextures(graphicsApi, N, N).first()
-//    val displacementMapX = allocateTexture(RGBA32F, dimension)
-//    val displacementMapY = allocateTexture(RGBA32F, dimension)
-//    val displacementMapZ = allocateTexture(RGBA32F, dimension)
     val displacementMapX = listOf(ColorAttachmentDefinition("DisplacementX", RGBA32F)).toTextures(graphicsApi, N, N).first()
     val displacementMapY = listOf(ColorAttachmentDefinition("DisplacementY", RGBA32F)).toTextures(graphicsApi, N, N).first()
     val displacementMapZ = listOf(ColorAttachmentDefinition("DisplacementZ", RGBA32F)).toTextures(graphicsApi, N, N).first()
-//    val normalMap = allocateTexture(
-//        RGBA32F, dimension,
-//        defaultTextureFilterConfig
-//    )
     val normalMap = listOf(ColorAttachmentDefinition("Normals", RGBA32F)).toTextures(graphicsApi, N, N).first()
-//    val albedoMap = allocateTexture(
-//        RGBA32F, dimension,
-//        defaultTextureFilterConfig
-//    )
     val albedoMap = listOf(ColorAttachmentDefinition("Color", RGBA32F)).toTextures(graphicsApi, N, N).first()
-//    val roughnessMap = allocateTexture(
-//        RGBA32F, dimension,
-//        defaultTextureFilterConfig
-//    )
     val roughnessMap = listOf(ColorAttachmentDefinition("Roughness", RGBA32F)).toTextures(graphicsApi, N, N).first()
 
     val debugMap = listOf(ColorAttachmentDefinition("Color", RGBA32F)).toTextures(graphicsApi, N, N).first().apply {
@@ -178,33 +158,13 @@ class OceanWaterRenderSystem(
             registerTextureForDebugOutput("[Ocean Water] Twiddle Indices", twiddleIndicesMap)
         }
     }
-    override fun extract(renderState: RenderState) {
-        val oceanWaterState = renderState[oceanWaterSystem.state]
-        val oceanWaterComponents = oceanWaterState.oceanWaterComponents
-        val materialComponents = oceanWaterState.materialComponents
-        val oceanSurfaceComponents = oceanWaterState.oceanSurfaceComponent
-        if(oceanWaterComponents.isNotEmpty()) {
-            val materialComponent = materialComponents.first()
-            val oceanSurfaceComponent = oceanSurfaceComponents.first()
-            if(!oceanSurfaceComponent.mapsSet) {
-                materialComponent.material.let {
-                    it.maps.putIfAbsent(Material.MAP.DIFFUSE, albedoMap)
-                    it.maps.putIfAbsent(Material.MAP.DISPLACEMENT, displacementMap)
-                    it.maps.putIfAbsent(Material.MAP.NORMAL, waterNormalMap)
-                }
-                oceanSurfaceComponent.mapsSet = true
-            }
-        }
-    }
 
-    private var seconds = 0.0f
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
-        val components = renderState[oceanWaterSystem.state].oceanWaterComponents
+        val oceanWaterState = renderState[oceanWaterSystem.state]
+        val components = oceanWaterState.oceanWaterComponents
         if(components.isEmpty()) return
         val oceanWaterComponent = components.first()
         if(oceanWaterComponent.windspeed == 0f) { return }
-
-        seconds += oceanWaterComponent.timeFactor * max(0.001f, renderState.deltaSeconds)
 
         h0kShader.use()
         bindImageTexture(0, h0kMap, 0, false, 0, Access.WriteOnly)
@@ -221,7 +181,7 @@ class OceanWaterRenderSystem(
         h0kShader.dispatchCompute(N/16,N/16,1)
 
         hktShader.use()
-        hktShader.setUniform("t", seconds)
+        hktShader.setUniform("t", oceanWaterState.seconds)
         hktShader.setUniform("N", N)
         hktShader.setUniform("L", oceanWaterComponent.L)
         bindImageTexture(0, tildeHktDyMap, 0, false, 0, Access.WriteOnly)
@@ -301,4 +261,6 @@ class OceanWaterRenderSystem(
         }
         return bitReversedIndices
     }
+
+    override fun processSystem() { }
 }

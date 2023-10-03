@@ -26,23 +26,3 @@ class OceanWaterComponent: Component() {
         val recommendedIntensity = 26f
     }
 }
-class OceanSurfaceComponent: Component() {
-    var mapsSet = false // this prevents oceanwaterextension from assigning maps every time extraction is done
-}
-
-// TODO: Implement oceanwater material as component
-//materialInfo.apply {
-//    lodFactor = 100.0f
-//    roughness = 0.0f
-//    metallic = 1.0f
-//    diffuse.set(0f, 0.1f, 1f)
-//    ambient = 0.05f
-//    parallaxBias = 0.0f
-//    put(SimpleMaterial.MAP.DISPLACEMENT, oceanWaterRenderSystem.displacementMap)
-//    put(SimpleMaterial.MAP.NORMAL, oceanWaterRenderSystem.normalMap)
-//    put(SimpleMaterial.MAP.DIFFUSE, oceanWaterRenderSystem.albedoMap)
-//    put(SimpleMaterial.MAP.ROUGHNESS, oceanWaterRenderSystem.roughnessMap)
-//    put(SimpleMaterial.MAP.ENVIRONMENT, scene.get<TextureManager>().cubeMap)
-//    put(SimpleMaterial.MAP.DIFFUSE, oceanWaterRenderSystem.displacementMap)
-//}
-//}

@@ -14,14 +14,13 @@ import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.ocean.OceanSurfaceComponent
 import de.hanno.hpengine.ocean.OceanWaterComponent
+import de.hanno.hpengine.ocean.OceanWaterRenderSystem
 import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.spatial.SpatialComponent
-import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import glfwModule
 import invoke
@@ -46,7 +45,6 @@ fun main() {
             glfwModule,
             openglModule,
             deferredRendererModule,
-//            simpleForwardRendererModule,
             editorModule,
             module {
                 single { config }
@@ -56,13 +54,21 @@ fun main() {
         )
     )
     engine.world.loadScene {
-        addOceanSurface(engine.systems.firstIsInstance<ProgramManager>(), Vector3f())
+        addOceanSurface(
+            engine.systems.firstIsInstance<ProgramManager>(),
+            engine.systems.firstIsInstance<OceanWaterRenderSystem>(),
+            Vector3f()
+        )
     }
     engine.simulate()
 }
 
 private var oceanSurfaceCounter = 0
-private fun World.addOceanSurface(programManager: ProgramManager, translation: Vector3fc) {
+private fun World.addOceanSurface(
+    programManager: ProgramManager,
+    oceanWaterRenderSystem: OceanWaterRenderSystem,
+    translation: Vector3fc
+) {
     edit(create()).apply {
         create(TransformComponent::class.java).apply {
             transform.scaling(10f)
@@ -91,11 +97,14 @@ private fun World.addOceanSurface(programManager: ProgramManager, translation: V
                 parallaxBias = 0.0f,
                 useWorldSpaceXZAsTexCoords = true,
                 uvScale = Vector2f(0.05f)
-            )
+            ).apply {
+                maps.putIfAbsent(Material.MAP.DIFFUSE, oceanWaterRenderSystem.albedoMap)
+                maps.putIfAbsent(Material.MAP.DISPLACEMENT, oceanWaterRenderSystem.displacementMap)
+                maps.putIfAbsent(Material.MAP.NORMAL, oceanWaterRenderSystem.waterNormalMap)
+            }
         }
         add(OceanWaterComponent())
         create(SpatialComponent::class.java)
-        create(OceanSurfaceComponent::class.java)
         create(NameComponent::class.java).apply {
             name = "OceanSurface${oceanSurfaceCounter++}"
         }
