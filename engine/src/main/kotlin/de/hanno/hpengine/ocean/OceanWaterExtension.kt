@@ -48,6 +48,7 @@ class OceanWaterRenderSystem(
     private val random1 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_1.png", srgba = false, directory = engineDir)
     private val random2 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_2.png", srgba = false, directory = engineDir)
     private val random3 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_3.png", srgba = false, directory = engineDir)
+    private val waterNormalMap = textureManager.getTexture("assets/textures/water_normal_map.jpg", srgba = false, directory = config.engineDir)
 
     private fun createRandomTexture(): Texture2D = listOf(ColorAttachmentDefinition("Random",
         RGBA32F
@@ -156,40 +157,40 @@ class OceanWaterRenderSystem(
             twiddleIndicesShader.bindShaderStorageBuffer(1, bitReversedIndices)
             twiddleIndicesShader.dispatchCompute(log2N,N/16,1)
         }
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Albedo", albedoMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] NormalGenerated", normalMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Displacement", displacementMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] DisplacementX", displacementMapX)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] DisplacementY", displacementMapY)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] DisplacementZ", displacementMapZ)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Roughness", roughnessMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Debug", debugMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Random0", random0)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Random1", random1)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Random2", random2)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Random3", random3)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] h0k", h0kMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] h0MinusK", h0MinuskMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] ~hktdx", tildeHktDxMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] ~hktdy", tildeHktDyMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] ~hktdz", tildeHktDzMap)
-        textureManager.registerTextureForDebugOutput("[Ocean Water] Twiddle Indices", twiddleIndicesMap)
+        textureManager.apply {
+            registerTextureForDebugOutput("[Ocean Water] Albedo", albedoMap)
+            registerTextureForDebugOutput("[Ocean Water] NormalGenerated", normalMap)
+            registerTextureForDebugOutput("[Ocean Water] Displacement", displacementMap)
+            registerTextureForDebugOutput("[Ocean Water] DisplacementX", displacementMapX)
+            registerTextureForDebugOutput("[Ocean Water] DisplacementY", displacementMapY)
+            registerTextureForDebugOutput("[Ocean Water] DisplacementZ", displacementMapZ)
+            registerTextureForDebugOutput("[Ocean Water] Roughness", roughnessMap)
+            registerTextureForDebugOutput("[Ocean Water] Debug", debugMap)
+            registerTextureForDebugOutput("[Ocean Water] Random0", random0)
+            registerTextureForDebugOutput("[Ocean Water] Random1", random1)
+            registerTextureForDebugOutput("[Ocean Water] Random2", random2)
+            registerTextureForDebugOutput("[Ocean Water] Random3", random3)
+            registerTextureForDebugOutput("[Ocean Water] h0k", h0kMap)
+            registerTextureForDebugOutput("[Ocean Water] h0MinusK", h0MinuskMap)
+            registerTextureForDebugOutput("[Ocean Water] ~hktdx", tildeHktDxMap)
+            registerTextureForDebugOutput("[Ocean Water] ~hktdy", tildeHktDyMap)
+            registerTextureForDebugOutput("[Ocean Water] ~hktdz", tildeHktDzMap)
+            registerTextureForDebugOutput("[Ocean Water] Twiddle Indices", twiddleIndicesMap)
+        }
     }
     override fun extract(renderState: RenderState) {
-        // TODO: Implement extraction here
         val oceanWaterState = renderState[oceanWaterSystem.state]
         val oceanWaterComponents = oceanWaterState.oceanWaterComponents
         val materialComponents = oceanWaterState.materialComponents
         val oceanSurfaceComponents = oceanWaterState.oceanSurfaceComponent
         if(oceanWaterComponents.isNotEmpty()) {
-            val components = oceanWaterComponents.first()
             val materialComponent = materialComponents.first()
             val oceanSurfaceComponent = oceanSurfaceComponents.first()
             if(!oceanSurfaceComponent.mapsSet) {
                 materialComponent.material.let {
                     it.maps.putIfAbsent(Material.MAP.DIFFUSE, albedoMap)
                     it.maps.putIfAbsent(Material.MAP.DISPLACEMENT, displacementMap)
-                    it.maps.putIfAbsent(Material.MAP.NORMAL, normalMap)
+                    it.maps.putIfAbsent(Material.MAP.NORMAL, waterNormalMap)
                 }
                 oceanSurfaceComponent.mapsSet = true
             }

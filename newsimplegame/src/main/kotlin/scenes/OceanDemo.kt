@@ -17,6 +17,7 @@ import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ocean.OceanSurfaceComponent
 import de.hanno.hpengine.ocean.OceanWaterComponent
 import de.hanno.hpengine.opengl.openglModule
+import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.spatial.SpatialComponent
@@ -80,7 +81,9 @@ private fun World.addOceanSurface(programManager: ProgramManager, translation: V
         create(MaterialComponent::class.java).apply {
             material = Material(
                 "ocean",
-                programDescription = programManager.heightMappingFirstPassProgramDescription,
+                programDescription = programManager.heightMappingFirstPassProgramDescription.copy(
+                    fragmentShaderSource = FileBasedCodeSource(programManager.config.engineDir.resolve("shaders/ocean/heightmapping_ocean_fragment.glsl"))
+                ),
                 diffuse = Vector3f(0.05f, 0.05f, 0.4f),
                 metallic = 0.95f,
                 roughness = 0.001f,
