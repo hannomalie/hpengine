@@ -1,7 +1,6 @@
 package de.hanno.hpengine.skybox
 
-import com.artemis.World
-import de.hanno.hpengine.model.EntitiesStateHolder
+import InternalTextureFormat
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -11,20 +10,23 @@ import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.model.material.MaterialManager
 import org.koin.core.annotation.Single
 
 @Single(binds = [SkyboxRenderExtension::class, DeferredRenderExtension::class])
 class SkyboxRenderExtension(
     private val graphicsApi: GraphicsApi,
-    private val renderStateContext: RenderStateContext,
     private val config: Config,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
+    private val materialManager: MaterialManager,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val skyBoxStateHolder: SkyBoxStateHolder,
 ) : DeferredRenderExtension {
 
     init {
@@ -33,19 +35,42 @@ class SkyboxRenderExtension(
             TextureTarget.TEXTURE_CUBE_MAP,
             textureManager.cubeMap.id
         )
+        val loadSomeSkyboxes = true
+        if(loadSomeSkyboxes) {
+            config.engineDir.apply {
+                textureManager.getCubeMap(
+                    "assets/textures/skybox/skybox2.jpg",
+                    resolve("assets/textures/skybox/skybox2.jpg")
+                )
+                textureManager.getCubeMap(
+                    "assets/textures/skybox/skybox3.jpg",
+                    resolve("assets/textures/skybox/skybox3.jpg")
+                )
+//                TODO: This causes some opengl error when trying to load it
+//                textureManager.getCubeMap(
+//                    "assets/textures/skybox/skybox4.jpg",
+//                    resolve("assets/textures/skybox/skybox4.jpg")
+//                )
+                textureManager.getCubeMap(
+                    "assets/textures/skybox/skybox5.jpg",
+                    resolve("assets/textures/skybox/skybox5.jpg")
+                )
+                textureManager.getCubeMap(
+                    "assets/textures/skybox/skybox6.jpg",
+                    resolve("assets/textures/skybox/skybox6.jpg")
+                )
+//                TODO: This causes some opengl error when trying to load it
+//                textureManager.getCubeMap(
+//                    "assets/textures/skybox/skybox7.jpg",
+//                    resolve("assets/textures/skybox/skybox7.jpg")
+//                )
+            }
+        }
     }
 
     private val secondPassReflectionProgram = programManager.getComputeProgram(
         config.EngineAsset("shaders/second_pass_skybox_reflection.glsl")
     )
-    val skyBoxTexture = renderStateContext.renderState.registerState {
-        textureManager.cubeMap.id
-    }
-
-    override fun extract(renderState: RenderState, world: World) {
-//         TODO: Reimplement
-//        renderState[skyBoxTexture].value = it.id
-    }
 
     override fun renderSecondPassFullScreen(renderState: RenderState) = graphicsApi.run {
         bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
@@ -54,10 +79,13 @@ class SkyboxRenderExtension(
         bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
         bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
         bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-        // TODO: Reimplement with artemis system extraction
-        bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture])
-        bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
-        // TODO: Add glbindimagetexture to openglcontext class
+        val skyBoxMaterialIndex = renderState[skyBoxStateHolder.skyBoxMaterialIndex]
+        val skyboxTexture = if(skyBoxMaterialIndex > -1) {
+            materialManager.materials[renderState[skyBoxStateHolder.skyBoxMaterialIndex]].maps[Material.MAP.ENVIRONMENT]!!
+        } else {
+            textureManager.cubeMap
+        }
+        bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, skyboxTexture.id)
         bindImageTexture(
             4,
             deferredRenderingBuffer.reflectionBuffer.renderedTextures[0],

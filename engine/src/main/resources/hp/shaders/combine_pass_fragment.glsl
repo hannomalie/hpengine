@@ -384,7 +384,8 @@ void main(void) {
   	
 	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0) + textureLod(indirectHalfScreen, st, 0);
 	vec4 reflection = textureLod(environmentReflection, st, 0);
-	lightDiffuseSpecular.rgb += specularColor.rgb * reflection.rgb * roughness;
+	vec3 specularLighting = specularColor.rgb * reflection.rgb * roughness;
+	lightDiffuseSpecular.rgb += specularLighting;
 
 	float revealage = textureLod(forwardRenderedRevealageMap, st, 0).r;
 	float additiveness = textureLod(forwardRenderedRevealageMap, st, 0).a;
@@ -434,5 +435,4 @@ void main(void) {
 	    out_color.rgb = out_color.rgb * whiteScale;
     }
 	out_color.a = 1;
-
 }

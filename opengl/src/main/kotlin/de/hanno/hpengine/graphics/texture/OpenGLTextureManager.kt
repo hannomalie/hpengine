@@ -30,7 +30,7 @@ import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 
-@Single(binds=[BaseSystem::class, TextureManager::class, OpenGLTextureManager::class])
+@Single(binds=[BaseSystem::class, TextureManager::class, TextureManagerBaseSystem::class, OpenGLTextureManager::class])
 class OpenGLTextureManager(
     val config: Config,
     private val graphicsApi: GraphicsApi,
