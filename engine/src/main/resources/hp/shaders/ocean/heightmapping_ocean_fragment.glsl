@@ -93,6 +93,36 @@ float fbm ( in vec2 _st) {
     return v;
 }
 
+const mat2 myt = mat2(.12121212, .13131313, -.13131313, .12121212);
+const vec2 mys = vec2(1e4, 1e6);
+
+vec2 rhash(vec2 uv) {
+    uv *= myt;
+    uv *= mys;
+    return fract(fract(uv / mys) * uv);
+}
+
+vec3 hash(vec3 p) {
+    return fract(sin(vec3(dot(p, vec3(1.0, 57.0, 113.0)),
+    dot(p, vec3(57.0, 113.0, 1.0)),
+    dot(p, vec3(113.0, 1.0, 57.0)))) *
+    43758.5453);
+}
+
+float voronoi2d(const in vec2 point) {
+    vec2 p = floor(point);
+    vec2 f = fract(point);
+    float res = 0.0;
+    for (int j = -1; j <= 1; j++) {
+        for (int i = -1; i <= 1; i++) {
+            vec2 b = vec2(i, j);
+            vec2 r = vec2(b) - f + rhash(p + b);
+            res += 1. / pow(dot(r, r), 8.);
+        }
+    }
+    return pow(1. / res, 0.0625);
+}
+
 void main()
 {
     Entity entity = entities[entityBufferIndex_FS_in];
@@ -148,31 +178,43 @@ void main()
 
         out_normalAmbient.xyz = max(PN_view, PN_view2);
 
-        /////////// https://thebookofshaders.com/13/
+        const bool useNiceNoise = false;
+        if(useNiceNoise) {
+            /////////// https://thebookofshaders.com/13/
+            vec3 colorX = vec3(0.0);
 
-        vec3 colorX = vec3(0.0);
+            vec2 st = normalUV;
+            vec2 q = vec2(0.);
+            float deltaSeconds = (time%10000)*0.0001f;
+            q.x = fbm( st + 0.00*deltaSeconds);
+            q.y = fbm( st + vec2(1.0));
 
-        vec2 st = normalUV;
-        vec2 q = vec2(0.);
-        float deltaSeconds = (time%10000)*0.0001f;
-        q.x = fbm( st + 0.00*deltaSeconds);
-        q.y = fbm( st + vec2(1.0));
+            vec2 r = vec2(0.);
+            r.x = fbm( st + 1.0*q + vec2(1.7,9.2)+ 0.15*deltaSeconds );
+            r.y = fbm( st + 1.0*q + vec2(8.3,2.8)+ 0.126*deltaSeconds);
 
-        vec2 r = vec2(0.);
-        r.x = fbm( st + 1.0*q + vec2(1.7,9.2)+ 0.15*deltaSeconds );
-        r.y = fbm( st + 1.0*q + vec2(8.3,2.8)+ 0.126*deltaSeconds);
+            float f = fbm(st+r);
+            colorX = mix(vec3(0.101961,0.619608,0.666667), vec3(0.666667,0.666667,0.498039), clamp((f*f)*4.0,0.0,1.0));
+            colorX = mix(colorX, vec3(0,0,0.164706), clamp(length(q),0.0,1.0));
+            colorX = mix(colorX, vec3(0.666667,1,1), clamp(length(r.x),0.0,1.0));
 
-        float f = fbm(st+r);
-        colorX = mix(vec3(0.101961,0.619608,0.666667), vec3(0.666667,0.666667,0.498039), clamp((f*f)*4.0,0.0,1.0));
-        colorX = mix(colorX, vec3(0,0,0.164706), clamp(length(q),0.0,1.0));
-        colorX = mix(colorX, vec3(0.666667,1,1), clamp(length(r.x),0.0,1.0));
+            out_normalAmbient.xyz = mix(PN_view, PN_view2, colorX);
+            color.rgb += color.rgb * colorX;
+            ///////////
+        }
+        vec3 displacement = clamp(textureLod(displacementMap, UV, 0).xyz, 0.0f, 10.0f);
 
-        out_normalAmbient.xyz = mix(PN_view, PN_view2, colorX);
-//        color.rgb = vec3(colorX.r);
-        ///////////
-
-        vec3 displacement = clamp(textureLod(displacementMap, UV, 0).xyz, 0.0f, 1.0f);
-        color.rgb += 3*color.rgb*displacement;
+        const bool useVoronoiFoam = true;
+        if(useVoronoiFoam) {
+            //////////////// voronoi foam, based on https://github.com/MaxBittker/glsl-voronoi-noise/blob/master/2d.glsl
+            vec3 voronoi = 0.5f * vec3(voronoi2d(1f * displacement.y * normalUV))  * PN_world.y;
+            voronoi += 0.25f * vec3(voronoi2d(220f * clamp(displacement.y/20f, 0, 5) * normalUV));
+            voronoi += 0.25f * vec3(voronoi2d(160f * normalUV));
+            color.rgb += voronoi * displacement.y;
+            ////////////////
+        } else {
+            color.rgb += 3 * color.rgb * displacement;
+        }
     }
     if(hasRoughnessMap) {
         float r = textureLod(roughnessMap, UV, 0).x;

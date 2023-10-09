@@ -454,7 +454,7 @@ class OpenGLContext private constructor(
         format: Format,
         type: TexelComponentType,
         pixels: ByteBuffer
-    ) {
+    ) = onGpu {
         GL11.glTexSubImage2D(
             GL11.GL_TEXTURE_2D,
             level, offsetX, offsetY, width, height, format.glValue, type.glValue, pixels

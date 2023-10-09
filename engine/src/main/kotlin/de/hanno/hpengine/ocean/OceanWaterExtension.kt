@@ -24,6 +24,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
+import java.util.*
 import kotlin.math.ln
 import kotlin.math.max
 
@@ -48,28 +49,30 @@ class OceanWaterRenderSystem(
     private fun createRandomTexture(): Texture2D = listOf(ColorAttachmentDefinition("Random",
         RGBA32F
     )).toTextures(graphicsApi, N, N).first().apply {
-        graphicsApi.onGpu {
-            val buffer = BufferUtils.createByteBuffer(Float.SIZE_BYTES * dimension.width * dimension.height * 4)
-            val floatBuffer = buffer.asFloatBuffer()
-            val random = java.util.Random()
-            for (x in 0 until dimension.width) {
-                for (y in 0 until dimension.height) {
-                    floatBuffer.put(x + y * dimension.width, random.nextGaussian().toFloat())
-//                    buffer.put(x + y * dimension.width, Random.nextFloat())
-                }
+        fillWithRandomData(graphicsApi)
+    }
+
+    private fun Texture2D.fillWithRandomData(graphicsApi: GraphicsApi) = graphicsApi.run {
+        val buffer = BufferUtils.createByteBuffer(Float.SIZE_BYTES * dimension.width * dimension.height * 4)
+        val floatBuffer = buffer.asFloatBuffer()
+        val random = Random()
+        for (x in 0 until dimension.width) {
+            for (y in 0 until dimension.height) {
+                floatBuffer.put(x + y * dimension.width, random.nextGaussian().toFloat())
+    //                    buffer.put(x + y * dimension.width, Random.nextFloat())
             }
-            floatBuffer.flip()
-            texSubImage2D(
-                0,
-                0,
-                0,
-                dimension.width,
-                dimension.height,
-                Format.RED,
-                TexelComponentType.Float,
-                buffer
-            )
         }
+        floatBuffer.flip()
+        texSubImage2D(
+            0,
+            0,
+            0,
+            dimension.width,
+            dimension.height,
+            Format.RED,
+            TexelComponentType.Float,
+            buffer
+        )
     }
 
     //    TODO: These ones don't do the same thing as code below, find out why
@@ -165,6 +168,14 @@ class OceanWaterRenderSystem(
         if(components.isEmpty()) return
         val oceanWaterComponent = components.first()
         if(oceanWaterComponent.windspeed == 0f) { return }
+
+        if(oceanWaterComponent.initRandomNess) {
+            random0.fillWithRandomData(graphicsApi)
+            random1.fillWithRandomData(graphicsApi)
+            random2.fillWithRandomData(graphicsApi)
+            random3.fillWithRandomData(graphicsApi)
+            oceanWaterComponent.initRandomNess = false // TODO: This doesn't work when this component gets copied properly
+        }
 
         h0kShader.use()
         bindImageTexture(0, h0kMap, 0, false, 0, Access.WriteOnly)

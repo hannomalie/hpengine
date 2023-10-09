@@ -13,6 +13,7 @@ class OceanWaterComponent: Component() {
     var albedo: Vector3f = Vector3f(0f, 0.1f, 1f)
     var waveHeight = 1f
     var choppiness = 1f
+    var initRandomNess = false
 
     val L: Int get() = (windspeed.pow(2.0f) /9.81f).toInt()
 

@@ -245,6 +245,9 @@ private fun Window.oceanWaterInputs(selection: OceanWaterSelection) {
     floatInput("Time Factor", oceanWater.timeFactor, min = 0.0f, max = 10f) { floatArray ->
         oceanWater.timeFactor = floatArray[0]
     }
+    if (ImGui.button("Init new randomness")) {
+        oceanWater.initRandomNess = true
+    }
 }
 
 private fun Window.entityInputs(
