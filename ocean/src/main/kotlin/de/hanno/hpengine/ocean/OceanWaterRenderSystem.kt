@@ -26,7 +26,6 @@ import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
 import java.util.*
 import kotlin.math.ln
-import kotlin.math.max
 
 @Single(binds = [OceanWaterRenderSystem::class, RenderSystem::class, BaseSystem::class])
 class OceanWaterRenderSystem(

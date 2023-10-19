@@ -2,7 +2,6 @@ package de.hanno.hpengine.graphics.editor
 
 import InternalTextureFormat.RGBA16F
 import com.artemis.BaseSystem
-import com.artemis.Component
 import com.artemis.ComponentManager
 import com.artemis.World
 import com.artemis.managers.TagManager
@@ -18,13 +17,13 @@ import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.RenderingMode
-import de.hanno.hpengine.graphics.renderer.picking.Indices
-import de.hanno.hpengine.graphics.renderer.picking.OnClickListener
 import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.Facing
+import de.hanno.hpengine.graphics.editor.extension.EditorExtension
+import de.hanno.hpengine.graphics.editor.select.*
 import de.hanno.hpengine.graphics.output.DebugOutput
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.texture.Texture2D
@@ -41,32 +40,11 @@ import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImInt
-import org.joml.Vector2i
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 
 interface ImGuiEditorExtension {
     fun render(imGuiEditor: ImGuiEditor)
-}
-
-data class EntityClicked(val coordinates: Vector2i, val indices: Indices)
-
-@Single(binds = [EntityClickListener::class, OnClickListener::class])
-class EntityClickListener : OnClickListener {
-    var clickState: EntityClicked? = null
-    override fun onClick(coordinates: Vector2i, indices: Indices) = indices.run {
-        if (clickState == null) {
-            clickState = EntityClicked(coordinates, indices)
-        }
-    }
-
-    inline fun <T> consumeClick(onClick: (EntityClicked) -> T): T? = clickState?.let {
-        try {
-            onClick(it)
-        } finally {
-            this.clickState = null
-        }
-    }
 }
 
 enum class SelectionMode { Entity, Mesh; }
@@ -91,10 +69,12 @@ class ImGuiEditor(
     internal val deferredRenderExtensionConfig: DeferredRenderExtensionConfig?,
     internal val renderSystemsConfig: Lazy<RenderSystemsConfig>,
     internal val renderManager: Lazy<RenderManager>,
+    _editorExtensions: List<EditorExtension>,
 ) : BaseSystem(), RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val formerFinalOutput = finalOutput.texture2D
     override val supportsSingleStep: Boolean get() = false
+    internal val extensions: List<EditorExtension> = _editorExtensions.distinct()
 
     private var editorConfig = EditorConfig()
 
@@ -134,8 +114,6 @@ class ImGuiEditor(
                     .map { TextureOutputSelection(it.key, it.value as Texture2D) }
 
     val currentOutputTexture: TextureOutputSelection get() = textureOutputOptions[output.get()]
-
-    val fillBag = Bag<Component>()
 
     lateinit var artemisWorld: World
 
@@ -190,11 +168,10 @@ class ImGuiEditor(
                 selection = when (editorConfig.selectionMode) {
                     SelectionMode.Mesh -> {
                         val modelComponent = components.filterIsInstance<ModelComponent>().first()
-                        val model =
-                            artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
-                        MeshSelection(entityId, model.meshes[meshIndex], modelComponent, components.toList())
+                        val model = artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
+                        MeshSelection(entityId, model.meshes[meshIndex], modelComponent, components)
                     }
-                    else -> SimpleEntitySelection(entityId, components.toList())
+                    else -> SimpleEntitySelection(entityId, components)
                 }
             }
         }
@@ -250,6 +227,7 @@ class ImGuiEditor(
                         deferredRenderExtensionConfig,
                         renderSystemsConfig.value,
                         renderManager.value,
+                        extensions,
                     )
                 }
             }

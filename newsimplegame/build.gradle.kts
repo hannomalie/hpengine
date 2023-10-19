@@ -27,6 +27,7 @@ application {
 dependencies {
     api(project(":engine"))
     api(project(":editor"))
+    api(project(":ocean"))
 }
 
 val bundleLinux by tasks.registering {

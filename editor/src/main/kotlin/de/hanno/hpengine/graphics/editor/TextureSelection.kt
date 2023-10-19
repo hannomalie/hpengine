@@ -5,14 +5,14 @@ import de.hanno.hpengine.model.material.Material
 import imgui.ImGui
 
 fun textureSelection(
-    editor: ImGuiEditor,
-    material: Material
+    material: Material,
+    textureManager: TextureManagerBaseSystem
 ) {
     ImGui.text("Textures")
-    val all2DTextures = editor.artemisWorld.getSystem(OpenGLTextureManager::class.java)
-        .textures.filterValues { it is Texture2D } + editor.textureManager.texturesForDebugOutput
+    val all2DTextures = textureManager
+        .textures.filterValues { it is Texture2D } + textureManager.texturesForDebugOutput
 
-    val all3DTextures = editor.artemisWorld.getSystem(OpenGLTextureManager::class.java)
+    val all3DTextures = textureManager
         .textures.filterValues { it is CubeMap }
 
     val all2DTexturesNames = all2DTextures.keys.toTypedArray()

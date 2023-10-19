@@ -1,5 +1,8 @@
 package de.hanno.hpengine
 
+import com.artemis.BaseSystem
+import com.artemis.link.EntityLinkManager
+import com.artemis.managers.TagManager
 import de.hanno.hpengine.config.*
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
@@ -30,5 +33,10 @@ class ApiModule {
     fun fpsCounter(fpsCounterSystem: FPSCounterSystem) = fpsCounterSystem.fpsCounter
     @Single(binds = [RenderSystem::class, FPSCounterSystem::class])
     fun fpsCounterSystem() = FPSCounterSystem()
+
+    @Single(binds = [TagManager::class, BaseSystem::class])
+    fun tagManager() = TagManager()
+    @Single(binds = [EntityLinkManager::class, BaseSystem::class])
+    fun entityLinkManager() = EntityLinkManager()
 }
 val apiModule = ApiModule().module

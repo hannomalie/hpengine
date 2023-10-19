@@ -4,7 +4,6 @@ import com.artemis.BaseSystem
 import com.artemis.World
 import com.artemis.WorldConfigurationBuilder
 import com.artemis.link.EntityLinkManager
-import com.artemis.managers.TagManager
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import de.hanno.hpengine.config.Config
@@ -29,10 +28,7 @@ class Engine(
     private val window: Window,
     private val addResourceContext: AddResourceContext,
 ) {
-    val systems = listOf(
-        EntityLinkManager(),
-        TagManager(),
-    ) + baseSystems
+    val systems = baseSystems
 
     val extractors = systems.filterIsInstance<Extractor>().distinct() // TODO: bind as Extractor, inject properly, this is flawed
     val renderManager = systems.firstIsInstance<RenderManager>() // TODO: See above

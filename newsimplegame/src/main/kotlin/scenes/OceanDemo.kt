@@ -16,6 +16,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ocean.OceanWaterComponent
 import de.hanno.hpengine.ocean.OceanWaterRenderSystem
+import de.hanno.hpengine.ocean.oceanModule
 import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.dsl.Directory
@@ -46,6 +47,7 @@ fun main() {
             openglModule,
             deferredRendererModule,
             editorModule,
+            oceanModule,
             module {
                 single { config }
                 single { config.gameDir }

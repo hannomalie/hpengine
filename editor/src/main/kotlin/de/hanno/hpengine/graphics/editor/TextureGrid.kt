@@ -14,33 +14,3 @@ fun textureManagerGrid(
         }
     }
 }
-fun textureGrid(
-    graphicsApi: GraphicsApi,
-    key: String,
-    texture: Texture
-) {
-    ImGui.text(key)
-    if (ImGui.beginCombo("UploadState", texture.uploadState.toString())) {
-        val states = listOf(
-            UploadState.Uploaded,
-            UploadState.NotUploaded
-        ) + (0..texture.mipmapCount).map { UploadState.Uploading(it) }
-
-        states.forEach { type ->
-            val selected = texture.uploadState == type
-            if (ImGui.selectable(type.toString(), selected)) {
-                texture.uploadState = type
-            }
-            if (selected) {
-                ImGui.setItemDefaultFocus()
-            }
-        }
-        ImGui.endCombo()
-    }
-    if (ImGui.button("Load")) {
-        if(texture is FileBasedTexture2D) {
-            graphicsApi.run { texture.uploadAsync() }
-        }
-    }
-
-}
