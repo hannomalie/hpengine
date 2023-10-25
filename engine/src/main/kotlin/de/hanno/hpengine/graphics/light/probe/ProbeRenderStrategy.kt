@@ -2,20 +2,11 @@ package de.hanno.hpengine.graphics.light.probe
 
 import AmbientCubeImpl.Companion.sizeInBytes
 import InternalTextureFormat.*
-import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.constants.*
-import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimension
-import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.dimensionHalf
-import de.hanno.hpengine.graphics.light.probe.ProbeRenderStrategy.Companion.extent
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.rendertarget.DepthBuffer
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
@@ -23,13 +14,12 @@ import de.hanno.hpengine.graphics.rendertarget.toCubeMaps
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -41,7 +31,6 @@ class ProbeRenderStrategy(
     private val config: Config,
     private val graphicsApi: GraphicsApi,
     programManager: ProgramManager,
-    private val textureManager: OpenGLTextureManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
 ) {
@@ -227,69 +216,3 @@ class ProbeRenderStrategy(
     }
 }
 
-class EvaluateProbeRenderExtension(
-    private val graphicsApi: GraphicsApi,
-    private val programManager: ProgramManager,
-    textureManager: OpenGLTextureManager,
-    private val config: Config,
-    private val deferredRenderingBuffer: DeferredRenderingBuffer,
-    private val directionalLightStateHolder: DirectionalLightStateHolder,
-    private val entitiesStateHolder: EntitiesStateHolder,
-    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
-): DeferredRenderExtension {
-
-    private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
-
-    private val probeRenderStrategy = ProbeRenderStrategy(
-        config,
-        graphicsApi,
-        programManager,
-        textureManager,
-        directionalLightStateHolder,
-        entitiesStateHolder,
-    )
-
-    val evaluateProbeProgram = programManager.getProgram(
-        config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
-        config.engineDir.resolve("shaders/evaluate_probe_fragment.glsl").toCodeSource(),
-        Uniforms.Empty,
- Defines()
-    )
-
-    override fun renderFirstPass(
-        renderState: RenderState
-    ) {
-        probeRenderStrategy.renderProbes(renderState)
-
-    }
-
-    override fun renderSecondPassFullScreen(renderState: RenderState): Unit = graphicsApi.run {
-
-        val deferredRenderingBuffer = deferredRenderingBuffer
-        deferredRenderingBuffer.lightAccumulationBuffer.use(false)
-
-        graphicsApi.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
-        graphicsApi.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
-        graphicsApi.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-        graphicsApi.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
-        graphicsApi.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-
-        val camera = renderState[primaryCameraStateHolder.camera]
-        evaluateProbeProgram.use()
-        val camTranslation = Vector3f()
-        evaluateProbeProgram.setUniform(
-            "eyePosition",
-            camera.transform.getTranslation(camTranslation)
-        )
-        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
-        evaluateProbeProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
-        evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderStrategy.probeGrid)
-        evaluateProbeProgram.setUniform("screenWidth", config.width.toFloat())
-        evaluateProbeProgram.setUniform("screenHeight", config.height.toFloat())
-        evaluateProbeProgram.setUniform("extent", extent)
-        evaluateProbeProgram.setUniform("dimension", dimension)
-        evaluateProbeProgram.setUniform("dimensionHalf", dimensionHalf)
-        fullscreenBuffer.draw()
-    }
-}

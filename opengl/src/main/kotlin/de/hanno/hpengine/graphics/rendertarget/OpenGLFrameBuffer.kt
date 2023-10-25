@@ -9,7 +9,7 @@ import de.hanno.hpengine.graphics.texture.Texture3D
 import org.lwjgl.opengl.GL30.*
 import org.lwjgl.opengl.GL32
 
-class OpenGLFrameBuffer(override val frameBuffer: Int, override val depthBuffer: DepthBuffer<*>?) : FrameBuffer {
+class OpenGLFrameBuffer private constructor(override val frameBuffer: Int, override val depthBuffer: DepthBuffer<*>?) : FrameBuffer {
 
     companion object {
         operator fun invoke(

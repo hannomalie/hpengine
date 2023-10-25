@@ -16,7 +16,6 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
@@ -35,6 +34,7 @@ class AOScatteringExtension(
     private val pointLightStateHolder: PointLightStateHolder,
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val pointLightSystem: PointLightSystem,
 ): DeferredRenderExtension {
     private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer(graphicsApi) }
     val gBuffer = deferredRenderingBuffer
@@ -61,7 +61,7 @@ class AOScatteringExtension(
             if(directionalShadowMap > -1) {
                 bindTexture(6, TextureTarget.TEXTURE_2D, directionalShadowMap)
             }
-            renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
+            pointLightSystem.shadowMapStrategy.bindTextures()
             val environmentProbesState = renderState[environmentProbesStateHolder.environmentProbesState]
             if(environmentProbesState.environmapsArray3Id > 0) {
                 graphicsApi.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, environmentProbesState.environmapsArray3Id)
@@ -84,12 +84,12 @@ class AOScatteringExtension(
             //		}
 
             aoScatteringProgram.setUniform("maxPointLightShadowmaps", PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
-            aoScatteringProgram.setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLights.size)
+            aoScatteringProgram.setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLightCount)
             aoScatteringProgram.bindShaderStorageBuffer(2,
                 renderState[pointLightStateHolder.lightState].pointLightBuffer)
             aoScatteringProgram.bindShaderStorageBuffer(3, directionalLightState)
 
-            fullscreenBuffer.draw()
+            fullscreenBuffer.draw(indexBuffer = null)
             profiled("generate mipmaps") {
                 graphicsApi.enable(Capability.DEPTH_TEST)
                 graphicsApi.generateMipMaps(gBuffer.halfScreenBuffer.textures[0])

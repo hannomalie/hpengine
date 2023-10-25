@@ -33,7 +33,6 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.math.Vector4fStrukt
-import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3fc
 import org.koin.core.annotation.Single

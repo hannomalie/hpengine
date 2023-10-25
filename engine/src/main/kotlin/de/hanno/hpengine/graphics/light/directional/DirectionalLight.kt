@@ -101,23 +101,6 @@ class DirectionalLightSystem(
 }
 
 
-@Single
-class DirectionalLightStateHolder(
-    private val graphicsApi: GraphicsApi,
-    private val renderStateContext: RenderStateContext,
-) {
-    val lightState = renderStateContext.renderState.registerState {
-        graphicsApi.PersistentShaderStorageBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type).apply {
-            forIndex(0) {
-                it.shadowMapId = -1
-                it.shadowMapHandle = -1L
-            }
-
-        }
-    }
-    val directionalLightHasMovedInCycle = renderStateContext.renderState.registerState { 0L }
-}
-
 fun World.addDirectionalLight() {
     edit(create()).apply {
         create(NameComponent::class.java).apply {

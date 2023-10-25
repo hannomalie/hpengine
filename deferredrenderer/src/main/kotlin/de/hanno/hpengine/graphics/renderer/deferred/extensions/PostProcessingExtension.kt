@@ -4,7 +4,6 @@ package de.hanno.hpengine.graphics.renderer.deferred.extensions
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
@@ -55,7 +54,7 @@ class PostProcessingExtension(
             bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
             bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
             bindTexture(4, TextureTarget.TEXTURE_2D, textureManager.lensFlareTexture.id)
-            fullscreenBuffer.draw()
+            fullscreenBuffer.draw(indexBuffer = null)
         }
     }
 }

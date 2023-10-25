@@ -12,17 +12,21 @@ import de.hanno.hpengine.graphics.constants.RenderingMode.Lines
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
+import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
-open class DirectFirstPassPipeline(
+open class DirectPipeline(
     private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val program: Program<out FirstPassUniforms>,
@@ -141,6 +145,8 @@ open class DirectFirstPassPipeline(
         for (groupedBatches in batchesWithOwnProgram) {
             for (batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
                 val program = batch.program!!
+                program as Program<FirstPassUniforms> // TODO: This is not safe
+
                 cullFace = batch.material.cullBackFaces
                 depthTest = batch.material.depthTest
                 depthMask = batch.material.writesDepth
@@ -196,9 +202,6 @@ open class DirectFirstPassPipeline(
     }
 }
 
-private val <T: Uniforms> Program<T>.tesselationControlShader: TesselationControlShader?
-    get() = shaders.firstIsInstanceOrNull<TesselationControlShader>()
-
 val ProgramImpl<*>.primitiveType
     get() = if (tesselationControlShader != null) {
         PrimitiveType.Patches
@@ -207,59 +210,50 @@ val ProgramImpl<*>.primitiveType
     }
 
 context(GraphicsApi)
-fun DirectDrawDescription<FirstPassUniforms>.draw() {
-    beforeDraw(renderState, program, drawCam)
-    if(ignoreCustomPrograms) {
-        program.use()
-    }
+fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>, diffuseFallbackTexture: Texture? = null) {
+    for (mapEnumEntry in Material.MAP.values()) {
+        if (maps.contains(mapEnumEntry)) {
+            val map = maps[mapEnumEntry]!!
+            if (map.id > 0) {
+                val isDiffuse = mapEnumEntry == Material.MAP.DIFFUSE
 
-    val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
-    vertexIndexBuffer.indexBuffer.bind()
-    for (groupedBatches in batchesWithOwnProgram) {
-        var program: Program<FirstPassUniforms> // TODO: Assign this program in the loop below and use() only on change
-        for(batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
-            if (!ignoreCustomPrograms) {
-                program = (batch.program ?: this.program)
-                program.use()
-            } else {
-                program = this.program
+                when(map.uploadState) {
+                    UploadState.Uploaded -> {
+                        bindTexture(mapEnumEntry.textureSlot, map)
+                        setUniform(mapEnumEntry.uniformKey, true)
+                        if(isDiffuse) {
+                            setUniform("diffuseMipBias", 0)
+                        }
+                    }
+                    UploadState.NotUploaded -> {
+                        if(isDiffuse) {
+                            if(diffuseFallbackTexture != null) {
+                                bindTexture(mapEnumEntry.textureSlot, diffuseFallbackTexture)
+                                setUniform(mapEnumEntry.uniformKey, true)
+                                setUniform("diffuseMipBias", 0)
+                            } else {
+                                setUniform(mapEnumEntry.uniformKey, false)
+                                setUniform("diffuseMipBias", 0)
+                            }
+                        } else {
+                            setUniform(mapEnumEntry.uniformKey, false)
+                        }
+                    }
+                    is UploadState.Uploading -> {
+                        if(isDiffuse) {
+                            bindTexture(mapEnumEntry.textureSlot, map)
+                            setUniform(mapEnumEntry.uniformKey, true)
+                            setUniform("diffuseMipBias", (map.uploadState as UploadState.Uploading).maxMipMapLoaded)
+                        } else {
+                            setUniform(mapEnumEntry.uniformKey, false)
+                        }
+                    }
+                }
             }
-            program.uniforms.entityIndex = batch.entityBufferIndex
-            beforeDraw(renderState, program, drawCam)
-            cullFace = batch.material.cullBackFaces
-            depthTest = batch.material.depthTest
-            depthMask = batch.material.writesDepth
-            program.setTextureUniforms(batch.material.maps)
-            val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
-
-            program.bind()
-            vertexIndexBuffer.indexBuffer.draw(
-                batch.drawElementsIndirectCommand,
-                primitiveType = primitiveType,
-                mode = mode,
-                bindIndexBuffer = false,
-            )
+        } else {
+            setUniform(mapEnumEntry.uniformKey, false)
         }
     }
-
-    beforeDraw(renderState, program, drawCam)
-    vertexIndexBuffer.indexBuffer.bind()
-    for (batch in renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }) {
-        depthMask = batch.material.writesDepth
-        cullFace = batch.material.cullBackFaces
-        depthTest = batch.material.depthTest
-        program.setTextureUniforms(batch.material.maps)
-        program.uniforms.entityIndex = batch.entityBufferIndex
-        program.bind()
-        vertexIndexBuffer.indexBuffer.draw(
-            batch.drawElementsIndirectCommand,
-            primitiveType = PrimitiveType.Triangles,
-            mode = mode,
-            bindIndexBuffer = false,
-        )
-    }
-
-    depthMask = true // TODO: Resetting defaults here should not be necessary
 }
 
 fun RenderBatch.isCulled(cullCam: Camera): Boolean {

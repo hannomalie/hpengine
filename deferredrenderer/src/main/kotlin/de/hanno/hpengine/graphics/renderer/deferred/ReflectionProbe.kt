@@ -14,11 +14,11 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.feature.BindlessTextures
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
+import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.graphics.renderer.drawLines
@@ -39,7 +39,6 @@ import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
-import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
@@ -101,6 +100,7 @@ class ReflectionProbeRenderExtension(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val reflectionProbesStateHolder: ReflectionProbesStateHolder,
+    private val pointLightSystem: PointLightSystem,
 ) : DeferredRenderExtension {
     private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
     override val renderPriority = 3000
@@ -289,7 +289,7 @@ class ReflectionProbeRenderExtension(
             bindTexture(6, TextureTarget.TEXTURE_2D, directionalShadowMap)
         }
         bindTexture(7, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
-        renderState[pointLightStateHolder.lightState].pointLightShadowMapStrategy.bindTextures()
+        pointLightSystem.shadowMapStrategy.bindTextures()
 
         val camera = renderState[primaryCameraStateHolder.camera]
         evaluateProbeProgram.setUniform("eyePosition", camera.getPosition())
@@ -301,7 +301,7 @@ class ReflectionProbeRenderExtension(
 
         evaluateProbeProgram.setUniform("probeCount", currentReflectionProbeRenderState.probeCount)
         evaluateProbeProgram.bindShaderStorageBuffer(4, currentReflectionProbeRenderState.probeMinMaxStructBuffer)
-        fullscreenBuffer.draw()
+        fullscreenBuffer.draw(indexBuffer = null)
 
         gBuffer.use(false)
 
@@ -333,7 +333,7 @@ class ReflectionProbeRenderExtension(
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(2, pointLightState.pointLightBuffer)
-                pointCubeShadowPassProgram.setUniform("pointLightCount", pointLightState.pointLights.size)
+                pointCubeShadowPassProgram.setUniform("pointLightCount", pointLightState.pointLightCount)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
                 pointCubeShadowPassProgram.setUniform(
                     "pointLightPositionWorld",

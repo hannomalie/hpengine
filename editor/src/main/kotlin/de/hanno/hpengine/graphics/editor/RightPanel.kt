@@ -5,7 +5,6 @@ import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.RenderSystemsConfig
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtensionConfig
 import imgui.ImGui
 import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiWindowFlags
@@ -17,7 +16,6 @@ fun ImGuiEditor.rightPanel(
     rightPanelWidth: Float,
     screenHeight: Float,
     editorConfig: EditorConfig,
-    deferredRenderExtensionConfig: DeferredRenderExtensionConfig?,
     renderSystemsConfig: RenderSystemsConfig,
     renderManager: RenderManager,
     editorExtensions: List<EditorExtension>
@@ -66,17 +64,8 @@ fun ImGuiEditor.rightPanel(
                         }
                     }
                 }
-                tab("RenderExtensions") {
-                    deferredRenderExtensionConfig?.run {
-                        renderExtensions.forEach {
-                            if (ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
-                                it.enabled = !it.enabled
-                            }
-                        }
-                    }
-                }
                 configTab(config, window)
-                renderTab(this@rightPanel, renderStateContext, graphicsApi, gpuProfiler, renderSystemsConfig, renderManager)
+                renderTab(this@rightPanel, gpuProfiler, renderManager)
                 tab("Editor") {
                     if (ImGui.beginCombo("Selection Mode", editorConfig.selectionMode.toString())) {
                         SelectionMode.values().forEach {

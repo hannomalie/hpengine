@@ -10,10 +10,9 @@ class ProgramImpl<T: Uniforms>(
     val geometryShader: GeometryShader?,
     val tesselationControlShader: TesselationControlShader?,
     val tesselationEvaluationShader: TesselationEvaluationShader?,
-    uniforms: T,
+    override val uniforms: T,
     defines: Defines = Defines(),
     graphicsApi: GraphicsApi,
-    fileMonitor: FileMonitor,
 ): AbstractProgram<T>(
     shaders = listOfNotNull(
         vertexShader,
@@ -23,6 +22,5 @@ class ProgramImpl<T: Uniforms>(
         tesselationEvaluationShader
     ),
     defines = defines,
-    uniforms = uniforms,
     graphicsApi = graphicsApi,
 )

@@ -29,7 +29,6 @@ import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
-import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtensionConfig
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
@@ -66,7 +65,6 @@ class ImGuiEditor(
     internal val entityClickListener: EntityClickListener,
     internal val primaryCameraStateHolder: PrimaryCameraStateHolder,
     internal val gpuProfiler: GPUProfiler,
-    internal val deferredRenderExtensionConfig: DeferredRenderExtensionConfig?,
     internal val renderSystemsConfig: Lazy<RenderSystemsConfig>,
     internal val renderManager: Lazy<RenderManager>,
     _editorExtensions: List<EditorExtension>,
@@ -224,7 +222,6 @@ class ImGuiEditor(
                         rightPanelWidth,
                         screenHeight,
                         editorConfig,
-                        deferredRenderExtensionConfig,
                         renderSystemsConfig.value,
                         renderManager.value,
                         extensions,

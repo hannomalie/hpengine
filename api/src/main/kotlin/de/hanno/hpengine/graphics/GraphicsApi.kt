@@ -8,6 +8,7 @@ import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import de.hanno.hpengine.graphics.buffer.IndexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
 import de.hanno.hpengine.graphics.feature.GpuFeature
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.rendertarget.*
@@ -257,6 +258,7 @@ interface GraphicsApi {
 
     fun drawArraysInstanced(primitiveType: PrimitiveType, firsIndex: Int, count: Int, primitiveCount: Int)
 
+    fun VertexBuffer.draw(indexBuffer: IndexBuffer?): Int
     fun validateFrameBufferState(renderTargetImpl: BackBufferRenderTarget<*>)
 
     fun framebufferTextureLayer(index: Int, texture: Texture, level: Int, layer: Int)

@@ -156,7 +156,7 @@ class ProbeRenderer(
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(2,
                     renderState[pointLightStateHolder.lightState].pointLightBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightCount",
-                    renderState[pointLightStateHolder.lightState].pointLights.size)
+                    renderState[pointLightStateHolder.lightState].pointLightCount)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", probePositions[probeIndex])
 //                pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)

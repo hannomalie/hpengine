@@ -1,12 +1,10 @@
 package de.hanno.hpengine.graphics.renderer
 
-import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
-import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import org.joml.Vector3f
-import java.util.ArrayList
 
 class RenderBatch(
     var entityIndex: Int = -1,
@@ -27,7 +25,7 @@ class RenderBatch(
     var animated : Boolean = false,
     var boundingSphereRadius: Float = 0.0f,
     var material: Material = Material("default"),
-    var program: ProgramImpl<FirstPassUniforms>? = null,
+    var program: ProgramImpl<*>? = null,
     var entityBufferIndex: Int = 0,
     var contributesToGi: Boolean = true
 ) {

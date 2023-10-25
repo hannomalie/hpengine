@@ -39,7 +39,7 @@ class DeferredRenderingBuffer(
     )
 
     internal val reflectionBuffer = graphicsApi.RenderTarget(
-        OpenGLFrameBuffer(graphicsApi, depthBuffer),
+        graphicsApi.FrameBuffer(depthBuffer),
         width,
         height,
         ColorAttachmentDefinitions(arrayOf("Diffuse", "Specular"), RGBA16F).toList().toTextures(
@@ -81,7 +81,7 @@ class DeferredRenderingBuffer(
     )
 
     internal val finalBuffer = graphicsApi.RenderTarget(
-        OpenGLFrameBuffer(graphicsApi, depthBuffer),
+        graphicsApi.FrameBuffer(depthBuffer),
         width = width,
         height = height,
         textures = listOf(ColorAttachmentDefinition("Color", RGB8)).toTextures(graphicsApi, width, height),
@@ -90,7 +90,7 @@ class DeferredRenderingBuffer(
     )
 
     internal val halfScreenBuffer = graphicsApi.RenderTarget(
-        OpenGLFrameBuffer(graphicsApi, depthBuffer),
+        graphicsApi.FrameBuffer(depthBuffer),
         width = width / 2,
         height = height / 2,
         textures = listOf(

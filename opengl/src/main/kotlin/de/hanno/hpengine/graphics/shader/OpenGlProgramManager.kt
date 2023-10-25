@@ -7,7 +7,6 @@ import de.hanno.hpengine.graphics.ProgramChangeListenerManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.ressources.*
-import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -43,7 +42,7 @@ class OpenGlProgramManager(
         codeSource: FileBasedCodeSource,
         defines: Defines,
         uniforms: Uniforms?
-    ): ComputeProgramImpl = ComputeProgramImpl(ComputeShader(graphicsApi, codeSource, defines), graphicsApi, fileMonitor).apply {
+    ): ComputeProgramImpl = ComputeProgramImpl(ComputeShader(graphicsApi, codeSource, defines), graphicsApi, fileMonitor, uniforms ?: Uniforms.Empty).apply {
         programsCache.add(this).apply {
             programChangeListener.run {
                 reregisterListener { graphicsApi.run { reload() } }
@@ -76,10 +75,9 @@ class OpenGlProgramManager(
             geometryShader = geometryShaderSource?.let { GeometryShader(graphicsApi, it, defines) },
             tesselationControlShader = tesselationControlShaderSource?.let { TesselationControlShader(graphicsApi, it, defines) },
             tesselationEvaluationShader = tesselationEvaluationShaderSource?.let { TesselationEvaluationShader(graphicsApi, it, defines) },
-            defines = defines,
             uniforms = uniforms,
+            defines = defines,
             graphicsApi = graphicsApi,
-            fileMonitor = fileMonitor,
         ).apply {
             load()
             programsCache.add(this)
@@ -90,7 +88,7 @@ class OpenGlProgramManager(
     }
 
     override fun getComputeProgram(codeSource: CodeSource): ComputeProgramImpl = ComputeProgramImpl(
-        ComputeShader(graphicsApi, codeSource, Defines()), graphicsApi, fileMonitor,
+        ComputeShader(graphicsApi, codeSource, Defines()), graphicsApi, fileMonitor,  Uniforms.Empty,
     )
 
     var programsSourceCache: WeakHashMap<Shader, Int> = WeakHashMap()

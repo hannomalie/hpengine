@@ -16,11 +16,9 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.IndirectCulledDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.constants.RenderingMode
-import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -30,10 +28,14 @@ import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.buffer.vertex.drawElementsIndirectCount
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
+import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.joml.Vector4f
@@ -95,7 +97,7 @@ open class GPUCulledPipeline(
     }
 
     private val highZBuffer = graphicsApi.RenderTarget(
-        frameBuffer = OpenGLFrameBuffer(graphicsApi, null),
+        frameBuffer = graphicsApi.FrameBuffer(null),
         width = config.width / 2,
         height = config.height / 2,
         textures = listOf(
@@ -503,3 +505,12 @@ class CommandOrganizationGpuCulled(graphicsApi: GraphicsApi) {
     val instanceCountForCommand = IndexBuffer(graphicsApi)
 }
 
+class IndirectCulledDrawDescription<T : FirstPassUniforms>(
+    val renderState: RenderState,
+    val program: Program<T>,
+    val commandOrganization: CommandOrganizationGpuCulled,
+    val vertexIndexBuffer: VertexIndexBuffer<*>,
+    val mode: RenderingMode,
+    val camera: Camera,
+    val cullCam: Camera = camera,
+)

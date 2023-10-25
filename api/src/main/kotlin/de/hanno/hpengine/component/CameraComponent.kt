@@ -80,7 +80,7 @@ class CameraComponent: Component() {
 }
 
 @Single(binds=[BaseSystem::class, CameraSystem::class])
-class CameraSystem: BaseSystem(), WorldPopulator {
+class CameraSystem : BaseSystem(), WorldPopulator {
     override fun processSystem() { }
     override fun World.populate() {
         addPrimaryCamera()

@@ -4,6 +4,7 @@ import InternalTextureFormat
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.buffer.*
 import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.VertexBufferImpl
 import de.hanno.hpengine.graphics.buffer.vertex.drawInstancedBaseVertex
 import de.hanno.hpengine.graphics.constants.*
@@ -801,6 +802,18 @@ class OpenGLContext private constructor(
              count,
              primitiveCount
          )
+    }
+
+    override fun VertexBuffer.draw(indexBuffer: IndexBuffer?): Int {
+        bind()
+        return if (indexBuffer != null) {
+            indexBuffer.bind()
+            glDrawElements(GL_TRIANGLES, indexBuffer.buffer)
+            (indexBuffer.buffer.capacity() / 3) / Byte.SIZE_BYTES
+        } else {
+            glDrawArrays(GL_TRIANGLES, 0, verticesCount)
+            verticesCount / 3
+        }
     }
 
     override fun validateFrameBufferState(renderTarget: BackBufferRenderTarget<*>) {

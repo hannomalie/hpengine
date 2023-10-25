@@ -10,14 +10,12 @@ import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
-import com.artemis.World
-import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
@@ -29,27 +27,27 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.math.Matrix4fStrukt
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
+import de.hanno.hpengine.system.Extractor
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
 import struktgen.api.forIndex
 
 
-@Single(binds = [DirectionalLightShadowMapExtension::class, DeferredRenderExtension::class])
+@Single(binds = [DirectionalLightShadowMapExtension::class, Extractor::class, RenderSystem::class])
 class DirectionalLightShadowMapExtension(
     private val graphicsApi: GraphicsApi,
-    private val renderStateContext: RenderStateContext,
-    private val config: Config,
-    private val programManager: ProgramManager,
-    private val textureManager: OpenGLTextureManager,
+    renderStateContext: RenderStateContext,
+    config: Config,
+    programManager: ProgramManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
-) : DeferredRenderExtension {
+) : Extractor, RenderSystem {
 
     private var forceRerender = true
 
@@ -146,14 +144,14 @@ class DirectionalLightShadowMapExtension(
 
     val shadowMapId = renderTarget.renderedTexture
 
-    override fun extract(renderState: RenderState, world: World) {
-        renderState[directionalLightStateHolder.lightState].typedBuffer.forIndex(0) {
+    override fun extract(currentWriteState: RenderState) {
+        currentWriteState[directionalLightStateHolder.lightState].typedBuffer.forIndex(0) {
             it.shadowMapHandle = renderTarget.frameBuffer.depthBuffer!!.texture.handle
             it.shadowMapId = renderTarget.frameBuffer.depthBuffer!!.texture.id
         }
     }
 
-    override fun renderZeroPass(renderState: RenderState) = graphicsApi.run {
+    override fun render(renderState: RenderState) = graphicsApi.run {
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         profiled("Directional shadowmap") {
             val needsRerender = forceRerender ||

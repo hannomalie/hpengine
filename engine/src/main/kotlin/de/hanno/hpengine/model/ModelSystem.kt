@@ -23,8 +23,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder

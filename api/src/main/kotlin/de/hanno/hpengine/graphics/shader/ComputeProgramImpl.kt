@@ -7,10 +7,10 @@ class ComputeProgramImpl(
     val computeShader: ComputeShader,
     private val graphicsApi: GraphicsApi,
     private val fileMonitor: FileMonitor,
+    override val uniforms: Uniforms,
 ) : AbstractProgram<Uniforms>(
     shaders = listOf(computeShader),
     defines = computeShader.defines,
-    uniforms = Uniforms.Empty,
     graphicsApi,
 ), ComputeProgram<Uniforms> {
     override fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int) {

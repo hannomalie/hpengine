@@ -1,19 +1,19 @@
-package de.hanno.hpengine.graphics.light.directional
+package de.hanno.hpengine.graphics.renderer.deferred.extensions
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.constants.BlendMode
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.feature.BindlessTextures
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
@@ -23,7 +23,7 @@ import struktgen.api.forIndex
 class DirectionalLightSecondPassExtension(
     private val config: Config,
     private val programManager: ProgramManager,
-    private val textureManager: OpenGLTextureManager,
+    private val textureManager: TextureManager,
     private val graphicsApi: GraphicsApi,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
@@ -109,7 +109,7 @@ class DirectionalLightSecondPassExtension(
                 secondPassDirectionalProgram.bindShaderStorageBuffer(2, directionalLightState)
             }
             profiled("Draw fullscreen buffer") {
-                fullscreenBuffer.draw()
+                fullscreenBuffer.draw(indexBuffer = null)
             }
         }
     }

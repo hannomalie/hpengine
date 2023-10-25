@@ -75,7 +75,6 @@ class PointLightSystem(
 
         currentWriteState[lightState].pointLightBuffer.ensureCapacityInBytes(gpuPointLights.sizeInBytes)
         gpuPointLights.buffer.copyTo(currentWriteState[lightState].pointLightBuffer.buffer)
-        currentWriteState[lightState].pointLightShadowMapStrategy = shadowMapStrategy
     }
 
     companion object {

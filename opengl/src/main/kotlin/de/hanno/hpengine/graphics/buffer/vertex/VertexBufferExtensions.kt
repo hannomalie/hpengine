@@ -41,17 +41,6 @@ fun GpuBuffer.drawInstancedBaseVertex(
     primitiveType
 )
 
-fun VertexBuffer.draw(indexBuffer: IndexBuffer? = null): Int {
-    bind()
-    return if (indexBuffer != null) {
-        indexBuffer.bind()
-        glDrawElements(GL_TRIANGLES, indexBuffer.buffer)
-        (indexBuffer.buffer.capacity() / 3) / Byte.SIZE_BYTES
-    } else {
-        glDrawArrays(GL_TRIANGLES, 0, verticesCount)
-        verticesCount / 3
-    }
-}
 /**
  *
  *

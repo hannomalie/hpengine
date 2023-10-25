@@ -1,10 +1,10 @@
 package de.hanno.hpengine
 
+import InternalTextureFormat
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.extension.renderSystem
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.output.FinalOutput
-import de.hanno.hpengine.graphics.renderer.IdTexture
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
@@ -36,10 +36,6 @@ val textureRendererModule = module {
                 clear = Vector4f(),
             )
         }
-    }
-    single {
-        val textureManager: OpenGLTextureManager = get()
-        IdTexture(textureManager.defaultTexture.backingTexture)
     }
     single {
         val renderTarget: RenderTarget2D = get()

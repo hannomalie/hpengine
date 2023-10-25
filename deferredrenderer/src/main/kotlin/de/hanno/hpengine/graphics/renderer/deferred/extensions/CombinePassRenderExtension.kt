@@ -3,7 +3,6 @@ package de.hanno.hpengine.graphics.renderer.deferred.extensions
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.constants.Capability
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
@@ -84,7 +83,7 @@ class CombinePassRenderExtension(private val config: Config,
             bindTexture(14, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
             bindTexture(15, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.halfScreenBuffer.renderedTextures[1])
 
-            fullscreenBuffer.draw()
+            fullscreenBuffer.draw(indexBuffer = null)
 
         }
     }

@@ -2,9 +2,11 @@ package de.hanno.hpengine.camera
 
 import de.hanno.hpengine.buffers.safePut
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.math.createOrthogonal
 import de.hanno.hpengine.math.createPerspective
 import org.joml.*
+import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 
 class Camera(
@@ -198,4 +200,11 @@ class Camera(
     }
 }
 
+
+@Single
+class CameraComponentsStateHolder(
+    renderStateContext: RenderStateContext
+) {
+    val frustumLines = renderStateContext.renderState.registerState { mutableListOf<Vector3fc>() }
+}
 

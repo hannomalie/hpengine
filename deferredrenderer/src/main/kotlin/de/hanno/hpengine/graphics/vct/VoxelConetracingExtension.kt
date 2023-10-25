@@ -1,6 +1,5 @@
 package de.hanno.hpengine.graphics.vct
 
-import InternalTextureFormat
 import Vector4fStruktImpl.Companion.type
 import VoxelGridImpl.Companion.type
 import com.artemis.World
@@ -10,27 +9,29 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.constants.Capability.*
 import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_3D
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.light.gi.GIVolumeGrids
 import de.hanno.hpengine.graphics.light.gi.GiVolumeStateHolder
+import de.hanno.hpengine.graphics.light.gi.gridTextureFormatSized
+import de.hanno.hpengine.graphics.light.gi.indexGridTextureFormatSized
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.deferred.extensions.BvHPointLightSecondPassExtension
+import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.texture.Texture3D
-import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -44,38 +45,6 @@ import struktgen.api.get
 import struktgen.api.size
 import kotlin.math.max
 
-fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExtension.GIVolumeGrids {
-    return VoxelConeTracingExtension.GIVolumeGrids(
-        getTexture3D(
-            gridSize,
-            VoxelConeTracingExtension.gridTextureFormatSized,
-            MinFilter.LINEAR_MIPMAP_LINEAR,
-            MagFilter.LINEAR,
-            WrapMode.ClampToEdge
-        ),
-        getTexture3D(
-            gridSize,
-            VoxelConeTracingExtension.indexGridTextureFormatSized,
-            MinFilter.NEAREST,
-            MagFilter.NEAREST,
-            WrapMode.ClampToEdge
-        ),
-        getTexture3D(
-            gridSize,
-            VoxelConeTracingExtension.gridTextureFormatSized,
-            MinFilter.LINEAR_MIPMAP_LINEAR,
-            MagFilter.LINEAR,
-            WrapMode.ClampToEdge
-        ),
-        getTexture3D(
-            gridSize,
-            VoxelConeTracingExtension.gridTextureFormatSized,
-            MinFilter.LINEAR_MIPMAP_LINEAR,
-            MagFilter.LINEAR,
-            WrapMode.ClampToEdge
-        )
-    )
-}
 @Single(binds = [VoxelConeTracingExtension::class, DeferredRenderExtension::class])
 class VoxelConeTracingExtension(
     private val graphicsApi: GraphicsApi,
@@ -97,15 +66,6 @@ class VoxelConeTracingExtension(
     val voxelGrids = renderStateContext.renderState.registerState {
         //PersistentShaderStorageBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type)
         graphicsApi.PersistentShaderStorageBuffer(Byte.SIZE_BYTES).typed(VoxelGrid.type) // make it one byte size as long as no elements, so that we can encode the "empty" state
-    }
-    data class GIVolumeGrids(val grid: Texture3D,
-                             val indexGrid: Texture3D,
-                             val albedoGrid: Texture3D,
-                             val normalGrid: Texture3D
-    ) {
-
-        val gridSize: Int = albedoGrid.dimension.width
-
     }
 
     private val voxelizerStatic = programManager.getProgram(
@@ -140,8 +100,8 @@ class VoxelConeTracingExtension(
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val staticPipeline = DirectFirstPassPipeline(graphicsApi, config, voxelizerStatic, entitiesStateHolder, primaryCameraStateHolder)
-    private val animatedPipeline = DirectFirstPassPipeline(graphicsApi, config, voxelizerAnimated, entitiesStateHolder, primaryCameraStateHolder)
+    private val staticPipeline = DirectPipeline(graphicsApi, config, voxelizerStatic, entitiesStateHolder, primaryCameraStateHolder)
+    private val animatedPipeline = DirectPipeline(graphicsApi, config, voxelizerAnimated, entitiesStateHolder, primaryCameraStateHolder)
     private val useIndirectDrawing = false
 
     private var litInCycle: Long = -1
@@ -289,7 +249,7 @@ class VoxelConeTracingExtension(
                                 bindTexture(6, TEXTURE_2D, directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
                             }
                             bindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, Access.WriteOnly, gridTextureFormatSized)
-                            setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLights.size)
+                            setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLightCount)
                             bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
                             bindShaderStorageBuffer(2, renderState[pointLightStateHolder.lightState].pointLightBuffer)
                             bindShaderStorageBuffer(3, directionalLightState)
@@ -399,7 +359,7 @@ class VoxelConeTracingExtension(
                     voxelConeTraceProgram.setUniform("screenHeight", config.height.toFloat() / 2f)
                     voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", renderState[skyBoxStateHolder.skyBoxMaterialIndex])
                     voxelConeTraceProgram.setUniform("debugVoxels", config.debug.isDebugVoxels)
-                    fullscreenBuffer.draw()
+                    fullscreenBuffer.draw(indexBuffer = null)
                     //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;
                     //        if(entityOrDirectionalLightHasMoved)
                     //        {
@@ -462,9 +422,7 @@ class VoxelConeTracingExtension(
 
     companion object {
         val gridTextureFormat = Format.RGBA//GL11.GL_R;
-        val gridTextureFormatSized = InternalTextureFormat.RGBA8//GL30.GL_R32UI;
         val indexGridTextureFormat = Format.RED_INTEGER//GL30.GL_R32UI;
-        val indexGridTextureFormatSized = InternalTextureFormat.R16I//GL30.GL_R32UI;
     }
 }
 class VoxelizerUniformsStatic(graphicsApi: GraphicsApi) : StaticFirstPassUniforms(graphicsApi) {

@@ -16,7 +16,6 @@ import java.nio.LongBuffer
 abstract class AbstractProgram<T : Uniforms>(
     override val shaders: List<Shader>,
     val defines: Defines = Defines(),
-    override val uniforms: T,
     private val graphicsApi: GraphicsApi,
 ) : Program<T> {
 

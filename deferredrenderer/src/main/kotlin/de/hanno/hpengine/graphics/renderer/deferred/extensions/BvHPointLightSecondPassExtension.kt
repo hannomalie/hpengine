@@ -141,6 +141,7 @@ class BvHPointLightSecondPassExtension(
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val pointLightSystem: PointLightSystem,
 ) : DeferredRenderExtension {
     private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
@@ -232,7 +233,7 @@ class BvHPointLightSecondPassExtension(
 
     override fun renderSecondPassFullScreen(renderState: RenderState) = graphicsApi.run {
         val pointLightState = renderState[pointLightStateHolder.lightState]
-        if (pointLightState.pointLights.isEmpty()) {
+        if (pointLightState.pointLightCount == 0) {
             return
         }
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
@@ -264,7 +265,7 @@ class BvHPointLightSecondPassExtension(
             graphicsApi.bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
             graphicsApi.bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
             graphicsApi.bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-            pointLightState.pointLightShadowMapStrategy.bindTextures()
+            pointLightSystem.shadowMapStrategy.bindTextures()
             graphicsApi.bindImageTexture(
                 4,
                 deferredRenderingBuffer.lightAccumulationMapOneId,
@@ -276,8 +277,7 @@ class BvHPointLightSecondPassExtension(
             )
             secondPassPointBvhComputeProgram.use()
             secondPassPointBvhComputeProgram.setUniform("nodeCount", nodeCount)
-            secondPassPointBvhComputeProgram.setUniform("pointLightCount",
-                pointLightState.pointLights.size)
+            secondPassPointBvhComputeProgram.setUniform("pointLightCount", pointLightState.pointLightCount)
             secondPassPointBvhComputeProgram.setUniform("screenWidth", config.width.toFloat())
             secondPassPointBvhComputeProgram.setUniform("screenHeight", config.height.toFloat())
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)

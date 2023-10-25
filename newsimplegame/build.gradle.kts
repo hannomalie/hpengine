@@ -27,6 +27,7 @@ application {
 dependencies {
     api(project(":engine"))
     api(project(":editor"))
+    api(project(":deferredrenderer"))
     api(project(":ocean"))
 }
 

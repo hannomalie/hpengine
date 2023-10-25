@@ -16,7 +16,6 @@ import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector2f
 
@@ -136,6 +135,6 @@ open class SimpleTextureRenderer(
 
         bindTexture(0, TextureTarget.TEXTURE_2D, texture)
 
-        buffer.draw()
+        buffer.draw(indexBuffer = null)
     }
 }
