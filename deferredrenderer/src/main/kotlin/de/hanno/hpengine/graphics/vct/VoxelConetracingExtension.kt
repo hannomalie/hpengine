@@ -205,7 +205,7 @@ class VoxelConeTracingExtension(
 
                 renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.bind()
                 for (entity in batches) {
-                    voxelizerStatic.setTextureUniforms(entity.material.maps)
+                    voxelizerStatic.setTextureUniforms(graphicsApi, entity.material.maps)
                     renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.draw(
                         entity.drawElementsIndirectCommand,
                         bindIndexBuffer = false,

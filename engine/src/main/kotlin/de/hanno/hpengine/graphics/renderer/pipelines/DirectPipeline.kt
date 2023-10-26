@@ -10,7 +10,6 @@ import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.constants.RenderingMode.Fill
 import de.hanno.hpengine.graphics.constants.RenderingMode.Lines
 import de.hanno.hpengine.graphics.profiled
-import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
@@ -23,7 +22,6 @@ import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.VertexIndexBuffer
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
 open class DirectPipeline(
@@ -119,7 +117,7 @@ open class DirectPipeline(
             depthMask = batch.material.writesDepth
             cullFace = batch.material.cullBackFaces
             depthTest = batch.material.depthTest
-            program.setTextureUniforms(batch.material.maps, fallbackTexture)
+            program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
             program.uniforms.entityIndex = batch.entityBufferIndex
             program.bind()
             vertexIndexBuffer.indexBuffer.draw(
@@ -186,7 +184,7 @@ open class DirectPipeline(
                 }
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.uniforms.entityBaseIndex = 0
-                program.setTextureUniforms(batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
 
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -209,9 +207,12 @@ val ProgramImpl<*>.primitiveType
         PrimitiveType.Triangles
     }
 
-context(GraphicsApi)
-fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>, diffuseFallbackTexture: Texture? = null) {
-    for (mapEnumEntry in Material.MAP.values()) {
+fun Program<*>.setTextureUniforms(
+    graphicsApi: GraphicsApi,
+    maps: Map<Material.MAP, Texture>,
+    diffuseFallbackTexture: Texture? = null
+) = graphicsApi.run {
+    for (mapEnumEntry in Material.MAP.entries) {
         if (maps.contains(mapEnumEntry)) {
             val map = maps[mapEnumEntry]!!
             if (map.id > 0) {

@@ -11,7 +11,7 @@ buildscript {
 
 plugins {
     kotlin("jvm")
-    id("com.google.devtools.ksp") version "1.7.21-1.0.8"
+    id("com.google.devtools.ksp") version "1.9.10-1.0.13"
 }
 
 plugins.apply("artemis")

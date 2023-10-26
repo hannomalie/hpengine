@@ -204,7 +204,7 @@ class ProbeRenderer(
 
                 profiled("Probe entity rendering") {
                     for (batch in entitiesState.renderBatchesStatic) {
-                        pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(graphicsApi, batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill
                         )
