@@ -1,30 +1,23 @@
+import de.hanno.hpengine.build.Dependencies.Koin
+import de.hanno.hpengine.build.Dependencies.StruktGen
+
 plugins {
     kotlin("jvm")
-    id("com.google.devtools.ksp") version "1.9.10-1.0.13"
-}
-
-group = "de.hanno.hpengine"
-version = "1.0.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
+    id("com.google.devtools.ksp")
 }
 
 dependencies {
-    ksp("de.hanno.struktgen:processor:1.0.0-SNAPSHOT")
+    api(StruktGen.api)
+    ksp(StruktGen.processor)
 
-    api("io.insert-koin:koin-annotations:1.2.2")
-    ksp("io.insert-koin:koin-ksp-compiler:1.2.2")
+    api(Koin.annotations)
+    ksp(Koin.compiler)
+
     api(project(":api"))
     implementation(project(":editor"))
-    implementation(project(":engine"))
 
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-}
-
-tasks.test {
-    useJUnitPlatform()
 }
 
 kotlin {

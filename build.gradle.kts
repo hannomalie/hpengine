@@ -13,9 +13,9 @@ buildscript {
         google()
     }
 }
-
 allprojects {
     group = "de.hanno.hpengine"
+
     tasks.withType<KotlinCompile> {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xjvm-default=all", "-Xcontext-receivers")
@@ -23,6 +23,9 @@ allprojects {
         }
     }
 
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
 
     repositories {
 

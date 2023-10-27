@@ -1,4 +1,6 @@
-import org.gradle.internal.os.OperatingSystem
+import de.hanno.hpengine.build.Dependencies
+import de.hanno.hpengine.build.Dependencies.LWJGL
+import de.hanno.hpengine.build.Dependencies.StruktGen
 
 buildscript {
     repositories {
@@ -11,7 +13,7 @@ buildscript {
 
 plugins {
     kotlin("jvm")
-    id("com.google.devtools.ksp") version "1.9.10-1.0.13"
+    id("com.google.devtools.ksp")
 }
 
 plugins.apply("artemis")
@@ -29,15 +31,6 @@ tasks.build {
 
 tasks.classes {
     dependsOn(tasks.named("kspKotlin"))
-}
-
-val kotlinVersion: String by rootProject.extra
-val lwjgl_version = "3.2.3"
-val lwjgl_natives = when (OperatingSystem.current()) {
-    OperatingSystem.LINUX   -> "natives-linux"
-    OperatingSystem.MAC_OS  -> "natives-macos"
-    OperatingSystem.WINDOWS -> "natives-windows"
-    else -> throw Error("Unrecognized or unsupported Operating system. Please set \"lwjglNatives\" manually")
 }
 
 dependencies {
@@ -61,53 +54,43 @@ dependencies {
     api("", "dds", "1.0.1-SNAPSHOT")
     api("", "DDSUtils")
 
-    api("org.lwjgl:lwjgl:$lwjgl_version")
-    api("org.lwjgl:lwjgl-glfw:$lwjgl_version")
-    api("org.lwjgl:lwjgl-jawt:$lwjgl_version")
+    api("org.lwjgl:lwjgl:${LWJGL.version}")
+    api("org.lwjgl:lwjgl-glfw:${LWJGL.version}")
+    api("org.lwjgl:lwjgl-jawt:${LWJGL.version}")
     api("org.lwjglx:lwjgl3-awt:0.1.8")
-    api("org.lwjgl:lwjgl-jemalloc:$lwjgl_version")
-    api("org.lwjgl:lwjgl-nanovg:$lwjgl_version")
-    api("org.lwjgl:lwjgl-opencl:$lwjgl_version")
-    api("org.lwjgl:lwjgl-assimp:$lwjgl_version")
+    api("org.lwjgl:lwjgl-jemalloc:${LWJGL.version}")
+    api("org.lwjgl:lwjgl-nanovg:${LWJGL.version}")
+    api("org.lwjgl:lwjgl-opencl:${LWJGL.version}")
+    api("org.lwjgl:lwjgl-assimp:${LWJGL.version}")
 
-    api("org.lwjgl", "lwjgl", lwjgl_version, classifier = lwjgl_natives)
-    api("org.lwjgl", "lwjgl-jemalloc", lwjgl_version, classifier = lwjgl_natives)
-    api("org.lwjgl", "lwjgl-nanovg", lwjgl_version, classifier = lwjgl_natives)
-    api("org.lwjgl", "lwjgl-assimp", lwjgl_version, classifier = lwjgl_natives)
+    api("org.lwjgl", "lwjgl", LWJGL.version, classifier = LWJGL.natives)
+    api("org.lwjgl", "lwjgl-jemalloc", LWJGL.version, classifier = LWJGL.natives)
+    api("org.lwjgl", "lwjgl-nanovg", LWJGL.version, classifier = LWJGL.natives)
+    api("org.lwjgl", "lwjgl-assimp", LWJGL.version, classifier = LWJGL.natives)
 
     api("org.joml:joml:1.9.3")
     api("", "lwjgl3-awt", "0.1.6")
     api("javax.vecmath:vecmath:1.5.2")
-    api("jfree:jfreechart:1.0.13")
     api("jcommon:jcommon:0.9.5")
     api("commons-lang:commons-lang:2.3")
     api("set.sf.sociaal:jbullet:3.0.0.20130526")
     api("com.google.guava:guava:10.0.1")
     api("net.engio:mbassador:1.2.4")
     api("de.ruedigermoeller:fst:2.33")
-//    api("de.hanno.compiler:java-compiler:1.4")
     api("commons-beanutils:commons-beanutils:1.9.3")
     api("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
-    val radianceVersion =  "3.0-SNAPSHOT"
-    api("org.pushing-pixels:radiance-ember:$radianceVersion")
-    api("org.pushing-pixels:radiance-substance-extras:$radianceVersion")
-    api("org.pushing-pixels:radiance-flamingo:$radianceVersion")
-    api("org.pushing-pixels:radiance-photon:$radianceVersion")
-    api("org.pushing-pixels:radiance-meteor:$radianceVersion")
-    api("com.miglayout:miglayout:3.7.4")
     api("com.dreizak:miniball:1.0.3")
     api("org.apache.logging.log4j:log4j-api:2.13.0")
     api("org.apache.logging.log4j:log4j-core:2.13.0")
 
-    api("de.hanno.struktgen:api:1.0.0-SNAPSHOT")
-    ksp("de.hanno.struktgen:processor:1.0.0-SNAPSHOT")
+    api(StruktGen.api)
+    ksp(StruktGen.processor)
 
     api("io.github.config4k:config4k:0.4.2")
 
-    val koinVersion= "3.1.1"
-    api("io.insert-koin:koin-core:$koinVersion")
-    api("io.insert-koin:koin-annotations:1.2.2")
-    ksp("io.insert-koin:koin-ksp-compiler:1.2.2")
+    api(Dependencies.Koin.core)
+    api(Dependencies.Koin.annotations)
+    ksp(Dependencies.Koin.compiler)
 
     api("net.onedaybeard.artemis:artemis-odb:2.3.0")
     api("net.onedaybeard.artemis:artemis-odb-serializer-json:2.3.0")
@@ -115,7 +98,7 @@ dependencies {
 
     implementation("com.esotericsoftware:kryo:5.3.0")
 
-    testImplementation("io.insert-koin:koin-test:$koinVersion")
+    testImplementation(Dependencies.Koin.test)
 
     testImplementation("junit:junit:4.12")
 }

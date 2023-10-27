@@ -19,8 +19,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "6.0.0"
 }
 
-group = "de.hanno.hpengine"
-
 application {
     mainClassName = "scenes.InstancingDemoKt"
 }
