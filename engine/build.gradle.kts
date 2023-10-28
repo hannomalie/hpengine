@@ -86,7 +86,8 @@ dependencies {
     api(StruktGen.api)
     ksp(StruktGen.processor)
 
-    api("io.github.config4k:config4k:0.4.2")
+//    api("io.github.config4k:config4k:0.4.2")
+    api("com.sksamuel.hoplite:hoplite-core:2.7.5")
 
     api(Dependencies.Koin.core)
     api(Dependencies.Koin.annotations)

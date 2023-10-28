@@ -1,6 +1,7 @@
 
 import com.badlogicgames.packr.Packr
 import com.badlogicgames.packr.PackrConfig
+import com.github.jengelman.gradle.plugins.shadow.internal.JavaJarExec
 import java.util.Arrays
 
 
@@ -20,7 +21,8 @@ plugins {
 }
 
 application {
-    mainClassName = "scenes.InstancingDemoKt"
+    mainClass.set("scenes.DemoKt")
+    mainClassName = "scenes.DemoKt" // Caution, don't remove despite deprecated, will break shadow jar tasks!
 }
 dependencies {
     api(project(":engine"))
@@ -51,3 +53,25 @@ val bundleLinux by tasks.registering {
         Packr().pack(config)
     }
 }
+
+tasks.getByName<JavaExec>("run") {
+    systemProperty("gameDir", rootDir.resolve("src/main/resources/game"))
+    systemProperty("engineDir", rootDir.resolve("../engine/src/main/resources/hp"))
+    systemProperty("demo", "Ocean")
+
+    classpath = sourceSets.main.get().runtimeClasspath
+}
+//tasks.create<JavaExec>("runDemo") {
+//    group = "demo"
+//    main = "scenes.DemoKt"
+//    systemProperty("gameDir", rootDir.resolve("src/main/resources/game"))
+//    systemProperty("engineDir", rootDir.resolve("../engine/src/main/resources/hp"))
+//    systemProperty("demo", "Ocean")
+//}
+//tasks.create<JavaExec>("runOceanDemo") {
+//    group = "demo"
+//    main = "scenes.DemoKt"
+//    systemProperty("gameDir", rootDir.resolve("src/main/resources/game"))
+//    systemProperty("engineDir", rootDir.resolve("../engine/src/main/resources/hp"))
+//    systemProperty("demo", "Ocean")
+//}

@@ -14,6 +14,7 @@ abstract class AbstractDirectory(val baseDir: File, sourceLocationIsJarFile: Boo
     private val path = Path.of(System.getProperty("java.io.tmpdir"))
         .resolve("hpengine")
         .apply { if(!exists()) createDirectory() }
+
     val tempDir by lazy {
         Files.createTempDirectory(path, null).toFile().apply {
             deleteOnExit()

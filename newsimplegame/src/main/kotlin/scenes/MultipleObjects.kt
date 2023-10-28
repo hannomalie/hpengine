@@ -1,5 +1,6 @@
 package scenes
 
+import de.hanno.hpengine.Engine
 import de.hanno.hpengine.Engine.Companion
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
@@ -41,6 +42,11 @@ fun main() {
             }
         )
     )
+    runMultipleObjects(config, engine)
+}
+
+fun runMultipleObjects(config: Config, engine: Engine) {
+
     CompletableFuture.supplyAsync {
         Thread.sleep(5000)
         engine.world.loadScene {

@@ -55,6 +55,11 @@ fun main() {
             }
         )
     )
+
+    runOcean(config, engine)
+}
+
+fun runOcean(config: Config, engine: Engine) {
     engine.world.loadScene {
         addOceanSurface(
             engine.systems.firstIsInstance<ProgramManager>(),

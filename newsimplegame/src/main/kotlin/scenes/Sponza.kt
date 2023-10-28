@@ -39,6 +39,11 @@ fun main() {
             }
         )
     )
+
+    runSponza(config, engine)
+}
+
+internal fun runSponza(config: Config, engine: Engine) {
     engine.world.loadScene {
         addStaticModelEntity("Sponza", "assets/models/sponza.obj")
     }
