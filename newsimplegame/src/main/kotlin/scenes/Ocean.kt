@@ -6,68 +6,37 @@ import de.hanno.hpengine.model.MaterialComponent
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
-import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.directory.Directories
-import de.hanno.hpengine.directory.EngineDirectory
-import de.hanno.hpengine.directory.GameDirectory
-import de.hanno.hpengine.graphics.editor.editorModule
-import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ocean.OceanWaterComponent
 import de.hanno.hpengine.ocean.OceanWaterRenderSystem
-import de.hanno.hpengine.ocean.oceanModule
-import de.hanno.hpengine.opengl.openglModule
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.spatial.SpatialComponent
 import de.hanno.hpengine.world.loadScene
-import glfwModule
-import invoke
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
-import org.koin.dsl.module
-import java.io.File
 
 fun main() {
+    val demoAndEngineConfig = createDemoAndEngineConfig()
 
-    val config = Config(
-        directories = Directories(
-            EngineDirectory(File("""D:\workspace\hpengine\engine\src\main\resources\hp""")),
-            GameDirectory(File("""D:\workspace\hpengine\newsimplegame\src\main\resources\game"""), null)
-        ),
-    )
+    val engine = createEngine(demoAndEngineConfig)
 
-    val engine = Engine(
-        listOf(
-            glfwModule,
-            openglModule,
-            deferredRendererModule,
-            editorModule,
-            oceanModule,
-            module {
-                single { config }
-                single { config.gameDir }
-                single { config.engineDir }
-            }
-        )
-    )
-
-    runOcean(config, engine)
+    engine.runOcean()
 }
 
-fun runOcean(config: Config, engine: Engine) {
-    engine.world.loadScene {
+fun Engine.runOcean() {
+    world.loadScene {
         addOceanSurface(
-            engine.systems.firstIsInstance<ProgramManager>(),
-            engine.systems.firstIsInstance<OceanWaterRenderSystem>(),
+            systems.firstIsInstance<ProgramManager>(),
+            systems.firstIsInstance<OceanWaterRenderSystem>(),
             Vector3f()
         )
     }
-    engine.simulate()
+    simulate()
 }
 
 private var oceanSurfaceCounter = 0

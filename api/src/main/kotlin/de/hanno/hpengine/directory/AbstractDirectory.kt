@@ -9,7 +9,7 @@ import kotlin.io.path.createDirectory
 import kotlin.io.path.exists
 
 abstract class AbstractDirectory(val baseDir: File, sourceLocationIsJarFile: Boolean) {
-    val usesFileSystem = baseDir.exists() && !sourceLocationIsJarFile
+    val useExistingFolder = baseDir.exists() && !sourceLocationIsJarFile
 
     private val path = Path.of(System.getProperty("java.io.tmpdir"))
         .resolve("hpengine")
@@ -20,25 +20,30 @@ abstract class AbstractDirectory(val baseDir: File, sourceLocationIsJarFile: Boo
             deleteOnExit()
         }
     }
+
     init {
-        if(usesFileSystem) {
+        if(useExistingFolder) {
             require(!baseDir.isFile) { "${baseDir.path} is a file, not a directory" }
             require(baseDir.exists()) { "Used baseDir for game doesn't exist: ${baseDir.path}" }
         } else {
-            ClassGraph().acceptPaths(baseDir.name).scan().use { scanResult ->
-                scanResult.allResources.forEachByteArrayThrowingIOException { res: Resource, content: ByteArray? ->
-                    val targetTempFile = tempDir.resolve(res.path)
-                    targetTempFile.parentFile.mkdirs()
-                    require(targetTempFile.createNewFile()) { "Cannot extract resource from jar to: $targetTempFile" }
-                    targetTempFile.writeBytes(content!!)
-                }
+            extractJarContentToTempDir()
+        }
+    }
+
+    private fun extractJarContentToTempDir() {
+        ClassGraph().acceptPaths(baseDir.name).scan().use { scanResult ->
+            scanResult.allResources.forEachByteArrayThrowingIOException { res: Resource, content: ByteArray? ->
+                val targetTempFile = tempDir.resolve(res.path)
+                targetTempFile.parentFile.mkdirs()
+                require(targetTempFile.createNewFile()) { "Cannot extract resource from jar to: $targetTempFile" }
+                targetTempFile.writeBytes(content!!)
             }
         }
     }
 
     fun resolve(path: String): File {
         val path = if(path.startsWith("/")) path.replaceFirst("/", "") else path
-        return if(usesFileSystem) {
+        return if(useExistingFolder) {
             baseDir.resolve(path)
         } else {
             tempDir.resolve("${baseDir.name}/$path")

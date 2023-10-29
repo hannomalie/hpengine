@@ -19,48 +19,50 @@ import org.koin.dsl.module
 import java.io.File
 
 fun main() {
+    val demoAndEngineConfig = createDemoAndEngineConfig()
+
+    val engine = createEngine(demoAndEngineConfig)
+
+    demoAndEngineConfig.demoConfig.demo.run(engine)
+}
+
+fun createEngine(demoAndEngineConfig: DemoAndEngineConfig) = Engine(
+    listOf(
+        glfwModule,
+        openglModule,
+        oceanModule,
+        demoAndEngineConfig.primaryRendererModule,
+        editorModule,
+        demoAndEngineConfig.configModule
+    )
+)
+
+fun createDemoAndEngineConfig(): DemoAndEngineConfig {
     val demoConfig = ConfigLoaderBuilder.default()
         .addEnvironmentSource()
         .addResourceSource("/application.properties")
         .build().loadConfigOrThrow<DemoConfig>()
 
-    val gameDirectory = if(demoConfig.gameDir != null) GameDirectory(demoConfig.gameDir, null) else GameDirectory(File("demo"), Demo::class.java)
+    val gameDirectory = if (demoConfig.gameDir != null) GameDirectory(demoConfig.gameDir, null) else GameDirectory(
+        File("demo"),
+        Demo::class.java
+    )
 
-    val directories = if(demoConfig.engineDir != null) Directories(
+    val directories = if (demoConfig.engineDir != null) Directories(
         EngineDirectory(demoConfig.engineDir),
         gameDirectory
     ) else Directories(gameDir = gameDirectory)
 
     val config = Config(directories = directories)
 
-    val primaryRendererModule = when (demoConfig.renderer) {
-        Renderer.Deferred -> deferredRendererModule
-        Renderer.Forward -> simpleForwardRendererModule
-    }
-
-    val engine = Engine(
-        listOf(
-            glfwModule,
-            openglModule,
-            oceanModule,
-            primaryRendererModule,
-            editorModule,
-            module {
-                single { config }
-                single { config.gameDir }
-                single { config.engineDir }
-            }
-        )
-    )
-
-    demoConfig.demo.run(config, engine)
+    return DemoAndEngineConfig(demoConfig, config)
 }
 
-enum class Demo(val run: (Config, Engine) -> Unit) {
-    LotsOfCubes({ _, _ -> }), // TODO: Make this possible by reimplementing the demo
-    MultipleObjects(::runMultipleObjects),
-    Ocean(::runOcean),
-    Sponza(::runSponza),
+enum class Demo(val run: (Engine) -> Unit) {
+    LotsOfCubes({  _ -> }), // TODO: Make this possible by reimplementing the demo
+    MultipleObjects(Engine::runMultipleObjects),
+    Ocean(Engine::runOcean),
+    Sponza(Engine::runSponza),
 }
 enum class Renderer {
     Deferred,
@@ -72,3 +74,18 @@ data class DemoConfig(
     val demo: Demo = Demo.Ocean,
     val renderer: Renderer = Renderer.Deferred
 )
+data class DemoAndEngineConfig(
+    val demoConfig: DemoConfig,
+    val config: Config
+) {
+    val configModule = module {
+        single { config }
+        single { config.gameDir }
+        single { config.engineDir }
+    }
+
+    val primaryRendererModule = when (demoConfig.renderer) {
+        Renderer.Deferred -> deferredRendererModule
+        Renderer.Forward -> simpleForwardRendererModule
+    }
+}
