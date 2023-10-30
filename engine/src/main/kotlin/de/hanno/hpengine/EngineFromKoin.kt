@@ -45,24 +45,3 @@ operator fun Engine.Companion.invoke(): Engine {
         }
     ))
 }
-
-fun main() {
-    val config = Config(
-        directories = Directories(
-//                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
-            EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
-//                    GameDirectory(File(Directories.GAMEDIR_NAME), null)
-            GameDirectory(File("C:\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game"), null)
-        ),
-    )
-
-    Engine(modules = listOf(
-        openglModule,
-        glfwModule,
-        module {
-            single { config }
-            single { config.gameDir }
-            single { config.engineDir }
-        }
-    ))
-}

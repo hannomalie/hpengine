@@ -1,4 +1,5 @@
 import de.hanno.hpengine.build.Dependencies
+import de.hanno.hpengine.build.Dependencies.Imgui
 import de.hanno.hpengine.build.Dependencies.StruktGen
 import de.hanno.hpengine.build.Dependencies.configureCommonTestDependencies
 
@@ -13,10 +14,9 @@ dependencies {
     api(project(":engine"))
     api(project(":opengl"))
 
-    val imguiVersion = "1.86.1"
-    api("io.github.spair:imgui-java-binding:$imguiVersion")
-    api("io.github.spair:imgui-java-lwjgl3:$imguiVersion")
-    api("io.github.spair:imgui-java-natives-windows:$imguiVersion") // TODO Make OS aware
+    api("io.github.spair:imgui-java-binding:${Imgui.version}")
+    api("io.github.spair:imgui-java-lwjgl3:${Imgui.version}")
+    api("io.github.spair:imgui-java-natives-${Imgui.osIdentifier}:${Imgui.version}")
 
     api(StruktGen.api)
     ksp(StruktGen.processor)

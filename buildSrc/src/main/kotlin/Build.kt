@@ -28,6 +28,17 @@ object Dependencies {
         }
     }
 
+    object Imgui {
+        const val version = "1.86.1"
+
+        val osIdentifier = when (org.gradle.internal.os.OperatingSystem.current()) {
+            org.gradle.internal.os.OperatingSystem.LINUX   -> "linux"
+            org.gradle.internal.os.OperatingSystem.MAC_OS  -> "macos"
+            org.gradle.internal.os.OperatingSystem.WINDOWS -> "windows"
+            else -> throw Error("""Unrecognized or unsupported Operating system. Please set imgui native dependency manually""")
+        }
+    }
+
     fun DependencyHandlerScope.configureCommonTestDependencies() {
         "testImplementation"("org.junit.jupiter:junit-jupiter-api:5.8.1")
         "testImplementation"("io.kotest:kotest-runner-junit5:5.5.4")
