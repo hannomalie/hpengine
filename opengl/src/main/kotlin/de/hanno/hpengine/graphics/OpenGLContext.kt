@@ -35,6 +35,8 @@ import org.lwjgl.opengl.GL32.*
 import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
 import org.lwjgl.opengl.GL40.glBlendFunci
 import org.lwjgl.opengl.GL45.glGetTextureSubImage
+import org.lwjgl.system.MemoryStack
+import org.lwjgl.system.MemoryUtil
 import java.lang.Integer.max
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -850,29 +852,41 @@ class OpenGLContext private constructor(
     }
 
     override fun Shader.load() {
+        val oldSource = if(source is FileBasedCodeSource) { // TODO: find a better way to do this
+            source.source
+        } else null
 
         source.load()
 
         val resultingShaderSource = source.toResultingShaderSource(defines)
 
-        onGpu {
-            GL20.glShaderSource(id, resultingShaderSource)
-            GL20.glCompileShader(id)
-        }
 
         val shaderLoadFailed = onGpu {
+            GL20.glShaderSource(id, resultingShaderSource)
+            GL20.glCompileShader(id)
+
             val compileStatus = GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS)
-            if (compileStatus == GL_FALSE) {
+             if (compileStatus == GL_FALSE) {
                 System.err.println("Could not compile " + shaderType + ": " + source.name)
                 var shaderInfoLog = GL20.glGetShaderInfoLog(id, 10000)
                 val lines = resultingShaderSource.lines()
-                System.err.println("Could not compile " + shaderType + ": " + source.name)
                 System.err.println("Problematic line:")
                 System.err.println(lines[Regex("""\d\((.*)\)""").find(shaderInfoLog)!!.groups[1]!!.value.toInt()-1])
                 shaderInfoLog = Shader.replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, lines.size)
                 System.err.println(resultingShaderSource)
+
+
+                oldSource?.let { oldSource ->
+                    val resultingShaderSource = getResultingSource(oldSource, defines)
+
+                    GL20.glShaderSource(id, resultingShaderSource)
+                    GL20.glCompileShader(id)
+                }
+
                 ShaderLoadException(shaderInfoLog)
-            } else null
+            } else {
+                null
+            }
         }
 
         shaderLoadFailed?.let { throw it }
@@ -906,27 +920,49 @@ class OpenGLContext private constructor(
     }
 
     override fun Program<*>.reload() = onGpu {
-        try {
-            shaders.forEach {
-                detach(it)
-                it.load()
-                attach(it)
+        shaders.forEach { shader ->
+            detach(shader)
+            try {
+                shader.load()
+            } catch (e: ShaderLoadException) {
+                e.printStackTrace()
             }
+            attach(shader)
+        }
 
-            bindShaderAttributeChannels()
-            linkProgram()
-            validateProgram()
+        bindShaderAttributeChannels()
+        linkProgram()
+        validateProgram()
 
-            registerUniforms()
-        } catch (e: ShaderLoadException) { e.printStackTrace() }
+        registerUniforms()
     }
 
     private fun Program<*>.attach(shader: Shader) {
-        glAttachShader(id, shader.id)
+        MemoryStack.stackPush().use {
+            val shaderIds = it.callocInt(10)
+            GL20.glGetAttachedShaders(this.id, it.callocInt(1).apply { put(0, 10) }, shaderIds)
+            var contained = false
+            repeat(10) {
+                if(shaderIds[it] == shader.id) { contained = true }
+            }
+            if(!contained) {
+                glAttachShader(id, shader.id)
+            }
+        }
     }
 
     private fun Program<*>.detach(shader: Shader) {
-        glDetachShader(id, shader.id)
+        MemoryStack.stackPush().use {
+            val shaderIds = it.callocInt(10)
+            GL20.glGetAttachedShaders(this.id, it.callocInt(1).apply { put(0, 10) }, shaderIds)
+            var contained = false
+            repeat(10) {
+                if(shaderIds[it] == shader.id) { contained = true }
+            }
+            if(contained) {
+                glDetachShader(id, shader.id)
+            }
+        }
     }
 
     fun <T : Uniforms> Program<T>.validateProgram() {
@@ -968,7 +1004,9 @@ class OpenGLContext private constructor(
         }
     }
 
-    override fun CodeSource.toResultingShaderSource(defines: Defines): String = getOpenGlVersionsDefine() +
+    override fun CodeSource.toResultingShaderSource(defines: Defines): String = getResultingSource(source, defines)
+
+    fun getResultingSource(source: String, defines: Defines) = getOpenGlVersionsDefine() +
             getOpenGlExtensionsDefine() +
             defines.joinToString("\n") { it.defineString } +
             ShaderDefine.getGlobalDefinesString(config) +

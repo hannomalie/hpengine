@@ -16,6 +16,8 @@ class FileBasedCodeSource(val file: File) : CodeSource {
     }
     override var source: String = getSourceStringFromFile()
         private set
+    var oldSource: String? = null
+        private set
 
     private val filename = file.nameWithoutExtension
 
@@ -28,7 +30,7 @@ class FileBasedCodeSource(val file: File) : CodeSource {
         includedFiles = source.extractIncludeFiles()
     }
 
-    private fun getSourceStringFromFile(): String = try {
+    fun getSourceStringFromFile(): String = try {
         file.readText()
     } catch (e: IOException) {
         System.err.println("Cannot reload shader file, old one is kept ($filename)")

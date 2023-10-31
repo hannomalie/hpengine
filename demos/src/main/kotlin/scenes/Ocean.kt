@@ -64,7 +64,7 @@ private fun World.addOceanSurface(
             material = Material(
                 "ocean",
                 programDescription = programManager.heightMappingFirstPassProgramDescription.copy(
-                    fragmentShaderSource = FileBasedCodeSource(programManager.config.engineDir.resolve("shaders/ocean/heightmapping_ocean_fragment.glsl"))
+                    fragmentShaderSource = FileBasedCodeSource(programManager.config.gameDir.resolve("shaders/ocean/heightmapping_ocean_fragment.glsl"))
                 ),
                 diffuse = Vector3f(0.05f, 0.05f, 0.4f),
                 metallic = 0.95f,

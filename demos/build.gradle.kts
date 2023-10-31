@@ -55,11 +55,12 @@ val bundleLinux by tasks.registering {
 }
 
 tasks.getByName<JavaExec>("run") {
-    systemProperty("gameDir", rootDir.resolve("src/main/resources/game"))
-    systemProperty("engineDir", rootDir.resolve("../engine/src/main/resources/hp"))
-    systemProperty("demo", "Ocean")
+//    systemProperty("gameDir", rootDir.resolve("src/main/resources/game"))
+//    systemProperty("engineDir", rootDir.resolve("../engine/src/main/resources/hp"))
+//    systemProperty("demo", "Ocean")
+//    environment("demo", "MultipleObjects")
 
-    classpath = sourceSets.main.get().runtimeClasspath
+//    classpath = sourceSets.main.get().runtimeClasspath
 }
 //tasks.create<JavaExec>("runDemo") {
 //    group = "demo"

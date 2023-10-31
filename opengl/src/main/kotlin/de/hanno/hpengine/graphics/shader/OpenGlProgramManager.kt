@@ -96,14 +96,17 @@ class OpenGlProgramManager(
         if(config.debug.isUseFileReloading) {
             programsCache.forEach { program ->
                 program.shaders.forEach { shader ->
-                     if (shader.source is StringBasedCodeSource || shader.source is FileBasedCodeSource || shader.source is WrappedCodeSource) {
-                        programsSourceCache.putIfAbsent(shader, shader.source.source.hashCode())
-                         if (shader.source.hasChanged(programsSourceCache[shader]!!)) {
-                             graphicsApi.run {
+                    when (val source = shader.source) {
+                        is FileBasedCodeSource -> {// || shader.source is WrappedCodeSource || shader.source is StringBasedCodeSource) { // TODO: Make this possible again
+                            programsSourceCache.putIfAbsent(shader, shader.source.source.hashCode())
+                            if (source.getSourceStringFromFile().hashCode() != programsSourceCache[shader]!!) {
+                                graphicsApi.run {
 //                                 TODO: Make this possible again
 //                                 program.reloadProgram()
-                                 program.reload()
-                             }
+                                    program.reload()
+                                    programsSourceCache[shader] = shader.source.source.hashCode()
+                                }
+                            }
                         }
                     }
                 }

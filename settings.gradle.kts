@@ -10,7 +10,7 @@ pluginManagement {
 }
 
 include("engine")
-include("newsimplegame")
+include("demos")
 
 //includeBuild("../StruktGen")
 include("api")

@@ -117,12 +117,12 @@ class OceanWaterRenderSystem(
         }
     }
 
-    private val h0kShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/h0k_compute.glsl").toCodeSource())
-    private val hktShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/hkt_compute.glsl").toCodeSource())
-    private val twiddleIndicesShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/twiddle_indices_compute.glsl").toCodeSource())
-    private val butterflyShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/butterfly_compute.glsl").toCodeSource())
-    private val inversionShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/inversion_compute.glsl").toCodeSource())
-    private val mergeDisplacementMapsShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/merge_displacement_maps_compute.glsl").toCodeSource())
+    private val h0kShader = programManager.getComputeProgram(config.GameAsset("shaders/ocean/h0k_compute.glsl").toCodeSource())
+    private val hktShader = programManager.getComputeProgram(config.GameAsset("shaders/ocean/hkt_compute.glsl").toCodeSource())
+    private val twiddleIndicesShader = programManager.getComputeProgram(config.GameAsset("shaders/ocean/twiddle_indices_compute.glsl").toCodeSource())
+    private val butterflyShader = programManager.getComputeProgram(config.GameAsset("shaders/ocean/butterfly_compute.glsl").toCodeSource())
+    private val inversionShader = programManager.getComputeProgram(config.GameAsset("shaders/ocean/inversion_compute.glsl").toCodeSource())
+    private val mergeDisplacementMapsShader = programManager.getComputeProgram(config.GameAsset("shaders/ocean/merge_displacement_maps_compute.glsl").toCodeSource())
 
     init {
         graphicsApi.onGpu {
