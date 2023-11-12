@@ -59,7 +59,7 @@ fun createDemoAndEngineConfig(): DemoAndEngineConfig {
 }
 
 enum class Demo(val run: (Engine) -> Unit) {
-    LotsOfCubes({  _ -> }), // TODO: Make this possible by reimplementing the demo
+    LotsOfCubes(Engine::runLotsOfCubes), // TODO: Make this possible by reimplementing the demo
     MultipleObjects(Engine::runMultipleObjects),
     Ocean(Engine::runOcean),
     Sponza(Engine::runSponza),

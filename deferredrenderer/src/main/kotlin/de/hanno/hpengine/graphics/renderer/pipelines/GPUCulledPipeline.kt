@@ -23,8 +23,6 @@ import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.OpenGLTexture2D
-import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.buffer.vertex.drawElementsIndirectCount
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
@@ -32,6 +30,7 @@ import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.graphics.texture.UploadInfo.SingleMipLevelTexture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -74,23 +73,23 @@ open class GPUCulledPipeline(
         programManager.getComputeProgram(EngineAsset("shaders/append_drawcommands_compute.glsl"))
     }
 
-    private val baseDepthTexture = OpenGLTexture2D(
-        graphicsApi,
-        info = Texture2DUploadInfo(TextureDimension(config.width, config.height), internalFormat = RGBA16F, textureFilterConfig = textureFilterConfig),
-        textureFilterConfig = textureFilterConfig,
+    private val baseDepthTexture = graphicsApi.Texture2D(
+        SingleMipLevelTexture2DUploadInfo(
+            TextureDimension(config.width, config.height),
+            internalFormat = RGBA16F,
+            textureFilterConfig = textureFilterConfig,
+        ),
         wrapMode = WrapMode.ClampToEdge,
     ).apply {
         textureManager.registerTextureForDebugOutput("High Z base depth", this)
     }
 
-    private val debugMinMaxTexture = OpenGLTexture2D(
-        graphicsApi,
-        info = Texture2DUploadInfo(
+    private val debugMinMaxTexture = graphicsApi.Texture2D(
+        info = SingleMipLevelTexture2DUploadInfo(
             TextureDimension(config.width / 2, config.height / 2),
             internalFormat = RGBA16F,
             textureFilterConfig = textureFilterConfig,
         ),
-        textureFilterConfig = textureFilterConfig,
         wrapMode = WrapMode.ClampToEdge,
     ).apply {
         textureManager.registerTextureForDebugOutput("Min Max Debug", this)
@@ -101,14 +100,12 @@ open class GPUCulledPipeline(
         width = config.width / 2,
         height = config.height / 2,
         textures = listOf(
-            OpenGLTexture2D(
-                graphicsApi,
-                info = Texture2DUploadInfo(
+            graphicsApi.Texture2D(
+                info = SingleMipLevelTexture2DUploadInfo(
                     TextureDimension(config.width / 2, config.height / 2),
                     internalFormat = RGBA16F,
                     textureFilterConfig = textureFilterConfig,
                 ),
-                textureFilterConfig = textureFilterConfig,
                 wrapMode = WrapMode.ClampToEdge,
             )
         ),

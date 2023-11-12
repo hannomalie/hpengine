@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
 import com.artemis.BaseSystem
+import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.constants.MagFilter
 import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.WrapMode
@@ -21,6 +22,12 @@ interface TextureManager {
         magFilter: MagFilter,
         wrapMode: WrapMode
     ): Texture3D
+
+    fun getTexture(
+        resourcePath: String,
+        srgba: Boolean = false,
+        directory: AbstractDirectory
+    ): Texture
 }
 
 abstract class TextureManagerBaseSystem: TextureManager, BaseSystem()

@@ -1,25 +1,28 @@
 package de.hanno.hpengine.graphics.light.point
 
 
-import InternalTextureFormat.*
+import InternalTextureFormat.RGBA16F
+import InternalTextureFormat.RGBA8
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
-import de.hanno.hpengine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
-import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_2D_ARRAY
-import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_CUBE_MAP_ARRAY
 import de.hanno.hpengine.graphics.constants.MagFilter
 import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.constants.WrapMode.*
-import de.hanno.hpengine.graphics.rendertarget.*
+import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_2D_ARRAY
+import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_CUBE_MAP_ARRAY
+import de.hanno.hpengine.graphics.constants.WrapMode
+import de.hanno.hpengine.graphics.constants.WrapMode.ClampToEdge
+import de.hanno.hpengine.graphics.constants.WrapMode.Repeat
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
+import de.hanno.hpengine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.texture.*
-import de.hanno.hpengine.graphics.texture.UploadInfo.Texture2DUploadInfo
+import de.hanno.hpengine.graphics.texture.TextureDimension
+import de.hanno.hpengine.graphics.texture.TextureDimension3D
+import de.hanno.hpengine.graphics.texture.UploadInfo
+import de.hanno.hpengine.graphics.texture.UploadInfo.SingleMipLevelTexture2DUploadInfo
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
@@ -154,8 +157,7 @@ class DualParaboloidShadowMapStrategy(
 
     private val textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)
     private val renderTarget = graphicsApi.RenderTarget(
-        frameBuffer = OpenGLFrameBuffer(
-            graphicsApi,
+        frameBuffer = graphicsApi.FrameBuffer(
             graphicsApi.DepthBuffer(
                 AREALIGHT_SHADOWMAP_RESOLUTION,
                 AREALIGHT_SHADOWMAP_RESOLUTION
@@ -164,18 +166,17 @@ class DualParaboloidShadowMapStrategy(
         width = AREALIGHT_SHADOWMAP_RESOLUTION,
         height = AREALIGHT_SHADOWMAP_RESOLUTION,
         textures = listOf(
-            OpenGLTexture2D(
-                graphicsApi,
-                info = Texture2DUploadInfo(
+            graphicsApi.Texture2D(
+                info = SingleMipLevelTexture2DUploadInfo(
                     TextureDimension(
                         AREALIGHT_SHADOWMAP_RESOLUTION,
                         AREALIGHT_SHADOWMAP_RESOLUTION
                     ),
                     internalFormat = RGBA8,
-                    textureFilterConfig = textureFilterConfig
+                    textureFilterConfig = textureFilterConfig,
                 ),
-                textureFilterConfig = textureFilterConfig
-            )
+                WrapMode.Repeat,
+            ),
         ),
         name = "PointLight Shadow",
         clear = Vector4f()

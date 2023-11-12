@@ -61,29 +61,9 @@ sealed interface UploadInfo {
         override val dimension: TextureDimension2D
         val dataCompressed: Boolean
         val srgba: Boolean
-
-        companion object {
-            operator fun invoke(
-                dimension: TextureDimension2D,
-                data: ByteBuffer? = null,
-                dataCompressed: Boolean = false,
-                srgba: Boolean = false,
-                internalFormat: InternalTextureFormat,
-                textureFilterConfig: TextureFilterConfig,
-            ): SimpleTexture2DUploadInfo {
-                return SimpleTexture2DUploadInfo(
-                    dimension,
-                    data,
-                    dataCompressed,
-                    srgba,
-                    internalFormat,
-                    textureFilterConfig,
-                )
-            }
-        }
     }
 
-    data class SimpleTexture2DUploadInfo(
+    data class SingleMipLevelTexture2DUploadInfo(
         override val dimension: TextureDimension2D,
         val data: ByteBuffer? = null,
         override val dataCompressed: Boolean = false,
@@ -94,7 +74,7 @@ sealed interface UploadInfo {
         override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
     }
 
-    data class CompleteTexture2DUploadInfo(
+    data class AllMipLevelsTexture2DUploadInfo(
         override val dimension: TextureDimension2D,
         val data: List<ByteBuffer>,
         override val dataCompressed: Boolean = false,
@@ -105,7 +85,7 @@ sealed interface UploadInfo {
         override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) data.size else 1
     }
 
-    data class LazyTexture2DUploadInfo(
+    data class AllMipLevelsLazyTexture2DUploadInfo(
         override val dimension: TextureDimension2D,
         val data: List<LazyTextureData>,
         override val dataCompressed: Boolean = false,
@@ -114,6 +94,19 @@ sealed interface UploadInfo {
         override val textureFilterConfig: TextureFilterConfig,
         override val mipMapCount: Int
     ) : Texture2DUploadInfo
+
+    data class SingleMipLevelsLazyTexture2DUploadInfo(
+        override val dimension: TextureDimension2D,
+        val data: LazyTextureData,
+        override val dataCompressed: Boolean = false,
+        override val srgba: Boolean = false,
+        override val internalFormat: InternalTextureFormat,
+        override val textureFilterConfig: TextureFilterConfig,
+        override val mipMapCount: Int
+    ) : Texture2DUploadInfo
+
+
+
 
     data class Texture3DUploadInfo(
         override val dimension: TextureDimension3D,

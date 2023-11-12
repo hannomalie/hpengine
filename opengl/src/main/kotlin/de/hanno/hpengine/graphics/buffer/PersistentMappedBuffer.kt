@@ -46,7 +46,9 @@ class PersistentMappedBuffer(
     }
 
     override fun put(src: ByteBuffer) {
+        buffer.rewind()
         buffer.put(src)
+        buffer.rewind()
     }
     private fun BufferDefinition.copyTo(newBuffer: BufferDefinition) {
         graphicsApi.onGpu {

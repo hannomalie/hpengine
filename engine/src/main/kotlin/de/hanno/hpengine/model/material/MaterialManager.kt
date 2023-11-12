@@ -92,10 +92,9 @@ class MaterialManager(
         }
     }
     fun registerMaterial(material: Material) = singleThreadContext.launch {
-//        This happens often, I have to reconsider that somehow
-//        require(materials.none { material.name == it.name }) { "Material with name ${material.name} already registered!" }
-
-        materials.add(material)
+        if(materials.firstOrNull { it.name == material.name } == null) {
+            materials.add(material)
+        }
     }
 
     override fun extract(currentWriteState: RenderState) {
@@ -122,7 +121,7 @@ class MaterialManager(
                 useWorldSpaceXZAsTexCoords = if (material.useWorldSpaceXZAsTexCoords) 1 else 0
                 environmentMapId = material.maps[MAP.ENVIRONMENT]?.id ?: 0
                 diffuseMapHandle = material.deriveHandle(MAP.DIFFUSE, textureManager.defaultTexture)
-                diffuseMipmapBias = material.deriveDiffuseMipmapBias()
+                diffuseMipmapBias = material.deriveDiffuseMipMapBias()
                 normalMapHandle = material.deriveHandle(MAP.NORMAL)
                 specularMapHandle = material.deriveHandle(MAP.SPECULAR)
                 heightMapHandle = material.deriveHandle(MAP.HEIGHT)
@@ -133,7 +132,7 @@ class MaterialManager(
             }
         }
     }
-    private fun Material.deriveDiffuseMipmapBias(): Int = if(maps.containsKey(MAP.DIFFUSE)) {
+    private fun Material.deriveDiffuseMipMapBias(): Int = if(maps.containsKey(MAP.DIFFUSE)) {
         when(val uploadState = maps[MAP.DIFFUSE]!!.uploadState) {
             is UploadState.Uploading -> uploadState.maxMipMapLoaded
             else -> 0

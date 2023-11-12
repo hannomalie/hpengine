@@ -51,7 +51,7 @@ private fun textureGrid(
         ImGui.endCombo()
     }
     if (ImGui.button("Load")) {
-        if(texture is FileBasedTexture2D) {
+        (texture as? FileBasedTexture2D<Texture2D>)?.let {
             graphicsApi.run { texture.uploadAsync() }
         }
     }

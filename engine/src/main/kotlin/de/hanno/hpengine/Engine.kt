@@ -23,7 +23,7 @@ import java.util.concurrent.Executors
 
 class Engine(
     baseSystems: List<BaseSystem>,
-    private val config: Config,
+    val config: Config,
     private val input: Input,
     private val window: Window,
     private val addResourceContext: AddResourceContext,

@@ -111,6 +111,7 @@ class ModelSystem(
     operator fun get(modelComponentDescription: ModelComponentDescription) = modelCache[modelComponentDescription]
 
     override fun inserted(entityId: Int) {
+        println("##################### ADDED entity in modelsystem")
         threadPool.submit {
             if (loadModelToCache(entityId) != null) {
                 cacheEntityIndices()
@@ -130,6 +131,7 @@ class ModelSystem(
 
     override fun inserted(entities: IntBag) {
         val entities = IntBag().apply { addAll(entities) }
+        println("##################### ADDED entity in modelsystem")
         threadPool.submit {
             entities.forEach { entityId ->
                 loadModelToCache(entityId)
@@ -142,6 +144,7 @@ class ModelSystem(
     }
 
     private fun loadModelToCache(entityId: Int): ModelCacheComponent? {
+        println("##################### loadModelToCache")
         val instanceComponent = instanceComponentMapper.getOrNull(entityId)
         val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
         if (instanceComponent == null && modelComponentOrNull == null) return null

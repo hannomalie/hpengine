@@ -13,7 +13,6 @@ import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
-import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 import org.koin.ksp.generated.module
@@ -31,8 +30,8 @@ class OpenGLModule {
         BaseSystem::class,
     ])
     fun openglTextureManager(
-        config: Config, graphicsApi: GraphicsApi, programManager: OpenGlProgramManager
-    ) = OpenGLTextureManager(config, graphicsApi, programManager)
+        config: Config, openGLContext: OpenGLContext, programManager: OpenGlProgramManager
+    ) = OpenGLTextureManager(config, openGLContext, programManager)
 
     @Single(binds = [
         ProgramManager::class,

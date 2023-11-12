@@ -9,8 +9,8 @@ fun textureManagerGrid(
     textureManagerBaseSystem: TextureManagerBaseSystem
 ) {
     if (ImGui.button("Reload all")) {
-        textureManagerBaseSystem.textures.values.filterIsInstance<FileBasedTexture2D>().forEach {
-            graphicsApi.run { it.uploadAsync() }
+        textureManagerBaseSystem.textures.values.filterIsInstance<FileBasedTexture2D<Texture2D>>().forEach { texture ->
+            graphicsApi.run { texture.uploadAsync() }
         }
     }
 }

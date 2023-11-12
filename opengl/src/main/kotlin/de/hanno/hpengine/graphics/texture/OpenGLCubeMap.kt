@@ -26,7 +26,11 @@ data class OpenGLCubeMap(
             wrapMode: WrapMode = WrapMode.Repeat,
         ): OpenGLCubeMap {
             val (textureId, handle) = graphicsApi.allocateTexture(
-                UploadInfo.Texture2DUploadInfo(dimension, internalFormat = internalFormat, textureFilterConfig = filterConfig),
+                UploadInfo.SingleMipLevelTexture2DUploadInfo(
+                    dimension,
+                    internalFormat = internalFormat,
+                    textureFilterConfig = filterConfig
+                ),
                 TextureTarget.TEXTURE_CUBE_MAP,
                 wrapMode
             )

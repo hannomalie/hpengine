@@ -2,10 +2,11 @@ package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
 import com.artemis.BaseSystem
+import ddsutil.DDSUtil
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.Access
-import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.OpenGLContext
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.constants.TextureTarget.*
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
@@ -17,11 +18,11 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.threads.TimeStepThread
 import jogl.DDSImage
 import org.apache.commons.io.FileUtils
-import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
 import org.koin.core.annotation.Single
 import java.awt.Color
 import java.awt.image.*
+import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
 import java.util.*
@@ -30,10 +31,10 @@ import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 
-@Single(binds=[BaseSystem::class, TextureManager::class, TextureManagerBaseSystem::class, OpenGLTextureManager::class])
+@Single(binds = [BaseSystem::class, TextureManager::class, TextureManagerBaseSystem::class, OpenGLTextureManager::class])
 class OpenGLTextureManager(
     val config: Config,
-    private val graphicsApi: GraphicsApi,
+    private val graphicsApi: OpenGLContext,
     programManager: OpenGlProgramManager,
 ) : TextureManagerBaseSystem() {
 
@@ -62,7 +63,7 @@ class OpenGLTextureManager(
         }
     }
 
-    override val lensFlareTexture = engineDir.getTexture("assets/textures/lens_flare_tex.jpg", true)
+    override val lensFlareTexture = getTexture("assets/textures/lens_flare_tex.jpg", true, engineDir)
     override var cubeMap = getCubeMap(
         "assets/textures/skybox/skybox.png",
         config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")
@@ -81,46 +82,79 @@ class OpenGLTextureManager(
     private val temp = loadDefaultTexture()
     override val defaultTexture = temp.first
 
-    private fun loadDefaultTexture(): Pair<FileBasedTexture2D, BufferedImage> {
+    private fun loadDefaultTexture(): Pair<FileBasedTexture2D<OpenGLTexture2D>, BufferedImage> {
         val defaultTexturePath = "assets/textures/default/gi_flag.png"
-        val defaultTexture = engineDir.getTexture(defaultTexturePath, true) as FileBasedTexture2D
+        val defaultTexture = getTexture(defaultTexturePath, true, engineDir)
         val defaultTextureAsBufferedImage = loadImage(defaultTexturePath)
         return Pair(defaultTexture, defaultTextureAsBufferedImage)
     }
 
     private fun loadAllAvailableTextures() {
         val textureDir = config.directories.engineDir.textures
-        val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE) as List<File>
+        val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).toList()
         for (file in files) {
-            try {
-                if (FilenameUtils.isExtension(file.absolutePath, "hptexture")) {
-                    getTexture(file.absolutePath, directory = config.directories.gameDir)
-                } else {
-                    getCubeMap(file.absolutePath, config.directories.gameDir.resolve(file.absolutePath))
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-
+            this.getTexture(file.absolutePath, srgba = false, directory = config.directories.engineDir)
         }
     }
 
-    fun AbstractDirectory.getTexture(resourceName: String, srgba: Boolean = false) = getTexture(
-        resourceName, srgba, this
-    )
+    override fun getTexture(
+        resourcePath: String,
+        srgba: Boolean,
+        directory: AbstractDirectory
+    ) = getTexture(directory.resolve(resourcePath), resourcePath, srgba)
 
-    fun getTexture(
-        resourceName: String,
-        srgba: Boolean = false,
-        directory: AbstractDirectory = config.directories.gameDir
-    ) = textures.ifAbsentPutInSingleThreadContext(resourceName) {
-        FileBasedTexture2D(graphicsApi, resourceName, directory, srgba)
-    }
+    fun getTexture(file: File, resourcePath: String = file.absolutePath, srgba: Boolean = false): FileBasedTexture2D<OpenGLTexture2D> {
+        require(file.exists()) { "File ${file.absolutePath} must exist!" }
+        require(file.isFile) { "File ${file.absolutePath} is not a file!" }
 
-    fun getTexture(
-        resourceName: String, srgba: Boolean = false, file: File
-    ) = textures.ifAbsentPutInSingleThreadContext(resourceName) {
-        FileBasedTexture2D(graphicsApi, resourceName, file, srgba)
+        val compressInternal = config.performance.textureCompressionByDefault
+        val internalFormat = if (compressInternal) {
+            if (srgba) InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT else InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT
+        } else {
+            if (srgba) InternalTextureFormat.SRGB8_ALPHA8_EXT else InternalTextureFormat.RGBA16F
+        }
+
+        val openGLTexture = if (file.extension == "dds") {
+            val ddsImage = DDSImage.read(file)
+            if (compressInternal) {
+                val uploadInfo = UploadInfo.AllMipLevelsTexture2DUploadInfo(
+                    TextureDimension(ddsImage.width, ddsImage.height),
+                    ddsImage.allMipMaps.map { it.data },
+                    dataCompressed = true,
+                    srgba = srgba,
+                    internalFormat = internalFormat,
+                    textureFilterConfig = TextureFilterConfig(),
+                )
+                graphicsApi.Texture2D(
+                    uploadInfo,
+                    WrapMode.Repeat,
+                )
+            } else {
+                val bufferedImage = DDSUtil.decompressTexture(
+                    ddsImage.getMipMap(0).data,
+                    ddsImage.width,
+                    ddsImage.height,
+                    ddsImage.compressionFormat
+                ).apply {
+                    DDSConverter.run { rescaleToNextPowerOfTwo() }
+                }
+                graphicsApi.Texture2D(
+                    graphicsApi.createAllMipLevelsLazyTexture2DUploadInfo(bufferedImage, internalFormat),
+                    wrapMode = WrapMode.Repeat,
+                )
+            }
+        } else graphicsApi.Texture2D(
+            graphicsApi.createAllMipLevelsLazyTexture2DUploadInfo(ImageIO.read(file), internalFormat),
+            wrapMode = WrapMode.Repeat,
+        )
+
+        return FileBasedTexture2D(
+            resourcePath,
+            file,
+            openGLTexture
+        ).apply {
+            textures.ifAbsentPutInSingleThreadContext(resourcePath) { this }
+        }
     }
 
     private inline fun <T> MutableMap<String, T>.ifAbsentPutInSingleThreadContext(
@@ -282,7 +316,7 @@ class OpenGLTextureManager(
         internalFormat: InternalTextureFormat,
         target: TextureTarget,
         depth: Int = 1
-    ): Texture = when(target) {
+    ): Texture = when (target) {
         TEXTURE_2D -> graphicsApi.Texture2D(
             TextureDimension2D(width, height),
             target,
@@ -291,12 +325,14 @@ class OpenGLTextureManager(
             WrapMode.Repeat,
             UploadState.Uploaded
         )
+
         TEXTURE_CUBE_MAP -> graphicsApi.CubeMap(
             TextureDimension2D(width, height),
             internalFormat,
             TextureFilterConfig(),
             WrapMode.Repeat,
         )
+
         TEXTURE_CUBE_MAP_ARRAY -> TODO() // TODO: Implement those
         TEXTURE_2D_ARRAY -> TODO()
         TEXTURE_3D -> TODO()

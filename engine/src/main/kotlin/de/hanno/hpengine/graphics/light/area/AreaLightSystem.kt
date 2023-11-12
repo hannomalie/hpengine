@@ -105,7 +105,7 @@ class AreaLightSystem(
                 val dimension = TextureDimension2D(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
 
                 val allocation = allocateTexture(
-                    UploadInfo.Texture2DUploadInfo(
+                    UploadInfo.SingleMipLevelTexture2DUploadInfo(
                         dimension = dimension,
                         internalFormat = internalFormat,
                         textureFilterConfig = filterConfig,

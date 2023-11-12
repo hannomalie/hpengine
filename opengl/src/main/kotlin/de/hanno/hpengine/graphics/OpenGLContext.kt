@@ -22,6 +22,7 @@ import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.*
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import glValue
+import kotlinx.coroutines.*
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -36,13 +37,16 @@ import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
 import org.lwjgl.opengl.GL40.glBlendFunci
 import org.lwjgl.opengl.GL45.glGetTextureSubImage
 import org.lwjgl.system.MemoryStack
-import org.lwjgl.system.MemoryUtil
+import java.awt.image.BufferedImage
 import java.lang.Integer.max
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.nio.LongBuffer
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import javax.imageio.ImageIO
+import kotlin.math.min
 
 class OpenGLContext private constructor(
     private val gpuExecutor: GpuExecutor,
@@ -83,7 +87,7 @@ class OpenGLContext private constructor(
         wrapMode: WrapMode,
         uploadState: UploadState
     ): OpenGLTexture2D {
-        val info = UploadInfo.Texture2DUploadInfo(
+        val info = UploadInfo.SingleMipLevelTexture2DUploadInfo(
             dimension = dimension,
             data = null,
             dataCompressed = false,
@@ -94,7 +98,6 @@ class OpenGLContext private constructor(
         val textureAllocationData = allocateTexture(info, TextureTarget.TEXTURE_2D, wrapMode)
 
         return OpenGLTexture2D(
-            this,
             dimension,
             textureAllocationData.textureId,
             target,
@@ -550,11 +553,190 @@ class OpenGLContext private constructor(
         TextureAllocationData(textureId, handle, wrapMode)
     }
 
+    override fun Texture2D(
+        image: BufferedImage,
+        srgba: Boolean,
+    ): OpenGLTexture2D {
+        val compressInternal = config.performance.textureCompressionByDefault
+        val internalFormat = if (compressInternal) {
+            if (srgba) InternalTextureFormat.COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT
+        } else {
+            if (srgba) InternalTextureFormat.SRGB8_ALPHA8_EXT else InternalTextureFormat.RGBA16F
+        }
+
+        val precalculateMipMapsOnCpu = true
+
+        val uploadInfo = if(precalculateMipMapsOnCpu) {
+            createAllMipLevelsLazyTexture2DUploadInfo(image, internalFormat)
+        } else {
+            UploadInfo.SingleMipLevelTexture2DUploadInfo(
+                TextureDimension(image.width, image.height),
+                null, false, srgba,
+                internalFormat = internalFormat,
+                textureFilterConfig = TextureFilterConfig(),
+            )
+        }
+        return Texture2D(
+            uploadInfo,
+            WrapMode.Repeat
+        )
+    }
+
+    override fun Texture2D(
+        info: UploadInfo.Texture2DUploadInfo,
+        wrapMode: WrapMode
+    ): OpenGLTexture2D {
+        val textureAllocationData = allocateTexture(
+            info,
+            TextureTarget.TEXTURE_2D,
+            wrapMode
+        )
+        return OpenGLTexture2D(
+            info.dimension,
+            textureAllocationData.textureId,
+            TextureTarget.TEXTURE_2D,
+            info.internalFormat,
+            textureAllocationData.handle,
+            info.textureFilterConfig,
+            wrapMode,
+            UploadState.NotUploaded,
+            info.srgba,
+        ).apply {
+            upload(info)
+        }
+    }
+
     override fun getTextureHandle(textureId: Int) = if (isSupported(BindlessTextures)) {
         glGetTextureHandleARB(textureId).apply {
             glMakeTextureHandleResidentARB(this)
         }
     } else -1
+
+    override fun FileBasedTexture2D<Texture2D>.uploadAsync() {
+        val bufferedImage = ImageIO.read(file).apply { DDSConverter.run { rescaleToNextPowerOfTwo() } }
+        (backingTexture as OpenGLTexture2D).upload( // TODO: Try to avoid this cast if possible without going crazy with generics
+            createAllMipLevelsLazyTexture2DUploadInfo(
+                bufferedImage,
+                backingTexture.internalFormat
+            )
+        )
+    }
+
+    fun createAllMipLevelsLazyTexture2DUploadInfo(
+        image: BufferedImage,
+        internalFormat: InternalTextureFormat
+    ): UploadInfo.AllMipLevelsLazyTexture2DUploadInfo {
+        val srgba = internalFormat == InternalTextureFormat.SRGB8_ALPHA8_EXT || internalFormat == InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT
+        val mipMapCount = TextureDimension(image.width, image.height).getMipMapCount()
+        val widths = mutableListOf<Int>()
+        val heights = mutableListOf<Int>()
+        var nextWidth = (image.width * 0.5).toInt()
+        var nextHeight = (image.width * 0.5).toInt()
+        (0 until mipMapCount - 1).forEach {
+            widths.add(nextWidth)
+            heights.add(nextWidth)
+            nextWidth = (nextWidth * 0.5).toInt()
+            nextHeight = (nextHeight * 0.5).toInt()
+        }
+        val mipMapData = widths.mapIndexed { index, it ->
+            LazyTextureData(it, heights[index]) { image.resize(it).toByteBuffer() }
+        }
+        val data = listOf(LazyTextureData(image.width, image.height) { image.toByteBuffer() }) + mipMapData
+
+        return UploadInfo.AllMipLevelsLazyTexture2DUploadInfo(
+            TextureDimension(image.width, image.height), data, false, srgba,
+            internalFormat = internalFormat,
+            textureFilterConfig = TextureFilterConfig(),
+            mipMapCount,
+        )
+    }
+
+    internal fun OpenGLTexture2D.upload(info: UploadInfo.Texture2DUploadInfo) {
+        if (config.performance.usePixelBufferForTextureUpload) {
+            uploadWithPixelBuffer(info)
+        } else {
+            uploadWithoutPixelBuffer(info)
+        }
+    }
+
+    private fun OpenGLTexture2D.uploadWithPixelBuffer(info: UploadInfo.Texture2DUploadInfo) {
+        pixelBufferObjectPool.scheduleUpload(info, this)
+    }
+
+    private fun OpenGLTexture2D.uploadWithoutPixelBuffer( info: UploadInfo.Texture2DUploadInfo) {
+        when(info) {
+            is UploadInfo.AllMipLevelsTexture2DUploadInfo -> onGpu {
+                // TODO: Reverse upload from largest mip to smallest
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
+                var currentWidth = info.dimension.width
+                var currentHeight = info.dimension.height
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
+                info.data.forEachIndexed { index, data ->
+                    if (info.dataCompressed) {
+                        GL13.glCompressedTexSubImage2D(GL11.GL_TEXTURE_2D, index, 0, 0, currentWidth, currentHeight, info.internalFormat.glValue, data)
+                    } else {
+                        GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, index, 0, 0, currentWidth, currentHeight, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data)
+                    }
+                    currentWidth = (currentWidth * 0.5).toInt()
+                    currentHeight = (currentHeight * 0.5).toInt()
+                }
+                uploadState = UploadState.Uploaded
+            }
+            is UploadInfo.SingleMipLevelTexture2DUploadInfo -> onGpu {
+                val data = info.data
+                if(data != null) {
+                    GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
+                    if (info.dataCompressed) {
+                        GL13.glCompressedTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data)
+                    } else {
+                        GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data)
+                    }
+                    if(info.textureFilterConfig.minFilter.isMipMapped) {
+                        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
+                    }
+                    uploadState = UploadState.Uploaded
+                }
+            }
+            is UploadInfo.AllMipLevelsLazyTexture2DUploadInfo -> GlobalScope.launch(Dispatchers.IO) {
+                info.data.reversed().forEachIndexed { i, textureData ->
+                    val mipLevel = info.data.size - i - 1
+                    val data = textureData.dataProvider()
+                    onGpu {
+                        GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
+                        if (info.dataCompressed) {
+                            GL13.glCompressedTexSubImage2D(GL11.GL_TEXTURE_2D, mipLevel, 0, 0, textureData.width, textureData.height, info.internalFormat.glValue, data)
+                        } else {
+                            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, mipLevel, 0, 0, textureData.width, textureData.height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data)
+                        }
+                        when(val uploadState = uploadState) {
+                            UploadState.NotUploaded -> this@uploadWithoutPixelBuffer.uploadState = UploadState.Uploading(mipLevel)
+                            UploadState.Uploaded -> {}
+                            is UploadState.Uploading -> this@uploadWithoutPixelBuffer.uploadState = UploadState.Uploading(min(uploadState.maxMipMapLoaded, mipLevel))
+                        }
+                    }
+                }
+                this@uploadWithoutPixelBuffer.uploadState = UploadState.Uploaded
+            }
+            is UploadInfo.SingleMipLevelsLazyTexture2DUploadInfo -> {
+                CompletableFuture.supplyAsync {
+                    val data = info.data.dataProvider.invoke()
+                    onGpu {
+                        GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
+                        if (info.dataCompressed) {
+                            GL13.glCompressedTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data)
+                        } else {
+                            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data)
+                        }
+                        if(info.textureFilterConfig.minFilter.isMipMapped) {
+                            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
+                        }
+                        uploadState = UploadState.Uploaded
+                    }
+                }
+            }
+        }
+
+    }
 
     override fun delete(texture: Texture) = onGpu {
         glDeleteTextures(texture.id)
@@ -1175,7 +1357,11 @@ class OpenGLContext private constructor(
         val textureTarget = TextureTarget.TEXTURE_2D
         val internalFormat = InternalTextureFormat.DEPTH_COMPONENT24
         val (textureId, handle, wrapMode) = allocateTexture(
-            UploadInfo.Texture2DUploadInfo(dimension, internalFormat = internalFormat, textureFilterConfig = filterConfig),
+            UploadInfo.SingleMipLevelTexture2DUploadInfo(
+                dimension,
+                internalFormat = internalFormat,
+                textureFilterConfig = filterConfig
+            ),
             textureTarget,
             WrapMode.Repeat,
         )
@@ -1265,3 +1451,27 @@ val Capability.glInt get() = when(this) {
 }
 
 val Capability.isEnabled: Boolean get() = glIsEnabled(glInt)
+
+
+private fun BufferedImage.toByteBuffer(): ByteBuffer {
+    val width = width
+    val height = height
+
+    val pixels = IntArray(width * height)
+    getRGB(0, 0, width, height, pixels, 0, width)
+
+    val buffer = BufferUtils.createByteBuffer(width * height * 4) // 4 because RGBA
+
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val pixel = pixels[x + y * width]
+            buffer.put((pixel shr 16 and 0xFF).toByte())
+            buffer.put((pixel shr 8 and 0xFF).toByte())
+            buffer.put((pixel and 0xFF).toByte())
+            buffer.put((pixel shr 24 and 0xFF).toByte())
+        }
+    }
+
+    buffer.flip()
+    return buffer
+}

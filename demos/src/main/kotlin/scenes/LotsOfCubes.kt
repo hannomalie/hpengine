@@ -1,10 +1,18 @@
 package scenes
 
 import de.hanno.hpengine.Engine
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
+import de.hanno.hpengine.model.Cluster
+import de.hanno.hpengine.model.MaterialComponent
+import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.scene.dsl.entity
 import de.hanno.hpengine.transform.AABBData
 import de.hanno.hpengine.scene.dsl.scene
+import de.hanno.hpengine.world.addAnimatedModelEntity
+import de.hanno.hpengine.world.addStaticModelEntity
+import de.hanno.hpengine.world.loadScene
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Vector3f
 
 var maxDistance = 15
@@ -16,32 +24,31 @@ var clusterLocations = arrayOf(
     Vector3f(0f, 0f, 0f),
     Vector3f((-clusterDistance).toFloat(), 0f, clusterDistance.toFloat())
 )
+fun main() {
+    val demoAndEngineConfig = createDemoAndEngineConfig()
 
-val Engine.lotsOfCubesScene
-    get() = scene("Hellknight") {
-        entity("Plane") {
-            add(
-                StaticModelComponentDescription(
-                    file = "assets/models/cube.obj",
-                    de.hanno.hpengine.scene.dsl.Directory.Game,
-                    AABBData(
-                        Vector3f(-60f, -10f, -35f),
-                        Vector3f(60f, 130f, 50f)
-                    ),
-//                    TODO: Reimplement
-//                    material = Material(
-//                        "grass",
-//                        materialType = Material.MaterialType.FOLIAGE,
-//                        maps = mutableMapOf(
-//                            Material.MAP.DIFFUSE to
-//                                    application.koin.get<TextureManager>()
-//                                        .getTexture("assets/textures/grass.png", true)
-//                        )
-//                    )
+    val engine = createEngine(demoAndEngineConfig)
+
+    engine.runLotsOfCubes()
+}
+
+fun Engine.runLotsOfCubes() {
+    val textureManager = systems.firstIsInstance<TextureManagerBaseSystem>()
+    world.loadScene {
+        addStaticModelEntity("Plane", "assets/models/plane.obj").apply {
+            create(MaterialComponent::class.java).apply {
+                material = Material(
+                    "grass",
+                    materialType = Material.MaterialType.FOLIAGE,
+                    maps = mutableMapOf(
+                        Material.MAP.DIFFUSE to textureManager.getTexture("assets/textures/grass.png", true, config.gameDir)
+                    )
                 )
-            )
+
+            }
+
         }
-    }
+
 //        val clusters: MutableList<Cluster> = ArrayList()
 //        val clustersComponent = ClustersComponent(this@entity)
 //        for (clusterIndex in 0..4) {
@@ -64,3 +71,6 @@ val Engine.lotsOfCubesScene
 //            clustersComponent.addClusters(clusters)
 //        }
 //        this@entity.addComponent(clustersComponent)
+    }
+    simulate()
+}

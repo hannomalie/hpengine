@@ -20,6 +20,7 @@ import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.CodeSource
 import org.joml.Vector4f
+import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
@@ -195,7 +196,19 @@ interface GraphicsApi {
         wrapMode: WrapMode,
     ): TextureAllocationData
 
+    fun Texture2D(
+        image: BufferedImage,
+        srgba: Boolean
+    ): Texture2D
+
+    fun Texture2D(
+        info: UploadInfo.Texture2DUploadInfo,
+        wrapMode: WrapMode
+    ): Texture2D
+
     fun getTextureHandle(textureId: Int): Long
+
+    fun FileBasedTexture2D<Texture2D>.uploadAsync()
 
     fun delete(texture: Texture)
 

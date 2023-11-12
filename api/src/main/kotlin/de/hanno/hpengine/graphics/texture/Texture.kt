@@ -4,6 +4,7 @@ import InternalTextureFormat
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.WrapMode
+import java.io.File
 import kotlin.math.log2
 import kotlin.math.nextUp
 
@@ -12,10 +13,11 @@ sealed interface Texture {
     val id: Int
     val target: TextureTarget
     val internalFormat: InternalTextureFormat
-    var handle: Long
+    val handle: Long
     val textureFilterConfig: TextureFilterConfig
     val wrapMode: WrapMode
     var uploadState: UploadState
+    val srgba: Boolean get() = false
     fun unload() {}
 
     companion object {
@@ -40,3 +42,10 @@ interface CubeMapArray: Texture {
 
 val Texture.isMipMapped: Boolean get() = textureFilterConfig.minFilter.isMipMapped
 val Texture.mipmapCount: Int get() = if(isMipMapped) { dimension.getMipMapCount() } else 0
+
+
+data class FileBasedTexture2D<out T: Texture2D>(
+    val path: String,
+    val file: File,
+    val backingTexture: T
+) : Texture2D by backingTexture
