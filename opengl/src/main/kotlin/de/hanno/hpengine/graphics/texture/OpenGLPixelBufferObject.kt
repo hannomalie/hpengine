@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL21.*
 import org.lwjgl.opengl.GL45.glCompressedTextureSubImage2D
 import org.lwjgl.opengl.GL45.glTextureSubImage2D
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.floor
 
 class OpenGLPixelBufferObject(
     private val graphicsApi: GraphicsApi,
@@ -45,8 +46,8 @@ class OpenGLPixelBufferObject(
                         buffer.unbind()
                     }
 
-                    currentWidth = (currentWidth * 0.5).toInt()
-                    currentHeight = (currentHeight * 0.5).toInt()
+                    currentWidth = floor(currentWidth * 0.5).toInt()
+                    currentHeight = floor(currentHeight * 0.5).toInt()
                 }
                 texture.uploadState = UploadState.Uploaded
                 uploading.getAndSet(false)

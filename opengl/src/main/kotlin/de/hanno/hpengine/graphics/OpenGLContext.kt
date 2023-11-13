@@ -46,6 +46,7 @@ import java.nio.LongBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
+import kotlin.math.floor
 import kotlin.math.min
 
 class OpenGLContext private constructor(
@@ -627,27 +628,16 @@ class OpenGLContext private constructor(
         internalFormat: InternalTextureFormat
     ): UploadInfo.AllMipLevelsLazyTexture2DUploadInfo {
         val srgba = internalFormat == InternalTextureFormat.SRGB8_ALPHA8_EXT || internalFormat == InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT
-        val mipMapCount = TextureDimension(image.width, image.height).getMipMapCount()
-        val widths = mutableListOf<Int>()
-        val heights = mutableListOf<Int>()
-        var nextWidth = (image.width * 0.5).toInt()
-        var nextHeight = (image.width * 0.5).toInt()
-        (0 until mipMapCount - 1).forEach {
-            widths.add(nextWidth)
-            heights.add(nextWidth)
-            nextWidth = (nextWidth * 0.5).toInt()
-            nextHeight = (nextHeight * 0.5).toInt()
-        }
-        val mipMapData = widths.mapIndexed { index, it ->
-            LazyTextureData(it, heights[index]) { image.resize(it).toByteBuffer() }
-        }
-        val data = listOf(LazyTextureData(image.width, image.height) { image.toByteBuffer() }) + mipMapData
+        val mipMapSizes = calculateMipMapSizes(image.width, image.height)
 
+        val data = mipMapSizes.map {
+            LazyTextureData(it.width, it.height) { image.resize(it.width).toByteBuffer() }
+        }
         return UploadInfo.AllMipLevelsLazyTexture2DUploadInfo(
             TextureDimension(image.width, image.height), data, false, srgba,
             internalFormat = internalFormat,
             textureFilterConfig = TextureFilterConfig(),
-            mipMapCount,
+            mipMapSizes.size,
         )
     }
 

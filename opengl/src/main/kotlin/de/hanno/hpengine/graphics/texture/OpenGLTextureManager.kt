@@ -176,7 +176,7 @@ class OpenGLTextureManager(
         return if (ddsImageAvailable) {
 //        return if (resourceName.endsWith(".dds")) {
             val ddsImage = DDSImage.read(File(getFullPathAsDDS(resourceName)))
-            val mipMapCountPlusOne = calculateMipMapCountPlusOne(ddsImage.width, ddsImage.height)
+            val mipMapCountPlusOne = calculateMipMapCount(ddsImage.width, ddsImage.height)
             val mipMapCount = mipMapCountPlusOne - 1
 
             val data = (0 until ddsImage.allMipMaps.size).map {
@@ -206,7 +206,7 @@ class OpenGLTextureManager(
         } else {
             val bufferedImage = loadImage(resourceName)
 
-            val mipMapCountPlusOne = calculateMipMapCountPlusOne(bufferedImage.width, bufferedImage.height)
+            val mipMapCountPlusOne = calculateMipMapCount(bufferedImage.width, bufferedImage.height)
             val mipMapCount = mipMapCountPlusOne - 1
 
             val hasAlpha = bufferedImage.colorModel.hasAlpha()

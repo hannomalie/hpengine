@@ -19,12 +19,6 @@ sealed interface Texture {
     var uploadState: UploadState
     val srgba: Boolean get() = false
     fun unload() {}
-
-    companion object {
-        fun getMipMapCountForDimension(w: Int, h: Int, d: Int): Int {
-            return 1 + kotlin.math.floor(log2(kotlin.math.max(w, kotlin.math.max(h, d)).toDouble())).nextUp().toInt()
-        }
-    }
 }
 
 interface Texture2D: Texture {
