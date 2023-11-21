@@ -132,7 +132,7 @@ class OpenGLContext private constructor(
             override val id = viewTextureId
             override val target = TextureTarget.TEXTURE_CUBE_MAP
             override val internalFormat = texture.internalFormat
-            override var handle: Long = glGetTextureHandleARB(viewTextureId)
+            override var handle: Long = if(!isSupported(BindlessTextures)) -1 else onGpu { glGetTextureHandleARB(viewTextureId) }
             override val textureFilterConfig = texture.textureFilterConfig
             override val wrapMode = texture.wrapMode
             override var uploadState: UploadState = UploadState.Uploaded
@@ -1040,12 +1040,16 @@ class OpenGLContext private constructor(
             val compileStatus = GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS)
              if (compileStatus == GL_FALSE) {
                 System.err.println("Could not compile " + shaderType + ": " + source.name)
-                var shaderInfoLog = GL20.glGetShaderInfoLog(id, 10000)
-                val lines = resultingShaderSource.lines()
-                System.err.println("Problematic line:")
-                System.err.println(lines[Regex("""\d\((.*)\)""").find(shaderInfoLog)!!.groups[1]!!.value.toInt()-1])
-                shaderInfoLog = Shader.replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, lines.size)
-                System.err.println(resultingShaderSource)
+                val shaderInfoLog = GL20.glGetShaderInfoLog(id, 10000)
+                 System.err.println(shaderInfoLog)
+                 // TODO: This is incorrect on intel gpus, shaderlog is structured differently
+//                val lines = resultingShaderSource.lines()
+//                val lineNumber = Regex("""\d\((.*)\)""").find(shaderInfoLog)!!.groups[1]!!.value.toInt() - 1
+//                System.err.println("Problematic line ($lineNumber):")
+//                System.err.println(lines[lineNumber])
+//                shaderInfoLog = Shader.replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, lines.size)
+//                 shaderInfoLog += "\n\n" + resultingShaderSource
+//                System.err.println(shaderInfoLog)
 
 
                 oldSource?.let { oldSource ->
@@ -1055,7 +1059,7 @@ class OpenGLContext private constructor(
                     GL20.glCompileShader(id)
                 }
 
-                ShaderLoadException(shaderInfoLog)
+                ShaderLoadException(resultingShaderSource)
             } else {
                 null
             }

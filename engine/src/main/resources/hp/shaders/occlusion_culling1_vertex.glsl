@@ -293,8 +293,8 @@ void main(){
 
 
         vec4[2] boundingRect;
-        boundingRect[0] = (viewProjectionMatrix * vec4(entity.min, 1f));
-        boundingRect[1] = (viewProjectionMatrix * vec4(entity.max, 1f));
+        boundingRect[0] = (viewProjectionMatrix * vec4(entity.min, 1.0f));
+        boundingRect[1] = (viewProjectionMatrix * vec4(entity.max, 1.0f));
         boundingRect[0].xyz /= boundingRect[0].w;
         boundingRect[1].xyz /= boundingRect[1].w;
         boundingRect[0].xy = boundingRect[0].xy * 0.5 + 0.5;

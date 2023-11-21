@@ -186,7 +186,7 @@ open class DirectPipeline(
                 program.uniforms.entityBaseIndex = 0
                 program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
 
-                program.bind()
+                program.bind() // TODO: useAndBind seems not to work as this call is required, investigate
                 vertexIndexBuffer.indexBuffer.draw(
                     batch.drawElementsIndirectCommand,
                     primitiveType = program.primitiveType,

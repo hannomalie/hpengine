@@ -35,7 +35,7 @@ in vec2 pass_TextureCoord;
 out vec4 out_color;
 
 float calculateMotionBlur(vec2 uv) {
-	return 10*(length(texture2D(motionMap, uv).xy));
+	return 10*(length(textureLod(motionMap, uv, 0).xy));
 }
 ///////////////////////////////////////
 // http://facepunch.com/showthread.php?t=1401594
@@ -192,7 +192,7 @@ float bdepth(vec2 coords, vec2 texelSize, sampler2D color_depth) //blurring dept
 	for( int i=0; i<9; i++ )
 	{
 		//float tmp = texture2D(color_depth, coords + offset[i]).r;
-		float tmp = texture2D(motionMap, coords + vec2(offset[i],offset1[i])).b;
+		float tmp = textureLod(motionMap, coords + vec2(offset[i],offset1[i]), 0).b;
 		d += tmp * kernel[i];
 	}
 	
@@ -204,9 +204,9 @@ vec3 color(vec2 coords,float blur, vec2 texelSize, sampler2D color_depth) //proc
 {
 	vec3 col = vec3(0.0,0.0,0.0);
 	
-	col.g = texture2D(color_depth,coords + vec2(0.0,1.0)*texelSize*fringe*blur).g;
-	col.b = texture2D(color_depth,coords + vec2(-0.866,-0.5)*texelSize*fringe*blur).b;
-	col.r = texture2D(color_depth,coords + vec2(0.866,-0.5)*texelSize*fringe*blur).r;
+	col.g = texture(color_depth,coords + vec2(0.0,1.0)*texelSize*fringe*blur).g;
+	col.b = texture(color_depth,coords + vec2(-0.866,-0.5)*texelSize*fringe*blur).b;
+	col.r = texture(color_depth,coords + vec2(0.866,-0.5)*texelSize*fringe*blur).r;
 	
 	vec3 lumcoeff = vec3(0.299,0.587,0.114);
 	float lum = dot(col.rgb, lumcoeff);
@@ -255,7 +255,7 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 {
 	//scene depth calculation
 
-	float depthSample = texture2D(motionMap, uv ).b;
+	float depthSample = texture(motionMap, uv).b;
 	float depth = linearize(depthSample);
 	
 	if (depthblur)
@@ -269,7 +269,7 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 	
 	if (autofocus)
 	{
-		fDepth = texture2D(motionMap,focus).b;
+		fDepth = textureLod(motionMap, focus, 0).b;
 		fDepth = linearize(fDepth);
 		//fDepth = pow( (1.0f - fDepth), exponential );
 	}
@@ -317,11 +317,11 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 	
 	if(blur < 0.05) //some optimization thingy
 	{
-		col = texture2D(renderedTexture, uv).rgb;
+		col = textureLod(renderedTexture, uv, 0).rgb;
 	}
 	else
 	{
-		col = texture2D(renderedTexture, uv).rgb;
+		col = textureLod(renderedTexture, uv, 0).rgb;
 		float s = 1.0;
 		int ringsamples;
 		
@@ -481,8 +481,8 @@ vec3 calculateLensflare(vec2 texcoord) {
 void main()
 {
 	if (usePostProcessing) {
-		vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
-		float depth = texture2D(motionMap, pass_TextureCoord).b;
+		vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 0);
+		float depth = textureLod(motionMap, pass_TextureCoord, 0).b;
 	    in_color.rgb = DoDOF(pass_TextureCoord, vec2(1/screenWidth,1/screenHeight), renderedTexture);
 	    
 	    out_color = in_color;

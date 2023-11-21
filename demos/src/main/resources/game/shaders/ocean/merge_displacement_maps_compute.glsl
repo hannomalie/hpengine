@@ -35,7 +35,7 @@ void main(void)
     vec3 resultingDisplacement = waveHeight * textureLod(displacementY, uvTextureSpace, 0).xyz;
     resultingDisplacement += choppiness * textureLod(displacementX, uvTextureSpace, 0).xyz;
     resultingDisplacement += choppiness * textureLod(displacementZ, uvTextureSpace, 0).xyz;
-    resultingDisplacement *= 100f;
+    resultingDisplacement *= 100.0f;
 
     imageStore(displacement, uv, vec4(resultingDisplacement, 1));
 
@@ -69,7 +69,7 @@ void main(void)
     vec2 dDdy = 0.5 * LAMBDA * (vec2(cX, cY) - vec2(dX, dY));
     const float scale = 15.0f;
     float j = jacobian(dDdx * scale, dDdy * scale);
-    float resultingRoughness = clamp(1-j, 0f, 1f);
+    float resultingRoughness = clamp(1.0-j, 0.0f, 1.0f);
 
     float turbulence = 0.25f*max(2.0 - j + dot(abs(bump.xz), vec2(1.2)), 0.0);
     // This is rather "arbitrary", but looks pretty good in practice.

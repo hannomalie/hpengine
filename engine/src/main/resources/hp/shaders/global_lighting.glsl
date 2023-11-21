@@ -105,7 +105,7 @@ float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D s
     const bool simpleShadows = true;
     if(simpleShadows) {
         vec2 shadowMapValue = textureLod(shadowMap, shadowMapCoords, 0).rg;
-        return shadowMapValue.r > (depthInLightSpace - 0.001f) ? 1f : 0f;
+        return shadowMapValue.r > (depthInLightSpace - 0.001f) ? 1.0f : 0.0f;
     }
     return clamp(chebyshevUpperBound(depthInLightSpace, shadowMapCoords, light, shadowMap), 0, 1).r;
 }

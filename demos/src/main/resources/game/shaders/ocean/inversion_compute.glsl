@@ -13,7 +13,7 @@ void main(void)
 //    ivec2 x = ivec2(gl_GlobalInvocationID.xy) - N/2;
     float perms[] = {1.0, -1.0};
     int index = int(mod(x.x+x.y, 2));
-    float perm = 1f;//perms[index];
+    float perm = 1.0f;//perms[index];
 
     if(pingpong == 0)
     {

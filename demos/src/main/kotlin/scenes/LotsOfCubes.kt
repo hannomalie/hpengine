@@ -1,19 +1,50 @@
 package scenes
 
+import Vector4fStruktImpl.Companion.sizeInBytes
+import Vector4fStruktImpl.Companion.type
+import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
+import com.artemis.Component
+import com.artemis.EntitySystem
+import com.artemis.annotations.All
 import de.hanno.hpengine.Engine
+import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.buffer.vertex.drawInstancedBaseVertex
+import de.hanno.hpengine.graphics.constants.PrimitiveType
+import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
+import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
+import de.hanno.hpengine.graphics.shader.Program
+import de.hanno.hpengine.graphics.shader.ProgramManager
+import de.hanno.hpengine.graphics.shader.SSBO
+import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.shader.useAndBind
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
-import de.hanno.hpengine.model.Cluster
-import de.hanno.hpengine.model.MaterialComponent
+import de.hanno.hpengine.math.Vector4fStrukt
+import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.scene.dsl.entity
-import de.hanno.hpengine.transform.AABBData
-import de.hanno.hpengine.scene.dsl.scene
-import de.hanno.hpengine.world.addAnimatedModelEntity
+import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
+import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.scene.VertexStruktPacked
+import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
+import org.joml.AxisAngle4f
 import org.joml.Vector3f
+import org.joml.Vector3fc
+import org.koin.core.annotation.Single
+import struktgen.api.get
+import kotlin.random.Random
 
 var maxDistance = 15
 var clusterDistance = 10 * maxDistance
@@ -32,10 +63,140 @@ fun main() {
     engine.runLotsOfCubes()
 }
 
+class Grass: Component()
+
+@All(Grass::class, ModelComponent::class)
+@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
+class GrassSystem(
+    private val config: Config,
+    private val graphicsApi: GraphicsApi,
+    private val modelSystem: ModelSystem,
+    private val renderStateContext: RenderStateContext,
+    private val programManager: ProgramManager,
+    private val entitiesStateHolder: EntitiesStateHolder,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+): BaseEntitySystem(), Extractor, DeferredRenderExtension {
+    private val positions = renderStateContext.renderState.registerState {
+        graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
+    }
+
+    private val uniforms1 = GrassFirstPassUniforms()
+
+    inner class GrassFirstPassUniforms : StaticFirstPassUniforms(graphicsApi) {
+        var positions by SSBO(
+            "vec4", 5, graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
+        )
+    }
+
+    val program = programManager.getProgram(
+        config.gameDir.resolve("shaders/first_pass_grass_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
+        null,
+        Defines(),
+        uniforms1
+    )
+
+    private class Box(var value: Int)
+    private val entityId = renderStateContext.renderState.registerState { Box(-1) }
+
+    private val templatePositions: List<Vector3fc> = buildList {
+        repeat(100) {
+            add(
+                Vector3f(
+                    (Random.nextFloat() - 0.5f) * 50,
+                    0f,
+                    (Random.nextFloat() - 0.5f) * 50,
+                )
+            )
+        }
+    }
+    override fun processSystem() { }
+
+    override fun extract(currentWriteState: RenderState) {
+        val positionsToWrite = currentWriteState[positions]
+        positionsToWrite.ensureCapacityInBytes(templatePositions.size * Vector4fStrukt.sizeInBytes)
+
+        var index = 0
+        templatePositions.forEach {
+            positionsToWrite.buffer.run {
+                positionsToWrite[index].set(it)
+            }
+            index++
+        }
+        forEachEntity {
+            currentWriteState[entityId].value = it
+        }
+    }
+    override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
+        val entityId = renderState[entityId].value
+        if(entityId == -1) return
+        val modelCacheComponent = modelSystem.modelCacheComponentMapper.get(entityId)
+        if(modelCacheComponent == null) return
+        val entityIndex = modelSystem.entityIndices[entityId] // TODO: Encapsulate this in own system
+        if(entityIndex == null) return
+
+        val materialComponent = modelSystem.materialComponentMapper.get(entityId)
+        val entitiesState = renderState[entitiesStateHolder.entitiesState]
+        val camera = renderState[primaryCameraStateHolder.camera]
+
+        val indexCount = modelCacheComponent.model.meshIndexCounts[0]
+        val allocation = modelCacheComponent.allocation
+
+        program.use()
+        program.useAndBind { uniforms ->
+            uniforms.apply {
+                materials = entitiesState.materialBuffer
+                entities = entitiesState.entitiesBuffer
+                positions = renderState[this@GrassSystem.positions]
+                program.uniforms.indirect = false
+                program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
+                viewMatrix = camera.viewMatrixAsBuffer
+                lastViewMatrix = camera.viewMatrixAsBuffer
+                projectionMatrix = camera.projectionMatrixAsBuffer
+                viewProjectionMatrix = camera.viewProjectionMatrixAsBuffer
+
+                eyePosition = camera.getPosition()
+                near = camera.near
+                far = camera.far
+                time = renderState.time.toInt()
+
+                program.uniforms.entityBaseIndex = 0
+                program.uniforms.indirect = false
+
+                val vertexIndexBuffer = renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
+
+                depthMask = materialComponent.material.writesDepth
+                cullFace = materialComponent.material.cullBackFaces
+                depthTest = materialComponent.material.depthTest
+                program.setTextureUniforms(graphicsApi, materialComponent.material.maps)
+
+                program.uniforms.entityIndex = entityIndex
+
+                program.bind() // TODO: useAndBind seems not to work as this call is required, investigate
+                vertexIndexBuffer.indexBuffer.bind()
+                vertexIndexBuffer.indexBuffer.draw(
+                    DrawElementsIndirectCommand(
+                        count = indexCount,
+                        instanceCount = templatePositions.size,
+                        firstIndex = allocation.indexOffset,
+                        baseVertex = allocation.vertexOffset,
+                        baseInstance = 0,
+                    ),
+                    primitiveType = PrimitiveType.Triangles,
+                    mode = if(config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill,
+                    bindIndexBuffer = false,
+                )
+            }
+        }
+    }
+}
+
+fun Float.toRadian(): Float = (this / (180 * Math.PI)).toFloat()
+
 fun Engine.runLotsOfCubes() {
     val textureManager = systems.firstIsInstance<TextureManagerBaseSystem>()
     world.loadScene {
-        addStaticModelEntity("Plane", "assets/models/plane.obj").apply {
+        addStaticModelEntity("Plane", "assets/models/plane.obj", rotation = AxisAngle4f(1f, 0f, 0f, -180f)).apply {
             create(MaterialComponent::class.java).apply {
                 material = Material(
                     "grass",
@@ -44,33 +205,10 @@ fun Engine.runLotsOfCubes() {
                         Material.MAP.DIFFUSE to textureManager.getTexture("assets/textures/grass.png", true, config.gameDir)
                     )
                 )
-
             }
-
+            create(Grass::class.java)
+            create(PreventDefaultRendering::class.java)
         }
-
-//        val clusters: MutableList<Cluster> = ArrayList()
-//        val clustersComponent = ClustersComponent(this@entity)
-//        for (clusterIndex in 0..4) {
-//            val cluster = Cluster()
-//            val random = java.util.Random()
-//            val count = 10
-//            for (x in -count until count) {
-//                for (y in -count until count) {
-//                    for (z in -count until count) {
-//                        val trafo = Transform()
-//                        val randomFloat = random.nextFloat() - 0.5f
-//                        trafo.setTranslation(Vector3f().add(Vector3f(clusterLocations[clusterIndex % clusterLocations.size])).add(Vector3f(randomFloat * maxDistance * x, randomFloat * maxDistance * y, randomFloat * maxDistance * z)))
-//                        val modelComponent = this@entity.getComponent(ModelComponent::class.java)!!
-//                        val materials = modelComponent.materials
-//                        cluster.add(Instance(this@entity, trafo, materials, null, StaticTransformSpatial(trafo, modelComponent)))
-//                    }
-//                }
-//            }
-//            clusters.add(cluster)
-//            clustersComponent.addClusters(clusters)
-//        }
-//        this@entity.addComponent(clustersComponent)
     }
     simulate()
 }

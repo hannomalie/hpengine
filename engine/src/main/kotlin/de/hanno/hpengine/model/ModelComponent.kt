@@ -10,6 +10,7 @@ import de.hanno.hpengine.transform.SimpleSpatial
 class ModelComponent : Component() {
     lateinit var modelComponentDescription: ModelComponentDescription
 }
+class PreventDefaultRendering: Component()
 class ModelCacheComponent : Component() {
     lateinit var model: Model<*>
     lateinit var allocation: Allocation // TODO: sometimes, this is accessed before initialization, check out why

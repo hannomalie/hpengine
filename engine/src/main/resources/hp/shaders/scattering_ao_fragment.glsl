@@ -396,8 +396,8 @@ vec4 getAmbientOcclusionBentNormal(vec2 st) {
 
 				  vec2 coords2 = vec2(i*incx2,j*incy2)/prof;
 
-				  float prof2g = texture2D(motionMap,st.xy+coords2*rand(st.xy)).b; // depth
-				  vec3 norm2g = normalize(vec3(texture2D(normalMap,st.xy+coords2*rand(st.xy)).xyz)); //*2.0-vec3(1.0)
+				  float prof2g = textureLod(motionMap,st.xy+coords2*rand(st.xy), 0).b; // depth
+				  vec3 norm2g = normalize(vec3(textureLod(normalMap,st.xy+coords2*rand(st.xy), 0).xyz)); //*2.0-vec3(1.0)
 
 				  //OCCLUSION:
 				  //calculate approximate pixel distance:

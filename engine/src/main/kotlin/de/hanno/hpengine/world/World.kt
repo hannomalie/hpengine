@@ -13,6 +13,7 @@ import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.spatial.SpatialComponent
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.transform.AABBData
+import org.joml.AxisAngle4f
 import org.joml.Vector3f
 
 fun World.loadScene(block: World.() -> Unit) {
@@ -48,9 +49,13 @@ fun World.addStaticModelEntity(
     path: String,
     directory: Directory = Directory.Game,
     translation: Vector3f = Vector3f(),
+    rotation: AxisAngle4f? = null,
 ): EntityEdit = edit(create()).apply {
     create(TransformComponent::class.java).apply {
-        transform.translation(translation)
+        if(rotation != null) {
+            transform.rotate(Vector3f(rotation.x, rotation.y, rotation.z), rotation.angle.toInt())
+        }
+        transform.translateLocal(translation)
     }
     create(ModelComponent::class.java).apply {
         modelComponentDescription = StaticModelComponentDescription(path, directory)

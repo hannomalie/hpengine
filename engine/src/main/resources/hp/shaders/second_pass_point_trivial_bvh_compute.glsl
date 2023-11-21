@@ -78,9 +78,9 @@ void main(void) {
 	vec3 positionView = textureLod(positionMap, st, 0).xyz;
 	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 
-	vec3 color = texture2D(diffuseMap, st).xyz;
-	float roughness = texture2D(positionMap, st).w;
-	float metallic = texture2D(diffuseMap, st).w;
+	vec3 color = textureLod(diffuseMap, st, 0).xyz;
+	float roughness = textureLod(positionMap, st, 0).w;
+	float metallic = textureLod(diffuseMap, st, 0).w;
 
 	float glossiness = (1-roughness);
 	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
@@ -93,8 +93,8 @@ void main(void) {
 	dir.w = 0.0;
 	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
 	vec3 normalView = textureLod(normalMap, st, 0).xyz;
-	vec4 specular = texture2D(specularMap, st);
-	float depthFloat = texture2D(normalMap, st).w;
+	vec4 specular = textureLod(specularMap, st, 0);
+	float depthFloat = textureLod(normalMap, st, 0).w;
 	depthFloat = textureLod(visibilityMap, st, 0).g;
 
 	vec4 finalColor = vec4(0);

@@ -79,6 +79,7 @@ class ModelSystem(
     private val threadPool = Executors.newFixedThreadPool(1)
 
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
+    lateinit var preventDefaultRenderingComponentMapper: ComponentMapper<PreventDefaultRendering>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var boundingVolumeComponentMapper: ComponentMapper<BoundingVolumeComponent>
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
@@ -480,21 +481,23 @@ class ModelSystem(
             )
             val transform = transformComponent!!.transform
 
-            extractBatch(
-                modelComponent,
-                modelCacheComponent,
-                entityId,
-                instanceComponent,
-                entityIndices,
-                parentEntityId,
-                transform,
-                camera,
-                instanceCount,
-                currentWriteState,
-                drawLines,
-                cameraWorldPosition,
-                allocations
-            )
+            if(preventDefaultRenderingComponentMapper[entityId] == null) {
+                extractBatch(
+                    modelComponent,
+                    modelCacheComponent,
+                    entityId,
+                    instanceComponent,
+                    entityIndices,
+                    parentEntityId,
+                    transform,
+                    camera,
+                    instanceCount,
+                    currentWriteState,
+                    drawLines,
+                    cameraWorldPosition,
+                    allocations
+                )
+            }
         }
     }
 

@@ -15,7 +15,10 @@ import de.hanno.hpengine.ocean.oceanModule
 import de.hanno.hpengine.opengl.openglModule
 import glfwModule
 import invoke
+import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Module
 import org.koin.dsl.module
+import org.koin.ksp.generated.module
 import java.io.File
 
 fun main() {
@@ -30,12 +33,16 @@ fun createEngine(demoAndEngineConfig: DemoAndEngineConfig) = Engine(
     listOf(
         glfwModule,
         openglModule,
-        oceanModule,
         demoAndEngineConfig.primaryRendererModule,
         editorModule,
-        demoAndEngineConfig.configModule
-    )
+        demoAndEngineConfig.configModule,
+        DemoModule().module
+    ) + demoAndEngineConfig.demoConfig.demo.additionalModules
 )
+
+@Module
+@ComponentScan
+class DemoModule
 
 fun createDemoAndEngineConfig(): DemoAndEngineConfig {
     val demoConfig = ConfigLoaderBuilder.default()
@@ -44,7 +51,7 @@ fun createDemoAndEngineConfig(): DemoAndEngineConfig {
         .build().loadConfigOrThrow<DemoConfig>()
 
     val gameDirectory = if (demoConfig.gameDir != null) GameDirectory(demoConfig.gameDir, null) else GameDirectory(
-        File("demo"),
+        File("game"),
         Demo::class.java
     )
 
@@ -58,10 +65,10 @@ fun createDemoAndEngineConfig(): DemoAndEngineConfig {
     return DemoAndEngineConfig(demoConfig, config)
 }
 
-enum class Demo(val run: (Engine) -> Unit) {
+enum class Demo(val run: (Engine) -> Unit, val additionalModules: List<org.koin.core.module.Module> = emptyList()) {
     LotsOfCubes(Engine::runLotsOfCubes), // TODO: Make this possible by reimplementing the demo
     MultipleObjects(Engine::runMultipleObjects),
-    Ocean(Engine::runOcean),
+    Ocean(Engine::runOcean, listOf(oceanModule)),
     Sponza(Engine::runSponza),
 }
 enum class Renderer {

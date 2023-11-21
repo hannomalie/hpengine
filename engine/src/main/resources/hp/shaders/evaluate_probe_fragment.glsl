@@ -167,7 +167,7 @@ void main(void) {
     ivec3 positionInGrid = ivec3(positionInGridClamped);
     int probeIndex = to1D(positionInGrid.x,positionInGrid.y,positionInGrid.z);
 
-    const float offset = 1f;
+    const float offset = 1.0f;
     float x = positionInGridClamped.x;
     float y = positionInGridClamped.y;
     float z = positionInGridClamped.z;

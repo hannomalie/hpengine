@@ -2,6 +2,7 @@
 import com.badlogicgames.packr.Packr
 import com.badlogicgames.packr.PackrConfig
 import com.github.jengelman.gradle.plugins.shadow.internal.JavaJarExec
+import de.hanno.hpengine.build.Dependencies
 import java.util.Arrays
 
 
@@ -18,6 +19,7 @@ plugins {
     kotlin("jvm")
     application
     id("com.github.johnrengelman.shadow") version "6.0.0"
+    id("com.google.devtools.ksp")
 }
 
 application {
@@ -29,6 +31,9 @@ dependencies {
     api(project(":editor"))
     api(project(":deferredrenderer"))
     api(project(":ocean"))
+
+    api(Dependencies.Koin.annotations)
+    ksp(Dependencies.Koin.compiler)
 }
 
 val bundleLinux by tasks.registering {
@@ -51,6 +56,12 @@ val bundleLinux by tasks.registering {
         }
 
         Packr().pack(config)
+    }
+}
+
+kotlin {
+    sourceSets["main"].apply {
+        kotlin.srcDir("build/generated/ksp/main/kotlin/")
     }
 }
 

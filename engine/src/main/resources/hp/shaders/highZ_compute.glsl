@@ -19,9 +19,9 @@ float getMaxR(sampler2D sampler, ivec2 baseCoords, vec2 texCoords, vec2 texelSiz
 
 //	fineZ = textureGather(sampler, texCoords, 0);
 	fineZ.x = (textureLod(sampler, texCoords, mipLevelToSampleFrom).r);
-	fineZ.y = (textureLod(sampler, clamp(texCoords + vec2(texelSize.x,0), 0f, 1f), mipLevelToSampleFrom).r);
-	fineZ.z = (textureLod(sampler, clamp(texCoords + vec2(texelSize), 0f, 1f), mipLevelToSampleFrom).r);
-	fineZ.w = (textureLod(sampler, clamp(texCoords + vec2(0,texelSize.y), 0f, 1f), mipLevelToSampleFrom).r);
+	fineZ.y = (textureLod(sampler, clamp(texCoords + vec2(texelSize.x, 0.0), 0.0f, 1.0f), mipLevelToSampleFrom).r);
+	fineZ.z = (textureLod(sampler, clamp(texCoords + vec2(texelSize), 0.0f, 1.0f), mipLevelToSampleFrom).r);
+	fineZ.w = (textureLod(sampler, clamp(texCoords + vec2(0,texelSize.y), 0.0f, 1.0f), mipLevelToSampleFrom).r);
 
 	return max(max(fineZ.x, fineZ.y), max(fineZ.z, fineZ.w));
 }
@@ -34,9 +34,9 @@ float getMaxG(sampler2D sampler, ivec2 baseCoords, vec2 texCoords, vec2 texelSiz
 
 //	fineZ = textureGather(sampler, texCoords, 1);
 	fineZ.x = (textureLod(sampler, texCoords, mipLevelToSampleFrom).g);
-	fineZ.y = (textureLod(sampler, clamp(texCoords + vec2(texelSize.x, 0), 0f, 1f), mipLevelToSampleFrom).g);
-	fineZ.z = (textureLod(sampler, clamp(texCoords + vec2(texelSize), 0f, 1f), mipLevelToSampleFrom).g);
-	fineZ.w = (textureLod(sampler, clamp(texCoords + vec2(0,texelSize.y), 0f, 1f), mipLevelToSampleFrom).g);
+	fineZ.y = (textureLod(sampler, clamp(texCoords + vec2(texelSize.x, 0.0f), 0.0f, 1.0f), mipLevelToSampleFrom).g);
+	fineZ.z = (textureLod(sampler, clamp(texCoords + vec2(texelSize), 0.0f, 1.0f), mipLevelToSampleFrom).g);
+	fineZ.w = (textureLod(sampler, clamp(texCoords + vec2(0,texelSize.y), 0.0f, 1.0f), mipLevelToSampleFrom).g);
 
 	return max(max(fineZ.x, fineZ.y), max(fineZ.z, fineZ.w));
 }
@@ -50,7 +50,7 @@ void main(){
 	ivec2 samplePos = 2*pixelPos;
 	vec2 textureCoords = vec2(pixelPos)/vec2(width, height);
 	int mipmapSource = mipmapTarget-1;
-	vec2 texelSize = vec2(1f/width, 1f/height);
+	vec2 texelSize = vec2(1.0f/width, 1.0f/height);
 
     float maximum;
     if(mipmapTarget == 0) {

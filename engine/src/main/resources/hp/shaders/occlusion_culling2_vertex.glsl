@@ -79,15 +79,15 @@ void main(){
                 Entity entity = entities[offset+i];
 
                 vec4[2] boundingRect;
-                boundingRect[0] = (projectionMatrix*viewMatrix * vec4(entity.min, 1f));
+                boundingRect[0] = (projectionMatrix*viewMatrix * vec4(entity.min, 1.0f));
                 boundingRect[0].xyz /= boundingRect[0].w;
-                boundingRect[0].xy = boundingRect[0].xy * 0.5 + 0.5;
-                boundingRect[1] = (projectionMatrix*viewMatrix * vec4(entity.max, 1f));
+                boundingRect[0].xy = boundingRect[0].xy * 0.5f + 0.5f;
+                boundingRect[1] = (projectionMatrix*viewMatrix * vec4(entity.max, 1.0f));
                 boundingRect[1].xyz /= boundingRect[1].w;
-                boundingRect[1].xy = boundingRect[1].xy * 0.5 + 0.5;
+                boundingRect[1].xy = boundingRect[1].xy * 0.5f + 0.5f;
 
-                float ViewSizeX = (boundingRect[1].x-boundingRect[0].x) * 1280/2.0;
-                float ViewSizeY = (boundingRect[1].y-boundingRect[0].y) * 720/2.0;
+                float ViewSizeX = (boundingRect[1].x-boundingRect[0].x) * 1280.0f/2.0f;
+                float ViewSizeY = (boundingRect[1].y-boundingRect[0].y) * 720.0f/2.0f;
                 float LOD = ceil( log2( max( ViewSizeX, ViewSizeY ) / 2.0 ) );
     //            float LOD = ceil( log2( max( ViewSizeX, ViewSizeY ) ) );
 
