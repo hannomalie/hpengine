@@ -33,8 +33,7 @@ import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL11.GL_FALSE
 import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
 import org.lwjgl.opengl.GL32.*
-import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
-import org.lwjgl.opengl.GL40.glBlendFunci
+import org.lwjgl.opengl.GL40.*
 import org.lwjgl.opengl.GL45.glGetTextureSubImage
 import org.lwjgl.system.MemoryStack
 import java.awt.image.BufferedImage
@@ -71,7 +70,7 @@ class OpenGLContext private constructor(
             blend = false
 
             enable(Capability.TEXTURE_CUBE_MAP_SEAMLESS)
-            GL40.glPatchParameteri(GL40.GL_PATCH_VERTICES, 3)
+            glPatchParameteri(GL_PATCH_VERTICES, 3)
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
             GL11.glLineWidth(1f)
         }
@@ -79,6 +78,9 @@ class OpenGLContext private constructor(
 
     private fun getCapabilities() = onGpu { GL.getCapabilities() }
 
+    override fun unbindPixelBufferObject() = onGpu {
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
+    }
     override val maxLineWidth = onGpu { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
     override fun Texture2D(
         dimension: TextureDimension2D,

@@ -24,7 +24,6 @@ class OpenGLPixelBufferObjectPool(
                 )
             )
         }
-
     }
     private val queue = PriorityBlockingQueue(10000, TaskComparator)
     private val threadPool = Executors.newFixedThreadPool(buffers.size).apply {

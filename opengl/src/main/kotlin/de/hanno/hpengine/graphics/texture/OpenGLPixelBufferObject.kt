@@ -4,6 +4,7 @@ package de.hanno.hpengine.graphics.texture
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import de.hanno.hpengine.graphics.buffer.bound
 import de.hanno.hpengine.graphics.constants.BufferTarget
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.glValue
@@ -22,6 +23,9 @@ class OpenGLPixelBufferObject(
     private val buffer = _buffer ?: graphicsApi.PersistentMappedBuffer(BufferTarget.PixelUnpack, 5_000_000)
     var uploading = AtomicBoolean(false)
 
+    init {
+        graphicsApi.unbindPixelBufferObject()
+    }
     override fun upload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D) {
         if(uploading.getAndSet(true)) throw IllegalStateException("PBO already uploading!")
 
@@ -37,13 +41,13 @@ class OpenGLPixelBufferObject(
 
                     val level = index
                     graphicsApi.onGpu {
-                        buffer.bind()
-                        if (info.dataCompressed) {
-                            glCompressedTextureSubImage2D(texture.id, level, 0, 0, currentWidth, currentHeight, info.internalFormat.glValue, data.capacity(), 0)
-                        } else {
-                            glTextureSubImage2D(texture.id, level, 0, 0, currentWidth, currentHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                        buffer.bound {
+                            if (info.dataCompressed) {
+                                glCompressedTextureSubImage2D(texture.id, level, 0, 0, currentWidth, currentHeight, info.internalFormat.glValue, data.capacity(), 0)
+                            } else {
+                                glTextureSubImage2D(texture.id, level, 0, 0, currentWidth, currentHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                            }
                         }
-                        buffer.unbind()
                     }
 
                     currentWidth = floor(currentWidth * 0.5).toInt()
@@ -63,14 +67,14 @@ class OpenGLPixelBufferObject(
 
                         graphicsApi.onGpu {
                             bindTexture(TextureTarget.TEXTURE_2D, texture.id)
-                            buffer.bind()
-                            if (info.dataCompressed) {
-                                glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data.capacity(), 0)
-                            } else {
-                                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                            buffer.bound {
+                                if (info.dataCompressed) {
+                                    glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data.capacity(), 0)
+                                } else {
+                                    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                                }
+                                generateMipMaps(texture)
                             }
-                            generateMipMaps(texture)
-                            buffer.unbind()
                             CommandSync {
                                 uploading.getAndSet(false)
                                 texture.uploadState = UploadState.Uploaded
@@ -104,13 +108,13 @@ class OpenGLPixelBufferObject(
 
                         graphicsApi.onGpu {
                             profiled("textureSubImage") {
-                                buffer.bind()
-                                if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {
-                                    glCompressedTextureSubImage2D(textureId, level1, 0, 0, width, height, info.internalFormat.glValue, capacity, 0)
-                                } else profiled("glTextureSubImage2D") {
-                                    glTextureSubImage2D(textureId, level1, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                                buffer.bound {
+                                    if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {
+                                        glCompressedTextureSubImage2D(textureId, level1, 0, 0, width, height, info.internalFormat.glValue, capacity, 0)
+                                    } else profiled("glTextureSubImage2D") {
+                                        glTextureSubImage2D(textureId, level1, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                                    }
                                 }
-                                buffer.unbind()
                             }
                             texture.uploadState = UploadState.Uploading(level1)
                             CommandSync {
@@ -133,14 +137,14 @@ class OpenGLPixelBufferObject(
 
                     graphicsApi.onGpu {
                         bindTexture(TextureTarget.TEXTURE_2D, texture.id)
-                        buffer.bind()
-                        if (info.dataCompressed) {
-                            glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data.capacity(), 0)
-                        } else {
-                            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                        buffer.bound {
+                            if (info.dataCompressed) {
+                                glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data.capacity(), 0)
+                            } else {
+                                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                            }
+                            generateMipMaps(texture)
                         }
-                        generateMipMaps(texture)
-                        buffer.unbind()
                         CommandSync {
                             uploading.getAndSet(false)
                             texture.uploadState = UploadState.Uploaded
@@ -179,13 +183,13 @@ class OpenGLPixelBufferObject(
         graphicsApi.onGpu {
 //        (backgroundContext ?: this).onGpu { // TODO: In here happen errors, investigate why
             profiled("textureSubImage") {
-                buffer.bind()
-                if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {
-                    glCompressedTextureSubImage2D(textureId, level, 0, 0, width, height, info.internalFormat.glValue, capacity, 0)
-                } else profiled("glTextureSubImage2D") {
-                    glTextureSubImage2D(textureId, level, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                buffer.bound {
+                    if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {
+                        glCompressedTextureSubImage2D(textureId, level, 0, 0, width, height, info.internalFormat.glValue, capacity, 0)
+                    } else profiled("glTextureSubImage2D") {
+                        glTextureSubImage2D(textureId, level, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                    }
                 }
-                buffer.unbind()
             }
             CommandSync {
                 uploading.getAndSet(false)

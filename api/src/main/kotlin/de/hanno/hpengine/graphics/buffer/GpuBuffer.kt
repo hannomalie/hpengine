@@ -40,6 +40,15 @@ interface GpuBuffer : Buffer {
     fun delete()
 }
 
+inline fun <T> GpuBuffer.bound(action: () -> T) {
+    try {
+        bind()
+        action()
+    } finally {
+        unbind()
+    }
+}
+
 interface TypedGpuBuffer<T: Strukt> : GpuBuffer, ITypedBuffer<T> {
     val gpuBuffer: GpuBuffer
     val typedBuffer: TypedBuffer<T>

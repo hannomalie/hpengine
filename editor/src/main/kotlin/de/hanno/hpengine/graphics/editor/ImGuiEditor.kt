@@ -38,6 +38,7 @@ import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
+import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
@@ -81,8 +82,8 @@ class ImGuiEditor(
         RenderTargetImpl(
             graphicsApi,
             OpenGLFrameBuffer(graphicsApi, null),
-            config.width,
-            config.height,
+            1920,
+            1080,
             listOf(
                 ColorAttachmentDefinition("Color", RGBA16F, TextureFilterConfig(MinFilter.LINEAR))
             ).toTextures(graphicsApi, config.width, config.height),
@@ -126,7 +127,7 @@ class ImGuiEditor(
     }
 
     private val imGuiImplGlfw = graphicsApi.onGpu {
-        ImGuiImplGlfw().apply {
+        ImGuiImplGlfwFrameBufferAware().apply {
             init(window.handle, true)
         }
     }
@@ -175,8 +176,8 @@ class ImGuiEditor(
         }
         graphicsApi.polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
         renderTarget.use(true)
-        imGuiImplGlfw.newFrame()
-        ImGui.getIO().setDisplaySize(renderTarget.width.toFloat(), renderTarget.height.toFloat())
+        imGuiImplGlfw.newFrame(renderTarget.width, renderTarget.height)
+
         try {
 
             ImGui.newFrame()
@@ -236,7 +237,7 @@ class ImGuiEditor(
                     e.printStackTrace()
                 }
             }
-//            ImGui.showDemoWindow(ImBoolean(true))
+            ImGui.showDemoWindow(ImBoolean(true))
         } catch (it: Exception) {
             it.printStackTrace()
         } finally {

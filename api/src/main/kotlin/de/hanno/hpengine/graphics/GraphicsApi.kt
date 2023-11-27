@@ -324,7 +324,6 @@ interface GraphicsApi {
         name: String,
         clear: Vector4f
     ): RenderTarget2D
-
     fun <T : Texture> RenderTarget(
         frameBuffer: FrameBuffer,
         width: Int,
@@ -374,7 +373,17 @@ interface GraphicsApi {
         primitiveType: PrimitiveType,
         mode: RenderingMode
     ): TriangleCount
+
+    fun unbindPixelBufferObject()
 }
+
+fun GraphicsApi.RenderTarget(
+    frameBuffer: FrameBuffer,
+    textures: List<Texture2D>,
+    name: String,
+    clear: Vector4f = Vector4f(),
+) = this.RenderTarget(frameBuffer, textures.first().dimension.width, textures.first().dimension.height, textures, name, clear)
+
 
 typealias TriangleCount = Int
 
