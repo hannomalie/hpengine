@@ -46,15 +46,6 @@ import org.koin.core.annotation.Single
 import struktgen.api.get
 import kotlin.random.Random
 
-var maxDistance = 15
-var clusterDistance = 10 * maxDistance
-var clusterLocations = arrayOf(
-    Vector3f(clusterDistance.toFloat(), 0f, clusterDistance.toFloat()),
-    Vector3f(clusterDistance.toFloat(), 0f, (-clusterDistance).toFloat()),
-    Vector3f((-clusterDistance).toFloat(), 0f, (-clusterDistance).toFloat()),
-    Vector3f(0f, 0f, 0f),
-    Vector3f((-clusterDistance).toFloat(), 0f, clusterDistance.toFloat())
-)
 fun main() {
     val demoAndEngineConfig = createDemoAndEngineConfig()
 
@@ -99,15 +90,20 @@ class GrassSystem(
     private class Box(var value: Int)
     private val entityId = renderStateContext.renderState.registerState { Box(-1) }
 
+    private val clusterPositions = buildList<Vector3f> {
+        val clusterCount = 150
+        repeat(clusterCount) {
+            add(Vector3f(Random.nextFloat(), 0f, Random.nextFloat()).mul(3f*clusterCount))
+        }
+    }
     private val templatePositions: List<Vector3fc> = buildList {
         repeat(100) {
-            add(
-                Vector3f(
-                    (Random.nextFloat() - 0.5f) * 50,
-                    0f,
-                    (Random.nextFloat() - 0.5f) * 50,
-                )
-            )
+            val random0 = Random.nextFloat()
+            val random1 = Random.nextFloat()
+            val position = Vector3f((random0 - 0.5f) * 50, 0f, (random1 - 0.5f) * 50)
+            clusterPositions.forEach {
+                add(Vector3f(position).add(it))
+            }
         }
     }
     override fun processSystem() { }

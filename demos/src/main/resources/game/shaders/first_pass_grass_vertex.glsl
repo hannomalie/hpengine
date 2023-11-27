@@ -159,21 +159,17 @@ void main(void) {
 	vec4 color = in_Color;
 	vec2 texCoord = vertex.texCoord.xy;
 
-	vec3 position = positions[gl_InstanceID].xyz; // TODO: Consider using the AFTER_POSITION hook instead of copying whole shader
-	mat4 positionAdjustment;
-	positionAdjustment[0][0] = position.x;
-	positionAdjustment[1][1] = position.y;
-	positionAdjustment[2][2] = position.z;
-	positionAdjustment[3][3] = 1; // TODO: Use this matrix actually
+	vec4 position = vec4(positions[gl_InstanceID].xyz, 0); // TODO: Consider using the AFTER_POSITION hook instead of copying whole shader
 
 	vec4 position_world = modelMatrix * positionModel;
+	position_world += position;
 	//AFTER_POSITION
 
 	mat4 mvp = (projectionMatrix * viewMatrix * modelMatrix);
 
 	vec4 position_clip_last = (projectionMatrix * lastViewMatrix * position_world);
 
-	vec4 position_clip = projectionMatrix * viewMatrix * modelMatrix * positionModel;
+	vec4 position_clip = projectionMatrix * viewMatrix * position_world;
 	vec4 position_clip_uv;
 	position_clip_uv.xyz = position_clip.xyz;
 	position_clip_uv /= position_clip_uv.w;

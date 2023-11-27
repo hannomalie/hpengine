@@ -237,7 +237,7 @@ class ImGuiEditor(
                     e.printStackTrace()
                 }
             }
-            ImGui.showDemoWindow(ImBoolean(true))
+//            ImGui.showDemoWindow(ImBoolean(true))
         } catch (it: Exception) {
             it.printStackTrace()
         } finally {
