@@ -13,9 +13,10 @@ interface ProgramManager {
     val config: Config
 
     fun update(deltaSeconds: Float)
-    fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: Uniforms? = null): ComputeProgram<Uniforms>
-    fun getComputeProgram(codeSourceAsset: Asset): ComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), Defines(), null)
-    fun getComputeProgram(codeSourceAsset: Asset, defines: Defines = Defines(), uniforms: Uniforms? = null): ComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), defines, uniforms)
+    fun <T: Uniforms> getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: T): ComputeProgram<T>
+    fun getComputeProgram(codeSourceAsset: Asset): ComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), Defines(), Uniforms.Empty)
+
+    fun <T: Uniforms>getComputeProgram(codeSourceAsset: Asset, defines: Defines = Defines(), uniforms: T): ComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), defines, uniforms)
     fun getComputeProgram(codeSource: CodeSource): ComputeProgram<Uniforms> // TODO: Enhance and make like the other geometry pipeline
 
     fun <T: Uniforms> getProgram(vertexShaderSource: CodeSource,

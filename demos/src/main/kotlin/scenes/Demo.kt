@@ -66,11 +66,12 @@ fun createDemoAndEngineConfig(): DemoAndEngineConfig {
 }
 
 enum class Demo(val run: (Engine) -> Unit, val additionalModules: List<org.koin.core.module.Module> = emptyList()) {
-    LotsOfCubes(Engine::runLotsOfGrass),
+    LotsOfGrass(Engine::runLotsOfGrass),
     MultipleObjects(Engine::runMultipleObjects),
     Ocean(Engine::runOcean, listOf(oceanModule)),
     Sponza(Engine::runSponza),
-    GPUParticles(Engine::runCPUParticles),
+    CPUParticles(Engine::runCPUParticles),
+    GPUParticles(Engine::runGPUParticles),
 }
 enum class Renderer {
     Deferred,

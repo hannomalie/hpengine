@@ -29,6 +29,7 @@ import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.UploadInfo.SingleMipLevelTexture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
@@ -206,7 +207,7 @@ open class GPUCulledPipeline(
     private val highZProgram = config.run {
         programManager.getComputeProgram(
             EngineAsset("shaders/highZ_compute.glsl"),
-            Defines()
+            Defines(), Uniforms.Empty
         )
     }
 

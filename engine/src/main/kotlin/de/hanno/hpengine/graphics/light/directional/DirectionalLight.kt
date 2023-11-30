@@ -11,6 +11,7 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.artemis.forFirstEntityIfPresent
 import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
@@ -78,20 +79,20 @@ class DirectionalLightSystem(
     override fun extract(currentWriteState: RenderState) {
         currentWriteState.set(directionalLightStateHolder.directionalLightHasMovedInCycle, currentWriteState.cycle)
 
-        if(!subscription.entities.isIndexWithinBounds(0)) return
+        forFirstEntityIfPresent { entityId ->
+            val light = directionalLightComponentMapper.get(entityId)
+            val transform = transformComponentMapper.get(entityId).transform
+            val camera = cameraComponentMapper.get(entityId)
 
-        val light = directionalLightComponentMapper.get(subscription.entities[0])
-        val transform = transformComponentMapper.get(subscription.entities[0]).transform
-        val camera = cameraComponentMapper.get(subscription.entities[0])
-
-        currentWriteState[lightState].typedBuffer.forIndex(0) { directionalLightState ->
-            directionalLightState.color.set(light.color)
-            directionalLightState.direction.set(transform.viewDirection)
-            directionalLightState.scatterFactor = light.scatterFactor
-            val viewMatrix = Matrix4f(transform).invert()
-            directionalLightState.viewMatrix.set(viewMatrix)
-            directionalLightState.projectionMatrix.set(camera.projectionMatrix)
-            directionalLightState.viewProjectionMatrix.set(Matrix4f(camera.projectionMatrix).mul(viewMatrix))
+            currentWriteState[lightState].typedBuffer.forIndex(0) { directionalLightState ->
+                directionalLightState.color.set(light.color)
+                directionalLightState.direction.set(transform.viewDirection)
+                directionalLightState.scatterFactor = light.scatterFactor
+                val viewMatrix = Matrix4f(transform).invert()
+                directionalLightState.viewMatrix.set(viewMatrix)
+                directionalLightState.projectionMatrix.set(camera.projectionMatrix)
+                directionalLightState.viewProjectionMatrix.set(Matrix4f(camera.projectionMatrix).mul(viewMatrix))
+            }
         }
     }
 

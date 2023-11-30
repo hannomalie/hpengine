@@ -32,17 +32,18 @@ class OpenGlProgramManager(
             is IntType -> "uniform int ${it.name};"
             is BooleanType -> "uniform bool ${it.name};"
             is FloatType -> "uniform float ${it.name};"
+            is Vec2 -> "uniform vec3 ${it.name};"
         }
     }
     override val Uniforms.shaderDeclarations get() = registeredUniforms.toUniformDeclaration()
 
     override val heightMappingFirstPassProgramDescription = getFirstPassHeightMappingProgramDescription()
 
-    override fun getComputeProgram(
+    override fun <T: Uniforms> getComputeProgram(
         codeSource: FileBasedCodeSource,
         defines: Defines,
-        uniforms: Uniforms?
-    ): ComputeProgramImpl = ComputeProgramImpl(ComputeShader(graphicsApi, codeSource, defines), graphicsApi, fileMonitor, uniforms ?: Uniforms.Empty).apply {
+        uniforms: T
+    ): ComputeProgramImpl<T> = ComputeProgramImpl(ComputeShader(graphicsApi, codeSource, defines), graphicsApi, fileMonitor, uniforms).apply {
         programsCache.add(this).apply {
             programChangeListener.run {
                 reregisterListener { graphicsApi.run { reload() } }
@@ -87,7 +88,7 @@ class OpenGlProgramManager(
         }
     }
 
-    override fun getComputeProgram(codeSource: CodeSource): ComputeProgramImpl = ComputeProgramImpl(
+    override fun getComputeProgram(codeSource: CodeSource): ComputeProgramImpl<Uniforms> = ComputeProgramImpl(
         ComputeShader(graphicsApi, codeSource, Defines()), graphicsApi, fileMonitor,  Uniforms.Empty,
     )
 

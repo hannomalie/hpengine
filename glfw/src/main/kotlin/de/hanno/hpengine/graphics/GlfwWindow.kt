@@ -132,7 +132,7 @@ class GlfwWindow(
         glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
         glfwSwapInterval(if (this.vSync) 1 else 0)
         GL.createCapabilities()
-//        GLUtil.setupDebugMessageCallback()
+        GLUtil.setupDebugMessageCallback()
         GL32.glViewport(0, 0, Integer.max(width, 0), Integer.max(height, 0))
 
         // Don't remove that, or some operating systems won't make context current on another thread

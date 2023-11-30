@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.shader
 
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
@@ -23,6 +24,7 @@ class FloatType(initial: Float = 0f): UniformDelegate<Float>(initial)
 class BooleanType(initial: Boolean): UniformDelegate<Boolean>(initial)
 class Mat4(initial: FloatBuffer = BufferUtils.createFloatBuffer(16).apply { Transform().get(this) }) : UniformDelegate<FloatBuffer>(initial)
 class Vec3(initial: Vector3f) : UniformDelegate<Vector3f>(initial)
+class Vec2(initial: Vector2f) : UniformDelegate<Vector2f>(initial)
 class SSBO(val dataType: String, val bindingIndex: Int, initial: GpuBuffer) : UniformDelegate<GpuBuffer>(initial)
 
 open class Uniforms {

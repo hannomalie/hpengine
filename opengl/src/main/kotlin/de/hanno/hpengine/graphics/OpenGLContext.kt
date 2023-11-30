@@ -773,12 +773,13 @@ class OpenGLContext private constructor(
         uniforms.registeredUniforms.forEach {
             it.run {
                 when (this) {
-                    is Mat4 -> GL20.glUniformMatrix4fv(uniformBindings[name]!!.location, false, _value)
-                    is Vec3 -> GL20.glUniform3f(uniformBindings[name]!!.location, _value.x, _value.y, _value.z)
-                    is SSBO -> GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, uniformBindings[name]!!.location, _value.id)
-                    is IntType -> GL20.glUniform1i(uniformBindings[name]!!.location, _value)
-                    is BooleanType -> GL20.glUniform1i(uniformBindings[name]!!.location, if(_value) 1 else 0)
-                    is FloatType -> GL20.glUniform1f(uniformBindings[name]!!.location, _value)
+                    is Mat4 -> glUniformMatrix4fv(uniformBindings[name]!!.location, false, _value)
+                    is Vec3 -> glUniform3f(uniformBindings[name]!!.location, _value.x, _value.y, _value.z)
+                    is SSBO -> glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, uniformBindings[name]!!.location, _value.id)
+                    is IntType -> glUniform1i(uniformBindings[name]!!.location, _value)
+                    is BooleanType -> glUniform1i(uniformBindings[name]!!.location, if(_value) 1 else 0)
+                    is FloatType -> glUniform1f(uniformBindings[name]!!.location, _value)
+                    is Vec2 -> glUniform2f(uniformBindings[name]!!.location, _value.x, _value.y)
                 }
             }
         }
@@ -1185,6 +1186,7 @@ class OpenGLContext private constructor(
                 is IntType -> UniformBinding(it.name, getUniformLocation(it.name))
                 is Mat4 -> UniformBinding(it.name, getUniformLocation(it.name))
                 is Vec3 -> UniformBinding(it.name, getUniformLocation(it.name))
+                is Vec2 -> UniformBinding(it.name, getUniformLocation(it.name))
             }
         }
     }
