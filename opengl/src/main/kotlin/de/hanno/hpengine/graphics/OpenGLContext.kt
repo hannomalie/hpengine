@@ -81,6 +81,10 @@ class OpenGLContext private constructor(
     override fun unbindPixelBufferObject() = onGpu {
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
     }
+
+    override fun setPointsSize(size: Float) {
+        GL30.glPointSize(size)
+    }
     override val maxLineWidth = onGpu { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
     override fun Texture2D(
         dimension: TextureDimension2D,
@@ -740,6 +744,9 @@ class OpenGLContext private constructor(
 
     override fun Program<*>.use() {
         glUseProgram(id)
+    }
+    override fun Program<*>.unuse() {
+        glUseProgram(0)
     }
 
     override fun Program<*>.getUniformLocation(name: String): Int {

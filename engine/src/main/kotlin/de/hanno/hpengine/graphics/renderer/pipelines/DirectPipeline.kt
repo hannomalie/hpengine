@@ -80,7 +80,7 @@ open class DirectPipeline(
         val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
         val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
         val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
-        program.useAndBind { uniforms: FirstPassUniforms ->
+        using(program) { uniforms: FirstPassUniforms ->
             uniforms.apply {
                 materials = entitiesState.materialBuffer
                 entities = entitiesState.entitiesBuffer
@@ -153,7 +153,7 @@ open class DirectPipeline(
                 val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
                 val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
                 val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
-                program.useAndBind { uniforms ->
+                using(program) { uniforms ->
                     uniforms.apply {
                         materials = entitiesState.materialBuffer
                         entities = entitiesState.entitiesBuffer

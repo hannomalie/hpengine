@@ -2,7 +2,6 @@ package de.hanno.hpengine.graphics.renderer
 
 
 import Vector4fStruktImpl
-import Vector4fStruktImpl.Companion.type
 import de.hanno.hpengine.buffers.safePut
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
@@ -64,7 +63,7 @@ fun GraphicsApi.drawLines(
 
     if (verticesCount <= 0) return
 
-    linesProgram.useAndBind { uniforms ->
+    using(linesProgram) { uniforms ->
         uniforms.modelMatrix.safePut(modelMatrix)
         uniforms.projectionMatrix.safePut(projectionMatrix)
         uniforms.viewMatrix.safePut(viewMatrix)

@@ -19,7 +19,7 @@ import de.hanno.hpengine.graphics.shader.SSBO
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.buffers.safePut
-import de.hanno.hpengine.graphics.shader.useAndBind
+import de.hanno.hpengine.graphics.shader.using
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
@@ -146,7 +146,7 @@ class AreaLightSystem(
 
                 val light = areaLights[i]
 
-                areaShadowPassProgram.useAndBind { uniforms ->
+                using(areaShadowPassProgram) { uniforms ->
                     uniforms.entitiesBuffer = entitiesState.entitiesBuffer
                     // TODO: Move buffer creation somewhere else or eliminate
                     val buffer = BufferUtils.createFloatBuffer(16)

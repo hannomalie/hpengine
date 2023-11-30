@@ -12,4 +12,5 @@ internal val PrimitiveType.glValue: Int get() = when(this) {
     PrimitiveType.Lines -> GL30.GL_LINES
     PrimitiveType.Triangles -> GL30.GL_FILL
     PrimitiveType.Patches -> GL30.GL_FILL
+    PrimitiveType.Points -> GL30.GL_POINT
 }

@@ -16,7 +16,7 @@ import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.graphics.shader.useAndBind
+import de.hanno.hpengine.graphics.shader.using
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.ressources.FileBasedCodeSource
@@ -62,7 +62,7 @@ class ForwardRenderExtension(
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
         val camera = renderState[primaryCameraStateHolder.camera]
-        programStatic.useAndBind { uniforms ->
+        using(programStatic) { uniforms ->
             uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
             uniforms.materials = entitiesState.materialBuffer
             uniforms.entities = entitiesState.entitiesBuffer

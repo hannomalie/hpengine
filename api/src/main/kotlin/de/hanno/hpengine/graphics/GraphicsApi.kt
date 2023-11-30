@@ -309,6 +309,7 @@ interface GraphicsApi {
     fun copyCubeMap(sourceTexture: CubeMap): CubeMap
     fun Program<*>.delete()
     fun Program<*>.use()
+    fun Program<*>.unuse()
     fun Program<*>.getUniformLocation(name: String): Int
     fun Program<*>.bindShaderStorageBuffer(index: Int, block: GpuBuffer)
     fun Program<*>.bindAtomicCounterBufferBuffer(index: Int, block: AtomicCounterBuffer)
@@ -375,6 +376,7 @@ interface GraphicsApi {
     ): TriangleCount
 
     fun unbindPixelBufferObject()
+    fun setPointsSize(size: Float)
 }
 
 fun GraphicsApi.RenderTarget(

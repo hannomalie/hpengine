@@ -50,12 +50,16 @@ fun World.addStaticModelEntity(
     directory: Directory = Directory.Game,
     translation: Vector3f = Vector3f(),
     rotation: AxisAngle4f? = null,
+    scale: Vector3f? = null
 ): EntityEdit = edit(create()).apply {
     create(TransformComponent::class.java).apply {
         if(rotation != null) {
             transform.rotate(Vector3f(rotation.x, rotation.y, rotation.z), rotation.angle.toInt())
         }
         transform.translateLocal(translation)
+        if(scale != null) {
+            transform.scaleLocal(scale.x, scale.y, scale.z)
+        }
     }
     create(ModelComponent::class.java).apply {
         modelComponentDescription = StaticModelComponentDescription(path, directory)

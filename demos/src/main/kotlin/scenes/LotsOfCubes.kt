@@ -5,26 +5,21 @@ import Vector4fStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.Component
-import com.artemis.EntitySystem
 import com.artemis.annotations.All
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.buffer.vertex.drawInstancedBaseVertex
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
-import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.SSBO
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.graphics.shader.useAndBind
+import de.hanno.hpengine.graphics.shader.using
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
@@ -34,7 +29,6 @@ import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
@@ -51,7 +45,7 @@ fun main() {
 
     val engine = createEngine(demoAndEngineConfig)
 
-    engine.runLotsOfCubes()
+    engine.runLotsOfGrass()
 }
 
 class Grass: Component()
@@ -139,7 +133,7 @@ class GrassSystem(
         val allocation = modelCacheComponent.allocation
 
         program.use()
-        program.useAndBind { uniforms ->
+        using(program) { uniforms ->
             uniforms.apply {
                 materials = entitiesState.materialBuffer
                 entities = entitiesState.entitiesBuffer
@@ -189,7 +183,7 @@ class GrassSystem(
 
 fun Float.toRadian(): Float = (this / (180 * Math.PI)).toFloat()
 
-fun Engine.runLotsOfCubes() {
+fun Engine.runLotsOfGrass() {
     val textureManager = systems.firstIsInstance<TextureManagerBaseSystem>()
     world.loadScene {
         addStaticModelEntity("Plane", "assets/models/plane.obj", rotation = AxisAngle4f(1f, 0f, 0f, -180f)).apply {
