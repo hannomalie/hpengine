@@ -14,8 +14,8 @@ import java.nio.ByteBuffer
 annotation class Order(val value: Int)
 
 interface Vector2fStrukt : Strukt {
-    context(ByteBuffer) @Order(0) var x: Float
-    context(ByteBuffer) @Order(1) var y: Float
+    context(ByteBuffer) var x: Float
+    context(ByteBuffer) var y: Float
 
     context(ByteBuffer)
     fun set(target: org.joml.Vector3fc) {
@@ -36,9 +36,9 @@ interface Vector2fStrukt : Strukt {
 }
 
 interface Vector3fStrukt : Strukt {
-    context(ByteBuffer) @Order(0) var x: Float
-    context(ByteBuffer) @Order(1) var y: Float
-    context(ByteBuffer) @Order(2) var z: Float
+    context(ByteBuffer) var x: Float
+    context(ByteBuffer) var y: Float
+    context(ByteBuffer) var z: Float
 
     context(ByteBuffer)
     fun set(target: org.joml.Vector3fc) {
@@ -61,10 +61,10 @@ interface Vector3fStrukt : Strukt {
 }
 
 interface Vector4fStrukt : Strukt {
-    context(ByteBuffer) @Order(0) var x: Float
-    context(ByteBuffer) @Order(1) var y: Float
-    context(ByteBuffer) @Order(2) var z: Float
-    context(ByteBuffer) @Order(3) var w: Float
+    context(ByteBuffer) var x: Float
+    context(ByteBuffer) var y: Float
+    context(ByteBuffer) var z: Float
+    context(ByteBuffer) var w: Float
 
     context(ByteBuffer) fun set(target: Vector4fc) {
         x = target.x
@@ -86,10 +86,10 @@ interface Vector4fStrukt : Strukt {
     companion object
 }
 interface Vector4iStrukt : Strukt {
-    context(ByteBuffer) @Order(0) var x: Int
-    context(ByteBuffer) @Order(1) var y: Int
-    context(ByteBuffer) @Order(2) var z: Int
-    context(ByteBuffer) @Order(3) var w: Int
+    context(ByteBuffer) var x: Int
+    context(ByteBuffer) var y: Int
+    context(ByteBuffer) var z: Int
+    context(ByteBuffer) var w: Int
 
     context(ByteBuffer) fun set(target: Vector4ic) {
         x = target.x()
@@ -111,22 +111,22 @@ interface Vector4iStrukt : Strukt {
     companion object
 }
 interface Matrix4fStrukt: Strukt {
-    context(ByteBuffer) @Order(0) var m00: Float
-    context(ByteBuffer) @Order(1) var m01: Float
-    context(ByteBuffer) @Order(2) var m02: Float
-    context(ByteBuffer) @Order(3) var m03: Float
-    context(ByteBuffer) @Order(4) var m10: Float
-    context(ByteBuffer) @Order(5) var m11: Float
-    context(ByteBuffer) @Order(6) var m12: Float
-    context(ByteBuffer) @Order(7) var m13: Float
-    context(ByteBuffer) @Order(8) var m20: Float
-    context(ByteBuffer) @Order(9) var m21: Float
-    context(ByteBuffer) @Order(10) var m22: Float
-    context(ByteBuffer) @Order(11) var m23: Float
-    context(ByteBuffer) @Order(12) var m30: Float
-    context(ByteBuffer) @Order(13) var m31: Float
-    context(ByteBuffer) @Order(14) var m32: Float
-    context(ByteBuffer) @Order(15) var m33: Float
+    context(ByteBuffer) var m00: Float
+    context(ByteBuffer) var m01: Float
+    context(ByteBuffer) var m02: Float
+    context(ByteBuffer) var m03: Float
+    context(ByteBuffer) var m10: Float
+    context(ByteBuffer) var m11: Float
+    context(ByteBuffer) var m12: Float
+    context(ByteBuffer) var m13: Float
+    context(ByteBuffer) var m20: Float
+    context(ByteBuffer) var m21: Float
+    context(ByteBuffer) var m22: Float
+    context(ByteBuffer) var m23: Float
+    context(ByteBuffer) var m30: Float
+    context(ByteBuffer) var m31: Float
+    context(ByteBuffer) var m32: Float
+    context(ByteBuffer) var m33: Float
 
     context(ByteBuffer)
     fun set(target: org.joml.Matrix4fc) {

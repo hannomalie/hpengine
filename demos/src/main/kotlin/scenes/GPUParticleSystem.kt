@@ -1,17 +1,20 @@
 package scenes
 
+import AttractorStruktImpl.Companion.type
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
 import com.artemis.*
 import com.artemis.annotations.All
+import com.artemis.annotations.One
 import com.artemis.utils.Bag
 import de.hanno.hpengine.Engine
-import de.hanno.hpengine.artemis.forFirstEntityIfPresent
+import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.artemis.getOrNull
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.engine.graphics.imgui.intInput
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
@@ -26,6 +29,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.math.Vector3fStrukt
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.Material
@@ -36,10 +40,12 @@ import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import imgui.ImGui
 import org.joml.AxisAngle4f
-import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
+import struktgen.api.Strukt
+import struktgen.api.forIndex
 import struktgen.api.get
+import java.nio.ByteBuffer
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
@@ -64,10 +70,26 @@ class GPUParticles: Component() {
 
     var clusterPositions = calculateClusterPositions(initialClusterCount)
     var particlePositions: List<Vector3f> = calculateParticlePositions(initialClusterCount, clusterPositions)
-    var particleVelocities: List<Vector3f> = particlePositions.map { Vector3f(Random.nextFloat()) }
+}
+class Attractor: Component() {
+    var radius = 100f
+    var strength = 1f
 }
 
-@All(GPUParticles::class, ModelComponent::class)
+interface AttractorStrukt: Strukt {
+    context(ByteBuffer) val position: Vector3fStrukt
+    context(ByteBuffer) var radius: Float
+
+    context(ByteBuffer) var strength: Float
+    context(ByteBuffer) var padding0: Float
+    context(ByteBuffer) var padding1: Float
+    context(ByteBuffer) var padding2: Float
+
+    companion object
+}
+
+@All(ModelComponent::class)
+@One(GPUParticles::class, Attractor::class)
 @Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
 class GPUParticleSystem(
     private val config: Config,
@@ -78,13 +100,17 @@ class GPUParticleSystem(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
+    lateinit var attractorComponentMapper: ComponentMapper<Attractor>
     lateinit var particlesComponentMapper: ComponentMapper<GPUParticles>
+    lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
+
     private val positions = graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
     private val velocities = graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
+    private val attractors = graphicsApi.PersistentShaderStorageBuffer(1000).typed(AttractorStrukt.type)
 
     inner class GPUParticlesFirstPassUniforms : StaticFirstPassUniforms(graphicsApi) {
         var positions by SSBO("vec4", 5, this@GPUParticleSystem.positions)
-        var velocities by SSBO("vec4", 6, this@GPUParticleSystem.velocities)
+        var velocities by SSBO("vec4", 8, this@GPUParticleSystem.velocities)
     }
 
     val program = programManager.getProgram(
@@ -98,8 +124,9 @@ class GPUParticleSystem(
         var maxThreads by IntType(initialClusterCount * initialCountPerCluster)
         var positions by SSBO("vec4", 5, this@GPUParticleSystem.positions)
         var velocities by SSBO("vec4", 6, this@GPUParticleSystem.velocities)
+        var attractors by SSBO("vec4", 7, this@GPUParticleSystem.attractors)
         var time by FloatType(0f)
-        var target by Vec2(Vector2f())
+        var targetCount by IntType()
     }
     val computeProgram = programManager.getComputeProgram(
         config.gameDir.resolve("shaders/particles_compute.glsl").toCodeSource(),
@@ -109,11 +136,28 @@ class GPUParticleSystem(
 
     private class Box(var value: Int?)
     private val entityId = renderStateContext.renderState.registerState { Box(null) }
+    private val targetCount = renderStateContext.renderState.registerState { Box(0) }
 
-    override fun processSystem() { }
+    override fun processSystem() {
+        var attractorCounter = 0
+        forEachEntity { entityId ->
+            attractorComponentMapper.getOrNull(entityId)?.apply {
+                transformComponentMapper.getOrNull(entityId)?.apply {
+                    transform.translation(
+                        Vector3f(
+                        cos(seconds % 1000) * (50 + attractorCounter * 50),
+                        if(attractorCounter%2 == 0) sin(seconds % 1000) * (50 + attractorCounter * 50) else cos(seconds % 1000) * (50 + attractorCounter * 50),
+                        if(attractorCounter%3 == 0) sin(seconds % 1000) * (50 + attractorCounter * 50) else cos(seconds % 1000) * (50 + attractorCounter * 50),
+                        )
+                    )
+                }
+                attractorCounter++
+            }
+        }
+    }
 
     override fun inserted(entityId: Int) {
-        particlesComponentMapper.get(entityId).apply {
+        particlesComponentMapper.getOrNull(entityId)?.apply {
             positions.ensureCapacityInBytes(particlePositions.size * Vector4fStrukt.sizeInBytes)
             velocities.ensureCapacityInBytes(particlePositions.size * Vector4fStrukt.sizeInBytes)
 
@@ -122,15 +166,31 @@ class GPUParticleSystem(
                     positions[index].set(it)
                 }
                 velocities.buffer.run {
-                    velocities[index].set(Vector3f(Random.nextFloat()))
+                    velocities[index].set(Vector3f())
                 }
             }
         }
     }
     override fun extract(currentWriteState: RenderState) {
-        forFirstEntityIfPresent { entityId ->
-            currentWriteState[this.entityId].value = entityId
+        var attractorCounter = 0
+        forEachEntity { entityId ->
+            particlesComponentMapper.getOrNull(entityId)?.apply {// TODO: Extract all entity ids
+                currentWriteState[this@GPUParticleSystem.entityId].value = entityId
+            }
+            attractorComponentMapper.getOrNull(entityId)?.apply {
+                transformComponentMapper.get(entityId).transform.apply {
+                    attractors.run {
+                        forIndex(attractorCounter) {
+                            it.position.set(position)
+                            it.radius = radius
+                            it.strength = strength
+                        }
+                    }
+                }
+                attractorCounter++
+            }
         }
+        currentWriteState[targetCount].value = attractorCounter
     }
 
     private var seconds = 0f
@@ -149,11 +209,10 @@ class GPUParticleSystem(
             setUniforms = {
                 maxThreads = particlesComponent.particlePositions.size
                 time = seconds
-                target = Vector2f(cos(time%1000), sin(time%1000)).mul(100f)
+                targetCount = renderState[this@GPUParticleSystem.targetCount].value ?: 0
             },
         ) {
             computeProgram.dispatchCompute(max(1, particlesComponent.particlePositions.size/8), 1, 1)
-//            graphicsApi.finish()
         }
 
         val materialComponent = modelSystem.materialComponentMapper.get(entityId)
@@ -167,8 +226,6 @@ class GPUParticleSystem(
             setUniforms = {
                 materials = entitiesState.materialBuffer
                 entities = entitiesState.entitiesBuffer
-//                positions = this@GPUParticleSystem.positions
-//                velocities = this@GPUParticleSystem.velocities
                 program.uniforms.indirect = false
                 program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
                 viewMatrix = camera.viewMatrixAsBuffer
@@ -215,7 +272,7 @@ class GPUParticleSystem(
 
 private fun calculateClusterPositions(clusterCount: Int) = buildList<Vector3f> {
     repeat(clusterCount) {
-        add(Vector3f(Random.nextFloat(), 0f, Random.nextFloat()).mul(3f * clusterCount))
+        add(Vector3f(Random.nextFloat()-0.5f, Random.nextFloat()-0.5f, Random.nextFloat()-0.5f).mul(3f * clusterCount))
     }
 }
 
@@ -223,7 +280,8 @@ private fun calculateParticlePositions(instancesPerCluster: Int, clusterPosition
     repeat(instancesPerCluster) {
         val random0 = Random.nextFloat()
         val random1 = Random.nextFloat()
-        val position = Vector3f((random0 - 0.5f) * 50, 0f, (random1 - 0.5f) * 50)
+        val random2 = Random.nextFloat()
+        val position = Vector3f((random0 - 0.5f), (random1 - 0.5f), (random2 - 0.5f)).mul(100f)
         clusterPositions.forEach {
             add(Vector3f(position).add(it))
         }
@@ -231,47 +289,61 @@ private fun calculateParticlePositions(instancesPerCluster: Int, clusterPosition
 }
 
 class GPUParticlesSelection(val component: GPUParticles): Selection
+class AttractorSelection(val component: Attractor): Selection
+
 @Single(binds = [EntitySystem::class, EditorExtension::class])
 class GPUParticlesEditorExtension: BaseSystem(), EditorExtension {
     override fun getSelectionForComponentOrNull(
         component: Component,
         entity: Int,
         components: Bag<Component>,
-    ) = if(component is GPUParticles) {
-        GPUParticlesSelection(component)
-    } else null
+    ) = when (component) {
+        is GPUParticles -> GPUParticlesSelection(component)
+        is Attractor -> AttractorSelection(component)
+        else -> null
+    }
 
-    override fun Window.renderRightPanel(selection: Selection?) = if(selection is GPUParticlesSelection) {
-        intInput("Cluster count", selection.component.clusterCount, 1, 10000) {
-            selection.component.clusterCount = it[0]
-            selection.component.clusterPositions = calculateClusterPositions(selection.component.clusterCount)
-            selection.component.particlePositions = calculateParticlePositions(selection.component.countPerCluster, selection.component.clusterPositions)
-        }
-        intInput("Instances per cluster", selection.component.countPerCluster, 1, 10000) {
-            selection.component.countPerCluster = it[0]
-            selection.component.clusterPositions = calculateClusterPositions(selection.component.clusterCount)
-            selection.component.particlePositions = calculateParticlePositions(selection.component.countPerCluster, selection.component.clusterPositions)
-        }
-        if (ImGui.beginCombo("Primitive Type", selection.component.primitiveType.toString())) {
-            PrimitiveType.entries.forEach {
-                val selected = selection.component.primitiveType == it
-                if (ImGui.selectable(it.toString(), selected)) {
-                    selection.component.primitiveType = it
+    override fun Window.renderRightPanel(selection: Selection?) = when (selection) {
+        is GPUParticlesSelection -> {
+            intInput("Cluster count", selection.component.clusterCount, 1, 10000) {
+                selection.component.clusterCount = it[0]
+                selection.component.clusterPositions = calculateClusterPositions(selection.component.clusterCount)
+                selection.component.particlePositions = calculateParticlePositions(selection.component.countPerCluster, selection.component.clusterPositions)
+            }
+            intInput("Instances per cluster", selection.component.countPerCluster, 1, 10000) {
+                selection.component.countPerCluster = it[0]
+                selection.component.clusterPositions = calculateClusterPositions(selection.component.clusterCount)
+                selection.component.particlePositions = calculateParticlePositions(selection.component.countPerCluster, selection.component.clusterPositions)
+            }
+            if (ImGui.beginCombo("Primitive Type", selection.component.primitiveType.toString())) {
+                PrimitiveType.entries.forEach {
+                    val selected = selection.component.primitiveType == it
+                    if (ImGui.selectable(it.toString(), selected)) {
+                        selection.component.primitiveType = it
+                    }
+                    if (selected) {
+                        ImGui.setItemDefaultFocus()
+                    }
                 }
-                if (selected) {
-                    ImGui.setItemDefaultFocus()
+                ImGui.endCombo()
+            }
+            if(selection.component.primitiveType == PrimitiveType.Points) {
+                floatInput("Point size", selection.component.pointSize, 0.1f, 50f) {
+                    selection.component.pointSize = it[0]
                 }
             }
-            ImGui.endCombo()
+            true
         }
-        if(selection.component.primitiveType == PrimitiveType.Points) {
-            floatInput("Point size", selection.component.pointSize, 0.1f, 50f) {
-                selection.component.pointSize = it[0]
+        is AttractorSelection -> {
+            floatInput("Strength", selection.component.strength, 0f, 50f) {
+                selection.component.strength = it[0]
             }
+            floatInput("Radius", selection.component.radius, 1f, 200f) {
+                selection.component.radius = it[0]
+            }
+            true
         }
-        true
-    } else {
-        false
+        else -> false
     }
 
     override fun processSystem() { }
@@ -293,6 +365,29 @@ fun Engine.runGPUParticles() {
             }
             create(GPUParticles::class.java)
             create(PreventDefaultRendering::class.java)
+        }
+        val material = Material(
+            "attractor",
+            diffuse = Vector3f(1f, 0f, 0f),
+            materialType = Material.MaterialType.UNLIT,
+            cullBackFaces = false
+        )
+        repeat(20) {
+            addStaticModelEntity(
+                "Target$it",
+                "assets/models/sphere.obj",
+                rotation = AxisAngle4f(1f, 0f, 0f, -180f),
+                scale = Vector3f(5f)
+            ).apply {
+                create(MaterialComponent::class.java).apply {
+                    this.material = material
+                }
+                create(TransformComponent::class.java)
+                create(Attractor::class.java).apply {
+                    radius = 100f
+                    strength = 1f
+                }
+            }
         }
     }
     simulate()

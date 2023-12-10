@@ -34,6 +34,8 @@ dependencies {
 
     api(Dependencies.Koin.annotations)
     ksp(Dependencies.Koin.compiler)
+
+    ksp(Dependencies.StruktGen.processor)
 }
 
 val bundleLinux by tasks.registering {

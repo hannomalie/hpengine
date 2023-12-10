@@ -2,6 +2,7 @@
 
 package de.hanno.hpengine.build
 
+import org.gradle.internal.os.OperatingSystem
 import org.gradle.kotlin.dsl.DependencyHandlerScope
 
 object Dependencies {
@@ -20,10 +21,10 @@ object Dependencies {
     object LWJGL {
         const val version = "3.2.3"
 
-        val natives = when (org.gradle.internal.os.OperatingSystem.current()) {
-            org.gradle.internal.os.OperatingSystem.LINUX   -> "natives-linux"
-            org.gradle.internal.os.OperatingSystem.MAC_OS  -> "natives-macos"
-            org.gradle.internal.os.OperatingSystem.WINDOWS -> "natives-windows"
+        val natives = when (OperatingSystem.current()) {
+            OperatingSystem.LINUX   -> "natives-linux"
+            OperatingSystem.MAC_OS  -> "natives-macos"
+            OperatingSystem.WINDOWS -> "natives-windows"
             else -> throw Error("""Unrecognized or unsupported Operating system. Please set "lwjglNatives" manually""")
         }
     }
@@ -31,10 +32,10 @@ object Dependencies {
     object Imgui {
         const val version = "1.86.1"
 
-        val osIdentifier = when (org.gradle.internal.os.OperatingSystem.current()) {
-            org.gradle.internal.os.OperatingSystem.LINUX   -> "linux"
-            org.gradle.internal.os.OperatingSystem.MAC_OS  -> "macos"
-            org.gradle.internal.os.OperatingSystem.WINDOWS -> "windows"
+        val osIdentifier = when (OperatingSystem.current()) {
+            OperatingSystem.LINUX   -> "linux"
+            OperatingSystem.MAC_OS  -> "macos"
+            OperatingSystem.WINDOWS -> "windows"
             else -> throw Error("""Unrecognized or unsupported Operating system. Please set imgui native dependency manually""")
         }
     }

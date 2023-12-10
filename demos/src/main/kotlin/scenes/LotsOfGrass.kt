@@ -181,8 +181,6 @@ class GrassSystem(
     }
 }
 
-fun Float.toRadian(): Float = (this / (180 * Math.PI)).toFloat()
-
 fun Engine.runLotsOfGrass() {
     val textureManager = systems.firstIsInstance<TextureManagerBaseSystem>()
     world.loadScene {

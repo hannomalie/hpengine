@@ -41,6 +41,9 @@ layout(std430, binding=4) buffer _entityOffsets {
 layout(std430, binding=5) buffer _positions {
 	vec4 positions[2000]; // TODO: Higher max value here?
 };
+layout(std430, binding=8) buffer _velocities {
+	vec4 velocities[2000]; // TODO: Higher max value here?
+};
 
 #ifdef ANIMATED
 layout(std430, binding=6) buffer _joints {
@@ -160,6 +163,8 @@ void main(void) {
 	vec2 texCoord = vertex.texCoord.xy;
 
 	vec4 position = vec4(positions[gl_InstanceID].xyz, 0); // TODO: Consider using the AFTER_POSITION hook instead of copying whole shader
+	vec4 velocity = vec4(velocities[gl_InstanceID].xyz, 0); // TODO: Consider using the AFTER_POSITION hook instead of copying whole shader
+	color.rgb = velocity.xyz / 10.0f;
 
 	vec4 position_world = modelMatrix * positionModel;
 	position_world += position;
