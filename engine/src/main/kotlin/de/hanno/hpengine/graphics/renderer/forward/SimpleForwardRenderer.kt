@@ -28,6 +28,8 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.math.Matrix4fStrukt
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
@@ -45,7 +47,9 @@ class SimpleForwardRenderer(
     private val programManager: ProgramManager,
     private val config: Config,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ): RenderSystem {
 
     val simpleColorProgramStatic = programManager.getProgram(
@@ -65,13 +69,13 @@ class SimpleForwardRenderer(
     )
 
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, primaryCameraStateHolder) {
-            override fun RenderState.extractRenderBatches() = this[entitiesStateHolder.entitiesState].renderBatchesStatic
+        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem) {
+            override fun RenderState.extractRenderBatches() = this[defaultBatchesSystem.renderBatchesStatic]
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, primaryCameraStateHolder) {
-            override fun RenderState.extractRenderBatches() = this[entitiesStateHolder.entitiesState].renderBatchesAnimated
+        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem) {
+            override fun RenderState.extractRenderBatches() = this[defaultBatchesSystem.renderBatchesAnimated]
 
             override fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated
         }

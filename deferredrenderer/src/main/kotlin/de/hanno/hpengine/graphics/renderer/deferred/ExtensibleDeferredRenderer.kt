@@ -25,6 +25,8 @@ import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.koin.core.annotation.Single
 
@@ -41,8 +43,10 @@ class ExtensibleDeferredRenderer(
     private val textureManager: TextureManager,
     extensions: List<DeferredRenderExtension>,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ): RenderSystem, BaseSystem() {
 
     private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
@@ -74,25 +78,25 @@ class ExtensibleDeferredRenderer(
         get() = config.performance.isIndirectRendering && graphicsApi.isSupported(BindlessTextures)
 
     val indirectPipeline: StateRef<GPUCulledPipeline> = renderStateContext.renderState.registerState {
-        GPUCulledPipeline(graphicsApi, config, programManager, textureManager, deferredRenderingBuffer, true, entitiesStateHolder, primaryCameraStateHolder)
+        GPUCulledPipeline(graphicsApi, config, programManager, textureManager, deferredRenderingBuffer, true, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem)
     }
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, primaryCameraStateHolder, textureManager.defaultTexture) {
+        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, textureManager.defaultTexture) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
-                this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot { it.canBeRenderedInIndirectBatch }
+                this[defaultBatchesSystem.renderBatchesStatic].filterNot { it.canBeRenderedInIndirectBatch }
             } else {
-                this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot {
+                this[defaultBatchesSystem.renderBatchesStatic].filterNot {
                     it.shouldBeSkipped(this[primaryCameraStateHolder.camera])
                 }
             }
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, primaryCameraStateHolder, textureManager.defaultTexture) {
+        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, textureManager.defaultTexture) {
             override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
-                this[entitiesStateHolder.entitiesState].renderBatchesAnimated.filterNot { it.canBeRenderedInIndirectBatch }
+                this[defaultBatchesSystem.renderBatchesAnimated].filterNot { it.canBeRenderedInIndirectBatch }
             } else {
-                this[entitiesStateHolder.entitiesState].renderBatchesAnimated.filterNot {
+                this[defaultBatchesSystem.renderBatchesAnimated].filterNot {
                     it.shouldBeSkipped(this[primaryCameraStateHolder.camera])
                 }
             }

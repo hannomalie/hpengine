@@ -39,6 +39,8 @@ import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
@@ -98,9 +100,11 @@ class ReflectionProbeRenderExtension(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val reflectionProbesStateHolder: ReflectionProbesStateHolder,
     private val pointLightSystem: PointLightSystem,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) : DeferredRenderExtension {
     private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
     override val renderPriority = 3000
@@ -334,7 +338,7 @@ class ReflectionProbeRenderExtension(
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(2, pointLightState.pointLightBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightCount", pointLightState.pointLightCount)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                 pointCubeShadowPassProgram.setUniform(
                     "pointLightPositionWorld",
                     currentReflectionProbeRenderState.probePositions[probeIndex]
@@ -375,7 +379,7 @@ class ReflectionProbeRenderExtension(
                 }
 
                 profiled("ReflectionProbe entity rendering") {
-                    for (batch in entitiesState.renderBatchesStatic) {
+                    for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
                         pointCubeShadowPassProgram.setTextureUniforms(graphicsApi, batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch

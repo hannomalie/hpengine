@@ -27,6 +27,8 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.spatial.WorldAABBStateHolder
 import org.joml.Vector3f
@@ -44,7 +46,9 @@ class ProbeRenderer(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val worldAABBStateHolder: WorldAABBStateHolder,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
@@ -157,7 +161,7 @@ class ProbeRenderer(
                     renderState[pointLightStateHolder.lightState].pointLightBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightCount",
                     renderState[pointLightStateHolder.lightState].pointLightCount)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                 pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", probePositions[probeIndex])
 //                pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
                 pointCubeShadowPassProgram.setUniform(
@@ -203,7 +207,7 @@ class ProbeRenderer(
                 }
 
                 profiled("Probe entity rendering") {
-                    for (batch in entitiesState.renderBatchesStatic) {
+                    for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
                         pointCubeShadowPassProgram.setTextureUniforms(graphicsApi, batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill

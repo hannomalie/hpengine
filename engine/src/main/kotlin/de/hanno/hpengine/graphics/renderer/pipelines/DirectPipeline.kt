@@ -20,6 +20,8 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.UploadState
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.joml.FrustumIntersection
@@ -29,7 +31,9 @@ open class DirectPipeline(
     private val config: Config,
     private val program: Program<out FirstPassUniforms>,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
     private val fallbackTexture: Texture? = null,
     // TODO: Use shouldBeSkipped
     protected val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
@@ -48,7 +52,7 @@ open class DirectPipeline(
         renderBatches = renderState.extractRenderBatches()
     }
 
-    open fun RenderState.extractRenderBatches(): List<RenderBatch> = this[entitiesStateHolder.entitiesState].renderBatchesStatic.filterNot {
+    open fun RenderState.extractRenderBatches(): List<RenderBatch> = this[defaultBatchesSystem.renderBatchesStatic].filterNot {
         it.shouldBeSkipped(this[primaryCameraStateHolder.camera])
     }
     open fun RenderState.selectVertexIndexBuffer(): VertexIndexBuffer<*> = this[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
@@ -83,7 +87,7 @@ open class DirectPipeline(
         using(program) { uniforms: FirstPassUniforms ->
             uniforms.apply {
                 materials = entitiesState.materialBuffer
-                entities = entitiesState.entitiesBuffer
+                entities = renderState[entityBuffer.entitiesBuffer]
                 uniforms.indirect = false
                 when (val uniforms = uniforms) {
                     is StaticFirstPassUniforms -> uniforms.vertices =
@@ -156,7 +160,7 @@ open class DirectPipeline(
                 using(program) { uniforms ->
                     uniforms.apply {
                         materials = entitiesState.materialBuffer
-                        entities = entitiesState.entitiesBuffer
+                        entities = renderState[entityBuffer.entitiesBuffer]
                         program.uniforms.indirect = false
                         when (val uniforms = program.uniforms) {
                             is StaticFirstPassUniforms -> uniforms.vertices =
@@ -207,6 +211,7 @@ val ProgramImpl<*>.primitiveType
         PrimitiveType.Triangles
     }
 
+
 fun Program<*>.setTextureUniforms(
     graphicsApi: GraphicsApi,
     maps: Map<Material.MAP, Texture>,
@@ -244,7 +249,10 @@ fun Program<*>.setTextureUniforms(
                         if(isDiffuse) {
                             bindTexture(mapEnumEntry.textureSlot, map)
                             setUniform(mapEnumEntry.uniformKey, true)
-                            setUniform("diffuseMipBias", (map.uploadState as UploadState.Uploading).maxMipMapLoaded)
+                            setUniform(
+                                "diffuseMipBias",
+                                (map.uploadState as UploadState.Uploading).maxMipMapLoaded
+                            )
                         } else {
                             setUniform(mapEnumEntry.uniformKey, false)
                         }

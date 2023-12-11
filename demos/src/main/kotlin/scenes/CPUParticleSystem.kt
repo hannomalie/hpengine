@@ -73,10 +73,11 @@ class CPUParticles: Component() {
 class CPUParticleSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,
-    private val modelSystem: ModelSystem,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
     renderStateContext: RenderStateContext,
     programManager: ProgramManager,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
     lateinit var particlesComponentMapper: ComponentMapper<CPUParticles>
@@ -146,11 +147,11 @@ class CPUParticleSystem(
 
     override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
         val entityId = renderState[entityId].value ?: return
-        val modelCacheComponent = modelSystem.modelCacheComponentMapper.get(entityId) ?: return
-        val entityIndex = modelSystem.entityIndices[entityId] ?: return // TODO: Encapsulate this in own system
+        val modelCacheComponent = defaultBatchesSystem.modelCacheComponentMapper.get(entityId) ?: return
+        val entityIndex = entityBuffer.getEntityIndex(entityId) ?: return
 
         val particlesComponent = particlesComponentMapper.get(entityId)
-        val materialComponent = modelSystem.materialComponentMapper.get(entityId)
+        val materialComponent = defaultBatchesSystem.materialComponentMapper.get(entityId)
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         val camera = renderState[primaryCameraStateHolder.camera]
 
@@ -160,7 +161,7 @@ class CPUParticleSystem(
         program.useAndBind(
             setUniforms = {
                 materials = entitiesState.materialBuffer
-                entities = entitiesState.entitiesBuffer
+                entities = renderState[entityBuffer.entitiesBuffer]
                 positions = renderState[this@CPUParticleSystem.positions]
                 program.uniforms.indirect = false
                 program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray

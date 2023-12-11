@@ -34,6 +34,8 @@ import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import org.joml.Matrix4f
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
@@ -54,6 +56,8 @@ class AreaLightSystem(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val areaLightStateHolder: AreaLightStateHolder,
     private val gpuProfiler: GPUProfiler,
+    private val entityBuffer: EntityBuffer,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     private var gpuAreaLightArray = TypedBuffer(
         BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes),
@@ -147,7 +151,7 @@ class AreaLightSystem(
                 val light = areaLights[i]
 
                 using(areaShadowPassProgram) { uniforms ->
-                    uniforms.entitiesBuffer = entitiesState.entitiesBuffer
+                    uniforms.entitiesBuffer = renderState[entityBuffer.entitiesBuffer]
                     // TODO: Move buffer creation somewhere else or eliminate
                     val buffer = BufferUtils.createFloatBuffer(16)
                     light.transform.invert(Matrix4f()).get(buffer)
@@ -156,7 +160,7 @@ class AreaLightSystem(
                     uniforms.projectionMatrix.safePut(buffer)
                 }
 
-                for (e in entitiesState.renderBatchesStatic) {
+                for (e in renderState[defaultBatchesSystem.renderBatchesStatic]) {
                     entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                         e.drawElementsIndirectCommand,
                         true,

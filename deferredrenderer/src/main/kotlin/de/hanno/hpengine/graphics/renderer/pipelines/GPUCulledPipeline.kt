@@ -33,6 +33,8 @@ import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.UploadInfo.SingleMipLevelTexture2DUploadInfo
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.scene.VertexIndexBuffer
@@ -52,7 +54,9 @@ open class GPUCulledPipeline(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val useBackFaceCulling: Boolean = true,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) {
     // TODO: Fill these if possible
     private var verticesCount = 0
@@ -146,8 +150,8 @@ open class GPUCulledPipeline(
             addCommands(filteredRenderBatches, commands, offsetsForCommand)
         }
 
-        commandOrganizationStatic.prepare(renderState[entitiesStateHolder.entitiesState].renderBatchesStatic)
-        commandOrganizationAnimated.prepare(renderState[entitiesStateHolder.entitiesState].renderBatchesAnimated)
+        commandOrganizationStatic.prepare(renderState[defaultBatchesSystem.renderBatchesStatic])
+        commandOrganizationAnimated.prepare(renderState[defaultBatchesSystem.renderBatchesAnimated])
     }
 
     fun draw(
@@ -262,13 +266,12 @@ open class GPUCulledPipeline(
 
             val occlusionCullingPhase =
                 if (phase.coarsePhase == CoarseCullingPhase.ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
-            val entitiesState = renderState[entitiesStateHolder.entitiesState]
             with(occlusionCullingPhase) {
                 val invocationsPerCommand = 4096
                 use()
                 with(commandOrganization) {
                     bindShaderStorageBuffer(1, instanceCountForCommand)
-                    bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
+                    bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                     bindShaderStorageBuffer(4, offsetsForCommand)
                     bindShaderStorageBuffer(5, commands)
                     bindShaderStorageBuffer(9, visibilities)
@@ -333,7 +336,7 @@ open class GPUCulledPipeline(
                     use()
                     bindShaderStorageBuffer(1, instanceCountForCommand)
                     bindShaderStorageBuffer(2, drawCountBuffer)
-                    bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
+                    bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                     bindShaderStorageBuffer(4, offsetsForCommand)
                     bindShaderStorageBuffer(5, commands)
                     bindShaderStorageBuffer(7, commandsCompacted)
@@ -387,7 +390,7 @@ open class GPUCulledPipeline(
                 program.use()
                 program.uniforms.apply {
                     materials = entitiesState.materialBuffer
-                    entities = entitiesState.entitiesBuffer
+                    entities = renderState[entityBuffer.entitiesBuffer]
                     indirect = true
                     when (this) {
                         is StaticFirstPassUniforms -> vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
@@ -412,7 +415,7 @@ open class GPUCulledPipeline(
 
                     entityIndex = 0
                     entityBaseIndex = 0
-                    entities = entitiesState.entitiesBuffer
+                    entities = renderState[entityBuffer.entitiesBuffer]
                     entityOffsets = commandOrganization.offsetsForCommand
                     when (this) {
                         is StaticFirstPassUniforms -> Unit

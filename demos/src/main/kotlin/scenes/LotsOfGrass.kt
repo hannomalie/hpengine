@@ -55,10 +55,11 @@ class Grass: Component()
 class GrassSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,
-    private val modelSystem: ModelSystem,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
     private val renderStateContext: RenderStateContext,
     private val programManager: ProgramManager,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
     private val positions = renderStateContext.renderState.registerState {
@@ -120,12 +121,12 @@ class GrassSystem(
     override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
         val entityId = renderState[entityId].value
         if(entityId == -1) return
-        val modelCacheComponent = modelSystem.modelCacheComponentMapper.get(entityId)
+        val modelCacheComponent = defaultBatchesSystem.modelCacheComponentMapper.get(entityId)
         if(modelCacheComponent == null) return
-        val entityIndex = modelSystem.entityIndices[entityId] // TODO: Encapsulate this in own system
+        val entityIndex = entityBuffer.getEntityIndex(entityId) // TODO: Encapsulate this in own system
         if(entityIndex == null) return
 
-        val materialComponent = modelSystem.materialComponentMapper.get(entityId)
+        val materialComponent = defaultBatchesSystem.materialComponentMapper.get(entityId)
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         val camera = renderState[primaryCameraStateHolder.camera]
 
@@ -136,7 +137,7 @@ class GrassSystem(
         using(program) { uniforms ->
             uniforms.apply {
                 materials = entitiesState.materialBuffer
-                entities = entitiesState.entitiesBuffer
+                entities = renderState[entityBuffer.entitiesBuffer]
                 positions = renderState[this@GrassSystem.positions]
                 program.uniforms.indirect = false
                 program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray

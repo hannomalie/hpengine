@@ -22,6 +22,7 @@ import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer.invoke
 import de.hanno.hpengine.graphics.envprobe.EnvironmentProbeComponent
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
@@ -42,6 +43,7 @@ class EnvironmentSampler(
     cubeMapArrayRenderTarget: CubeMapArrayRenderTarget,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) {
     val cubeMapProgram = config.run {
         programManager.getProgram(
@@ -146,7 +148,7 @@ class EnvironmentSampler(
                 viewProjectionMatrixAsBuffer,
                 program
             )
-            for (e in entitiesState.renderBatchesStatic) {
+            for (e in renderState[defaultBatchesSystem.renderBatchesStatic]) {
                 if (!isInFrustum(camera.frustum, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
 //				continue;
                 }

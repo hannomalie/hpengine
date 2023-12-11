@@ -29,6 +29,8 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
@@ -47,6 +49,8 @@ class DirectionalLightShadowMapExtension(
     programManager: ProgramManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) : Extractor, RenderSystem {
 
     private var forceRerender = true
@@ -106,7 +110,7 @@ class DirectionalLightShadowMapExtension(
                 program.uniforms.apply {
                     materials = entitiesState.materialBuffer
                     directionalLightState = renderState[directionalLightStateHolder.lightState]
-                    entities = entitiesState.entitiesBuffer
+                    entities = renderState[entityBuffer.entitiesBuffer]
                     when (this) {
                         is StaticDirectionalShadowUniforms -> vertices = vertexIndexBuffer.vertexStructArray
                         is AnimatedDirectionalShadowUniforms -> {
@@ -118,7 +122,7 @@ class DirectionalLightShadowMapExtension(
                     indirect = false
                 }
 
-                val shadowCasters = entitiesState.getRenderBatches(program.uniforms).filter { it.isShadowCasting }
+                val shadowCasters = defaultBatchesSystem.getRenderBatches(renderState, program.uniforms)
                 for (batch in shadowCasters) {
                     program.uniforms.entityIndex = batch.entityBufferIndex
                     program.bind()
@@ -129,9 +133,9 @@ class DirectionalLightShadowMapExtension(
             }
         }
 
-        private fun EntitiesState.getRenderBatches(uniforms: DirectionalShadowUniforms) = when (uniforms) {
-            is AnimatedDirectionalShadowUniforms -> renderBatchesAnimated
-            is StaticDirectionalShadowUniforms -> renderBatchesStatic
+        private fun DefaultBatchesSystem.getRenderBatches(renderState: RenderState, uniforms: DirectionalShadowUniforms) = when (uniforms) {
+            is AnimatedDirectionalShadowUniforms -> renderState[renderBatchesAnimated]
+            is StaticDirectionalShadowUniforms -> renderState[renderBatchesStatic]
         }.filter { it.isVisible && it.isShadowCasting }
 
         private fun EntitiesState.selectVertexIndexBuffer(uniforms: DirectionalShadowUniforms) = when (uniforms) {
@@ -158,7 +162,7 @@ class DirectionalLightShadowMapExtension(
                     renderedInCycle < renderState[directionalLightStateHolder.directionalLightHasMovedInCycle] ||
                     renderedInCycle < entitiesState.anyEntityMovedInCycle ||
                     renderedInCycle < entitiesState.entityAddedInCycle ||
-                    entitiesState.renderBatchesAnimated.isNotEmpty()
+                    renderState[defaultBatchesSystem.renderBatchesAnimated].isNotEmpty()
 
             if (needsRerender) {
                 drawShadowMap(renderState)

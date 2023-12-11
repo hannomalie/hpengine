@@ -20,6 +20,8 @@ import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -33,6 +35,8 @@ class ProbeRenderStrategy(
     programManager: ProgramManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) {
     private val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     private val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
@@ -119,7 +123,7 @@ class ProbeRenderStrategy(
 
                 probeProgram.use()
                 probeProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
-                probeProgram.bindShaderStorageBuffer(3, entitiesState.entitiesBuffer)
+                probeProgram.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                 probeProgram.setUniform("probePositionWorld", probePosition)
                 val viewProjectionMatrices = getCubeViewProjectionMatricesForPosition(probePosition)
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
@@ -145,7 +149,7 @@ class ProbeRenderStrategy(
                 }
 
                 profiled("Probe entity rendering") {
-                    for (e in entitiesState.renderBatchesStatic) {
+                    for (e in renderState[defaultBatchesSystem.renderBatchesStatic]) {
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             e.drawElementsIndirectCommand,
                             true,

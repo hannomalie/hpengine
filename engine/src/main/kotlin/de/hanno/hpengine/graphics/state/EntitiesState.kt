@@ -29,12 +29,10 @@ class EntitiesState(graphicsApi: GraphicsApi) {
         get() = if(entityMovedInCycle >= staticEntityMovedInCycle) entityMovedInCycle else staticEntityMovedInCycle
     var entityAddedInCycle: Long = -1
     var componentAddedInCycle: Long = -1
-    var renderBatchesStatic = RenderBatches()
-    var renderBatchesAnimated = RenderBatches()
+
     var vertexIndexBufferStatic = VertexIndexBuffer(graphicsApi, VertexStruktPacked.type, 10)
     var vertexIndexBufferAnimated = VertexIndexBuffer(graphicsApi, AnimatedVertexStruktPacked.type, 10)
 
-    var entitiesBuffer = graphicsApi.PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
     var jointsBuffer = graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.type.sizeInBytes).typed(Matrix4fStrukt.type)
     val materialBuffer = graphicsApi.PersistentShaderStorageBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
 

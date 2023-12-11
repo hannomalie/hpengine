@@ -7,7 +7,6 @@ import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.model.ModelComponent
-import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.config.Config
@@ -32,13 +31,12 @@ import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.model.ModelSystem
 import imgui.ImGui
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
-import imgui.glfw.ImGuiImplGlfw
-import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW

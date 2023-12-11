@@ -14,6 +14,8 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
@@ -26,6 +28,8 @@ class EvaluateProbeRenderExtension(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ): DeferredRenderExtension {
 
@@ -37,6 +41,8 @@ class EvaluateProbeRenderExtension(
         programManager,
         directionalLightStateHolder,
         entitiesStateHolder,
+        entityBuffer,
+        defaultBatchesSystem,
     )
 
     val evaluateProbeProgram = programManager.getProgram(

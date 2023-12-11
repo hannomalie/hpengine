@@ -19,6 +19,8 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.shader.using
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
@@ -31,7 +33,9 @@ class ForwardRenderExtension(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ): DeferredRenderExtension {
     override val renderPriority = 2000
 
@@ -65,7 +69,7 @@ class ForwardRenderExtension(
         using(programStatic) { uniforms ->
             uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
             uniforms.materials = entitiesState.materialBuffer
-            uniforms.entities = entitiesState.entitiesBuffer
+            uniforms.entities = renderState[entityBuffer.entitiesBuffer]
             programStatic.bindShaderStorageBuffer(2, renderState[directionalLightStateHolder.lightState])
             uniforms.viewMatrix.safePut(camera.viewMatrixAsBuffer)
             uniforms.projectionMatrix.safePut(camera.projectionMatrixAsBuffer)
@@ -73,7 +77,7 @@ class ForwardRenderExtension(
         }
 
         entitiesState.vertexIndexBufferStatic.indexBuffer.bind()
-        for (batch in entitiesState.renderBatchesStatic.filter { it.material.transparencyType.needsForwardRendering }) {
+        for (batch in renderState[defaultBatchesSystem.renderBatchesStatic].filter { it.material.transparencyType.needsForwardRendering }) {
             programStatic.setTextureUniforms(graphicsApi, batch.material.maps)
             entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,

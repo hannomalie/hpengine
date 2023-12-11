@@ -8,8 +8,8 @@ import de.hanno.hpengine.graphics.imgui.dsl.TreeNode
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.model.Model
-import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.model.ModelSystem
+import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import imgui.ImGui

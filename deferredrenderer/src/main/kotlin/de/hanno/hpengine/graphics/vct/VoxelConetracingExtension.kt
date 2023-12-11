@@ -33,6 +33,8 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.math.Vector4fStrukt
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
@@ -56,9 +58,11 @@ class VoxelConeTracingExtension(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
     private val skyBoxStateHolder: SkyBoxStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val giVolumeStateHolder: GiVolumeStateHolder,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) : DeferredRenderExtension {
 
     private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
@@ -100,8 +104,8 @@ class VoxelConeTracingExtension(
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val staticPipeline = DirectPipeline(graphicsApi, config, voxelizerStatic, entitiesStateHolder, primaryCameraStateHolder)
-    private val animatedPipeline = DirectPipeline(graphicsApi, config, voxelizerAnimated, entitiesStateHolder, primaryCameraStateHolder)
+    private val staticPipeline = DirectPipeline(graphicsApi, config, voxelizerStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem)
+    private val animatedPipeline = DirectPipeline(graphicsApi, config, voxelizerAnimated, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem)
     private val useIndirectDrawing = false
 
     private var litInCycle: Long = -1
@@ -122,9 +126,9 @@ class VoxelConeTracingExtension(
             val bounces = 1
 
             val entitiesToVoxelize = if(!sceneInitiallyDrawn || config.debug.isForceRevoxelization) {
-                renderState[entitiesStateHolder.entitiesState].renderBatchesStatic
+                renderState[defaultBatchesSystem.renderBatchesStatic]
             } else {
-                renderState[entitiesStateHolder.entitiesState].renderBatchesStatic.filter { batch ->
+                renderState[defaultBatchesSystem.renderBatchesStatic].filter { batch ->
                     val entityVoxelizationCycle = entityVoxelizedInCycle[batch.entityName]
                     val voxelizeBecauseItIsDynamic = voxelizeDynamicEntites && batch.update == Update.DYNAMIC
                     val preventVoxelization = !batch.contributesToGi || if(voxelizeDynamicEntites) false else batch.update == Update.DYNAMIC
@@ -192,7 +196,7 @@ class VoxelConeTracingExtension(
                 voxelizerStatic.setUniform("voxelGridIndex", voxelGridIndex)
                 voxelizerStatic.setUniform("voxelGridCount", voxelGrids.typedBuffer.size)
                 voxelizerStatic.bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
-                voxelizerStatic.bindShaderStorageBuffer(3, renderState[entitiesStateHolder.entitiesState].entitiesBuffer)
+                voxelizerStatic.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                 voxelizerStatic.bindShaderStorageBuffer(5, voxelGrids)
                 voxelizerStatic.bindShaderStorageBuffer(7, renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.vertexStructArray)
 
@@ -253,7 +257,7 @@ class VoxelConeTracingExtension(
                             bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
                             bindShaderStorageBuffer(2, renderState[pointLightStateHolder.lightState].pointLightBuffer)
                             bindShaderStorageBuffer(3, directionalLightState)
-                            bindShaderStorageBuffer(4, renderState[entitiesStateHolder.entitiesState].entitiesBuffer)
+                            bindShaderStorageBuffer(4, renderState[entityBuffer.entitiesBuffer])
                             bindShaderStorageBuffer(5, voxelGrids)
                             bindShaderStorageBuffer(6, pointLightExtension.bvh)
                             setUniform("nodeCount", pointLightExtension.nodeCount)

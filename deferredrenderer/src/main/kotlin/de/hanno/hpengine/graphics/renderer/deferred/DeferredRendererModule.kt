@@ -7,7 +7,6 @@ import de.hanno.hpengine.graphics.light.gi.GiVolumeStateHolder
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.output.DebugOutput
 import de.hanno.hpengine.graphics.output.FinalOutput
-import de.hanno.hpengine.graphics.probe.EvaluateProbeRenderExtension
 import de.hanno.hpengine.graphics.renderer.deferred.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.graphics.renderer.picking.OnClickListener
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -19,16 +18,14 @@ import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.input.PixelPerfectPickingExtension
 import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
 import de.hanno.hpengine.skybox.SkyboxRenderExtension
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
-import org.koin.dsl.bind
-import org.koin.dsl.binds
-import org.koin.dsl.module
-import org.koin.ksp.generated.defaultModule
 import org.koin.ksp.generated.module
 
 @Module
@@ -78,9 +75,11 @@ class DeferredRendererModule {
         directionalLightStateHolder: DirectionalLightStateHolder,
         pointLightStateHolder: PointLightStateHolder,
         entitiesStateHolder: EntitiesStateHolder,
+        entityBuffer: EntityBuffer,
         skyBoxStateHolder: SkyBoxStateHolder,
         primaryCameraStateHolder: PrimaryCameraStateHolder,
         giVolumeStateHolder: GiVolumeStateHolder,
+        defaultBatchesSystem: DefaultBatchesSystem,
     ) = VoxelConeTracingExtension(
         graphicsApi,
         renderStateContext,
@@ -91,9 +90,11 @@ class DeferredRendererModule {
         directionalLightStateHolder,
         pointLightStateHolder,
         entitiesStateHolder,
+        entityBuffer,
         skyBoxStateHolder,
         primaryCameraStateHolder,
         giVolumeStateHolder,
+        defaultBatchesSystem,
     )
 
     @Single(binds = [PixelPerfectPickingExtension::class, DeferredRenderExtension::class])
