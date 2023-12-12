@@ -33,6 +33,7 @@ import de.hanno.hpengine.math.Vector3fStrukt
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.system.Extractor
@@ -100,6 +101,7 @@ class GPUParticleSystem(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val materialSystem: MaterialSystem,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
     lateinit var attractorComponentMapper: ComponentMapper<Attractor>
     lateinit var particlesComponentMapper: ComponentMapper<GPUParticles>
@@ -225,7 +227,7 @@ class GPUParticleSystem(
 
         program.useAndBind(
             setUniforms = {
-                materials = entitiesState.materialBuffer
+                materials = renderState[materialSystem.materialBuffer]
                 entities = renderState[entityBuffer.entitiesBuffer]
                 program.uniforms.indirect = false
                 program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray

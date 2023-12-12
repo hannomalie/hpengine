@@ -3,7 +3,6 @@ package de.hanno.hpengine.visibility
 import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
-import de.hanno.hpengine.model.material.MaterialManager
 import org.koin.core.annotation.Single
 
 class InvisibleComponent: Component()

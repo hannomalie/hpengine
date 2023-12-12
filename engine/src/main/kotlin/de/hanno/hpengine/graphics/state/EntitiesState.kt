@@ -34,6 +34,4 @@ class EntitiesState(graphicsApi: GraphicsApi) {
     var vertexIndexBufferAnimated = VertexIndexBuffer(graphicsApi, AnimatedVertexStruktPacked.type, 10)
 
     var jointsBuffer = graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.type.sizeInBytes).typed(Matrix4fStrukt.type)
-    val materialBuffer = graphicsApi.PersistentShaderStorageBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
-
 }

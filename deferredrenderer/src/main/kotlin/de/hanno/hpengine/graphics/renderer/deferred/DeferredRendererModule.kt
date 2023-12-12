@@ -20,7 +20,7 @@ import de.hanno.hpengine.input.PixelPerfectPickingExtension
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
-import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
 import de.hanno.hpengine.skybox.SkyboxRenderExtension
 import org.koin.core.annotation.ComponentScan
@@ -80,6 +80,7 @@ class DeferredRendererModule {
         primaryCameraStateHolder: PrimaryCameraStateHolder,
         giVolumeStateHolder: GiVolumeStateHolder,
         defaultBatchesSystem: DefaultBatchesSystem,
+        materialSystem: MaterialSystem,
     ) = VoxelConeTracingExtension(
         graphicsApi,
         renderStateContext,
@@ -95,6 +96,7 @@ class DeferredRendererModule {
         primaryCameraStateHolder,
         giVolumeStateHolder,
         defaultBatchesSystem,
+        materialSystem,
     )
 
     @Single(binds = [PixelPerfectPickingExtension::class, DeferredRenderExtension::class])
@@ -119,7 +121,7 @@ class DeferredRendererModule {
         deferredRenderingBuffer: DeferredRenderingBuffer,
         programManager: ProgramManager,
         textureManager: OpenGLTextureManager,
-        materialManager: MaterialManager,
+        materialSystem: MaterialSystem,
         entitiesStateHolder: EntitiesStateHolder,
         primaryCameraStateHolder: PrimaryCameraStateHolder,
         skyBoxStateHolder: SkyBoxStateHolder,
@@ -129,7 +131,7 @@ class DeferredRendererModule {
         deferredRenderingBuffer,
         programManager,
         textureManager,
-        materialManager,
+        materialSystem,
         entitiesStateHolder,
         primaryCameraStateHolder,
         skyBoxStateHolder,

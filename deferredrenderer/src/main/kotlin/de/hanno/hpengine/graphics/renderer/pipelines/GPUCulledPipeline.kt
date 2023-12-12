@@ -35,6 +35,7 @@ import de.hanno.hpengine.graphics.texture.UploadInfo.SingleMipLevelTexture2DUplo
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.scene.VertexIndexBuffer
@@ -57,6 +58,7 @@ open class GPUCulledPipeline(
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
 ) {
     // TODO: Fill these if possible
     private var verticesCount = 0
@@ -389,7 +391,7 @@ open class GPUCulledPipeline(
 
                 program.use()
                 program.uniforms.apply {
-                    materials = entitiesState.materialBuffer
+                    materials = renderState[materialSystem.materialBuffer]
                     entities = renderState[entityBuffer.entitiesBuffer]
                     indirect = true
                     when (this) {

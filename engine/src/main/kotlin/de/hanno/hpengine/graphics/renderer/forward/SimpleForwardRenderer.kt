@@ -31,6 +31,7 @@ import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialStrukt
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
@@ -50,6 +51,7 @@ class SimpleForwardRenderer(
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
 ): RenderSystem {
 
     val simpleColorProgramStatic = programManager.getProgram(
@@ -69,12 +71,12 @@ class SimpleForwardRenderer(
     )
 
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem) {
+        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
             override fun RenderState.extractRenderBatches() = this[defaultBatchesSystem.renderBatchesStatic]
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem) {
+        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
             override fun RenderState.extractRenderBatches() = this[defaultBatchesSystem.renderBatchesAnimated]
 
             override fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated

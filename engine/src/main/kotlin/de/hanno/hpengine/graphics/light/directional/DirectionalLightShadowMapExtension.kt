@@ -32,6 +32,7 @@ import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialStrukt
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
@@ -51,6 +52,7 @@ class DirectionalLightShadowMapExtension(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val entityBuffer: EntityBuffer,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
 ) : Extractor, RenderSystem {
 
     private var forceRerender = true
@@ -108,7 +110,7 @@ class DirectionalLightShadowMapExtension(
 
                 program.use()
                 program.uniforms.apply {
-                    materials = entitiesState.materialBuffer
+                    materials = renderState[materialSystem.materialBuffer]
                     directionalLightState = renderState[directionalLightStateHolder.lightState]
                     entities = renderState[entityBuffer.entitiesBuffer]
                     when (this) {

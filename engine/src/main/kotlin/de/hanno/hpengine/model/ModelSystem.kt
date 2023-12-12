@@ -27,7 +27,7 @@ import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.model.loader.assimp.StaticModelLoader
-import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexIndexBuffer
@@ -56,7 +56,7 @@ class ModelSystem(
     private val graphicsApi: GraphicsApi,
     private val config: Config,
     private val textureManager: OpenGLTextureManager,
-    private val materialManager: MaterialManager,
+    private val materialSystem: MaterialSystem,
     private val programManager: ProgramManager,
     private val entitiesStateHolder: EntitiesStateHolder,
 ) : BaseEntitySystem(), Extractor {
@@ -84,15 +84,13 @@ class ModelSystem(
     operator fun get(modelComponentDescription: ModelComponentDescription) = modelCache[modelComponentDescription]
 
     override fun inserted(entityId: Int) {
-        println("##################### ADDED entity in modelsystem")
         threadPool.submit {
-            loadModelToCache(entityId) != null
+            loadModelToCache(entityId)
         }
     }
 
     override fun inserted(entities: IntBag) {
         val entities = IntBag().apply { addAll(entities) }
-        println("##################### ADDED entity in modelsystem")
         threadPool.submit {
             entities.forEach { entityId ->
                 loadModelToCache(entityId)
@@ -101,7 +99,6 @@ class ModelSystem(
     }
 
     private fun loadModelToCache(entityId: Int): ModelCacheComponent {
-        println("##################### loadModelToCache")
         val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
         val instanceComponent = instanceComponentMapper.getOrNull(entityId)
 
@@ -117,24 +114,12 @@ class ModelSystem(
         }
         val model = modelCache.computeIfAbsent(descr) {
             when (descr) {
-                is AnimatedModelComponentDescription -> {
-                    animatedModelLoader.load(
-                        descr.file,
-                        textureManager,
-                        dir
-                    )
-                }
-                is StaticModelComponentDescription -> {
-                    staticModelLoader.load(
-                        descr.file,
-                        textureManager,
-                        dir
-                    )
-                }
+                is AnimatedModelComponentDescription -> animatedModelLoader.load(descr.file, textureManager, dir)
+                is StaticModelComponentDescription -> staticModelLoader.load(descr.file, textureManager, dir)
             }.apply {
                 meshes.forEach { mesh ->
                     val meshMaterial = materialComponentOrNull?.material ?: mesh.material
-                    materialManager.registerMaterial(meshMaterial)
+                    materialSystem.registerMaterial(meshMaterial)
                     meshMaterial.programDescription?.let { programDescription ->
                         programCache[programDescription] =
                             programManager.getFirstPassProgram(
@@ -166,6 +151,12 @@ class ModelSystem(
     }
 
     override fun processSystem() {
+        modelCache.values.forEach {
+            when(it) {
+                is AnimatedModel -> it.update(world.delta)
+                is StaticModel -> {}
+            }
+        }
     }
 
     fun allocateVertexIndexBufferSpace(modelCacheComponent: ModelCacheComponent, descr: ModelComponentDescription) {
@@ -199,28 +190,8 @@ class ModelSystem(
         allocations[descr] = allocation
     }
 
-    fun VertexIndexBuffer<*>.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {
-        val model = modelCache[modelComponent.modelComponentDescription]!!
+    private fun VertexIndexBuffer<*>.allocateForModel(model: Model<*>): VertexIndexOffsets {
         return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
-    }
-
-    fun VertexIndexBuffer<*>.allocateForModel(model: Model<*>): VertexIndexOffsets {
-        return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
-    }
-
-    fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
-        var currentIndexOffset = vertexIndexOffsets.indexOffset
-        var currentVertexOffset = vertexIndexOffsets.vertexOffset
-
-        val model = modelCache[modelComponentDescription]!!
-
-        return model.meshes.indices.map { i ->
-            val mesh = model.meshes[i] as Mesh<*>
-            VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
-                currentIndexOffset += mesh.indexBufferValues.capacity() / Integer.BYTES
-                currentVertexOffset += mesh.vertices.size
-            }
-        }
     }
 
     fun Model<*>.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
@@ -238,7 +209,7 @@ class ModelSystem(
         }
     }
 
-    fun Model<*>.putToBuffer(
+    private fun Model<*>.putToBuffer(
         vertexIndexBuffer: VertexIndexBuffer<*>,
         vertexIndexBufferAnimated: VertexIndexBuffer<*>,
         vertexIndexOffsets: VertexIndexOffsets,

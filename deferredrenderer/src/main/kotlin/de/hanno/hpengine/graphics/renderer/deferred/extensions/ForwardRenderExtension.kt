@@ -21,6 +21,7 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
@@ -36,6 +37,7 @@ class ForwardRenderExtension(
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
 ): DeferredRenderExtension {
     override val renderPriority = 2000
 
@@ -68,7 +70,7 @@ class ForwardRenderExtension(
         val camera = renderState[primaryCameraStateHolder.camera]
         using(programStatic) { uniforms ->
             uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
-            uniforms.materials = entitiesState.materialBuffer
+            uniforms.materials = renderState[materialSystem.materialBuffer]
             uniforms.entities = renderState[entityBuffer.entitiesBuffer]
             programStatic.bindShaderStorageBuffer(2, renderState[directionalLightStateHolder.lightState])
             uniforms.viewMatrix.safePut(camera.viewMatrixAsBuffer)

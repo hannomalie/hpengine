@@ -6,44 +6,51 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
+import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.buffer.typed
+import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.MaterialComponent
-import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.model.material.Material.MAP
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
 import org.joml.Vector3f
+import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
-import java.nio.ByteBuffer
-import de.hanno.hpengine.model.ModelComponent
-import de.hanno.hpengine.graphics.texture.Texture
-import de.hanno.hpengine.graphics.texture.UploadState
-import org.koin.core.annotation.Single
 import struktgen.api.forEachIndexed
+import java.nio.ByteBuffer
 
 @One(
     ModelComponent::class,
     MaterialComponent::class,
 )
-@Single(binds=[BaseSystem::class, MaterialManager::class])
-class MaterialManager(
+@Single(binds=[BaseSystem::class, MaterialSystem::class])
+class MaterialSystem(
     private val config: Config,
     private val textureManager: OpenGLTextureManager,
     private val singleThreadContext: AddResourceContext,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val renderStateContext: RenderStateContext,
+    private val graphicsApi: GraphicsApi,
 ) : BaseEntitySystem(), Clearable, Extractor {
+
+    val materialBuffer = renderStateContext.renderState.registerState {
+        graphicsApi.PersistentShaderStorageBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
+    }
 
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
 
     val materials: MutableList<Material> = mutableListOf()
 
     val engineDir = config.directories.engineDir
-
-    var materialsBuffer = TypedBuffer(BufferUtils.createByteBuffer(1000 * MaterialStrukt.type.sizeInBytes), MaterialStrukt.type)
 
     fun initDefaultMaterials() {
 
@@ -99,11 +106,10 @@ class MaterialManager(
 
     override fun extract(currentWriteState: RenderState) {
 //        TODO: Remove most of this
-        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
-        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.buffer.rewind()
-        materialsBuffer = materialsBuffer.resize(sizeInBytes = materials.size * MaterialStrukt.sizeInBytes)
+        currentWriteState[materialBuffer].ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
+        currentWriteState[materialBuffer].buffer.rewind()
 
-        currentWriteState[entitiesStateHolder.entitiesState].materialBuffer.forEachIndexed(untilIndex = materials.size) { index, targetMaterial ->
+        currentWriteState[materialBuffer].forEachIndexed(untilIndex = materials.size) { index, targetMaterial ->
             val material = materials[index]
 
             targetMaterial.run {

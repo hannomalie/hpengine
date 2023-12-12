@@ -11,7 +11,6 @@ import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.Texture3D
 import de.hanno.hpengine.graphics.texture.TextureManager
-import de.hanno.hpengine.model.material.MaterialManager
 import org.koin.core.annotation.Single
 
 

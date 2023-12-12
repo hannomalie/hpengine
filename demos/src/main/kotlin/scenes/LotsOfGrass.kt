@@ -27,6 +27,7 @@ import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.system.Extractor
@@ -61,6 +62,7 @@ class GrassSystem(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val materialSystem: MaterialSystem,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
     private val positions = renderStateContext.renderState.registerState {
         graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
@@ -136,7 +138,7 @@ class GrassSystem(
         program.use()
         using(program) { uniforms ->
             uniforms.apply {
-                materials = entitiesState.materialBuffer
+                materials = renderState[materialSystem.materialBuffer]
                 entities = renderState[entityBuffer.entitiesBuffer]
                 positions = renderState[this@GrassSystem.positions]
                 program.uniforms.indirect = false

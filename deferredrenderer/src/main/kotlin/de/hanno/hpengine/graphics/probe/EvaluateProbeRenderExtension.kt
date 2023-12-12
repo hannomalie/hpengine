@@ -16,6 +16,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
@@ -31,6 +32,7 @@ class EvaluateProbeRenderExtension(
     private val entityBuffer: EntityBuffer,
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val materialSystem: MaterialSystem,
 ): DeferredRenderExtension {
 
     private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
@@ -43,6 +45,7 @@ class EvaluateProbeRenderExtension(
         entitiesStateHolder,
         entityBuffer,
         defaultBatchesSystem,
+        materialSystem,
     )
 
     val evaluateProbeProgram = programManager.getProgram(

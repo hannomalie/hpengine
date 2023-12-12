@@ -20,7 +20,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.enhanced
@@ -35,7 +35,7 @@ class SkyBoxComponent : Component()
 @All(SkyBoxComponent::class)
 @Single(binds = [BaseSystem::class, SkyBoxSystem::class])
 class SkyBoxSystem(
-    private val materialManager: MaterialManager,
+    private val materialSystem: MaterialSystem,
     private val skyBoxStateHolder: SkyBoxStateHolder,
 ) : BaseEntitySystem(), WorldPopulator, Extractor {
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
@@ -64,7 +64,7 @@ class SkyBoxSystem(
 
     override fun extract(currentWriteState: RenderState) {
         forEachEntity {
-            currentWriteState.set(skyBoxStateHolder.skyBoxMaterialIndex, materialManager.indexOf(materialComponentMapper[it].material))
+            currentWriteState.set(skyBoxStateHolder.skyBoxMaterialIndex, materialSystem.indexOf(materialComponentMapper[it].material))
         }
     }
 

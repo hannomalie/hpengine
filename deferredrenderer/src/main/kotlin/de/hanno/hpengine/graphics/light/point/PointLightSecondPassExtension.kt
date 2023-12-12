@@ -11,6 +11,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.material.MaterialSystem
 
 class PointLightSecondPassExtension(
     private val graphicsApi: GraphicsApi,
@@ -20,7 +21,8 @@ class PointLightSecondPassExtension(
     private val pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
-    private val pointLightSystem: PointLightSystem
+    private val pointLightSystem: PointLightSystem,
+    private val materialSystem: MaterialSystem,
 ) : DeferredRenderExtension {
     private val shadowMapStrategy = pointLightSystem.shadowMapStrategy
 
@@ -67,7 +69,7 @@ class PointLightSecondPassExtension(
                 "maxPointLightShadowmaps",
                 PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
             )
-            secondPassPointComputeProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
+            secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
             secondPassPointComputeProgram.bindShaderStorageBuffer(
                 2,
                 renderState[pointLightStateHolder.lightState].pointLightBuffer

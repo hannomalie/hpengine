@@ -41,6 +41,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
@@ -105,6 +106,7 @@ class ReflectionProbeRenderExtension(
     private val reflectionProbesStateHolder: ReflectionProbesStateHolder,
     private val pointLightSystem: PointLightSystem,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
 ) : DeferredRenderExtension {
     private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
     override val renderPriority = 3000
@@ -335,7 +337,7 @@ class ReflectionProbeRenderExtension(
                 val skyBox = textureManager.cubeMap
 
                 pointCubeShadowPassProgram.use()
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(2, pointLightState.pointLightBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightCount", pointLightState.pointLightCount)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])

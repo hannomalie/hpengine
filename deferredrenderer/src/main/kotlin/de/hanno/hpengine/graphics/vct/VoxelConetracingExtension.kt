@@ -36,6 +36,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.Update
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
 import org.joml.Vector3f
@@ -63,6 +64,7 @@ class VoxelConeTracingExtension(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val giVolumeStateHolder: GiVolumeStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
 ) : DeferredRenderExtension {
 
     private val fullscreenBuffer = QuadVertexBuffer(graphicsApi)
@@ -104,8 +106,8 @@ class VoxelConeTracingExtension(
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val staticPipeline = DirectPipeline(graphicsApi, config, voxelizerStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem)
-    private val animatedPipeline = DirectPipeline(graphicsApi, config, voxelizerAnimated, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem)
+    private val staticPipeline = DirectPipeline(graphicsApi, config, voxelizerStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem)
+    private val animatedPipeline = DirectPipeline(graphicsApi, config, voxelizerAnimated, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem)
     private val useIndirectDrawing = false
 
     private var litInCycle: Long = -1
@@ -195,7 +197,7 @@ class VoxelConeTracingExtension(
 
                 voxelizerStatic.setUniform("voxelGridIndex", voxelGridIndex)
                 voxelizerStatic.setUniform("voxelGridCount", voxelGrids.typedBuffer.size)
-                voxelizerStatic.bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
+                voxelizerStatic.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
                 voxelizerStatic.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                 voxelizerStatic.bindShaderStorageBuffer(5, voxelGrids)
                 voxelizerStatic.bindShaderStorageBuffer(7, renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.vertexStructArray)
@@ -254,7 +256,7 @@ class VoxelConeTracingExtension(
                             }
                             bindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, Access.WriteOnly, gridTextureFormatSized)
                             setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLightCount)
-                            bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
+                            bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
                             bindShaderStorageBuffer(2, renderState[pointLightStateHolder.lightState].pointLightBuffer)
                             bindShaderStorageBuffer(3, directionalLightState)
                             bindShaderStorageBuffer(4, renderState[entityBuffer.entitiesBuffer])

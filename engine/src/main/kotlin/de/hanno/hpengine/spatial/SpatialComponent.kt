@@ -7,7 +7,6 @@ import com.artemis.ComponentMapper
 import com.artemis.annotations.All
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.model.BoundingVolumeComponent
-import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.transform.*
 import org.joml.Vector3f
 import org.koin.core.annotation.Single

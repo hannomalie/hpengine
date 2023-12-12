@@ -23,6 +23,7 @@ import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.joml.FrustumIntersection
 
@@ -34,6 +35,7 @@ open class DirectPipeline(
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
     private val fallbackTexture: Texture? = null,
     // TODO: Use shouldBeSkipped
     protected val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
@@ -86,7 +88,7 @@ open class DirectPipeline(
         val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
         using(program) { uniforms: FirstPassUniforms ->
             uniforms.apply {
-                materials = entitiesState.materialBuffer
+                materials = renderState[materialSystem.materialBuffer]
                 entities = renderState[entityBuffer.entitiesBuffer]
                 uniforms.indirect = false
                 when (val uniforms = uniforms) {
@@ -159,7 +161,7 @@ open class DirectPipeline(
                 val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
                 using(program) { uniforms ->
                     uniforms.apply {
-                        materials = entitiesState.materialBuffer
+                        materials = renderState[materialSystem.materialBuffer]
                         entities = renderState[entityBuffer.entitiesBuffer]
                         program.uniforms.indirect = false
                         when (val uniforms = program.uniforms) {

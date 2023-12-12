@@ -12,7 +12,7 @@ import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.instancing.InstancesComponent
-import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.system.Extractor
 import org.koin.core.annotation.Single
 import struktgen.api.get
@@ -22,7 +22,7 @@ import struktgen.api.get
     ModelComponent::class,
 )
 class EntityBufferExtractorSystem(
-    private val materialManager: MaterialManager,
+    private val materialSystem: MaterialSystem,
     private val entityBuffer: EntityBuffer,
 ) : BaseEntitySystem(), Extractor {
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
@@ -42,64 +42,42 @@ class EntityBufferExtractorSystem(
         var entityBufferIndex = 0
 
         forEachEntity { parentEntityId ->
-            val modelComponent = modelComponentMapper.getOrNull(parentEntityId)
+            modelComponentMapper.getOrNull(parentEntityId)?.let { _ ->
 
-            val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances
-            val entityIds = if (instances == null) arrayOf(parentEntityId) else arrayOf(parentEntityId) + instances
+                val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances
+                val entityIds = if (instances == null) arrayOf(parentEntityId) else arrayOf(parentEntityId) + instances
 
-            for (entityId in entityIds) {
-                val instanceComponent = instanceComponentMapper.getOrNull(entityId)
-                val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
+                for (entityId in entityIds) {
+                    val instanceComponent = instanceComponentMapper.getOrNull(entityId)
+                    val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
+                    val modelCacheComponent = modelCacheComponentMapper.getOrNull(entityId, parentEntityId)
 
-                if (modelComponent != null) {
-                    val modelCacheComponent =
-                        modelCacheComponentMapper.getOrNull(entityId) ?: modelCacheComponentMapper[parentEntityId]
-                    val modelIsLoaded = modelCacheComponent != null
-
-                    if (modelIsLoaded) {
+                    if (modelCacheComponent != null) {
                         val model = modelCacheComponent.model
-                        when (model) {
-                            is AnimatedModel -> model.animations.values.forEach {
-                                it.update(world.delta)
-                            }
-
-                            is StaticModel -> {}
-                        }
-                        val transformComponent =
-                            transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(
-                                instanceComponent!!.targetEntity
-                            )
+                        val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(
+                            instanceComponent!!.targetEntity
+                        )
                         val transform = transformComponent!!.transform
 
                         val allocation = modelCacheComponent.allocation
 
-                        val meshes = model.meshes
-
-
-                        val animationFrame = when (model) {
-                            is AnimatedModel -> model.animation.currentFrame
-                            is StaticModel -> 0
-                        }
                         entitiesBufferToWrite.byteBuffer.run {
-                            for ((targetMeshIndex, mesh) in meshes.withIndex()) {
+                            model.meshes.forEachIndexed { index, mesh ->
                                 val currentEntity = entitiesBufferToWrite[entityBufferIndex]
 
-                                val meshMaterial = materialComponentOrNull?.material
-                                    ?: mesh.material // TODO: Think about override per mesh instead of all at once
-                                val targetMaterialIndex = materialManager.indexOf(meshMaterial)
+                                val material = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
                                 currentEntity.run {
-                                    materialIndex = targetMaterialIndex
+                                    materialIndex = materialSystem.indexOf(material)
                                     update = Update.STATIC.value
                                     meshBufferIndex = entityBufferIndex
                                     entityIndex = entityId
-                                    meshIndex = targetMeshIndex
-                                    baseVertex = allocation.forMeshes[targetMeshIndex].vertexOffset
+                                    meshIndex = index
+                                    baseVertex = allocation.forMeshes[index].vertexOffset
                                     baseJointIndex = allocation.baseJointIndex
-                                    animationFrame0 = animationFrame
+                                    animationFrame0 = model.animationFrame
                                     isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                                     dummy4 = allocation.indexOffset
-                                    val boundingVolume =
-                                        modelCacheComponent.meshSpatials[targetMeshIndex].boundingVolume
+                                    val boundingVolume = modelCacheComponent.meshSpatials[index].boundingVolume
 
                                     setTrafoAndBoundingVolume(transform.transformation, boundingVolume)
                                 }
@@ -111,4 +89,9 @@ class EntityBufferExtractorSystem(
             }
         }
     }
+}
+
+private val Model<*>.animationFrame: Int get() = when (this) {
+    is AnimatedModel -> animation.currentFrame
+    is StaticModel -> 0
 }

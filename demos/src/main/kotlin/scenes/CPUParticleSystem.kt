@@ -30,6 +30,7 @@ import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.system.Extractor
@@ -79,6 +80,7 @@ class CPUParticleSystem(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val materialSystem: MaterialSystem,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
     lateinit var particlesComponentMapper: ComponentMapper<CPUParticles>
     private val positions = renderStateContext.renderState.registerState {
@@ -160,7 +162,7 @@ class CPUParticleSystem(
 
         program.useAndBind(
             setUniforms = {
-                materials = entitiesState.materialBuffer
+                materials = renderState[materialSystem.materialBuffer]
                 entities = renderState[entityBuffer.entitiesBuffer]
                 positions = renderState[this@CPUParticleSystem.positions]
                 program.uniforms.indirect = false

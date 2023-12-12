@@ -142,7 +142,7 @@ class ImGuiEditor(
         val screenWidth = ImGui.getIO().displaySizeX
         val screenHeight = ImGui.getIO().displaySizeY
 
-        val leftPanelYOffset = screenHeight * 0.015f
+        val leftPanelYOffset = 0f
         val leftPanelWidthPercentage = 0.1f
         val leftPanelWidth = screenWidth * leftPanelWidthPercentage
 

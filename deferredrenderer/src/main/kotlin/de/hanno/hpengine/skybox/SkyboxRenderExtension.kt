@@ -13,7 +13,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.model.material.MaterialSystem
 import org.koin.core.annotation.Single
 
 @Single(binds = [SkyboxRenderExtension::class, DeferredRenderExtension::class])
@@ -23,7 +23,7 @@ class SkyboxRenderExtension(
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
     private val programManager: ProgramManager,
     private val textureManager: OpenGLTextureManager,
-    private val materialManager: MaterialManager,
+    private val materialSystem: MaterialSystem,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val skyBoxStateHolder: SkyBoxStateHolder,
@@ -81,7 +81,7 @@ class SkyboxRenderExtension(
         bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
         val skyBoxMaterialIndex = renderState[skyBoxStateHolder.skyBoxMaterialIndex]
         val skyboxTexture = if(skyBoxMaterialIndex > -1) {
-            materialManager.materials[renderState[skyBoxStateHolder.skyBoxMaterialIndex]].maps[Material.MAP.ENVIRONMENT]!!
+            materialSystem.materials[renderState[skyBoxStateHolder.skyBoxMaterialIndex]].maps[Material.MAP.ENVIRONMENT]!!
         } else {
             textureManager.cubeMap
         }
@@ -113,7 +113,7 @@ class SkyboxRenderExtension(
             "projectionMatrix",
             camera.projectionMatrixAsBuffer
         )
-        secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState[entitiesStateHolder.entitiesState].materialBuffer)
+        secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
         secondPassReflectionProgram.dispatchCompute(
             config.width / 16,
             config.height / 16,

@@ -30,6 +30,7 @@ import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -142,6 +143,7 @@ class BvHPointLightSecondPassExtension(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val pointLightSystem: PointLightSystem,
+    private val materialSystem: MaterialSystem,
 ) : DeferredRenderExtension {
     private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
 
@@ -286,9 +288,8 @@ class BvHPointLightSecondPassExtension(
                 "maxPointLightShadowmaps",
                 PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
             )
-            secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
-            secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2,
-                pointLightState.pointLightBuffer)
+            secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
+            secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2, pointLightState.pointLightBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(3, bvh)
             secondPassPointBvhComputeProgram.dispatchCompute(config.width / 16, config.height / 16, 1)
         }

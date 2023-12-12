@@ -22,6 +22,7 @@ import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -37,6 +38,7 @@ class ProbeRenderStrategy(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val entityBuffer: EntityBuffer,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
 ) {
     private val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     private val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
@@ -122,7 +124,7 @@ class ProbeRenderStrategy(
                     Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).sub(Vector3f(dimensionHalf.toFloat())).mul(extent)
 
                 probeProgram.use()
-                probeProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
+                probeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
                 probeProgram.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                 probeProgram.setUniform("probePositionWorld", probePosition)
                 val viewProjectionMatrices = getCubeViewProjectionMatricesForPosition(probePosition)

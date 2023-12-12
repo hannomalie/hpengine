@@ -6,7 +6,6 @@ import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
 import de.hanno.hpengine.lifecycle.Updatable
-import de.hanno.hpengine.model.material.MaterialManager
 import de.hanno.hpengine.ressources.CodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileMonitor

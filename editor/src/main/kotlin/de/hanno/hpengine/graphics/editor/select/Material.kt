@@ -10,30 +10,30 @@ import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.model.MaterialComponent
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.model.material.MaterialSystem
 import imgui.ImGui.*
 import org.koin.core.annotation.Single
 
 data class MaterialSelection(val material: Material): Selection {
     override fun toString() = material.name
 }
-data class MaterialManagerSelection(val materialManager: MaterialManager): Selection
+data class MaterialManagerSelection(val materialSystem: MaterialSystem): Selection
 
 @Single(binds = [EditorExtension::class])
 class MaterialEditorExtension(
     private val textureManager: TextureManagerBaseSystem,
-    private val materialManager: MaterialManager,
+    private val materialSystem: MaterialSystem,
 ): EditorExtension {
     override fun getSelection(any: Any, components: Bag<Component>?) = when (any) {
-        is MaterialManager -> {
-            MaterialManagerSelection(materialManager)
+        is MaterialSystem -> {
+            MaterialManagerSelection(materialSystem)
         }
         else -> null
     }
 
     override fun ImGuiEditor.renderLeftPanelTopLevelNode() {
         Window.treeNode("Materials") {
-            materialManager.materials.sortedBy { it.name }.forEach { material ->
+            materialSystem.materials.sortedBy { it.name }.forEach { material ->
                 text(material.name) {
                     selectOrUnselect(MaterialSelection(material))
                 }

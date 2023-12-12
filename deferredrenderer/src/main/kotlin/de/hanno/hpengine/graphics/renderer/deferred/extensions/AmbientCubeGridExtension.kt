@@ -29,6 +29,7 @@ import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.spatial.WorldAABBStateHolder
 import org.joml.Vector3f
@@ -49,6 +50,7 @@ class ProbeRenderer(
     private val entityBuffer: EntityBuffer,
     private val worldAABBStateHolder: WorldAABBStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
 ) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
@@ -156,7 +158,7 @@ class ProbeRenderer(
                 val skyBox = textureManager.cubeMap
 
                 pointCubeShadowPassProgram.use()
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, entitiesState.materialBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(2,
                     renderState[pointLightStateHolder.lightState].pointLightBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightCount",

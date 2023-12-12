@@ -6,7 +6,7 @@ import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.model.Mesh
 import de.hanno.hpengine.model.ModelComponent
-import de.hanno.hpengine.model.material.MaterialManager
+import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.visibility.InvisibleComponentSystem
 import imgui.ImGui
 import org.koin.core.annotation.Single
@@ -19,7 +19,7 @@ data class MeshSelection(override val entity: Int, val mesh: Mesh<*>, val modelC
 @Single(binds = [EditorExtension::class])
 class MeshEditorExtension(
     private val invisibleComponentSystem: InvisibleComponentSystem,
-    private val materialManager: MaterialManager,
+    private val materialSystem: MaterialSystem,
 ) : EditorExtension {
 
     override fun Window.renderRightPanel(selection: Selection?) = if(selection is MeshSelection) {
@@ -30,7 +30,7 @@ class MeshEditorExtension(
         text(selection.mesh.name)
 
         if (ImGui.beginCombo("Material", selection.mesh.material.name)) {
-            materialManager.materials.distinctBy { it.name }.forEach { material ->
+            materialSystem.materials.distinctBy { it.name }.forEach { material ->
                 val selected = selection.mesh.material.name == material.name
                 if (ImGui.selectable(material.name, selected)) {
                     selection.mesh.material = material
