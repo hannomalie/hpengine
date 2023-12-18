@@ -80,8 +80,8 @@ class CameraRenderExtension(
                 linesProgram,
                 lineVertices,
                 renderState[cameraComponentsStateHolder.frustumLines],
-                viewMatrix = camera.viewMatrixAsBuffer,
-                projectionMatrix = camera.projectionMatrixAsBuffer,
+                viewMatrix = camera.viewMatrixBuffer,
+                projectionMatrix = camera.projectionMatrixBuffer,
                 color = Vector3f(1f, 0f, 0f)
             )
         }

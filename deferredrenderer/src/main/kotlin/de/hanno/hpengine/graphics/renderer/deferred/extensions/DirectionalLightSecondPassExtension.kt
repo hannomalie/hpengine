@@ -101,10 +101,10 @@ class DirectionalLightSecondPassExtension(
                 )
                 secondPassDirectionalProgram.setUniform("screenWidth", config.width.toFloat())
                 secondPassDirectionalProgram.setUniform("screenHeight", config.height.toFloat())
-                secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+                secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
                 secondPassDirectionalProgram.setUniformAsMatrix4(
                     "projectionMatrix",
-                    camera.projectionMatrixAsBuffer
+                    camera.projectionMatrixBuffer
                 )
                 secondPassDirectionalProgram.bindShaderStorageBuffer(2, directionalLightState)
             }

@@ -73,14 +73,14 @@ class ForwardRenderExtension(
             uniforms.materials = renderState[materialSystem.materialBuffer]
             uniforms.entities = renderState[entityBuffer.entitiesBuffer]
             programStatic.bindShaderStorageBuffer(2, renderState[directionalLightStateHolder.lightState])
-            uniforms.viewMatrix.safePut(camera.viewMatrixAsBuffer)
-            uniforms.projectionMatrix.safePut(camera.projectionMatrixAsBuffer)
-            uniforms.viewProjectionMatrix.safePut(camera.viewProjectionMatrixAsBuffer)
+            uniforms.viewMatrix.safePut(camera.viewMatrixBuffer)
+            uniforms.projectionMatrix.safePut(camera.projectionMatrixBuffer)
+            uniforms.viewProjectionMatrix.safePut(camera.viewProjectionMatrixBuffer)
         }
 
         entitiesState.vertexIndexBufferStatic.indexBuffer.bind()
         for (batch in renderState[defaultBatchesSystem.renderBatchesStatic].filter { it.material.transparencyType.needsForwardRendering }) {
-            programStatic.setTextureUniforms(graphicsApi, batch.material.maps)
+            setTextureUniforms(programStatic, graphicsApi, batch.material.maps)
             entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
                 primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Fill

@@ -23,7 +23,6 @@ class RenderManager(
     private val window: Window,
     programManager: ProgramManager,
     private val renderStateContext: RenderStateContext,
-    private val finalOutput: FinalOutput,
     private val debugOutput: DebugOutput,
     private val renderSystemsConfig: RenderSystemsConfig,
     private val gpuProfiler: GPUProfiler,
@@ -45,7 +44,7 @@ class RenderManager(
     private val textureRenderer = SimpleTextureRenderer(
         graphicsApi,
         config,
-        finalOutput.texture2D,
+        renderSystemsConfig.primaryRenderer.finalOutput.texture2D,
         programManager,
         window.frontBuffer
     )
@@ -70,11 +69,11 @@ class RenderManager(
 
                         val renderSystems = profiled("determineRenderSystems") {
                             when (val renderMode = renderMode) {
-                                RenderMode.Normal -> renderSystemsConfig.renderSystems
+                                RenderMode.Normal -> renderSystemsConfig.run { renderSystemsConfig.allRenderSystems.filter { it.enabled } }
 
                                 is RenderMode.SingleFrame -> {
                                     renderSystemsConfig.run {
-                                        val (singleStepSystems, continuousSystems) = renderSystems.filter { it.enabled }.partition {
+                                        val (singleStepSystems, continuousSystems) = allRenderSystems.filter { it.enabled }.partition {
                                             it.supportsSingleStep
                                         }
                                         val systemsToExecute = continuousSystems + if (renderMode.frameRequested.get()) {
@@ -107,6 +106,7 @@ class RenderManager(
 
                         profiled("present") {
                             window.frontBuffer.use(graphicsApi, true)
+                            val finalOutput = renderSystemsConfig.primaryRenderer.finalOutput
                             textureRenderer.drawToQuad(
                                 finalOutput.texture2D,
                                 mipMapLevel = finalOutput.mipmapLevel
@@ -151,7 +151,7 @@ class RenderManager(
         while(config.debug.forceSingleThreadedRendering && rendering.get()) {
             Thread.onSpinWait()
         }
-        renderSystemsConfig.renderSystems.forEach {
+        renderSystemsConfig.allRenderSystems.forEach {
             it.update(world.delta)
         }
     }

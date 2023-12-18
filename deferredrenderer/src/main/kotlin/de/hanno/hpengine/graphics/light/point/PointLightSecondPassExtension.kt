@@ -38,8 +38,8 @@ class PointLightSecondPassExtension(
         profiled("Seconds pass PointLights") {
 
             val camera = renderState[primaryCameraStateHolder.camera]
-            val viewMatrix = camera.viewMatrixAsBuffer
-            val projectionMatrix = camera.projectionMatrixAsBuffer
+            val viewMatrix = camera.viewMatrixBuffer
+            val projectionMatrix = camera.projectionMatrixBuffer
 
             graphicsApi.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
             graphicsApi.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)

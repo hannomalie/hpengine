@@ -249,7 +249,7 @@ class OceanWaterRenderSystem(
         mergeDisplacementMapsShader.setUniform("L", oceanWaterComponent.L)
         mergeDisplacementMapsShader.setUniform("choppiness", oceanWaterComponent.choppiness)
         mergeDisplacementMapsShader.setUniform("waveHeight", oceanWaterComponent.waveHeight)
-        mergeDisplacementMapsShader.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+        mergeDisplacementMapsShader.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
         bindImageTexture(0, displacementMap.id, 0, false, 0, Access.WriteOnly, displacementMap.internalFormat)
         bindTexture(1, displacementMapX)
         bindTexture(2, displacementMapY)

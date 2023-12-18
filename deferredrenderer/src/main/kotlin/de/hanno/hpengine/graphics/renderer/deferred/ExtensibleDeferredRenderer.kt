@@ -31,7 +31,7 @@ import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.koin.core.annotation.Single
 
-@Single(binds = [RenderSystem::class, BaseSystem::class])
+@Single(binds = [RenderSystem::class, BaseSystem::class, PrimaryRenderer::class])
 class ExtensibleDeferredRenderer(
     private val graphicsApi: GraphicsApi,
     private val renderStateContext: RenderStateContext,
@@ -49,7 +49,8 @@ class ExtensibleDeferredRenderer(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
-): RenderSystem, BaseSystem() {
+): PrimaryRenderer, BaseSystem() {
+    override val finalOutput = DeferredFinalOutput(deferredRenderingBuffer.finalMap, 0, this)
 
     private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
     private val extensions: List<DeferredRenderExtension>

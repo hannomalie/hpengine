@@ -24,10 +24,10 @@ class Camera(
             field = value
             updateProjectionMatrixAndFrustum()
         }
-    var viewProjectionMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-    var projectionMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-    var lastViewMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-    val viewMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
+    var viewProjectionMatrixBuffer = BufferUtils.createFloatBuffer(16)
+    var projectionMatrixBuffer = BufferUtils.createFloatBuffer(16)
+    var lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16)
+    val viewMatrixBuffer = BufferUtils.createFloatBuffer(16)
 
     var viewMatrix = Matrix4f()
         get() = transform.transformation.invert(field)
@@ -146,24 +146,24 @@ class Camera(
 
     private fun storeMatrices() {
 
-        viewMatrixAsBuffer.rewind()
-        viewMatrix.get(viewMatrixAsBuffer)
-        viewMatrixAsBuffer.rewind()
+        viewMatrixBuffer.rewind()
+        viewMatrix.get(viewMatrixBuffer)
+        viewMatrixBuffer.rewind()
 
-        projectionMatrixAsBuffer.rewind()
-        projectionMatrix.get(projectionMatrixAsBuffer)
-        projectionMatrixAsBuffer.rewind()
+        projectionMatrixBuffer.rewind()
+        projectionMatrix.get(projectionMatrixBuffer)
+        projectionMatrixBuffer.rewind()
 
-        viewProjectionMatrixAsBuffer.rewind()
-        viewProjectionMatrix.set(projectionMatrix).mul(viewMatrix).get(viewProjectionMatrixAsBuffer)
-        viewProjectionMatrixAsBuffer.rewind()
+        viewProjectionMatrixBuffer.rewind()
+        viewProjectionMatrix.set(projectionMatrix).mul(viewMatrix).get(viewProjectionMatrixBuffer)
+        viewProjectionMatrixBuffer.rewind()
     }
 
     private fun transform() {
         frustum.calculate(projectionMatrix, viewMatrix)
     }
 
-    fun saveViewMatrixAsLastViewMatrix() = lastViewMatrixAsBuffer.safePut(viewMatrixAsBuffer)
+    fun saveViewMatrixAsLastViewMatrix() = lastViewMatrixBuffer.safePut(viewMatrixBuffer)
 
     private fun updateProjectionMatrixAndFrustum() {
         calculateProjectionMatrix()

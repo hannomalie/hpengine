@@ -211,7 +211,7 @@ class VoxelConeTracingExtension(
 
                 renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.bind()
                 for (entity in batches) {
-                    voxelizerStatic.setTextureUniforms(graphicsApi, entity.material.maps)
+                    setTextureUniforms(voxelizerStatic, graphicsApi, entity.material.maps)
                     renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.draw(
                         entity.drawElementsIndirectCommand,
                         bindIndexBuffer = false,
@@ -355,8 +355,8 @@ class VoxelConeTracingExtension(
                     val camTranslation = Vector3f()
                     voxelConeTraceProgram.setUniform("voxelGridIndex", voxelGridIndex)
                     voxelConeTraceProgram.setUniform("eyePosition", camera.transform.getTranslation(camTranslation))
-                    voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-                    voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
+                    voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
+                    voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixBuffer)
                     voxelConeTraceProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
                     voxelConeTraceProgram.bindShaderStorageBuffer(5, voxelGrids)
                     voxelConeTraceProgram.setUniform("voxelGridCount", voxelGrids.typedBuffer.size)

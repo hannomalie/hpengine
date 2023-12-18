@@ -108,10 +108,10 @@ class SkyboxRenderExtension(
         secondPassReflectionProgram.use()
         secondPassReflectionProgram.setUniform("screenWidth", config.width.toFloat())
         secondPassReflectionProgram.setUniform("screenHeight", config.height.toFloat())
-        secondPassReflectionProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+        secondPassReflectionProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
         secondPassReflectionProgram.setUniformAsMatrix4(
             "projectionMatrix",
-            camera.projectionMatrixAsBuffer
+            camera.projectionMatrixBuffer
         )
         secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
         secondPassReflectionProgram.dispatchCompute(

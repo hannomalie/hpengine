@@ -249,8 +249,8 @@ class ReflectionProbeRenderExtension(
                 linesProgram,
                 lineVertices,
                 linePoints,
-                viewMatrix = camera.viewMatrixAsBuffer,
-                projectionMatrix = camera.projectionMatrixAsBuffer,
+                viewMatrix = camera.viewMatrixBuffer,
+                projectionMatrix = camera.projectionMatrixBuffer,
                 color = Vector3f(1f, 0f, 0f)
             )
         }
@@ -301,8 +301,8 @@ class ReflectionProbeRenderExtension(
         evaluateProbeProgram.setUniform("eyePosition", camera.getPosition())
         evaluateProbeProgram.setUniform("screenWidth", config.width.toFloat())
         evaluateProbeProgram.setUniform("screenHeight", config.height.toFloat())
-        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixBuffer)
         evaluateProbeProgram.setUniform("time", renderState.time.toInt())
 
         evaluateProbeProgram.setUniform("probeCount", currentReflectionProbeRenderState.probeCount)
@@ -382,7 +382,7 @@ class ReflectionProbeRenderExtension(
 
                 profiled("ReflectionProbe entity rendering") {
                     for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
-                        pointCubeShadowPassProgram.setTextureUniforms(graphicsApi, batch.material.maps)
+                        setTextureUniforms(pointCubeShadowPassProgram, graphicsApi, batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch
                                 .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill

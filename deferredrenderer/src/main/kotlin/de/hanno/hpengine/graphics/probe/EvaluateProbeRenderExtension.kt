@@ -80,8 +80,8 @@ class EvaluateProbeRenderExtension(
             "eyePosition",
             camera.transform.getTranslation(camTranslation)
         )
-        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderStrategy.probeGrid)
         evaluateProbeProgram.setUniform("screenWidth", config.width.toFloat())

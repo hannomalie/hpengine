@@ -11,11 +11,9 @@ import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.EntityStrukt
-import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.DepthFunc
-import de.hanno.hpengine.graphics.profiled
+import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
@@ -40,7 +38,7 @@ import org.koin.core.annotation.Single
 import org.koin.ksp.generated.module
 import org.lwjgl.BufferUtils
 
-@Single(binds = [RenderSystem::class])
+@Single(binds = [RenderSystem::class, PrimaryRenderer::class])
 class SimpleForwardRenderer(
     private val graphicsApi: GraphicsApi,
     private val renderStateContext: RenderStateContext,
@@ -52,7 +50,9 @@ class SimpleForwardRenderer(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
-): RenderSystem {
+): PrimaryRenderer {
+
+    override val finalOutput = ForwardFinalOutput(renderTarget.textures.first(), 0, this)
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
@@ -137,8 +137,8 @@ open class AnimatedFirstPassUniforms(graphicsApi: GraphicsApi): FirstPassUniform
         Matrix4fStrukt.type))
     var vertices by SSBO("VertexAnimatedPacked", 7, graphicsApi.PersistentShaderStorageBuffer(
         AnimatedVertexStruktPacked.sizeInBytes).typed(
-        AnimatedVertexStruktPacked.type
-    )
+            AnimatedVertexStruktPacked.type
+        )
     )
 }
 

@@ -231,10 +231,10 @@ class GPUParticleSystem(
                 entities = renderState[entityBuffer.entitiesBuffer]
                 program.uniforms.indirect = false
                 program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
-                viewMatrix = camera.viewMatrixAsBuffer
-                lastViewMatrix = camera.viewMatrixAsBuffer
-                projectionMatrix = camera.projectionMatrixAsBuffer
-                viewProjectionMatrix = camera.viewProjectionMatrixAsBuffer
+                viewMatrix = camera.viewMatrixBuffer
+                lastViewMatrix = camera.viewMatrixBuffer
+                projectionMatrix = camera.projectionMatrixBuffer
+                viewProjectionMatrix = camera.viewProjectionMatrixBuffer
 
                 eyePosition = camera.getPosition()
                 near = camera.near
@@ -248,7 +248,7 @@ class GPUParticleSystem(
                 depthMask = materialComponent.material.writesDepth
                 cullFace = materialComponent.material.cullBackFaces
                 depthTest = materialComponent.material.depthTest
-                program.setTextureUniforms(graphicsApi, materialComponent.material.maps)
+                setTextureUniforms(program, graphicsApi, materialComponent.material.maps)
 
                 program.uniforms.entityIndex = entityIndex
             }

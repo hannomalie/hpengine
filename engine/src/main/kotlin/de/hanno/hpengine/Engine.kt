@@ -66,6 +66,7 @@ class Engine(
         // the base system regular update below. Same for Executing the commands
         input.update()
         window.pollEvents()
+        window.closeIfReqeusted()
         addResourceContext.executeCommands()
 
         withContext(updateScopeDispatcher) {

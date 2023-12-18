@@ -171,8 +171,16 @@ class GlfwWindow(
 
     override fun pollEvents() = glfwPollEvents()
     override fun pollEventsInLoop() {
-        while (!glfwWindowShouldClose(handle)) {
+        while (!shouldClose()) {
             pollEvents()
+        }
+    }
+    override fun shouldClose(): Boolean {
+        return glfwWindowShouldClose(handle)
+    }
+    override fun closeIfReqeusted() {
+        if(shouldClose()) {
+            exitOnCloseCallback(handle)
         }
     }
 

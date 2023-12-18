@@ -33,7 +33,9 @@ fun createEngine(demoAndEngineConfig: DemoAndEngineConfig) = Engine(
     listOf(
         glfwModule,
         openglModule,
-        demoAndEngineConfig.primaryRendererModule,
+//        demoAndEngineConfig.primaryRendererModule,
+        deferredRendererModule,
+        simpleForwardRendererModule,
         editorModule,
         demoAndEngineConfig.configModule,
         DemoModule().module

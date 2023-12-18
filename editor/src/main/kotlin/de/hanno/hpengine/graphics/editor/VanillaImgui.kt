@@ -95,5 +95,6 @@ fun main() {
         renderer.render(RenderState(graphicsApi))
 
         window.swapBuffers()
+        window.closeIfReqeusted()
     }
 }

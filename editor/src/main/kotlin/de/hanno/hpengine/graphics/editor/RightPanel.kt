@@ -1,17 +1,13 @@
 package de.hanno.hpengine.graphics.editor
 
-import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.RenderSystemsConfig
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
-import de.hanno.hpengine.graphics.state.RenderStateContext
 import imgui.ImGui
 import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiWindowFlags
 
 fun ImGuiEditor.rightPanel(
-    graphicsApi: GraphicsApi,
-    renderStateContext: RenderStateContext,
     screenWidth: Float,
     rightPanelWidth: Float,
     screenHeight: Float,
@@ -57,10 +53,19 @@ fun ImGuiEditor.rightPanel(
                 }
                 tab("RenderSystems") {
                     renderSystemsConfig.run {
-                        allRenderSystems.forEach {
+                        nonPrimaryRenderers.forEach {
                             if (ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
                                 it.enabled = !it.enabled
                             }
+                        }
+                    }
+
+                    ImGui.text("Primary Renderer:")
+                    ImGui.text(renderSystemsConfig.primaryRenderer.javaClass.simpleName)
+                    ImGui.text("Current output")
+                    renderSystemsConfig.primaryRenderers.forEach {
+                        if (ImGui.checkbox(it.javaClass.simpleName, primaryRenderer == it)) {
+                            primaryRenderer = it
                         }
                     }
                 }

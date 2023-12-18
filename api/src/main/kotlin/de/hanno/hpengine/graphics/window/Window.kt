@@ -29,4 +29,6 @@ interface Window {
     fun awaitEvents()
 
     val frontBuffer: FrontBufferTarget
+    fun shouldClose(): Boolean
+    fun closeIfReqeusted()
 }

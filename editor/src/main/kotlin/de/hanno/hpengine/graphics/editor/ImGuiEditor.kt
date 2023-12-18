@@ -25,6 +25,7 @@ import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.select.*
 import de.hanno.hpengine.graphics.output.DebugOutput
 import de.hanno.hpengine.graphics.output.FinalOutput
+import de.hanno.hpengine.graphics.output.FinalOutputImpl
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
@@ -54,7 +55,6 @@ class ImGuiEditor(
     private val renderStateContext: RenderStateContext,
     internal val window: Window,
     internal val textureManager: TextureManagerBaseSystem,
-    internal val finalOutput: FinalOutput,
     internal val debugOutput: DebugOutput,
     internal val config: Config,
     internal val sharedDepthBuffer: SharedDepthBuffer,
@@ -67,9 +67,24 @@ class ImGuiEditor(
     internal val renderSystemsConfig: Lazy<RenderSystemsConfig>,
     internal val renderManager: Lazy<RenderManager>,
     _editorExtensions: List<EditorExtension>,
-) : BaseSystem(), RenderSystem {
+) : BaseSystem(), PrimaryRenderer {
+    override val priority: Int get() = 100
+    private var _primaryRenderer: PrimaryRenderer? = null
+    internal var primaryRenderer
+        get() = _primaryRenderer ?: renderSystemsConfig.value.primaryRenderers.filterNot {
+            it == this
+        }.maxByOrNull { it.priority }!!
+        set(value) {
+            _primaryRenderer = value
+            renderSystemsConfig.value.run {
+                primaryRenderers.forEach {
+                    it.enabled = it == value
+                }
+            }
+        }
+
+
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
-    private val formerFinalOutput = finalOutput.texture2D
     override val supportsSingleStep: Boolean get() = false
     internal val extensions: List<EditorExtension> = _editorExtensions.distinct()
 
@@ -87,9 +102,8 @@ class ImGuiEditor(
             ).toTextures(graphicsApi, config.width, config.height),
             "Final Editor Image",
         )
-    ).apply {
-        finalOutput.texture2D = textures[0]
-    }
+    )
+    override val finalOutput: FinalOutput = FinalOutputImpl(renderTarget.textures.first(), 0, this)
     var selection: Selection? = null
     fun selectOrUnselect(newSelection: Selection) {
         selection = if (selection == newSelection) null else newSelection
@@ -184,8 +198,8 @@ class ImGuiEditor(
                 artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
                     val camera = renderState[primaryCameraStateHolder.camera]
                     showGizmo(
-                        viewMatrixAsBuffer = camera.viewMatrixAsBuffer,
-                        projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer,
+                        viewMatrixAsBuffer = camera.viewMatrixBuffer,
+                        projectionMatrixAsBuffer = camera.projectionMatrixBuffer,
                         fovY = camera.fov,
                         near = camera.near,
                         far = camera.far,
@@ -215,8 +229,6 @@ class ImGuiEditor(
             graphicsApi.run {
                 profiled("rightPanel") {
                     rightPanel(
-                        graphicsApi,
-                        renderStateContext,
                         screenWidth,
                         rightPanelWidth,
                         screenHeight,
@@ -267,13 +279,8 @@ class ImGuiEditor(
 
                 // TODO: Would be nice when this worked, but it fails when texture alpha channels are
                 // used, especially when they are used for something else than traditional alpha
-                val textureToDraw = if (output.get() > -1) {
-                    textureOutputOptions[output.get()].texture.id
-                } else {
-                    formerFinalOutput.id
-                }
                 ImGui.image(
-                    formerFinalOutput.id,
+                    primaryRenderer.finalOutput.texture2D.id,
                     screenWidth,
                     screenHeight,
                     0f,

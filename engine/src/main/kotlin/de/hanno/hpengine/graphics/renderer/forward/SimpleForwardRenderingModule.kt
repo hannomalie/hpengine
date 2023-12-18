@@ -1,16 +1,21 @@
 package de.hanno.hpengine.graphics.renderer.forward
 
+import InternalTextureFormat
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.output.DebugOutput
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.rendertarget.toTextures
+import de.hanno.hpengine.graphics.texture.Texture2D
 import org.joml.Vector4f
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
+
+
+data class ForwardFinalOutput(override var texture2D: Texture2D, override var mipmapLevel: Int = 0, override val producedBy: RenderSystem? = null): FinalOutput
 
 @Module
 @ComponentScan
@@ -33,8 +38,6 @@ class SimpleForwardRenderingModule {
             clear = Vector4f(),
         )
     }
-    @Single
-    fun finalOutput(renderTarget: RenderTarget2D) = FinalOutput(renderTarget.textures.first())
 
     @Single
     fun debugOutput() = DebugOutput(null, 0)

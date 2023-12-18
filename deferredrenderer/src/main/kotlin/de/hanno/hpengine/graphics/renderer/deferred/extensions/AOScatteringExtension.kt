@@ -75,8 +75,8 @@ class AOScatteringExtension(
             aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", config.effects.ambientocclusionTotalStrength)
             aoScatteringProgram.setUniform("screenWidth", config.width.toFloat() / 2f)
             aoScatteringProgram.setUniform("screenHeight", config.height.toFloat() / 2f)
-            aoScatteringProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-            aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
+            aoScatteringProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
+            aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixBuffer)
             aoScatteringProgram.setUniform("time", renderState.time.toInt())
             //		aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
             //		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {

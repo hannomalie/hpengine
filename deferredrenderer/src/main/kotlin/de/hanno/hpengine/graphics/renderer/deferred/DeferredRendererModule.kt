@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.renderer.deferred
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.gi.GiVolumeStateHolder
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
@@ -13,13 +14,14 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.vct.VoxelConeTracingExtension
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.input.PixelPerfectPickingExtension
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
-import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
 import de.hanno.hpengine.skybox.SkyboxRenderExtension
@@ -28,6 +30,8 @@ import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 import org.koin.ksp.generated.module
 
+
+data class DeferredFinalOutput(override var texture2D: Texture2D, override var mipmapLevel: Int = 0, override val producedBy: RenderSystem? = null): FinalOutput
 @Module
 @ComponentScan
 class DeferredRendererModule {
@@ -35,11 +39,6 @@ class DeferredRendererModule {
     fun idTexture(
         deferredRenderingBuffer: DeferredRenderingBuffer,
     ) = IdTexture(deferredRenderingBuffer.depthAndIndicesMap)
-
-    @Single
-    fun finalOutput(
-        deferredRenderingBuffer: DeferredRenderingBuffer,
-    ) = FinalOutput(deferredRenderingBuffer.finalMap)
 
     @Single
     fun debugOutput(): DebugOutput = DebugOutput(null, 0)

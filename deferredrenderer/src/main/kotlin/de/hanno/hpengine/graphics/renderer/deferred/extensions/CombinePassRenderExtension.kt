@@ -50,8 +50,8 @@ class CombinePassRenderExtension(private val config: Config,
             generateMipMaps(renderTarget.textures[0])
 
             combineProgram.use()
-            combineProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
-            combineProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+            combineProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixBuffer)
+            combineProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
             combineProgram.setUniform("screenWidth", config.width.toFloat())
             combineProgram.setUniform("screenHeight", config.height.toFloat())
             combineProgram.setUniform("camPosition", camera.getPosition())

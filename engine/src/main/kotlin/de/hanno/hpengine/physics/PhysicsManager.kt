@@ -183,8 +183,8 @@ class PhysicsManager(
                 linesProgram,
                 lineVertices,
                 linePoints,
-                viewMatrix = camera.viewMatrixAsBuffer,
-                projectionMatrix = camera.projectionMatrixAsBuffer,
+                viewMatrix = camera.viewMatrixBuffer,
+                projectionMatrix = camera.projectionMatrixBuffer,
                 color = org.joml.Vector3f(1f, 1f, 0f)
             )
         }

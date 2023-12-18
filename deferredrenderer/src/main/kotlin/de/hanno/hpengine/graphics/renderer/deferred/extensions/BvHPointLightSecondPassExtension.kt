@@ -258,8 +258,8 @@ class BvHPointLightSecondPassExtension(
 
             val camera = renderState[primaryCameraStateHolder.camera]
 
-            val viewMatrix = camera.viewMatrixAsBuffer
-            val projectionMatrix = camera.projectionMatrixAsBuffer
+            val viewMatrix = camera.viewMatrixBuffer
+            val projectionMatrix = camera.projectionMatrixBuffer
 
             graphicsApi.bindTexture(0, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
             graphicsApi.bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
@@ -321,8 +321,8 @@ class BvHPointLightSecondPassExtension(
                 linesProgram,
                 lineVertices,
                 linePoints,
-                viewMatrix = camera.viewMatrixAsBuffer,
-                projectionMatrix = camera.projectionMatrixAsBuffer,
+                viewMatrix = camera.viewMatrixBuffer,
+                projectionMatrix = camera.projectionMatrixBuffer,
                 color = Vector3f(1f, 0f, 0f)
             )
         }

@@ -284,10 +284,10 @@ open class GPUCulledPipeline(
                 }
                 setUniform("maxDrawCommands", commandOrganization.commandCount)
                 val camera = cullCam
-                setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixAsBuffer)
-                setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+                setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixBuffer)
+                setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
                 setUniform("camPosition", camera.transform.position)
-                setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
+                setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixBuffer)
                 setUniform("useFrustumCulling", config.debug.isUseGpuFrustumCulling)
                 setUniform("useOcclusionCulling", config.debug.isUseGpuOcclusionCulling)
                 bindTexture(0, TextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
@@ -403,10 +403,10 @@ open class GPUCulledPipeline(
                     }
                     useRainEffect = config.effects.rainEffect != 0.0f
                     rainEffect = config.effects.rainEffect
-                    viewMatrix = camera.viewMatrixAsBuffer
-                    lastViewMatrix = camera.viewMatrixAsBuffer
-                    projectionMatrix = camera.projectionMatrixAsBuffer
-                    viewProjectionMatrix = camera.viewProjectionMatrixAsBuffer
+                    viewMatrix = camera.viewMatrixBuffer
+                    lastViewMatrix = camera.viewMatrixBuffer
+                    projectionMatrix = camera.projectionMatrixBuffer
+                    viewProjectionMatrix = camera.viewProjectionMatrixBuffer
 
                     eyePosition = camera.getPosition()
                     near = camera.near
