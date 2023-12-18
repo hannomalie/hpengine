@@ -51,6 +51,7 @@ class ExtensibleDeferredRenderer(
     private val materialSystem: MaterialSystem,
 ): PrimaryRenderer, BaseSystem() {
     override val finalOutput = DeferredFinalOutput(deferredRenderingBuffer.finalMap, 0, this)
+    override val priority: Int get() = 10
 
     private val allExtensions: List<DeferredRenderExtension> = extensions.distinct()
     private val extensions: List<DeferredRenderExtension>

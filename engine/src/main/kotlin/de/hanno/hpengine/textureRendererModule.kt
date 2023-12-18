@@ -50,8 +50,10 @@ val textureRendererModule = module {
             override val requiresClearSharedRenderTarget = true
 
             override fun render(renderState: RenderState) {
-                graphicsApi.clearColor(1f, 0f, 0f, 1f)
-                drawToQuad(texture = texture)
+                texture?.let { texture ->
+                    graphicsApi.clearColor(1f, 0f, 0f, 1f)
+                    drawToQuad(texture = texture)
+                }
             }
         }
     }

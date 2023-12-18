@@ -1,26 +1,20 @@
 package de.hanno.hpengine.graphics.editor
 
-import InternalTextureFormat.RGBA16F
+import InternalTextureFormat.RGB8
 import com.artemis.BaseSystem
 import com.artemis.ComponentManager
 import com.artemis.World
-import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.TransformComponent
-import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.rendertarget.SharedDepthBuffer
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.fps.FPSCounter
-import de.hanno.hpengine.graphics.constants.MinFilter
-import de.hanno.hpengine.graphics.constants.TextureFilterConfig
-import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
-import de.hanno.hpengine.graphics.constants.Facing
+import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.select.*
 import de.hanno.hpengine.graphics.output.DebugOutput
@@ -29,7 +23,8 @@ import de.hanno.hpengine.graphics.output.FinalOutputImpl
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
-import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.model.ModelSystem
@@ -52,12 +47,10 @@ data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
 @Single(binds = [BaseSystem::class, RenderSystem::class])
 class ImGuiEditor(
     private val graphicsApi: GraphicsApi,
-    private val renderStateContext: RenderStateContext,
     internal val window: Window,
     internal val textureManager: TextureManagerBaseSystem,
     internal val debugOutput: DebugOutput,
     internal val config: Config,
-    internal val sharedDepthBuffer: SharedDepthBuffer,
     internal val addResourceContext: AddResourceContext,
     internal val fpsCounter: FPSCounter,
     internal val editorExtensions: List<ImGuiEditorExtension>,
@@ -66,6 +59,7 @@ class ImGuiEditor(
     internal val gpuProfiler: GPUProfiler,
     internal val renderSystemsConfig: Lazy<RenderSystemsConfig>,
     internal val renderManager: Lazy<RenderManager>,
+    internal val programManager: ProgramManager,
     _editorExtensions: List<EditorExtension>,
 ) : BaseSystem(), PrimaryRenderer {
     override val priority: Int get() = 100
@@ -83,6 +77,26 @@ class ImGuiEditor(
             }
         }
 
+    private val textureRenderTarget = RenderTarget2D(
+        graphicsApi,
+        RenderTargetImpl(
+            graphicsApi,
+            OpenGLFrameBuffer(graphicsApi, null),
+            1920,
+            1080,
+            listOf(
+                ColorAttachmentDefinition("Color", RGB8, TextureFilterConfig(MinFilter.LINEAR))
+            ).toTextures(graphicsApi, config.width, config.height),
+            "Dummy Texture Target",
+        )
+    )
+   private val simpleTextureRenderer = SimpleTextureRenderer(
+        graphicsApi,
+        config,
+        null,
+        programManager,
+        window.frontBuffer
+    )
 
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     override val supportsSingleStep: Boolean get() = false
@@ -98,12 +112,13 @@ class ImGuiEditor(
             1920,
             1080,
             listOf(
-                ColorAttachmentDefinition("Color", RGBA16F, TextureFilterConfig(MinFilter.LINEAR))
+                ColorAttachmentDefinition("Color", RGB8, TextureFilterConfig(MinFilter.LINEAR))
             ).toTextures(graphicsApi, config.width, config.height),
             "Final Editor Image",
         )
     )
     override val finalOutput: FinalOutput = FinalOutputImpl(renderTarget.textures.first(), 0, this)
+
     var selection: Selection? = null
     fun selectOrUnselect(newSelection: Selection) {
         selection = if (selection == newSelection) null else newSelection
@@ -123,8 +138,6 @@ class ImGuiEditor(
                     .map { TextureOutputSelection(it.key, it.value as Texture2D) } +
                 textureManager.textures.filterValues { it is Texture2D }
                     .map { TextureOutputSelection(it.key, it.value as Texture2D) }
-
-    val currentOutputTexture: TextureOutputSelection get() = textureOutputOptions[output.get()]
 
     lateinit var artemisWorld: World
 
@@ -187,6 +200,11 @@ class ImGuiEditor(
             }
         }
         graphicsApi.polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
+
+        if(debugOutput.texture2D != null) {
+            textureRenderTarget.use(false)
+            simpleTextureRenderer.drawToQuad(debugOutput.texture2D!!)
+        }
         renderTarget.use(true)
         imGuiImplGlfw.newFrame(renderTarget.width, renderTarget.height)
 
@@ -200,9 +218,6 @@ class ImGuiEditor(
                     showGizmo(
                         viewMatrixAsBuffer = camera.viewMatrixBuffer,
                         projectionMatrixAsBuffer = camera.projectionMatrixBuffer,
-                        fovY = camera.fov,
-                        near = camera.near,
-                        far = camera.far,
                         editorCameraInputSystem = artemisWorld.getSystem(EditorCameraInputSystem::class.java),
                         windowWidth = screenWidth,
                         windowHeight = screenHeight,
@@ -212,9 +227,7 @@ class ImGuiEditor(
                         windowPositionY = 0f,
                         panelPositionX = leftPanelWidth,
                         panelPositionY = leftPanelYOffset,
-                        transform = it.transform,
-                        viewMatrix = artemisWorld.getSystem(TagManager::class.java).getEntity(primaryCameraTag)
-                            .getComponent(TransformComponent::class.java).transform
+                        transform = it.transform
                     )
                 }
             }
@@ -228,15 +241,7 @@ class ImGuiEditor(
 
             graphicsApi.run {
                 profiled("rightPanel") {
-                    rightPanel(
-                        screenWidth,
-                        rightPanelWidth,
-                        screenHeight,
-                        editorConfig,
-                        renderSystemsConfig.value,
-                        renderManager.value,
-                        extensions,
-                    )
+                    rightPanel(screenWidth, rightPanelWidth, screenHeight, editorConfig, renderSystemsConfig.value, renderManager.value, extensions)
                 }
             }
 
@@ -277,10 +282,8 @@ class ImGuiEditor(
             window("Main", windowFlags) {
                 ImGui.popStyleVar()
 
-                // TODO: Would be nice when this worked, but it fails when texture alpha channels are
-                // used, especially when they are used for something else than traditional alpha
                 ImGui.image(
-                    primaryRenderer.finalOutput.texture2D.id,
+                    debugOutput.texture2D?.let { textureRenderTarget.textures.first().id } ?: primaryRenderer.finalOutput.texture2D.id,
                     screenWidth,
                     screenHeight,
                     0f,

@@ -16,15 +16,18 @@ import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
+import de.hanno.hpengine.graphics.shader.define.Define
+import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.joml.Vector2f
 
 open class SimpleTextureRenderer(
     protected val graphicsApi: GraphicsApi,
     config: Config,
-    var texture: Texture2D,
+    var texture: Texture2D?,
     private val programManager: ProgramManager,
     private val frontBuffer: FrontBufferTarget,
+    private val ignoreAlpha: Boolean = false,
 ) : RenderSystem {
     private val fullscreenBuffer = graphicsApi.run { QuadVertexBuffer(graphicsApi) }
     val sixDebugBuffers: List<VertexBuffer> = graphicsApi.run {
@@ -46,28 +49,34 @@ open class SimpleTextureRenderer(
 
     private val renderToQuadProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/fullscreen_quad_vertex.glsl")),
-        FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
+        FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl")),
+        Defines(Define("IGNORE_ALPHA", ignoreAlpha)),
     )
 
     val debugFrameProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/quarterscreen_quad_vertex.glsl")),
-        FileBasedCodeSource(config.engineDir.resolve("shaders/debugframe_fragment.glsl"))
+        FileBasedCodeSource(config.engineDir.resolve("shaders/debugframe_fragment.glsl")),
+        Defines(Define("IGNORE_ALPHA", ignoreAlpha)),
     )
 
-    open var finalImage = texture.id
+    open var finalImage = texture?.id
 
     override fun render(renderState: RenderState) {
-        drawToQuad(texture = finalImage)
+        finalImage?.let { finalImage ->
+            drawToQuad(texture = finalImage)
+        }
     }
 
     fun drawToQuad(
-        texture: Int = finalImage,
+        texture: Int? = finalImage,
         buffer: VertexBuffer = fullscreenBuffer,
         program: Program<Uniforms> = renderToQuadProgram,
         factorForDebugRendering: Float = 1f,
         mipMapLevel: Int = 0,
     ) {
-        draw(texture, buffer, program, factorForDebugRendering, mipMapLevel)
+        texture?.let { texture ->
+            draw(texture, buffer, program, factorForDebugRendering, mipMapLevel)
+        }
     }
 
     fun drawToQuad(

@@ -382,7 +382,7 @@ class ReflectionProbeRenderExtension(
 
                 profiled("ReflectionProbe entity rendering") {
                     for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
-                        setTextureUniforms(pointCubeShadowPassProgram, graphicsApi, batch.material.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(graphicsApi, batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch
                                 .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill

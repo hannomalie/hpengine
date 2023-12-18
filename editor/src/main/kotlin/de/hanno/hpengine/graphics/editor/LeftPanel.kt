@@ -12,6 +12,13 @@ import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import de.hanno.hpengine.graphics.editor.select.*
+import imgui.flag.ImGuiWindowFlags.*
+
+private const val leftPanelWindowFlags =
+    NoCollapse or
+    NoTitleBar or
+    NoResize or
+    HorizontalScrollbar
 
 fun ImGuiEditor.leftPanel(
     leftPanelYOffset: Float,
@@ -20,8 +27,9 @@ fun ImGuiEditor.leftPanel(
 ) {
     ImGui.setNextWindowPos(0f, leftPanelYOffset)
     ImGui.setNextWindowSize(leftPanelWidth, screenHeight - leftPanelYOffset)
+    ImGui.setNextWindowBgAlpha(1.0f)
     de.hanno.hpengine.graphics.imgui.dsl.ImGui.run {
-        window("Scene", ImGuiWindowFlags.NoCollapse or ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.NoResize or ImGuiWindowFlags.AlwaysVerticalScrollbar or ImGuiWindowFlags.AlwaysHorizontalScrollbar) {
+        window("Scene", leftPanelWindowFlags) {
             ImGui.setNextItemOpen(true)
             treeNode("Scene") {
 

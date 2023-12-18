@@ -6,6 +6,13 @@ import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import imgui.ImGui
 import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiWindowFlags
+import imgui.flag.ImGuiWindowFlags.*
+
+private const val rightPanelFlags =
+    NoCollapse or
+    NoResize or
+    NoTitleBar or
+    HorizontalScrollbar
 
 fun ImGuiEditor.rightPanel(
     screenWidth: Float,
@@ -20,8 +27,9 @@ fun ImGuiEditor.rightPanel(
     ImGui.setNextWindowPos(screenWidth * (1.0f - rightPanelWidthPercentage), 0f)
     ImGui.setNextWindowSize(rightPanelWidth, screenHeight)
     ImGui.getStyle().windowMenuButtonPosition = ImGuiDir.None
+    ImGui.setNextWindowBgAlpha(1.0f)
     de.hanno.hpengine.graphics.imgui.dsl.ImGui.run {
-        window("Right panel", ImGuiWindowFlags.NoCollapse or ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.AlwaysVerticalScrollbar or ImGuiWindowFlags.AlwaysHorizontalScrollbar) {
+        window("Right panel", rightPanelFlags) {
             tabBar("Foo") {
 
                 tab("Entity") {

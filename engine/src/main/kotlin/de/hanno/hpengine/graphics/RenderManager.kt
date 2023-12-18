@@ -2,16 +2,12 @@ package de.hanno.hpengine.graphics
 
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.output.DebugOutput
-import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.lifecycle.UpdateCycle
-import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.system.Extractor
 import org.koin.core.annotation.Single
 import java.util.concurrent.atomic.AtomicBoolean
@@ -23,22 +19,11 @@ class RenderManager(
     private val window: Window,
     programManager: ProgramManager,
     private val renderStateContext: RenderStateContext,
-    private val debugOutput: DebugOutput,
     private val renderSystemsConfig: RenderSystemsConfig,
     private val gpuProfiler: GPUProfiler,
     private val updateCycle: UpdateCycle,
 ) : BaseSystem() {
 
-    private val debugBuffer = QuadVertexBuffer(graphicsApi, QuadVertexBuffer.quarterScreenVertices)
-
-    private val drawToQuadProgram = programManager.getProgram(
-        FileBasedCodeSource(config.engineDir.resolve("shaders/fullscreen_quad_vertex.glsl")),
-        FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
-    )
-    private val drawToDebugQuadProgram = programManager.getProgram(
-        FileBasedCodeSource(config.engineDir.resolve("shaders/quarterscreen_quad_vertex.glsl")),
-        FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl"))
-    )
     var renderMode: RenderMode = RenderMode.Normal
 
     private val textureRenderer = SimpleTextureRenderer(
@@ -111,14 +96,6 @@ class RenderManager(
                                 finalOutput.texture2D,
                                 mipMapLevel = finalOutput.mipmapLevel
                             )
-                            debugOutput.texture2D?.let { debugOutputTexture ->
-                                textureRenderer.drawToQuad(
-                                    debugOutputTexture,
-                                    buffer = debugBuffer,
-                                    program = drawToDebugQuadProgram,
-                                    mipMapLevel = debugOutput.mipmapLevel
-                                )
-                            }
                         }
 
                         profiled("checkCommandSyncs") {
@@ -136,6 +113,7 @@ class RenderManager(
                         }
                         profiled("swapBuffers") {
                             window.swapBuffers()
+                            window.closeIfReqeusted()
                         }
                     }
                 } catch (e: Exception) {

@@ -48,6 +48,11 @@ interface ProgramManager {
 
         return getProgram(vertexShaderSource, fragmentShaderSource, null, Defines(), Uniforms.Empty)
     }
+    fun getProgram(vertexShaderSource: CodeSource,
+                   fragmentShaderSource: CodeSource?, defines: Defines): Program<Uniforms> {
+
+        return getProgram(vertexShaderSource, fragmentShaderSource, null, defines, Uniforms.Empty)
+    }
 
     val heightMappingFirstPassProgramDescription: ProgramDescription
     fun List<UniformDelegate<*>>.toUniformDeclaration(): String

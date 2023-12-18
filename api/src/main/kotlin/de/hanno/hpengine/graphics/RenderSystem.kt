@@ -31,8 +31,8 @@ class RenderSystemsConfig(allRenderSystems: List<RenderSystem>) {
     private val renderSystemsEnabled = allRenderSystems.associateWith { true }.toMutableMap()
 
     init {
-        primaryRenderers.filterNot { it == primaryRenderer }.forEach {
-            it.enabled = false
+        primaryRenderers.forEach {
+            it.enabled = it != primaryRenderer
         }
     }
     var renderSystems = nonPrimaryRenderers
