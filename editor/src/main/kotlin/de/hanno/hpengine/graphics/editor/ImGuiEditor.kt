@@ -1,10 +1,15 @@
 package de.hanno.hpengine.graphics.editor
 
 import InternalTextureFormat.RGB8
+import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentManager
+import com.artemis.ComponentMapper
 import com.artemis.World
+import com.artemis.annotations.All
 import com.artemis.utils.Bag
+import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
@@ -44,7 +49,8 @@ interface ImGuiEditorExtension {
 enum class SelectionMode { Entity, Mesh; }
 data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
 
-@Single(binds = [BaseSystem::class, RenderSystem::class])
+@Single(binds = [BaseSystem::class, BaseEntitySystem::class, RenderSystem::class])
+@All(EditorCameraInputComponent::class)
 class ImGuiEditor(
     private val graphicsApi: GraphicsApi,
     internal val window: Window,
@@ -60,14 +66,16 @@ class ImGuiEditor(
     internal val renderSystemsConfig: Lazy<RenderSystemsConfig>,
     internal val renderManager: Lazy<RenderManager>,
     internal val programManager: ProgramManager,
+    internal val input: EditorInput,
     _editorExtensions: List<EditorExtension>,
-) : BaseSystem(), PrimaryRenderer {
-    override val priority: Int get() = 100
+) : BaseEntitySystem(), PrimaryRenderer {
+    lateinit var editorCameraInputComponentMapper: ComponentMapper<EditorCameraInputComponent>
+    override val renderPriority: Int get() = 100
     private var _primaryRenderer: PrimaryRenderer? = null
     internal var primaryRenderer
         get() = _primaryRenderer ?: renderSystemsConfig.value.primaryRenderers.filterNot {
             it == this
-        }.maxByOrNull { it.priority }!!
+        }.maxByOrNull { it.renderPriority }!!
         set(value) {
             _primaryRenderer = value
             renderSystemsConfig.value.run {
@@ -90,7 +98,7 @@ class ImGuiEditor(
             "Dummy Texture Target",
         )
     )
-   private val simpleTextureRenderer = SimpleTextureRenderer(
+    private val simpleTextureRenderer = SimpleTextureRenderer(
         graphicsApi,
         config,
         null,
@@ -132,7 +140,12 @@ class ImGuiEditor(
         get() = graphicsApi.registeredRenderTargets.flatMap { target ->
             target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
                 TextureOutputSelection(target.name + "[$index]", texture)
-            } + ((target.frameBuffer.depthBuffer?.texture as? Texture2D)?.let { TextureOutputSelection(target.name + "[depth]", it) })
+            } + ((target.frameBuffer.depthBuffer?.texture as? Texture2D)?.let {
+                TextureOutputSelection(
+                    target.name + "[depth]",
+                    it
+                )
+            })
         }.filterNotNull() +
                 textureManager.texturesForDebugOutput.filterValues { it is Texture2D }
                     .map { TextureOutputSelection(it.key, it.value as Texture2D) } +
@@ -162,7 +175,7 @@ class ImGuiEditor(
         }
     }
 
-    override fun processSystem() { }
+    override fun processSystem() {}
     override fun render(renderState: RenderState) {
         if (!config.debug.isEditorOverlay) return
 
@@ -181,7 +194,7 @@ class ImGuiEditor(
 
 
         entityClickListener.consumeClick { entityClicked ->
-            if(
+            if (
                 entityClicked.coordinates.x > leftPanelWidth &&
                 entityClicked.coordinates.x < (leftPanelWidth + midPanelWidth)
             ) {
@@ -192,16 +205,18 @@ class ImGuiEditor(
                 selection = when (editorConfig.selectionMode) {
                     SelectionMode.Mesh -> {
                         val modelComponent = components.filterIsInstance<ModelComponent>().first()
-                        val model = artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
+                        val model =
+                            artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
                         MeshSelection(entityId, model.meshes[meshIndex], modelComponent, components)
                     }
+
                     else -> SimpleEntitySelection(entityId, components)
                 }
             }
         }
         graphicsApi.polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
 
-        if(debugOutput.texture2D != null) {
+        if (debugOutput.texture2D != null) {
             textureRenderTarget.use(false)
             simpleTextureRenderer.drawToQuad(debugOutput.texture2D!!)
         }
@@ -212,36 +227,51 @@ class ImGuiEditor(
 
             ImGui.newFrame()
 
-            (selection as? EntitySelection)?.let { entitySelection ->
-                artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
-                    val camera = renderState[primaryCameraStateHolder.camera]
-                    showGizmo(
-                        viewMatrixAsBuffer = camera.viewMatrixBuffer,
-                        projectionMatrixAsBuffer = camera.projectionMatrixBuffer,
-                        editorCameraInputSystem = artemisWorld.getSystem(EditorCameraInputSystem::class.java),
-                        windowWidth = screenWidth,
-                        windowHeight = screenHeight,
-                        panelWidth = midPanelWidth,
-                        panelHeight = midPanelHeight,
-                        windowPositionX = 0f,
-                        windowPositionY = 0f,
-                        panelPositionX = leftPanelWidth,
-                        panelPositionY = leftPanelYOffset,
-                        transform = it.transform
-                    )
+            if(!input.prioritizeGameInput) {
+                (selection as? EntitySelection)?.let { entitySelection ->
+                    artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
+                        val camera = renderState[primaryCameraStateHolder.camera]
+                        showGizmo(
+                            viewMatrixAsBuffer = camera.viewMatrixBuffer,
+                            projectionMatrixAsBuffer = camera.projectionMatrixBuffer,
+                            editorCameraInputSystem = artemisWorld.getSystem(EditorCameraInputSystem::class.java),
+                            windowWidth = screenWidth,
+                            windowHeight = screenHeight,
+                            panelWidth = midPanelWidth,
+                            panelHeight = midPanelHeight,
+                            windowPositionX = 0f,
+                            windowPositionY = 0f,
+                            panelPositionX = leftPanelWidth,
+                            panelPositionY = leftPanelYOffset,
+                            transform = it.transform
+                        )
+                    }
                 }
             }
 
             background(screenWidth, screenHeight)
-            menu(screenWidth, screenHeight)
 
-            if (::artemisWorld.isInitialized) {
+            if(!input.prioritizeGameInput) {
+                menu(screenWidth, screenHeight)
+            }
+
+            if (::artemisWorld.isInitialized && !input.prioritizeGameInput) {
                 leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
             }
 
-            graphicsApi.run {
-                profiled("rightPanel") {
-                    rightPanel(screenWidth, rightPanelWidth, screenHeight, editorConfig, renderSystemsConfig.value, renderManager.value, extensions)
+            if(!input.prioritizeGameInput) {
+                graphicsApi.run {
+                    profiled("rightPanel") {
+                        rightPanel(
+                            screenWidth,
+                            rightPanelWidth,
+                            screenHeight,
+                            editorConfig,
+                            renderSystemsConfig.value,
+                            renderManager.value,
+                            extensions
+                        )
+                    }
                 }
             }
 
@@ -283,7 +313,8 @@ class ImGuiEditor(
                 ImGui.popStyleVar()
 
                 ImGui.image(
-                    debugOutput.texture2D?.let { textureRenderTarget.textures.first().id } ?: primaryRenderer.finalOutput.texture2D.id,
+                    debugOutput.texture2D?.let { textureRenderTarget.textures.first().id }
+                        ?: primaryRenderer.finalOutput.texture2D.id,
                     screenWidth,
                     screenHeight,
                     0f,
@@ -291,6 +322,8 @@ class ImGuiEditor(
                     1f,
                     0f,
                 )
+
+                input.swallowInput = !ImGui.isItemHovered()
             }
         }
     }

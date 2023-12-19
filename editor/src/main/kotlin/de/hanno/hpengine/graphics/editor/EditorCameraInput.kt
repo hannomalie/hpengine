@@ -3,12 +3,11 @@ package de.hanno.hpengine.graphics.editor
 import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
-import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.component.CameraComponent
-import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor
@@ -17,7 +16,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
-
+import kotlin.math.max
 
 @Singleton
 class EditorCameraInputComponent: Component() {
@@ -44,19 +43,18 @@ class EditorCameraInputComponent: Component() {
     //    TODO: Make this adjustable through editor
     val cameraSpeed: Float = 1.0f
 
-    var cameraControlsEnabled = true
+    var prioritizeGameInput = false
 }
 
 @Single(binds = [BaseSystem::class, EditorCameraInputSystem::class])
 class EditorCameraInputSystem(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val input: Input,
 ): BaseSystem(), Extractor {
 
     lateinit var editorCameraInputComponent: EditorCameraInputComponent
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var cameraComponentMapper: ComponentMapper<CameraComponent>
-    @Wire
-    lateinit var input: Input
     lateinit var tagManager: TagManager
 
     override fun processSystem() {
@@ -67,56 +65,50 @@ class EditorCameraInputSystem(
         val deltaSeconds =  world.delta
 
         editorCameraInputComponent.run {
+            var turbo = 1f
 
-            if(input.wasKeyReleasedLastFrame(GLFW.GLFW_KEY_T) && input.isKeyPressed(GLFW.GLFW_KEY_T)) {
-                cameraControlsEnabled = !cameraControlsEnabled
+            if (input.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+                turbo = 3f
             }
-            if(cameraControlsEnabled) {
-                var turbo = 1f
 
-                if (input.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
-                    turbo = 3f
-                }
+            val rotationAmount = 10.1f * turbo * deltaSeconds * rotationDelta * cameraSpeed
+            if (input.isMousePressed(0)) {
+                val pitchAmount = Math.toRadians((input.dySmooth * rotationAmount % 360).toDouble())
+                pitchAccel = max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()
+                pitchAccel = max(0f, pitchAccel * 0.9f)
 
-                val rotationAmount = 10.1f * turbo * deltaSeconds * rotationDelta * cameraSpeed
-                if (input.isMousePressed(0)) {
-                    val pitchAmount = Math.toRadians((input.dySmooth * rotationAmount % 360).toDouble())
-                    pitchAccel = Math.max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()
-                    pitchAccel = Math.max(0f, pitchAccel * 0.9f)
+                val yawAmount = Math.toRadians((input.dxSmooth * rotationAmount % 360).toDouble())
+                yawAccel = max(2 * Math.PI, yawAccel + yawAmount).toFloat()
+                yawAccel = max(0f, yawAccel * 0.9f)
 
-                    val yawAmount = Math.toRadians((input.dxSmooth * rotationAmount % 360).toDouble())
-                    yawAccel = Math.max(2 * Math.PI, yawAccel + yawAmount).toFloat()
-                    yawAccel = Math.max(0f, yawAccel * 0.9f)
+                yaw += yawAmount.toFloat()
+                pitch += pitchAmount.toFloat()
 
-                    yaw += yawAmount.toFloat()
-                    pitch += pitchAmount.toFloat()
+                val oldTranslation = transform.getTranslation(Vector3f())
+                transform.setTranslation(Vector3f(0f, 0f, 0f))
+                transform.rotateLocalY((-yawAmount).toFloat())
+                transform.rotateX(pitchAmount.toFloat())
+                transform.translateLocal(oldTranslation)
+            }
 
-                    val oldTranslation = transform.getTranslation(Vector3f())
-                    transform.setTranslation(Vector3f(0f, 0f, 0f))
-                    transform.rotateLocalY((-yawAmount).toFloat())
-                    transform.rotateX(pitchAmount.toFloat())
-                    transform.translateLocal(oldTranslation)
-                }
-
-                val moveAmount = turbo * posDelta * deltaSeconds * cameraSpeed
-                if (input.isKeyPressed(GLFW.GLFW_KEY_W)) {
-                    transform.translate(Vector3f(0f, 0f, -moveAmount))
-                }
-                if (input.isKeyPressed(GLFW.GLFW_KEY_S)) {
-                    transform.translate(Vector3f(0f, 0f, moveAmount))
-                }
-                if (input.isKeyPressed(GLFW.GLFW_KEY_A)) {
-                    transform.translate(Vector3f(-moveAmount, 0f, 0f))
-                }
-                if (input.isKeyPressed(GLFW.GLFW_KEY_D)) {
-                    transform.translate(Vector3f(moveAmount, 0f, 0f))
-                }
-                if (input.isKeyPressed(GLFW.GLFW_KEY_Q)) {
-                    transform.translate(Vector3f(0f, -moveAmount, 0f))
-                }
-                if (input.isKeyPressed(GLFW.GLFW_KEY_E)) {
-                    transform.translate(Vector3f(0f, moveAmount, 0f))
-                }
+            val moveAmount = turbo * posDelta * deltaSeconds * cameraSpeed
+            if (input.isKeyPressed(GLFW.GLFW_KEY_W)) {
+                transform.translate(Vector3f(0f, 0f, -moveAmount))
+            }
+            if (input.isKeyPressed(GLFW.GLFW_KEY_S)) {
+                transform.translate(Vector3f(0f, 0f, moveAmount))
+            }
+            if (input.isKeyPressed(GLFW.GLFW_KEY_A)) {
+                transform.translate(Vector3f(-moveAmount, 0f, 0f))
+            }
+            if (input.isKeyPressed(GLFW.GLFW_KEY_D)) {
+                transform.translate(Vector3f(moveAmount, 0f, 0f))
+            }
+            if (input.isKeyPressed(GLFW.GLFW_KEY_Q)) {
+                transform.translate(Vector3f(0f, -moveAmount, 0f))
+            }
+            if (input.isKeyPressed(GLFW.GLFW_KEY_E)) {
+                transform.translate(Vector3f(0f, moveAmount, 0f))
             }
         }
     }

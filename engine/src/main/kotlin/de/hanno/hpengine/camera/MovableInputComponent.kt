@@ -4,13 +4,14 @@ import com.artemis.BaseEntitySystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
-import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.input.Input
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
+import kotlin.math.max
 
 @All(MovableInputComponent::class, TransformComponent::class)
 class MovableInputComponentComponentSystem: BaseEntitySystem() {
@@ -47,12 +48,12 @@ class MovableInputComponentComponentSystem: BaseEntitySystem() {
                 val rotationAmount = 10.1f * turbo * deltaSeconds * rotationDelta * cameraSpeed
                 if (input.isMousePressed(0)) {
                     val pitchAmount = Math.toRadians((input.dySmooth * rotationAmount % 360).toDouble())
-                    pitchAccel = Math.max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()
-                    pitchAccel = Math.max(0f, pitchAccel * 0.9f)
+                    pitchAccel = max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()
+                    pitchAccel = max(0f, pitchAccel * 0.9f)
 
                     val yawAmount = Math.toRadians((input.dxSmooth * rotationAmount % 360).toDouble())
-                    yawAccel = Math.max(2 * Math.PI, yawAccel + yawAmount).toFloat()
-                    yawAccel = Math.max(0f, yawAccel * 0.9f)
+                    yawAccel = max(2 * Math.PI, yawAccel + yawAmount).toFloat()
+                    yawAccel = max(0f, yawAccel * 0.9f)
 
                     yaw += yawAmount.toFloat()
                     pitch += pitchAmount.toFloat()

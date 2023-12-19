@@ -94,9 +94,9 @@ fun showGizmo(
     }
 
     if (ImGuizmo.isUsing()) {
-        editorCameraInputSystem.editorCameraInputComponent.cameraControlsEnabled = false
+        editorCameraInputSystem.editorCameraInputComponent.prioritizeGameInput = false
     } else {
-        editorCameraInputSystem.editorCameraInputComponent.cameraControlsEnabled = true
+        editorCameraInputSystem.editorCameraInputComponent.prioritizeGameInput = true
     }
 
     if (showDebugPanel) {

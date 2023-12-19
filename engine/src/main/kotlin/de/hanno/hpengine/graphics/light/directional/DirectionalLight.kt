@@ -1,23 +1,22 @@
 package de.hanno.hpengine.graphics.light.directional
 
-import DirectionalLightStateImpl.Companion.type
-import com.artemis.*
+import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
+import com.artemis.ComponentMapper
+import com.artemis.World
 import com.artemis.annotations.All
 import com.artemis.annotations.Wire
-import de.hanno.hpengine.WorldPopulator
-import de.hanno.hpengine.cycle.CycleSystem
-import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.input.Input
-import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.forFirstEntityIfPresent
 import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
-import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.buffer.typed
+import de.hanno.hpengine.cycle.CycleSystem
+import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.input.Input
+import de.hanno.hpengine.system.Extractor
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -31,9 +30,8 @@ import struktgen.api.forIndex
 @All(DirectionalLightComponent::class, TransformComponent::class)
 class DirectionalLightSystem(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
+    private val input: Input,
 ) : BaseEntitySystem(), Extractor, WorldPopulator {
-    @Wire
-    lateinit var input: Input
     lateinit var cycleSystem: CycleSystem
     lateinit var directionalLightComponentMapper: ComponentMapper<DirectionalLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>

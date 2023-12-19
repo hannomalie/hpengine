@@ -17,7 +17,7 @@ interface RenderSystem: Updatable {
 
 interface PrimaryRenderer: RenderSystem {
     val finalOutput: FinalOutput
-    val priority: Int get() = -1
+    val renderPriority: Int get() = -1
 }
 
 @Single
@@ -25,7 +25,7 @@ class RenderSystemsConfig(allRenderSystems: List<RenderSystem>) {
     val allRenderSystems = allRenderSystems.distinct()
 
     val nonPrimaryRenderers = allRenderSystems.distinct().filterNot { it is PrimaryRenderer }
-    val primaryRenderers = allRenderSystems.distinct().filterIsInstance<PrimaryRenderer>().sortedByDescending { it.priority }
+    val primaryRenderers = allRenderSystems.distinct().filterIsInstance<PrimaryRenderer>().sortedByDescending { it.renderPriority }
     var primaryRenderer = primaryRenderers.first()
 
     private val renderSystemsEnabled = allRenderSystems.associateWith { true }.toMutableMap()

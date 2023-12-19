@@ -48,8 +48,6 @@ class Engine(
                     instantiatorStrategy = DefaultInstantiatorStrategy(StdInstantiatorStrategy())
                 }
             )
-            .register(input)
-            .register(config)
     ).apply {
         getSystem(EntityLinkManager::class.java).apply {
 //            register(InstanceComponent::class.java, modelSystem) // TODO: Figure out what this did

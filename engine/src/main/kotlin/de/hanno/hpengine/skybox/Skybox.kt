@@ -37,13 +37,11 @@ class SkyBoxComponent : Component()
 class SkyBoxSystem(
     private val materialSystem: MaterialSystem,
     private val skyBoxStateHolder: SkyBoxStateHolder,
+    private val config: Config,
 ) : BaseEntitySystem(), WorldPopulator, Extractor {
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
     lateinit var tagManager: TagManager
-
-    @Wire
-    lateinit var config: Config
 
     override fun processSystem() {
         if (!tagManager.isRegistered(primaryCameraTag)) return
