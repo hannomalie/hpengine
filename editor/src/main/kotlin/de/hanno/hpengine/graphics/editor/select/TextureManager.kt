@@ -20,12 +20,12 @@ class TextureManagerEditorExtension(
     override fun ImGuiEditor.renderLeftPanelTopLevelNode() {
         Window.treeNode("Textures") {
             text("Manager") {
-                selectOrUnselect(TextureManagerSelection(textureManagerBaseSystem))
+                selection = TextureManagerSelection(textureManagerBaseSystem)
             }
             treeNode("Textures") {
                 textureManagerBaseSystem.textures.entries.sortedBy { it.key }.forEach { (key, texture) ->
                     text(key.takeLast(15)) {
-                        selectOrUnselect(TextureSelection(key, texture))
+                        selection = TextureSelection(key, texture)
                     }
                 }
             }

@@ -44,11 +44,12 @@ object Window {
 }
 
 @PublishedApi
-internal inline fun treeNodeImpl(label: String, block: TreeNode.() -> Unit) {
-    if(imgui.ImGui.treeNode(label)) {
+internal inline fun treeNodeImpl(label: String, block: TreeNode.() -> Unit): Boolean {
+    return if(imgui.ImGui.treeNode(label, label)) {
         TreeNode.block()
         imgui.ImGui.treePop()
-    }
+        true
+    } else false
 }
 object TreeNode {
     inline fun text(text: String, onclick: () -> Unit = { }) {

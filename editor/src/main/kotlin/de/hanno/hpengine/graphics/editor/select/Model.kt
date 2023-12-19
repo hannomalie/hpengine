@@ -13,6 +13,7 @@ import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import imgui.ImGui
+import imgui.flag.ImGuiCol
 import org.koin.core.annotation.Single
 
 data class ModelSelection(override val entity: Int, val modelComponent: ModelComponent, val model: Model<*>, override val components: Bag<Component>): EntitySelection {
@@ -20,6 +21,7 @@ data class ModelSelection(override val entity: Int, val modelComponent: ModelCom
     override fun openNextNode(currentSelection: Selection?) = when(currentSelection) {
         is ModelComponentSelection -> currentSelection.modelComponent == modelComponent
         is ModelSelection -> currentSelection.modelComponent == modelComponent
+        is MeshSelection -> currentSelection.modelComponent == modelComponent
         else -> false
     }
 }
@@ -67,14 +69,23 @@ class ModelComponentEditorExtension(
 
             ImGui.setNextItemOpen(selectionOrNull.openNextNode(currentSelection))
             TreeNode.text(componentName) {
-                selectOrUnselect(selectionOrNull)
+                selection = selectionOrNull
             }
             when (component) {
                 is ModelComponent -> {
                     TreeNode.treeNode("Meshes") {
                         modelSystem[component.modelComponentDescription]!!.meshes.forEach { mesh ->
+                            val popNeeded = (selection as? MeshSelection)?.let {
+                                if(it.mesh == mesh && it.entity == entity) {
+                                    ImGui.pushStyleColor(ImGuiCol.Text, 0f, 1f, 0f, 1f)
+                                    true
+                                } else false
+                            } ?: false
                             text(mesh.name) {
-                                selectOrUnselect(MeshSelection(entity, mesh, component, components))
+                                selection = MeshSelection(entity, mesh, component, components)
+                            }
+                            if(popNeeded) {
+                                ImGui.popStyleColor()
                             }
                         }
 

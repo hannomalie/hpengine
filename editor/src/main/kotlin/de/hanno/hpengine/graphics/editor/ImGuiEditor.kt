@@ -4,41 +4,42 @@ import InternalTextureFormat.RGB8
 import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentManager
-import com.artemis.ComponentMapper
 import com.artemis.World
 import com.artemis.annotations.All
 import com.artemis.utils.Bag
-import de.hanno.hpengine.artemis.forEachEntity
-import de.hanno.hpengine.artemis.getOrNull
-import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
-import de.hanno.hpengine.graphics.fps.FPSCounter
-import de.hanno.hpengine.graphics.rendertarget.*
-import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
-import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.RenderSystem
-import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.constants.Facing
+import de.hanno.hpengine.graphics.constants.MinFilter
+import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
-import de.hanno.hpengine.graphics.editor.select.*
-import de.hanno.hpengine.graphics.output.DebugOutput
+import de.hanno.hpengine.graphics.editor.select.EntitySelection
+import de.hanno.hpengine.graphics.editor.select.MeshSelection
+import de.hanno.hpengine.graphics.editor.select.Selection
+import de.hanno.hpengine.graphics.editor.select.SimpleEntitySelection
+import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.output.FinalOutputImpl
-import de.hanno.hpengine.graphics.texture.Texture2D
-import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
-import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
+import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
+import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
+import de.hanno.hpengine.graphics.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.ProgramManager
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.model.ModelSystem
+import de.hanno.hpengine.scene.AddResourceContext
 import imgui.ImGui
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
-import imgui.type.ImInt
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 
@@ -55,7 +56,6 @@ class ImGuiEditor(
     private val graphicsApi: GraphicsApi,
     internal val window: Window,
     internal val textureManager: TextureManagerBaseSystem,
-    internal val debugOutput: DebugOutput,
     internal val config: Config,
     internal val addResourceContext: AddResourceContext,
     internal val fpsCounter: FPSCounter,
@@ -67,44 +67,11 @@ class ImGuiEditor(
     internal val renderManager: Lazy<RenderManager>,
     internal val programManager: ProgramManager,
     internal val input: EditorInput,
+    internal val primaryRendererSelection: PrimaryRendererSelection,
+    internal val outputSelection: OutputSelection,
     _editorExtensions: List<EditorExtension>,
 ) : BaseEntitySystem(), PrimaryRenderer {
-    lateinit var editorCameraInputComponentMapper: ComponentMapper<EditorCameraInputComponent>
     override val renderPriority: Int get() = 100
-    private var _primaryRenderer: PrimaryRenderer? = null
-    internal var primaryRenderer
-        get() = _primaryRenderer ?: renderSystemsConfig.value.primaryRenderers.filterNot {
-            it == this
-        }.maxByOrNull { it.renderPriority }!!
-        set(value) {
-            _primaryRenderer = value
-            renderSystemsConfig.value.run {
-                primaryRenderers.forEach {
-                    it.enabled = it == value
-                }
-            }
-        }
-
-    private val textureRenderTarget = RenderTarget2D(
-        graphicsApi,
-        RenderTargetImpl(
-            graphicsApi,
-            OpenGLFrameBuffer(graphicsApi, null),
-            1920,
-            1080,
-            listOf(
-                ColorAttachmentDefinition("Color", RGB8, TextureFilterConfig(MinFilter.LINEAR))
-            ).toTextures(graphicsApi, config.width, config.height),
-            "Dummy Texture Target",
-        )
-    )
-    private val simpleTextureRenderer = SimpleTextureRenderer(
-        graphicsApi,
-        config,
-        null,
-        programManager,
-        window.frontBuffer
-    )
 
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     override val supportsSingleStep: Boolean get() = false
@@ -128,29 +95,9 @@ class ImGuiEditor(
     override val finalOutput: FinalOutput = FinalOutputImpl(renderTarget.textures.first(), 0, this)
 
     var selection: Selection? = null
-    fun selectOrUnselect(newSelection: Selection) {
-        selection = if (selection == newSelection) null else newSelection
-    }
-
-    val output = ImInt(-1)
-
-    data class TextureOutputSelection(val identifier: String, val texture: Texture2D)
-
-    val textureOutputOptions: List<TextureOutputSelection>
-        get() = graphicsApi.registeredRenderTargets.flatMap { target ->
-            target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
-                TextureOutputSelection(target.name + "[$index]", texture)
-            } + ((target.frameBuffer.depthBuffer?.texture as? Texture2D)?.let {
-                TextureOutputSelection(
-                    target.name + "[depth]",
-                    it
-                )
-            })
-        }.filterNotNull() +
-                textureManager.texturesForDebugOutput.filterValues { it is Texture2D }
-                    .map { TextureOutputSelection(it.key, it.value as Texture2D) } +
-                textureManager.textures.filterValues { it is Texture2D }
-                    .map { TextureOutputSelection(it.key, it.value as Texture2D) }
+        set(value) {
+            field = if (field == value) null else value
+        }
 
     lateinit var artemisWorld: World
 
@@ -216,10 +163,8 @@ class ImGuiEditor(
         }
         graphicsApi.polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
 
-        if (debugOutput.texture2D != null) {
-            textureRenderTarget.use(false)
-            simpleTextureRenderer.drawToQuad(debugOutput.texture2D!!)
-        }
+        outputSelection.draw()
+
         renderTarget.use(true)
         imGuiImplGlfw.newFrame(renderTarget.width, renderTarget.height)
 
@@ -227,7 +172,7 @@ class ImGuiEditor(
 
             ImGui.newFrame()
 
-            if(!input.prioritizeGameInput) {
+            if(renderPanels) {
                 (selection as? EntitySelection)?.let { entitySelection ->
                     artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
                         val camera = renderState[primaryCameraStateHolder.camera]
@@ -251,15 +196,15 @@ class ImGuiEditor(
 
             background(screenWidth, screenHeight)
 
-            if(!input.prioritizeGameInput) {
+            if(renderPanels) {
                 menu(screenWidth, screenHeight)
             }
 
-            if (::artemisWorld.isInitialized && !input.prioritizeGameInput) {
+            if (::artemisWorld.isInitialized && renderPanels) {
                 leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
             }
 
-            if(!input.prioritizeGameInput) {
+            if(renderPanels) {
                 graphicsApi.run {
                     profiled("rightPanel") {
                         rightPanel(
@@ -297,6 +242,8 @@ class ImGuiEditor(
         }
     }
 
+    private val renderPanels get() = !input.prioritizeGameInput
+
     private fun background(screenWidth: Float, screenHeight: Float) {
         val windowFlags =
             NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
@@ -313,8 +260,7 @@ class ImGuiEditor(
                 ImGui.popStyleVar()
 
                 ImGui.image(
-                    debugOutput.texture2D?.let { textureRenderTarget.textures.first().id }
-                        ?: primaryRenderer.finalOutput.texture2D.id,
+                    outputSelection.textureOrNull ?: primaryRendererSelection.primaryRenderer.finalOutput.texture2D.id,
                     screenWidth,
                     screenHeight,
                     0f,

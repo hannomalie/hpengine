@@ -35,7 +35,7 @@ class MaterialEditorExtension(
         Window.treeNode("Materials") {
             materialSystem.materials.sortedBy { it.name }.forEach { material ->
                 text(material.name) {
-                    selectOrUnselect(MaterialSelection(material))
+                    selection = MaterialSelection(material)
                 }
             }
         }

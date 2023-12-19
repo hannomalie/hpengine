@@ -20,9 +20,10 @@ interface EditorExtension {
             else -> {
                 val componentName = component.javaClass.simpleName
 
-                ImGui.setNextItemOpen(selectionOrNull.openNextNode(currentSelection))
+                val nextNodeOpen = selectionOrNull.openNextNode(currentSelection)
+                ImGui.setNextItemOpen(nextNodeOpen)
                 TreeNode.text(componentName) {
-                    selectOrUnselect(selectionOrNull)
+                    selection = selectionOrNull
                 }
                 true
             }

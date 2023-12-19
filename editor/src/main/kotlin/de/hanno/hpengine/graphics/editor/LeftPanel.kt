@@ -9,7 +9,6 @@ import de.hanno.hpengine.artemis.forEach
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import imgui.ImGui
-import imgui.flag.ImGuiWindowFlags
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import de.hanno.hpengine.graphics.editor.select.*
 import imgui.flag.ImGuiWindowFlags.*
@@ -41,18 +40,25 @@ fun ImGuiEditor.leftPanel(
                     val fillBag = Bag<Component>()
                     val components = componentManager.getComponentsFor(entityId, fillBag)
 
-                    // TODO: Cover case where already opened nodes should remain open
                     when(val selection = selection) {
-                        is EntitySelection -> ImGui.setNextItemOpen(selection.entity == entityId)
+                        is EntitySelection -> {
+                            if(selection.entity == entityId) {
+                                ImGui.setNextItemOpen(true)
+                            }
+                        }
                     }
 
                     val tagManager = artemisWorld.getSystem(TagManager::class.java)
                     val nameComponentName = components.firstIsInstanceOrNull<NameComponent>()?.name
 
                     val nodeLabel = nameComponentName?: (tagManager.getTag(entityId) ?: "Entity $entityId")
+                    val simpleEntitySelection = SimpleEntitySelection(entityId, components)
+                    if(selection == simpleEntitySelection) {
+                        ImGui.setNextItemOpen(true)
+                    }
                     Window.treeNode(nodeLabel) {
                         Window.text("Entity") {
-                            selectOrUnselect(SimpleEntitySelection(entityId, components))
+                            selection = simpleEntitySelection
                         }
                         components.forEach { component ->
                             var anySelectorHasRenderedANode = false
@@ -67,7 +73,7 @@ fun ImGuiEditor.leftPanel(
                             if(!anySelectorHasRenderedANode) {
                                 val componentName = component.javaClass.simpleName
                                 text(componentName) {
-                                    selectOrUnselect(DefaultSelection(component))
+                                    selection = DefaultSelection(component)
                                 }
                             }
                         }

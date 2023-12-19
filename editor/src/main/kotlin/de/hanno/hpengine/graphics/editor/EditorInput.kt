@@ -52,7 +52,9 @@ class EditorInput(
     override val dySmooth: Int get() = (dy + dyLast + dyBeforeLast) / 3
 
     override fun update() {
-        if(wasKeyReleasedLastFrame(GLFW.GLFW_KEY_ESCAPE) && isKeyPressed(GLFW.GLFW_KEY_ESCAPE)) {
+        val escPressed = wasKeyReleasedLastFrame(GLFW.GLFW_KEY_ESCAPE) && isKeyPressed(GLFW.GLFW_KEY_ESCAPE)
+
+        if(escPressed) {
             prioritizeGameInput = !prioritizeGameInput
         }
         if (swallowInput && !prioritizeGameInput) {

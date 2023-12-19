@@ -6,7 +6,6 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystemsConfig
 import de.hanno.hpengine.graphics.editor.ImGuiEditor
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
-import de.hanno.hpengine.graphics.editor.select.MaterialSelection
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtensionConfig
@@ -34,7 +33,7 @@ class DeferredRendererEditorExtension(
         Window.treeNode("DeferredRenderer") {
             renderSystemsConfig.value.renderSystems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.let { it ->
                 text("DeferredRenderer") {
-                    selectOrUnselect(DeferredRendererSelection(it))
+                    selection = DeferredRendererSelection(it)
                 }
             }
         }

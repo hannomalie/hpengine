@@ -14,6 +14,8 @@ import org.koin.core.annotation.Single
 
 data class MeshSelection(override val entity: Int, val mesh: Mesh<*>, val modelComponent: ModelComponent, override val components: Bag<Component>): EntitySelection {
     override fun toString(): String = mesh.name
+
+    override fun openNextNode(currentSelection: Selection?) = currentSelection == this
 }
 
 @Single(binds = [EditorExtension::class])

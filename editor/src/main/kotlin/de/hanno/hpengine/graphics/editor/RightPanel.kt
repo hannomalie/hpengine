@@ -37,27 +37,7 @@ fun ImGuiEditor.rightPanel(
                 }
 
                 tab("Output") {
-                    if (ImGui.beginCombo("Mipmap Level", debugOutput.mipmapLevel.toString())) {
-                        repeat(10) {
-                            val selected = debugOutput.mipmapLevel == it
-                            if (ImGui.selectable(it.toString(), selected)) {
-                                debugOutput.mipmapLevel = it
-                            }
-                            if (selected) {
-                                ImGui.setItemDefaultFocus()
-                            }
-                        }
-                        ImGui.endCombo()
-                    }
-                    text("Select output")
-                    if(ImGui.radioButton("Default", output, -1)) {
-                        debugOutput.texture2D = null
-                    }
-                    textureOutputOptions.forEachIndexed { index, option ->
-                        if (ImGui.radioButton(option.identifier, output, index)) {
-                            debugOutput.texture2D = option.texture
-                        }
-                    }
+                    outputSelection.renderSelection()
                 }
                 tab("RenderSystems") {
                     renderSystemsConfig.run {
@@ -72,8 +52,8 @@ fun ImGuiEditor.rightPanel(
                     ImGui.text(renderSystemsConfig.primaryRenderer.javaClass.simpleName)
                     ImGui.text("Current output")
                     renderSystemsConfig.primaryRenderers.forEach {
-                        if (ImGui.checkbox(it.javaClass.simpleName, primaryRenderer == it)) {
-                            primaryRenderer = it
+                        if (ImGui.checkbox(it.javaClass.simpleName, primaryRendererSelection.primaryRenderer == it)) {
+                            primaryRendererSelection.primaryRenderer = it
                         }
                     }
                 }
