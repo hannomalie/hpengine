@@ -1,11 +1,11 @@
-package de.hanno.hpengine.graphics.editor
+package de.hanno.hpengine.graphics.editor.panels
 
 import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.RenderSystemsConfig
+import de.hanno.hpengine.graphics.editor.*
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import imgui.ImGui
 import imgui.flag.ImGuiDir
-import imgui.flag.ImGuiWindowFlags
 import imgui.flag.ImGuiWindowFlags.*
 
 private const val rightPanelFlags =
@@ -15,17 +15,13 @@ private const val rightPanelFlags =
     HorizontalScrollbar
 
 fun ImGuiEditor.rightPanel(
-    screenWidth: Float,
-    rightPanelWidth: Float,
-    screenHeight: Float,
     editorConfig: EditorConfig,
     renderSystemsConfig: RenderSystemsConfig,
     renderManager: RenderManager,
     editorExtensions: List<EditorExtension>
-) {
-    val rightPanelWidthPercentage = 0.2f
-    ImGui.setNextWindowPos(screenWidth * (1.0f - rightPanelWidthPercentage), 0f)
-    ImGui.setNextWindowSize(rightPanelWidth, screenHeight)
+): Unit = layout.run {
+    ImGui.setNextWindowPos(windowWidth * (1.0f - rightPanelWidthPercentage), 0f)
+    ImGui.setNextWindowSize(rightPanelWidth, windowHeight)
     ImGui.getStyle().windowMenuButtonPosition = ImGuiDir.None
     ImGui.setNextWindowBgAlpha(1.0f)
     de.hanno.hpengine.graphics.imgui.dsl.ImGui.run {

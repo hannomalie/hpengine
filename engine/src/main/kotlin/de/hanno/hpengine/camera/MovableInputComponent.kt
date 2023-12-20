@@ -22,7 +22,6 @@ class MovableInputComponentComponentSystem: BaseEntitySystem() {
     lateinit var transformComponentComponentMapper: ComponentMapper<TransformComponent>
 
     override fun processSystem() {
-        if(config.debug.isEditorOverlay) return
         val deltaSeconds = world.delta
 
         forEachEntity { entityId ->

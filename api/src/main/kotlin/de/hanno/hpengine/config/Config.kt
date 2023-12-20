@@ -59,7 +59,6 @@ data class DebugConfig(
     @Button var reRenderProbes: Boolean = false,
     var visualizeProbes: Boolean = false,
     var drawBvhInnerNodes: Boolean = false,
-    var isEditorOverlay: Boolean = true,
     var isUseCpuFrustumCulling: Boolean = true,
     var isUseGpuFrustumCulling: Boolean = true,
     var isUseGpuOcclusionCulling: Boolean = true,

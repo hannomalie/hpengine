@@ -15,6 +15,9 @@ import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
+import de.hanno.hpengine.graphics.editor.panels.PanelLayout
+import de.hanno.hpengine.graphics.editor.panels.leftPanel
+import de.hanno.hpengine.graphics.editor.panels.rightPanel
 import de.hanno.hpengine.graphics.editor.select.EntitySelection
 import de.hanno.hpengine.graphics.editor.select.MeshSelection
 import de.hanno.hpengine.graphics.editor.select.Selection
@@ -37,6 +40,7 @@ import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.scene.AddResourceContext
 import imgui.ImGui
 import imgui.flag.ImGuiConfigFlags
+import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
@@ -78,6 +82,8 @@ class ImGuiEditor(
     internal val extensions: List<EditorExtension> = _editorExtensions.distinct()
 
     private var editorConfig = EditorConfig()
+
+    internal val layout = PanelLayout()
 
     val renderTarget = RenderTarget2D(
         graphicsApi,
@@ -124,43 +130,10 @@ class ImGuiEditor(
 
     override fun processSystem() {}
     override fun render(renderState: RenderState) {
-        if (!config.debug.isEditorOverlay) return
+        layout.update(ImGui.getIO().displaySizeX, ImGui.getIO().displaySizeY)
 
-        val screenWidth = ImGui.getIO().displaySizeX
-        val screenHeight = ImGui.getIO().displaySizeY
+        entityClickListener.consumeClick { entityClicked -> handleClick(entityClicked) }
 
-        val leftPanelYOffset = 0f
-        val leftPanelWidthPercentage = 0.1f
-        val leftPanelWidth = screenWidth * leftPanelWidthPercentage
-
-        val rightPanelWidthPercentage = 0.2f
-        val rightPanelWidth = screenWidth * rightPanelWidthPercentage
-
-        val midPanelHeight = screenHeight - leftPanelYOffset
-        val midPanelWidth = screenWidth - leftPanelWidth - rightPanelWidth
-
-
-        entityClickListener.consumeClick { entityClicked ->
-            if (
-                entityClicked.coordinates.x > leftPanelWidth &&
-                entityClicked.coordinates.x < (leftPanelWidth + midPanelWidth)
-            ) {
-                val entityId = entityClicked.indices.entityId
-                val meshIndex = entityClicked.indices.meshIndex
-                val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
-                val components = componentManager.getComponentsFor(entityId, Bag())
-                selection = when (editorConfig.selectionMode) {
-                    SelectionMode.Mesh -> {
-                        val modelComponent = components.filterIsInstance<ModelComponent>().first()
-                        val model =
-                            artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
-                        MeshSelection(entityId, model.meshes[meshIndex], modelComponent, components)
-                    }
-
-                    else -> SimpleEntitySelection(entityId, components)
-                }
-            }
-        }
         graphicsApi.polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
 
         outputSelection.draw()
@@ -172,53 +145,20 @@ class ImGuiEditor(
 
             ImGui.newFrame()
 
+            background(layout.windowWidth, layout.windowHeight)
+
             if(renderPanels) {
-                (selection as? EntitySelection)?.let { entitySelection ->
-                    artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
-                        val camera = renderState[primaryCameraStateHolder.camera]
-                        showGizmo(
-                            viewMatrixAsBuffer = camera.viewMatrixBuffer,
-                            projectionMatrixAsBuffer = camera.projectionMatrixBuffer,
-                            editorCameraInputSystem = artemisWorld.getSystem(EditorCameraInputSystem::class.java),
-                            windowWidth = screenWidth,
-                            windowHeight = screenHeight,
-                            panelWidth = midPanelWidth,
-                            panelHeight = midPanelHeight,
-                            windowPositionX = 0f,
-                            windowPositionY = 0f,
-                            panelPositionX = leftPanelWidth,
-                            panelPositionY = leftPanelYOffset,
-                            transform = it.transform
-                        )
-                    }
+                menu(layout.windowWidth, layout.windowHeight)
+                rightPanel(editorConfig, renderSystemsConfig.value, renderManager.value, extensions)
+
+                if (::artemisWorld.isInitialized) {
+                    leftPanel(layout.leftPanelYOffset, layout.leftPanelWidth, layout.windowHeight)
                 }
+                midPanel(renderState)
+
+                bottomPanel()
             }
 
-            background(screenWidth, screenHeight)
-
-            if(renderPanels) {
-                menu(screenWidth, screenHeight)
-            }
-
-            if (::artemisWorld.isInitialized && renderPanels) {
-                leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
-            }
-
-            if(renderPanels) {
-                graphicsApi.run {
-                    profiled("rightPanel") {
-                        rightPanel(
-                            screenWidth,
-                            rightPanelWidth,
-                            screenHeight,
-                            editorConfig,
-                            renderSystemsConfig.value,
-                            renderManager.value,
-                            extensions
-                        )
-                    }
-                }
-            }
 
             editorExtensions.forEach {
                 try {
@@ -231,13 +171,57 @@ class ImGuiEditor(
         } catch (it: Exception) {
             it.printStackTrace()
         } finally {
-            ImGui.render()
-            imGuiImplGl3.renderDrawData(ImGui.getDrawData())
-            if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-                val backupWindowHandle = GLFW.glfwGetCurrentContext()
-                ImGui.updatePlatformWindows()
-                ImGui.renderPlatformWindowsDefault()
-                GLFW.glfwMakeContextCurrent(backupWindowHandle)
+            try {
+
+                ImGui.render()
+                imGuiImplGl3.renderDrawData(ImGui.getDrawData())
+                if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
+                    val backupWindowHandle = GLFW.glfwGetCurrentContext()
+                    ImGui.updatePlatformWindows()
+                    ImGui.renderPlatformWindowsDefault()
+                    GLFW.glfwMakeContextCurrent(backupWindowHandle)
+                }
+            } catch (it: Exception) {
+                it.printStackTrace()
+            }
+        }
+    }
+
+    private fun handleClick(entityClicked: EntityClicked) {
+        if (layout.contains(entityClicked)) {
+            val entityId = entityClicked.indices.entityId
+            val meshIndex = entityClicked.indices.meshIndex
+            val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
+            val components = componentManager.getComponentsFor(entityId, Bag())
+            selection = when (editorConfig.selectionMode) {
+                SelectionMode.Mesh -> {
+                    val modelComponent = components.filterIsInstance<ModelComponent>().first()
+                    val model =
+                        artemisWorld.getSystem(ModelSystem::class.java)!![modelComponent.modelComponentDescription]!!
+                    MeshSelection(entityId, model.meshes[meshIndex], modelComponent, components)
+                }
+
+                else -> SimpleEntitySelection(entityId, components)
+            }
+        }
+    }
+
+    private fun bottomPanel() {
+        (selection as? EntitySelection)?.let {
+            ImGui.setNextWindowPos(layout.bottomPanelPositionX, layout.bottomPanelPositionY)
+            ImGui.setNextWindowSize(layout.bottomPanelWidth, layout.bottomPanelHeight)
+            ImGui.getStyle().windowMenuButtonPosition = ImGuiDir.None
+            ImGui.setNextWindowBgAlpha(1.0f)
+
+            de.hanno.hpengine.graphics.imgui.dsl.ImGui.run {
+                window(
+                    "Bottom panel", NoCollapse or
+                            NoResize or
+                            NoTitleBar or
+                            HorizontalScrollbar
+                ) {
+                    renderTransformationConfig()
+                }
             }
         }
     }
@@ -271,6 +255,28 @@ class ImGuiEditor(
 
                 input.swallowInput = !ImGui.isItemHovered()
             }
+        }
+    }
+}
+
+private fun PanelLayout.contains(entityClicked: EntityClicked): Boolean {
+    return entityClicked.coordinates.x > leftPanelWidth &&
+            entityClicked.coordinates.x < (leftPanelWidth + midPanelWidth) &&
+            entityClicked.coordinates.y > 0 &&
+            windowHeight - entityClicked.coordinates.y < bottomPanelPositionY
+}
+
+private fun ImGuiEditor.midPanel(renderState: RenderState) {
+    (selection as? EntitySelection)?.let { entitySelection ->
+        artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let { transformComponent ->
+            val camera = renderState[primaryCameraStateHolder.camera]
+            showGizmo(
+                viewMatrixBuffer = camera.viewMatrixBuffer,
+                projectionMatrixBuffer = camera.projectionMatrixBuffer,
+                editorCameraInputSystem = artemisWorld.getSystem(EditorCameraInputSystem::class.java),
+                panelLayout = layout,
+                transform = transformComponent.transform
+            )
         }
     }
 }

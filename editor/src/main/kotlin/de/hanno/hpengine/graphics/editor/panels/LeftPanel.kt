@@ -1,4 +1,4 @@
-package de.hanno.hpengine.graphics.editor
+package de.hanno.hpengine.graphics.editor.panels
 
 import com.artemis.Aspect
 import com.artemis.Component
@@ -7,6 +7,7 @@ import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.artemis.forEach
 import de.hanno.hpengine.component.NameComponent
+import de.hanno.hpengine.graphics.editor.ImGuiEditor
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import imgui.ImGui
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull

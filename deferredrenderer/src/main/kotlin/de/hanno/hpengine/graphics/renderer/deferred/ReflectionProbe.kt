@@ -218,43 +218,39 @@ class ReflectionProbeRenderExtension(
 
     private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
     override fun renderEditor(renderState: RenderState): Unit = graphicsApi.run {
-
-        if (config.debug.isEditorOverlay) {
-            val linePoints = (0 until renderState[reflectionProbeRenderState].probeCount).flatMap {
-                val minWorld =
-                    renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it) {
-                        Vector3f(
-                            it.x,
-                            it.y,
-                            it.z
-                        )
-                    }
-                val maxWorld =
-                    renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it + 1) {
-                        Vector3f(
-                            it.x,
-                            it.y,
-                            it.z
-                        )
-                    }
-                mutableListOf<Vector3fc>().apply { addAABBLines(minWorld, maxWorld) }
-            }
-
-            deferredRenderingBuffer.finalBuffer.use(false)
-            blend = false
-
-            val camera = renderState[primaryCameraStateHolder.camera]
-            drawLines(
-                programManager,
-                linesProgram,
-                lineVertices,
-                linePoints,
-                viewMatrix = camera.viewMatrixBuffer,
-                projectionMatrix = camera.projectionMatrixBuffer,
-                color = Vector3f(1f, 0f, 0f)
-            )
+        val linePoints = (0 until renderState[reflectionProbeRenderState].probeCount).flatMap {
+            val minWorld =
+                renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it) {
+                    Vector3f(
+                        it.x,
+                        it.y,
+                        it.z
+                    )
+                }
+            val maxWorld =
+                renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it + 1) {
+                    Vector3f(
+                        it.x,
+                        it.y,
+                        it.z
+                    )
+                }
+            mutableListOf<Vector3fc>().apply { addAABBLines(minWorld, maxWorld) }
         }
 
+        deferredRenderingBuffer.finalBuffer.use(false)
+        blend = false
+
+        val camera = renderState[primaryCameraStateHolder.camera]
+        drawLines(
+            programManager,
+            linesProgram,
+            lineVertices,
+            linePoints,
+            viewMatrix = camera.viewMatrixBuffer,
+            projectionMatrix = camera.projectionMatrixBuffer,
+            color = Vector3f(1f, 0f, 0f)
+        )
     }
 
     override fun renderFirstPass(
@@ -382,7 +378,7 @@ class ReflectionProbeRenderExtension(
 
                 profiled("ReflectionProbe entity rendering") {
                     for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
-                        pointCubeShadowPassProgram.setTextureUniforms(graphicsApi, batch.material.maps)
+                        setTextureUniforms(pointCubeShadowPassProgram, graphicsApi, batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch
                                 .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill

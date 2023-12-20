@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.editor
 
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.graphics.editor.panels.PanelLayout
 import imgui.ImGui
 import imgui.extension.imguizmo.ImGuizmo
 import imgui.extension.imguizmo.flag.Mode
@@ -13,7 +14,7 @@ import org.lwjgl.glfw.GLFW.*
 import java.nio.FloatBuffer
 import java.util.*
 
-
+// TODO: Change global variables for local ones, wrap in a class
 private const val CAM_DISTANCE = 8
 private const val FLT_EPSILON = 1.19209290E-07f
 
@@ -61,88 +62,33 @@ private val BOUNDING_SIZE = ImBoolean(false)
 private val USE_SNAP = ImBoolean(false)
 
 private var currentMode = Mode.LOCAL
-private var currentGizmoOperation = 0
+private var currentGizmoOperation = Operation.TRANSLATE
 
 private var boundSizingSnap = false
 
 private const val showDebugPanel: Boolean = false
 
-fun showGizmo(
-    viewMatrixAsBuffer: FloatBuffer,
-    projectionMatrixAsBuffer: FloatBuffer,
+fun ImGuiEditor.showGizmo(
+    viewMatrixBuffer: FloatBuffer,
+    projectionMatrixBuffer: FloatBuffer,
     editorCameraInputSystem: EditorCameraInputSystem,
-    windowWidth: Float,
-    windowHeight: Float,
-    panelWidth: Float,
-    panelHeight: Float,
-    windowPositionX: Float,
-    windowPositionY: Float,
-    panelPositionX: Float,
-    panelPositionY: Float,
+    panelLayout: PanelLayout,
     transform: Transform,
 ) {
-    viewMatrixAsBuffer.get(INPUT_CAMERA_VIEW)
-//    Util.createPerspective(fovY, windowWidth / windowHeight, near, far).get(INPUT_CAMERA_PROJECTION)
-    projectionMatrixAsBuffer.get(INPUT_CAMERA_PROJECTION)
+    viewMatrixBuffer.get(INPUT_CAMERA_VIEW)
+    projectionMatrixBuffer.get(INPUT_CAMERA_PROJECTION)
 
-    if (showDebugPanel) {
-        ImGui.text("Keybindings:")
-        ImGui.text("T - Translate")
-        ImGui.text("R - Rotate")
-        ImGui.text("S - Scale")
-        ImGui.separator()
-    }
+    keyBindingsInfo()
 
-    if (ImGuizmo.isUsing()) {
-        editorCameraInputSystem.editorCameraInputComponent.prioritizeGameInput = false
-    } else {
-        editorCameraInputSystem.editorCameraInputComponent.prioritizeGameInput = true
-    }
+//    editorCameraInputSystem.editorCameraInputComponent.prioritizeGameInput = !ImGuizmo.isUsing()
 
-    if (showDebugPanel) {
-        if (ImGuizmo.isUsing()) {
-            ImGui.text("Using gizmo")
-            if (ImGuizmo.isOver()) {
-                ImGui.text("Over a gizmo")
-            }
-            if (ImGuizmo.isOver(Operation.TRANSLATE)) {
-                ImGui.text("Over translate gizmo")
-            } else if (ImGuizmo.isOver(Operation.ROTATE)) {
-                ImGui.text("Over rotate gizmo")
-            } else if (ImGuizmo.isOver(Operation.SCALE)) {
-                ImGui.text("Over scale gizmo")
-            }
-        } else {
-            ImGui.text("Not using gizmo")
-        }
-    }
+    debugPanel()
 
-    editTransform(windowWidth, windowHeight, windowPositionX, windowPositionY, panelWidth, panelHeight, panelPositionX, panelPositionY, transform)
+    editTransform(panelLayout, transform)
 }
 
-fun editTransform(
-    windowWidth: Float,
-    windowHeight: Float,
-    windowPositionX: Float,
-    windowPositionY: Float,
-    panelWidth: Float,
-    panelHeight: Float,
-    panelPositionX: Float,
-    panelPositionY: Float,
-    transform: Transform,
-) {
-
+fun ImGuiEditor.editTransform(panelLayout: PanelLayout, transform: Transform): Unit = panelLayout.run {
     transform.get(OBJECT_MATRIX)
-
-    if (ImGui.isKeyPressed(GLFW_KEY_T)) {
-        currentGizmoOperation = Operation.TRANSLATE
-    } else if (ImGui.isKeyPressed(GLFW_KEY_R)) {
-        currentGizmoOperation = Operation.ROTATE
-    } else if (ImGui.isKeyPressed(GLFW_KEY_S)) {
-        currentGizmoOperation = Operation.SCALE
-    } else if (ImGui.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
-        USE_SNAP.set(!USE_SNAP.get())
-    }
 
     if (ImGuizmo.isUsing()) {
         ImGuizmo.decomposeMatrixToComponents(
@@ -153,57 +99,11 @@ fun editTransform(
         )
     }
 
-    if(showDebugPanel) {
-        ImGui.inputFloat3("Tr", INPUT_MATRIX_TRANSLATION, "%.3f", ImGuiInputTextFlags.ReadOnly)
-        ImGui.inputFloat3("Rt", INPUT_MATRIX_ROTATION, "%.3f", ImGuiInputTextFlags.ReadOnly)
-        ImGui.inputFloat3("Sc", INPUT_MATRIX_SCALE, "%.3f", ImGuiInputTextFlags.ReadOnly)
-
-        if (ImGuizmo.isUsing()) {
-            ImGuizmo.recomposeMatrixFromComponents(OBJECT_MATRIX, INPUT_MATRIX_TRANSLATION, INPUT_MATRIX_ROTATION, INPUT_MATRIX_SCALE)
-        }
-
-        if (currentGizmoOperation != Operation.SCALE) {
-            if (ImGui.radioButton("Local", currentMode == Mode.LOCAL)) {
-                currentMode = Mode.LOCAL
-            }
-            ImGui.sameLine()
-            if (ImGui.radioButton("World", currentMode == Mode.WORLD)) {
-                currentMode = Mode.WORLD
-            }
-        }
-
-        ImGui.checkbox("Snap Checkbox", USE_SNAP)
-
-        INPUT_FLOAT.set(INPUT_SNAP_VALUE[0])
-        when (currentGizmoOperation) {
-            Operation.TRANSLATE -> ImGui.inputFloat3("Snap Value", INPUT_SNAP_VALUE)
-            Operation.ROTATE -> {
-                ImGui.inputFloat("Angle Value", INPUT_FLOAT)
-                val rotateValue = INPUT_FLOAT.get()
-                Arrays.fill(INPUT_SNAP_VALUE, rotateValue) //avoiding allocation
-            }
-            Operation.SCALE -> {
-                ImGui.inputFloat("Scale Value", INPUT_FLOAT)
-                val scaleValue = INPUT_FLOAT.get()
-                Arrays.fill(INPUT_SNAP_VALUE, scaleValue)
-            }
-        }
-
-        ImGui.checkbox("Show Bound Sizing", BOUNDING_SIZE)
-
-        if (BOUNDING_SIZE.get()) {
-            if (ImGui.checkbox("BoundSizingSnap", boundSizingSnap)) {
-                boundSizingSnap = !boundSizingSnap
-            }
-            ImGui.sameLine()
-            ImGui.inputFloat3("Snap", INPUT_BOUNDS_SNAP)
-        }
-    }
-
-    ImGui.setNextWindowPos(panelPositionX, panelPositionY)
-    ImGui.setNextWindowSize(panelWidth, panelHeight)
+    ImGui.setNextWindowPos(midPanelPositionX, panelPositionY)
+    ImGui.setNextWindowSize(midPanelWidth, midPanelHeight)
     val windowFlags = 0 or ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoTitleBar
     de.hanno.hpengine.graphics.imgui.dsl.ImGui.window("Gizmo", windowFlags) {
+        input.swallowInput = ImGui.isItemHovered()
         ImGui.beginChild("prevent_window_from_moving_by_drag", 0f, 0f, false, ImGuiWindowFlags.NoMove)
 
         ImGuizmo.setOrthographic(false)
@@ -235,7 +135,7 @@ fun editTransform(
             else -> ImGuizmo.manipulate(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, OBJECT_MATRIX, currentGizmoOperation, currentMode)
         }
 
-        val viewManipulateRight = panelPositionX + panelHeight
+        val viewManipulateRight = midPanelPositionX + midPanelHeight
         val viewManipulateTop = panelPositionY
         ImGuizmo.viewManipulate(INPUT_CAMERA_VIEW, CAM_DISTANCE.toFloat(), floatArrayOf(viewManipulateRight - 128, viewManipulateTop), VIEW_MANIPULATE_SIZE, 0x10101010)
 
@@ -244,4 +144,99 @@ fun editTransform(
 
     transform.set(OBJECT_MATRIX)
 //    viewMatrix.set(INPUT_CAMERA_VIEW).invert() TODO: This flickers because of multithreading
+}
+
+fun renderTransformationConfig() {
+    ImGui.inputFloat3("Tr", INPUT_MATRIX_TRANSLATION, "%.3f", ImGuiInputTextFlags.ReadOnly)
+    ImGui.inputFloat3("Rt", INPUT_MATRIX_ROTATION, "%.3f", ImGuiInputTextFlags.ReadOnly)
+    ImGui.inputFloat3("Sc", INPUT_MATRIX_SCALE, "%.3f", ImGuiInputTextFlags.ReadOnly)
+
+    if (ImGuizmo.isUsing()) {
+        ImGuizmo.recomposeMatrixFromComponents(
+            OBJECT_MATRIX,
+            INPUT_MATRIX_TRANSLATION,
+            INPUT_MATRIX_ROTATION,
+            INPUT_MATRIX_SCALE
+        )
+    }
+
+    if (currentGizmoOperation != Operation.SCALE) {
+        if (ImGui.radioButton("Local", currentMode == Mode.LOCAL)) {
+            currentMode = Mode.LOCAL
+        }
+        ImGui.sameLine()
+        if (ImGui.radioButton("World", currentMode == Mode.WORLD)) {
+            currentMode = Mode.WORLD
+        }
+    }
+
+    if (ImGui.radioButton("Translate", currentGizmoOperation == Operation.TRANSLATE)) {
+        currentGizmoOperation = Operation.TRANSLATE
+    }
+    ImGui.sameLine()
+    if (ImGui.radioButton("Rotate", currentGizmoOperation == Operation.ROTATE)) {
+        currentGizmoOperation = Operation.ROTATE
+    }
+    ImGui.sameLine()
+    if (ImGui.radioButton("Scale", currentGizmoOperation == Operation.SCALE)) {
+        currentGizmoOperation = Operation.SCALE
+    }
+
+    ImGui.checkbox("Snap Checkbox", USE_SNAP)
+
+    INPUT_FLOAT.set(INPUT_SNAP_VALUE[0])
+    when (currentGizmoOperation) {
+        Operation.TRANSLATE -> ImGui.inputFloat3("Snap Value", INPUT_SNAP_VALUE)
+        Operation.ROTATE -> {
+            ImGui.inputFloat("Angle Value", INPUT_FLOAT)
+            val rotateValue = INPUT_FLOAT.get()
+            Arrays.fill(INPUT_SNAP_VALUE, rotateValue) //avoiding allocation
+        }
+
+        Operation.SCALE -> {
+            ImGui.inputFloat("Scale Value", INPUT_FLOAT)
+            val scaleValue = INPUT_FLOAT.get()
+            Arrays.fill(INPUT_SNAP_VALUE, scaleValue)
+        }
+    }
+
+    ImGui.checkbox("Show Bound Sizing", BOUNDING_SIZE)
+
+    if (BOUNDING_SIZE.get()) {
+        if (ImGui.checkbox("BoundSizingSnap", boundSizingSnap)) {
+            boundSizingSnap = !boundSizingSnap
+        }
+        ImGui.sameLine()
+        ImGui.inputFloat3("Snap", INPUT_BOUNDS_SNAP)
+    }
+}
+
+private fun keyBindingsInfo() {
+    if (showDebugPanel) {
+        ImGui.text("Keybindings:")
+        ImGui.text("T - Translate")
+        ImGui.text("R - Rotate")
+        ImGui.text("S - Scale")
+        ImGui.separator()
+    }
+}
+
+private fun debugPanel() {
+    if (showDebugPanel) {
+        if (ImGuizmo.isUsing()) {
+            ImGui.text("Using gizmo")
+            if (ImGuizmo.isOver()) {
+                ImGui.text("Over a gizmo")
+            }
+            if (ImGuizmo.isOver(Operation.TRANSLATE)) {
+                ImGui.text("Over translate gizmo")
+            } else if (ImGuizmo.isOver(Operation.ROTATE)) {
+                ImGui.text("Over rotate gizmo")
+            } else if (ImGuizmo.isOver(Operation.SCALE)) {
+                ImGui.text("Over scale gizmo")
+            }
+        } else {
+            ImGui.text("Not using gizmo")
+        }
+    }
 }
