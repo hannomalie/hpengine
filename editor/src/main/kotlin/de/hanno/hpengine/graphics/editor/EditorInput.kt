@@ -26,7 +26,7 @@ class EditorInput(
     override val mousePressedLastFrame = IntArrayList()
 
     override val FIRST_KEY = GLFW.GLFW_KEY_SPACE
-    override val NUM_KEYS = GLFW.GLFW_KEY_LAST - GLFW.GLFW_KEY_SPACE
+    override val NUM_KEYS = GLFW.GLFW_KEY_LAST
     override val NUM_BUTTONS = 3
 
     override var dx: Int = 0
