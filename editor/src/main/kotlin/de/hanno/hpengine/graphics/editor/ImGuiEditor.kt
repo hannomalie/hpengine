@@ -35,9 +35,12 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.model.BoundingVolumeComponent
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.scene.AddResourceContext
+import de.hanno.hpengine.spatial.SpatialComponent
+import de.hanno.hpengine.transform.AABB
 import imgui.ImGui
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiDir
@@ -84,6 +87,8 @@ class ImGuiEditor(
     private var editorConfig = EditorConfig()
 
     internal val layout = PanelLayout()
+
+    private val gizmoSystem = GizmoSystem(input)
 
     val renderTarget = RenderTarget2D(
         graphicsApi,
@@ -147,7 +152,7 @@ class ImGuiEditor(
 
             background(layout.windowWidth, layout.windowHeight)
 
-            if(renderPanels) {
+            if (renderPanels) {
                 menu(layout.windowWidth, layout.windowHeight)
                 rightPanel(editorConfig, renderSystemsConfig.value, renderManager.value, extensions)
 
@@ -160,13 +165,7 @@ class ImGuiEditor(
             }
 
 
-            editorExtensions.forEach {
-                try {
-                    it.render(this)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
+            renderEditorExtensions()
 //            ImGui.showDemoWindow(ImBoolean(true))
         } catch (it: Exception) {
             it.printStackTrace()
@@ -183,6 +182,16 @@ class ImGuiEditor(
                 }
             } catch (it: Exception) {
                 it.printStackTrace()
+            }
+        }
+    }
+
+    private fun renderEditorExtensions() {
+        editorExtensions.forEach {
+            try {
+                it.render(this)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -220,7 +229,7 @@ class ImGuiEditor(
                             NoTitleBar or
                             HorizontalScrollbar
                 ) {
-                    renderTransformationConfig()
+                    gizmoSystem.renderTransformationConfig()
                 }
             }
         }
@@ -257,26 +266,30 @@ class ImGuiEditor(
             }
         }
     }
+
+    private fun ImGuiEditor.midPanel(renderState: RenderState) {
+        (selection as? EntitySelection)?.let { entitySelection ->
+            val entity = artemisWorld.getEntity(entitySelection.entity)
+            entity.getComponent(TransformComponent::class.java)
+                ?.let { transformComponent ->
+                    val camera = renderState[primaryCameraStateHolder.camera]
+                    gizmoSystem.showGizmo(
+                        viewMatrixBuffer = camera.viewMatrixBuffer,
+                        projectionMatrixBuffer = camera.projectionMatrixBuffer,
+                        panelLayout = layout,
+                        transform = transformComponent.transform,
+                        entity.getComponent(BoundingVolumeComponent::class.java)?.boundingVolume ?: dummyAABB
+                    )
+                }
+        }
+    }
 }
+
+private val dummyAABB = AABB()
 
 private fun PanelLayout.contains(entityClicked: EntityClicked): Boolean {
     return entityClicked.coordinates.x > leftPanelWidth &&
             entityClicked.coordinates.x < (leftPanelWidth + midPanelWidth) &&
             entityClicked.coordinates.y > 0 &&
             windowHeight - entityClicked.coordinates.y < bottomPanelPositionY
-}
-
-private fun ImGuiEditor.midPanel(renderState: RenderState) {
-    (selection as? EntitySelection)?.let { entitySelection ->
-        artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let { transformComponent ->
-            val camera = renderState[primaryCameraStateHolder.camera]
-            showGizmo(
-                viewMatrixBuffer = camera.viewMatrixBuffer,
-                projectionMatrixBuffer = camera.projectionMatrixBuffer,
-                editorCameraInputSystem = artemisWorld.getSystem(EditorCameraInputSystem::class.java),
-                panelLayout = layout,
-                transform = transformComponent.transform
-            )
-        }
-    }
 }
