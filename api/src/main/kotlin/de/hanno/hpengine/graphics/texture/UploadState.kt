@@ -32,8 +32,8 @@ fun BufferedImage.resize(targetSize: Int): BufferedImage {
         targetWidth = (targetHeight.toFloat() / ratio).roundToInt()
     }
     return BufferedImage(
-        targetWidth,
-        targetHeight,
+        maxOf(1, targetWidth),
+        maxOf(1, targetHeight),
         if (transparency == Transparency.OPAQUE) BufferedImage.TYPE_INT_RGB else BufferedImage.TYPE_INT_ARGB
     ).apply {
         createGraphics().apply {

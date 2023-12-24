@@ -143,7 +143,11 @@ struct DirectionalLightState {
 
     uvec2 shadowMapHandle;
     int shadowMapId;
+    int staticShadowMapId;
+
+    uvec2 staticShadowMapHandle;
     float dummy0;
+    float dummy1;
 };
 
 struct VertexShaderFlatOutput {

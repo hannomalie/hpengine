@@ -5,7 +5,6 @@ import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.World
 import com.artemis.annotations.All
-import com.artemis.annotations.Wire
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.forEachEntity
@@ -17,6 +16,7 @@ import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.transform.EntityMovementSystem
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -31,6 +31,7 @@ import struktgen.api.forIndex
 class DirectionalLightSystem(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val input: Input,
+    private val entityMovementSystem: EntityMovementSystem,
 ) : BaseEntitySystem(), Extractor, WorldPopulator {
     lateinit var cycleSystem: CycleSystem
     lateinit var directionalLightComponentMapper: ComponentMapper<DirectionalLightComponent>
@@ -75,13 +76,13 @@ class DirectionalLightSystem(
     }
 
     override fun extract(currentWriteState: RenderState) {
-        currentWriteState.set(directionalLightStateHolder.directionalLightHasMovedInCycle, currentWriteState.cycle)
-
         forFirstEntityIfPresent { entityId ->
             val light = directionalLightComponentMapper.get(entityId)
             val transform = transformComponentMapper.get(entityId).transform
             val camera = cameraComponentMapper.get(entityId)
 
+            currentWriteState[directionalLightStateHolder.entityId].underlying = entityId
+            currentWriteState[directionalLightStateHolder.directionalLightHasMovedInCycle].underlying = entityMovementSystem.cycleEntityHasMovedIn(entityId)
             currentWriteState[lightState].typedBuffer.forIndex(0) { directionalLightState ->
                 directionalLightState.color.set(light.color)
                 directionalLightState.direction.set(transform.viewDirection)

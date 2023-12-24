@@ -61,7 +61,7 @@ fun getCubeViewProjectionMatricesForPosition(position: Vector3f): Pair<Array<Mat
     resultProjectionMatrices[5] = Matrix4f(projectionMatrix)
     return Pair(resultViewMatrices, resultProjectionMatrices)
 }
-internal fun Matrix4f.isEqualTo(other: Matrix4fc): Boolean {
+fun Matrix4f.isEqualTo(other: Matrix4fc): Boolean {
     if (java.lang.Float.floatToIntBits(m00()) != java.lang.Float.floatToIntBits(other.m00())) return false
     if (java.lang.Float.floatToIntBits(m01()) != java.lang.Float.floatToIntBits(other.m01())) return false
     if (java.lang.Float.floatToIntBits(m02()) != java.lang.Float.floatToIntBits(other.m02())) return false

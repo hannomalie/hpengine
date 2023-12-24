@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.state.multithreading
 
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.StateRef
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -50,12 +51,12 @@ class TripleBuffer constructor(
         }
     }
 
-    private var customStateCounter = 0
+    private var customStateCounter = AtomicInteger()
     fun <TYPE : Any> registerState(factory: () -> TYPE): StateRef<TYPE> {
-        val newIndex = customStateCounter++
-        instanceA.add(factory())
-        instanceB.add(factory())
-        instanceC.add(factory())
+        val newIndex = customStateCounter.getAndIncrement()
+        instanceA.add(newIndex, factory())
+        instanceB.add(newIndex, factory())
+        instanceC.add(newIndex, factory())
         return StateRef(newIndex)
     }
 

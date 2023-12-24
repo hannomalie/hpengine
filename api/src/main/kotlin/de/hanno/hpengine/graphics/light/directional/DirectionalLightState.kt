@@ -11,10 +11,16 @@ interface DirectionalLightState : Strukt {
     context(ByteBuffer) val viewProjectionMatrix: Matrix4fStrukt
     context(ByteBuffer) val color: Vector3fStrukt
     context(ByteBuffer) val dummy: Float
+
     context(ByteBuffer) val direction: Vector3fStrukt
     context(ByteBuffer) var scatterFactor: Float
+
     context(ByteBuffer) var shadowMapHandle: Long
     context(ByteBuffer) var shadowMapId: Int
-    context(ByteBuffer) val dummy0: Float
+    context(ByteBuffer) var staticShadowMapId: Int
+
+    context(ByteBuffer) var staticShadowMapHandle: Long
+    context(ByteBuffer) var dummy0: Int
+    context(ByteBuffer) var dummy1: Int
     companion object
 }

@@ -43,6 +43,7 @@ import de.hanno.hpengine.transform.TransformSpatial
 import org.joml.Matrix4f
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
+import org.lwjgl.util.meshoptimizer.MeshOptimizer
 import struktgen.api.get
 import struktgen.api.typed
 import java.util.concurrent.CopyOnWriteArrayList
@@ -73,8 +74,6 @@ class ModelSystem(
     val joints: MutableList<Matrix4f> = CopyOnWriteArrayList()
 
     val allocations: MutableMap<ModelComponentDescription, Allocation> = mutableMapOf()
-
-    private var gpuJointsArray = BufferUtils.createByteBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
 
     private val modelCache = mutableMapOf<ModelComponentDescription, Model<*>>()
     internal val programCache = mutableMapOf<ProgramDescription, ProgramImpl<FirstPassUniforms>>()
@@ -234,14 +233,14 @@ class ModelSystem(
         currentWriteState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic = vertexIndexBufferStatic
         currentWriteState[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated = vertexIndexBufferAnimated
 
-        currentWriteState[entitiesStateHolder.entitiesState].jointsBuffer.ensureCapacityInBytes(gpuJointsArray.byteBuffer.capacity())
+        val targetJointsBuffer = currentWriteState[entitiesStateHolder.entitiesState].jointsBuffer
+        targetJointsBuffer.ensureCapacityInBytes(joints.size * Matrix4fStrukt.sizeInBytes)
 
-        gpuJointsArray = gpuJointsArray.enlarge(joints.size)
-        gpuJointsArray.byteBuffer.copyTo(currentWriteState[entitiesStateHolder.entitiesState].jointsBuffer.buffer)
-
-        with(gpuJointsArray.byteBuffer) {
+        with(targetJointsBuffer) {
             for ((index, joint) in joints.withIndex()) {
-                gpuJointsArray[index].set(joint)
+                byteBuffer.run {
+                    this@with[index].set(joint)
+                }
             }
         }
     }

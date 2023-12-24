@@ -31,7 +31,7 @@ class DeferredRendererEditorExtension(
 
     override fun ImGuiEditor.renderLeftPanelTopLevelNode() {
         Window.treeNode("DeferredRenderer") {
-            renderSystemsConfig.value.renderSystems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.let { it ->
+            renderSystemsConfig.value.primaryRenderers.firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.let { it ->
                 text("DeferredRenderer") {
                     selection = DeferredRendererSelection(it)
                 }

@@ -20,7 +20,7 @@ class RenderState(
 
     val gpuHasFinishedUsingIt get() = gpuCommandSync.isSignaled
 
-    fun add(state: Any) = customState.add(state)
+    fun add(index: Int, state: Any) = customState.add(index, state)
 
     operator fun <T: Any> get(stateRef: StateRef<T>) = customState[stateRef]
     fun <T: Any> set(ref: StateRef<T>, value: T) { customState.set(ref, value) }
@@ -29,8 +29,8 @@ class RenderState(
 class CustomStates {
     private val states = mutableListOf<Any>()
 
-    fun add(state: Any) {
-        states.add(state)
+    fun add(index: Int, state: Any) {
+        states.add(index, state)
     }
 
     operator fun <T: Any> get(ref: StateRef<T>) = states[ref.index] as T

@@ -63,6 +63,7 @@ class EntityBufferExtractorSystem(
 
                         entitiesBufferToWrite.byteBuffer.run {
                             model.meshes.forEachIndexed { index, mesh ->
+                                entitiesBufferToWrite.ensureCapacityInBytes((1+entityBufferIndex) * EntityStrukt.sizeInBytes)
                                 val currentEntity = entitiesBufferToWrite[entityBufferIndex]
 
                                 val material = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once

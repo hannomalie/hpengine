@@ -37,7 +37,7 @@ class RenderTargetImpl<T : Texture>(
             bindFrameBuffer(frameBuffer)
 
             // TODO: This is broken, reimplement
-            if (textures.first() is OpenGLCubeMapArray) {
+            if (textures.firstOrNull() is OpenGLCubeMapArray) {
                 textures.forEachIndexed { index, it ->
                     framebufferTextureLayer(index, it, 0, 0)
                 }

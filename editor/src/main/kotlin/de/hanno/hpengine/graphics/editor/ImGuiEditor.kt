@@ -39,8 +39,8 @@ import de.hanno.hpengine.model.BoundingVolumeComponent
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.model.ModelSystem
 import de.hanno.hpengine.scene.AddResourceContext
-import de.hanno.hpengine.spatial.SpatialComponent
 import de.hanno.hpengine.transform.AABB
+import de.hanno.hpengine.transform.EntityMovementSystem
 import imgui.ImGui
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiDir
@@ -76,6 +76,7 @@ class ImGuiEditor(
     internal val input: EditorInput,
     internal val primaryRendererSelection: PrimaryRendererSelection,
     internal val outputSelection: OutputSelection,
+    internal val entityMovementSystem: EntityMovementSystem,
     _editorExtensions: List<EditorExtension>,
 ) : BaseEntitySystem(), PrimaryRenderer {
     override val renderPriority: Int get() = 100
@@ -273,13 +274,16 @@ class ImGuiEditor(
             entity.getComponent(TransformComponent::class.java)
                 ?.let { transformComponent ->
                     val camera = renderState[primaryCameraStateHolder.camera]
-                    gizmoSystem.showGizmo(
+                    val entityMoved = gizmoSystem.showGizmo(
                         viewMatrixBuffer = camera.viewMatrixBuffer,
                         projectionMatrixBuffer = camera.projectionMatrixBuffer,
                         panelLayout = layout,
                         transform = transformComponent.transform,
                         entity.getComponent(BoundingVolumeComponent::class.java)?.boundingVolume ?: dummyAABB
                     )
+                    if(entityMoved) {
+                        entityMovementSystem.setEntityHasMovedInCycle(entitySelection.entity, -1)
+                    }
                 }
         }
     }

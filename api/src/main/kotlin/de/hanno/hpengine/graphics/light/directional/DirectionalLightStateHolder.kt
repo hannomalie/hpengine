@@ -21,5 +21,8 @@ class DirectionalLightStateHolder(
 
         }
     }
-    val directionalLightHasMovedInCycle = renderStateContext.renderState.registerState { 0L }
+    val directionalLightHasMovedInCycle = renderStateContext.renderState.registerState { LongBox(0L) }
+    val entityId = renderStateContext.renderState.registerState { IntBox(-1) }
+    data class IntBox(var underlying: Int)
+    data class LongBox(var underlying: Long)
 }

@@ -64,9 +64,14 @@ class DirectionalLightSecondPassExtension(
                     graphicsApi.bindTexture(6, TextureTarget.TEXTURE_2D, directionalShadowMap)
                     if (!graphicsApi.isSupported(BindlessTextures)) {
                         graphicsApi.bindTexture(
-                                8,
-                                TextureTarget.TEXTURE_2D,
-                                directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+                            8,
+                            TextureTarget.TEXTURE_2D,
+                            directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+                        )
+                        graphicsApi.bindTexture(
+                            11,
+                            TextureTarget.TEXTURE_2D,
+                            directionalLightState.typedBuffer.forIndex(0) { it.staticShadowMapId }
                         )
                     }
                 }

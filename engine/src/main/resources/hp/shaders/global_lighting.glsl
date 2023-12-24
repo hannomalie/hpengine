@@ -105,6 +105,27 @@ float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D s
     const bool simpleShadows = true;
     if(simpleShadows) {
         vec2 shadowMapValue = textureLod(shadowMap, shadowMapCoords, 0).rg;
+        //        vec2 shadowMapValueStatix = textureLod(shadowMap, shadowMapCoords, 0).rg;
+        return shadowMapValue.r > (depthInLightSpace - 0.001f) ? 1.0f : 0.0f;
+    }
+    return clamp(chebyshevUpperBound(depthInLightSpace, shadowMapCoords, light, shadowMap), 0, 1).r;
+}
+
+float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D shadowMap, sampler2D shadowMapStatic) {
+
+    mat4 shadowMatrix = light.viewProjectionMatrix;
+
+    vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
+    positionShadow.xyz /= positionShadow.w;
+    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
+    float depthInLightSpace = positionShadow.z;
+    vec2 shadowMapCoords = positionShadow.xy;
+
+    const bool simpleShadows = true;
+    if(simpleShadows) {
+        vec2 shadowMapValueDynamic = textureLod(shadowMap, shadowMapCoords, 0).rg;
+        vec2 shadowMapValueStatic = textureLod(shadowMapStatic, shadowMapCoords, 0).rg;
+        vec2 shadowMapValue = min(shadowMapValueDynamic, shadowMapValueStatic);
         return shadowMapValue.r > (depthInLightSpace - 0.001f) ? 1.0f : 0.0f;
     }
     return clamp(chebyshevUpperBound(depthInLightSpace, shadowMapCoords, light, shadowMap), 0, 1).r;
@@ -113,7 +134,8 @@ float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D s
 #ifdef BINDLESSTEXTURES
 float getVisibility(vec3 positionWorld, DirectionalLightState light) {
     sampler2D shadowMap = sampler2D(light.shadowMapHandle);
-    return getVisibility(positionWorld, light, shadowMap);
+    sampler2D shadowMapStatic = sampler2D(light.staticShadowMapHandle);
+    return getVisibility(positionWorld, light, shadowMap, shadowMapStatic);
 }
 #endif
 

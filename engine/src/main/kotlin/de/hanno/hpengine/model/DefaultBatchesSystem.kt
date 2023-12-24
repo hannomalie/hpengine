@@ -16,6 +16,8 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.instancing.InstancesComponent
+import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
+import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.visibility.InvisibleComponent
@@ -95,7 +97,10 @@ class DefaultBatchesSystem(
                     batch.cameraWorldPosition = camera.getPosition()
                     batch.isVisible = entityVisible
                     batch.isVisibleForCamera = visibleForCamera
-                    batch.update = Update.STATIC//entity.updateType TODO: reimplement
+                    batch.update = when(modelComponent.modelComponentDescription) {
+                        is AnimatedModelComponentDescription -> Update.DYNAMIC
+                        is StaticModelComponentDescription -> Update.STATIC
+                    }
                     batch.entityMinWorld.set(model.getBoundingVolume(mesh).min)//TODO: reimplement with transform
                     batch.entityMaxWorld.set(model.getBoundingVolume(mesh).max)//TODO: reimplement with transform
                     batch.meshMinWorld.set(aabb.min)

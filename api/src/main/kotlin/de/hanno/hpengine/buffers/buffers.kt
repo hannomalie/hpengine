@@ -12,10 +12,11 @@ fun ByteBuffer.copyTo(
     rewind()
     target.rewind()
     val requiredSizeInBytes = capacity()
-    val targetBufferSmallerThanNeeded = requiredSizeInBytes > target.capacity() - targetOffsetInBytes
+    val availableBytes = target.capacity() - targetOffsetInBytes
+    val targetBufferSmallerThanNeeded = requiredSizeInBytes > availableBytes
 
     require(!targetBufferSmallerThanNeeded) {
-        "Target buffer too small, resize before!"
+        "Target buffer too small, resize before! requiredSizeInBytes: $requiredSizeInBytes but got $availableBytes at offset $targetOffsetInBytes"
     }
     target.position(targetOffsetInBytes)
     target.put(this)

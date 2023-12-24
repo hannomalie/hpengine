@@ -224,7 +224,8 @@ class ExtensibleDeferredRenderer(
 }
 
 @Single
-class DeferredRenderExtensionConfig(val renderExtensions: List<DeferredRenderExtension>) {
+class DeferredRenderExtensionConfig(val _renderExtensions: List<DeferredRenderExtension>) {
+    val renderExtensions = _renderExtensions.distinct()
     private val renderSystemsEnabled = renderExtensions.distinct().associateWith { true }.toMutableMap()
     var DeferredRenderExtension.enabled: Boolean
         get() = renderSystemsEnabled[this]!!

@@ -123,7 +123,7 @@ class VoxelConeTracingExtension(
             val noGridsInUse = renderState[this@VoxelConeTracingExtension.voxelGrids].sizeInBytes == Byte.SIZE_BYTES
             if(noGridsInUse) return
 
-            val directionalLightMoved = renderState[directionalLightStateHolder.directionalLightHasMovedInCycle] > litInCycle
+            val directionalLightMoved = renderState[directionalLightStateHolder.directionalLightHasMovedInCycle].underlying > litInCycle
             val pointlightMoved = renderState[pointLightStateHolder.lightState].pointLightMovedInCycle > litInCycle
             val bounces = 1
 

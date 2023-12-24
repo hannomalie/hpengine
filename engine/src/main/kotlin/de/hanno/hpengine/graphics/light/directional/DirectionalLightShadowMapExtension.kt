@@ -5,7 +5,6 @@ import AnimatedVertexStruktPackedImpl.Companion.type
 import DirectionalLightStateImpl.Companion.type
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.type
-import InternalTextureFormat
 import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
@@ -18,25 +17,26 @@ import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
-import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
-import de.hanno.hpengine.graphics.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.transform.EntityMovementSystem
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
 import struktgen.api.forIndex
@@ -53,6 +53,7 @@ class DirectionalLightShadowMapExtension(
     private val entityBuffer: EntityBuffer,
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
+    private val entityMovementSystem: EntityMovementSystem,
 ) : Extractor, RenderSystem {
 
     private var forceRerender = true
@@ -61,18 +62,19 @@ class DirectionalLightShadowMapExtension(
         OpenGLFrameBuffer(graphicsApi, graphicsApi.DepthBuffer(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
         SHADOWMAP_RESOLUTION,
         SHADOWMAP_RESOLUTION,
-//                Reflective shadowmaps?
-//                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
-        listOf(ColorAttachmentDefinition("Shadow", InternalTextureFormat.RGBA16F, TextureFilterConfig(MinFilter.LINEAR))).toTextures(
-            graphicsApi,
-            SHADOWMAP_RESOLUTION,
-            SHADOWMAP_RESOLUTION
-        ),
+        emptyList<Texture2D>(),
         "DirectionalLight Shadow",
         Vector4f(1f, 1f, 1f, 1f),
-    ).apply {
-        factorsForDebugRendering[0] = 100f
-    }
+    )
+
+    val staticRenderTarget = graphicsApi.RenderTarget(
+        OpenGLFrameBuffer(graphicsApi, graphicsApi.DepthBuffer(STATIC_SHADOWMAP_RESOLUTION, STATIC_SHADOWMAP_RESOLUTION)),
+        STATIC_SHADOWMAP_RESOLUTION,
+        STATIC_SHADOWMAP_RESOLUTION,
+        emptyList<Texture2D>(),
+        "DirectionalLight Static Shadow",
+        Vector4f(1f, 1f, 1f, 1f),
+    )
 
     private val staticDirectionalShadowPassProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/directional_shadowmap_vertex.glsl")),
@@ -98,7 +100,7 @@ class DirectionalLightShadowMapExtension(
         private var verticesCount = 0
         private var entitiesCount = 0
 
-        fun draw(renderState: RenderState) = graphicsApi.run {
+        fun draw(renderState: RenderState, update: Update) = graphicsApi.run {
             profiled("Actual draw entities") {
                 verticesCount = 0
                 entitiesCount = 0
@@ -125,7 +127,7 @@ class DirectionalLightShadowMapExtension(
                 }
 
                 val shadowCasters = defaultBatchesSystem.getRenderBatches(renderState, program.uniforms)
-                for (batch in shadowCasters) {
+                for (batch in shadowCasters.filter { it.update == update }) {
                     program.uniforms.entityIndex = batch.entityBufferIndex
                     program.bind()
                     vertexIndexBuffer.indexBuffer.draw(batch.drawElementsIndirectCommand, false, PrimitiveType.Triangles, RenderingMode.Fill)
@@ -146,51 +148,57 @@ class DirectionalLightShadowMapExtension(
         }
     }
 
-    private var renderedInCycle: Long = 0
-
-    val shadowMapId = renderTarget.renderedTexture
+    private var animatedRenderedInCycle: Long = 0
+    private var staticRenderedInCycle: Long = 0
 
     override fun extract(currentWriteState: RenderState) {
         currentWriteState[directionalLightStateHolder.lightState].typedBuffer.forIndex(0) {
             it.shadowMapHandle = renderTarget.frameBuffer.depthBuffer!!.texture.handle
             it.shadowMapId = renderTarget.frameBuffer.depthBuffer!!.texture.id
+            it.staticShadowMapHandle = staticRenderTarget.frameBuffer.depthBuffer!!.texture.handle
+            it.staticShadowMapId = staticRenderTarget.frameBuffer.depthBuffer!!.texture.id
         }
     }
 
     override fun render(renderState: RenderState) = graphicsApi.run {
-        val entitiesState = renderState[entitiesStateHolder.entitiesState]
         profiled("Directional shadowmap") {
-            val needsRerender = forceRerender ||
-                    renderedInCycle < renderState[directionalLightStateHolder.directionalLightHasMovedInCycle] ||
-                    renderedInCycle < entitiesState.anyEntityMovedInCycle ||
-                    renderedInCycle < entitiesState.entityAddedInCycle ||
-                    renderState[defaultBatchesSystem.renderBatchesAnimated].isNotEmpty()
-
-            if (needsRerender) {
-                drawShadowMap(renderState)
-            }
+            drawShadowMap(renderState, renderState[entitiesStateHolder.entitiesState])
         }
     }
 
-    private fun drawShadowMap(renderState: RenderState) = graphicsApi.run {
+    private fun drawShadowMap(renderState: RenderState, entitiesState: EntitiesState) = graphicsApi.run {
         blend = false
         depthMask = true
         depthTest = true
         depthFunc = DepthFunc.LESS
         cullFace = false
-        renderTarget.use(true)
 
-        renderState[staticPipeline].draw(renderState)
-        renderState[animatedPipeline].draw(renderState)
+        val directionalLightMovedForAnimated = when (renderState[directionalLightStateHolder.entityId].underlying) {
+            -1 -> false
+            else -> { renderState[directionalLightStateHolder.directionalLightHasMovedInCycle].underlying >= animatedRenderedInCycle }
+        }
+        if(forceRerender || directionalLightMovedForAnimated || entitiesState.anyEntityMovedInCycle >= animatedRenderedInCycle) {
+            renderTarget.use(true)
+            renderState[animatedPipeline].draw(renderState, update = Update.DYNAMIC)
+            animatedRenderedInCycle = renderState.cycle
+        }
 
-        generateMipMaps(renderTarget.textures[0])
+        val directionalLightMovedForStatic = when (renderState[directionalLightStateHolder.entityId].underlying) {
+            -1 -> false
+            else -> { renderState[directionalLightStateHolder.directionalLightHasMovedInCycle].underlying >= staticRenderedInCycle }
+        }
+        if(forceRerender || directionalLightMovedForStatic || entitiesState.staticEntityMovedInCycle >= staticRenderedInCycle) {
+            staticRenderTarget.use(true)
+            renderState[staticPipeline].draw(renderState, update = Update.STATIC)
+            staticRenderedInCycle = renderState.cycle
+        }
 
-        renderedInCycle = renderState.cycle
         forceRerender = false
     }
 
     companion object {
         const val SHADOWMAP_RESOLUTION = 2048
+        const val STATIC_SHADOWMAP_RESOLUTION = 8 * 1024
     }
 }
 

@@ -12,6 +12,7 @@ layout(binding=10) uniform sampler2D depthAndIndicesMap;
 #ifdef BINDLESSTEXTURES
 #else
 layout(binding=8) uniform sampler2D directionalLightShadowMap;
+layout(binding=11) uniform sampler2D directionalLightStatcShadowMap;
 #endif
 
 //include(globals_structs.glsl)
@@ -152,7 +153,7 @@ void main(void) {
 #ifdef BINDLESSTEXTURES
 	float visibility = getVisibility(positionWorld, directionalLight);
 #else
-	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap);
+	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap, directionalLightStatcShadowMap);
 #endif
 
 	vec4 aoBentNormals = textureLod(aoBentNormalsMap, st, 0);

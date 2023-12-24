@@ -27,6 +27,12 @@ class GizmoSystem(val input: EditorInput) {
         0f, 0f, 1f, 0f,
         0f, 0f, 0f, 1f
     )
+    private val objectMatrixBefore = floatArrayOf(
+        1f, 0f, 0f, 0f,
+        0f, 1f, 0f, 0f,
+        0f, 0f, 1f, 0f,
+        0f, 0f, 0f, 1f
+    )
 
     private val viewManipulationSize = floatArrayOf(128f, 128f)
 
@@ -69,7 +75,7 @@ class GizmoSystem(val input: EditorInput) {
         panelLayout: PanelLayout,
         transform: Transform,
         aabb: AABB,
-    ) {
+    ): Boolean {
         viewMatrixBuffer.get(viewMatrix)
         projectionMatrixBuffer.get(projectionMatrix)
         aabb.worldAABB.apply {
@@ -89,11 +95,12 @@ class GizmoSystem(val input: EditorInput) {
 
         debugPanel()
 
-        editTransform(panelLayout, transform)
+        return editTransform(panelLayout, transform)
     }
 
-    private fun editTransform(panelLayout: PanelLayout, transform: Transform): Unit = panelLayout.run {
+    private fun editTransform(panelLayout: PanelLayout, transform: Transform): Boolean = panelLayout.run {
         transform.get(objectMatrix)
+        transform.get(objectMatrixBefore)
 
         if (ImGuizmo.isUsing()) {
             ImGuizmo.decomposeMatrixToComponents(
@@ -149,6 +156,7 @@ class GizmoSystem(val input: EditorInput) {
 
         transform.set(objectMatrix)
 //    viewMatrix.set(INPUT_CAMERA_VIEW).invert() TODO: This flickers because of multithreading
+        return !objectMatrixBefore.contentEquals(objectMatrix)
     }
 
     fun renderTransformationConfig() {

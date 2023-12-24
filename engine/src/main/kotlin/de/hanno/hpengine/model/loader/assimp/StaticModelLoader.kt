@@ -34,6 +34,7 @@ import org.lwjgl.assimp.Assimp.aiTextureType_HEIGHT
 import org.lwjgl.assimp.Assimp.aiTextureType_NONE
 import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
 import org.lwjgl.assimp.Assimp.aiTextureType_SPECULAR
+import org.lwjgl.util.meshoptimizer.MeshOptimizer
 import java.io.File
 import java.nio.IntBuffer
 import java.nio.file.Path
@@ -65,6 +66,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
             val aiMesh = AIMesh.create(aiMeshes[i])
             aiMesh.processMesh(materials)
         }
+
         return StaticModel(resourcesDir.resolve(file), meshes)
     }
 

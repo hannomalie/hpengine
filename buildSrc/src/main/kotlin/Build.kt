@@ -19,7 +19,7 @@ object Dependencies {
         const val test = "io.insert-koin:koin-test:3.1.1"
     }
     object LWJGL {
-        const val version = "3.2.3"
+        const val version = "3.3.3"
 
         val natives = when (OperatingSystem.current()) {
             OperatingSystem.LINUX   -> "natives-linux"
