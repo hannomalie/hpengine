@@ -39,13 +39,9 @@ import de.hanno.hpengine.scene.dsl.ModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.AABB
-import de.hanno.hpengine.transform.TransformSpatial
 import org.joml.Matrix4f
 import org.koin.core.annotation.Single
-import org.lwjgl.BufferUtils
-import org.lwjgl.util.meshoptimizer.MeshOptimizer
 import struktgen.api.get
-import struktgen.api.typed
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 
@@ -65,6 +61,7 @@ class ModelSystem(
 
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var instanceComponentMapper: ComponentMapper<InstanceComponent>
+    lateinit var boundingVolumeComponentMapper: ComponentMapper<BoundingVolumeComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
 
@@ -84,7 +81,11 @@ class ModelSystem(
 
     override fun inserted(entityId: Int) {
         threadPool.submit {
-            loadModelToCache(entityId)
+            try {
+                loadModelToCache(entityId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -92,7 +93,11 @@ class ModelSystem(
         val entities = IntBag().apply { addAll(entities) }
         threadPool.submit {
             entities.forEach { entityId ->
-                loadModelToCache(entityId)
+                try {
+                    loadModelToCache(entityId)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -130,19 +135,13 @@ class ModelSystem(
             }
         }
 
-        world.edit(entityId).run { BoundingVolumeComponent().apply { boundingVolume = model.boundingVolume; add(this) }}
+        boundingVolumeComponentMapper[entityId].boundingVolume.apply {
+            localMin.set(model.boundingVolume.min)
+            localMax.set(model.boundingVolume.max)
+        }
         return world.edit(entityId).run {
             ModelCacheComponent().apply {
                 this.model = model
-                this.meshSpatials = model.meshes.map {
-                    val origin = it.spatial.boundingVolume
-//                TODO: This doesn't work yet, aabbs are not calculated per mesh, figure out why
-//                StaticTransformSpatial(
-                    TransformSpatial(
-                        transformComponent.transform,
-                        AABB(origin.localMin, origin.localMax),
-                    )
-                }
                 allocateVertexIndexBufferSpace(this, descr)
                 add(this)
             }

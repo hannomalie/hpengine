@@ -79,9 +79,14 @@ class DefaultBatchesSystem(
 
                 val model: Model<*> = modelCacheComponent.model
                 val meshes = model.meshes
+                val aabb = AABB()
                 for (meshIndex in meshes.indices) {
                     val mesh = meshes[meshIndex]
-                    val aabb = model.getBoundingVolume(transform, mesh)
+                    aabb.apply {
+                        min.set(mesh.boundingVolume.min)
+                        max.set(mesh.boundingVolume.max)
+                        recalculate(transform)
+                    }
 
                     val visibleForCamera = camera.contains(aabb) || instanceCount > 1 // TODO: Better culling for instances
                     val meshBufferIndex = entityIndexOf + meshIndex //* entity.instanceCount
@@ -101,12 +106,12 @@ class DefaultBatchesSystem(
                         is AnimatedModelComponentDescription -> Update.DYNAMIC
                         is StaticModelComponentDescription -> Update.STATIC
                     }
-                    batch.entityMinWorld.set(model.getBoundingVolume(mesh).min)//TODO: reimplement with transform
-                    batch.entityMaxWorld.set(model.getBoundingVolume(mesh).max)//TODO: reimplement with transform
+                    batch.entityMinWorld.set(aabb.min)
+                    batch.entityMaxWorld.set(aabb.max)
                     batch.meshMinWorld.set(aabb.min)
                     batch.meshMaxWorld.set(aabb.max)
-                    batch.centerWorld = mesh.spatial.getCenter(transform.transformation)
-                    batch.boundingSphereRadius = model.getBoundingSphereRadius(mesh)
+                    batch.centerWorld.set(aabb.center)
+                    batch.boundingSphereRadius = aabb.boundingSphereRadius
                     batch.drawElementsIndirectCommand.instanceCount = instanceCount
                     batch.drawElementsIndirectCommand.count = model.meshIndexCounts[meshIndex]
                     batch.drawElementsIndirectCommand.firstIndex = allocation.indexOffset

@@ -6,11 +6,11 @@ import com.artemis.World
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.model.BoundingVolumeComponent
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.spatial.SpatialComponent
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.transform.AABBData
 import org.joml.AxisAngle4f
@@ -61,10 +61,10 @@ fun World.addStaticModelEntity(
             transform.scaleLocal(scale.x, scale.y, scale.z)
         }
     }
+    create(BoundingVolumeComponent::class.java)
     create(ModelComponent::class.java).apply {
         modelComponentDescription = StaticModelComponentDescription(path, directory)
     }
-    create(SpatialComponent::class.java)
     create(NameComponent::class.java).apply {
         this.name = name
     }
@@ -78,10 +78,10 @@ fun World.addAnimatedModelEntity(
 ) {
     edit(create()).apply {
         create(TransformComponent::class.java)
+        create(BoundingVolumeComponent::class.java)
         create(ModelComponent::class.java).apply {
             modelComponentDescription = AnimatedModelComponentDescription(path, directory, aabbData = aabbData)
         }
-        create(SpatialComponent::class.java)
         create(NameComponent::class.java).apply {
             this.name = name
         }

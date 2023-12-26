@@ -8,6 +8,7 @@ import com.artemis.Component
 import com.artemis.annotations.All
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.artemis.forFirstEntityIfPresent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.PrimitiveType
@@ -106,18 +107,24 @@ class GrassSystem(
     override fun processSystem() { }
 
     override fun extract(currentWriteState: RenderState) {
-        val positionsToWrite = currentWriteState[positions]
-        positionsToWrite.ensureCapacityInBytes(templatePositions.size * Vector4fStrukt.sizeInBytes)
-
-        var index = 0
-        templatePositions.forEach {
-            positionsToWrite.buffer.run {
-                positionsToWrite[index].set(it)
-            }
-            index++
+        var anyGrassPresent = false
+        forFirstEntityIfPresent {
+            anyGrassPresent = true
         }
-        forEachEntity {
-            currentWriteState[entityId].value = it
+        if(anyGrassPresent) {
+            val positionsToWrite = currentWriteState[positions]
+            positionsToWrite.ensureCapacityInBytes(templatePositions.size * Vector4fStrukt.sizeInBytes)
+
+            var index = 0
+            templatePositions.forEach {
+                positionsToWrite.buffer.run {
+                    positionsToWrite[index].set(it)
+                }
+                index++
+            }
+            forEachEntity {
+                currentWriteState[entityId].value = it
+            }
         }
     }
     override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
@@ -161,7 +168,7 @@ class GrassSystem(
                 depthMask = materialComponent.material.writesDepth
                 cullFace = materialComponent.material.cullBackFaces
                 depthTest = materialComponent.material.depthTest
-                setTextureUniforms(program, graphicsApi, materialComponent.material.maps)
+                program.setTextureUniforms(graphicsApi, materialComponent.material.maps)
 
                 program.uniforms.entityIndex = entityIndex
 

@@ -2,31 +2,16 @@ package de.hanno.hpengine.graphics.envprobe
 
 import com.artemis.Component
 import de.hanno.hpengine.graphics.renderer.environmentsampler.EnvironmentSampler
-import de.hanno.hpengine.transform.AABB
-import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesState
-import de.hanno.hpengine.transform.TransformSpatial
 import org.joml.Vector3f
-import org.joml.Vector3fc
 import org.koin.core.annotation.Single
 
 class EnvironmentProbeComponent: Component() {
     var size = Vector3f(10f)
     var weight = 1f
 
-    val spatial = TransformSpatial(Transform(), AABB(Vector3f(size).div(2f).negate(), Vector3f(size).div(2f)))
-    val box = spatial.boundingVolume
-
     // TODO: I don't want to have this here
     lateinit var sampler: EnvironmentSampler
-
-    fun move(amount: Vector3f) {
-        box.move(amount)
-    }
-
-    fun contains(min: Vector3fc?, max: Vector3fc?) = box.contains(min!!) && box.contains(max!!)
-    operator fun contains(minMaxWorld: AABB) = contains(minMaxWorld.min, minMaxWorld.max)
 }
 
 @Single

@@ -19,6 +19,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.model.BoundingVolumeComponent
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.model.material.ProgramDescription
@@ -85,6 +86,10 @@ fun World.addSkyBox(config: Config) {
         }
         create(TransformComponent::class.java)
         create(SkyBoxComponent::class.java)
+        create(BoundingVolumeComponent::class.java).apply {
+            this.boundingVolume.localMin.set(-5f)
+            this.boundingVolume.localMin.set(5f)
+        }
         create(ModelComponent::class.java).apply {
             modelComponentDescription = StaticModelComponentDescription(
                 "assets/models/skybox.obj",

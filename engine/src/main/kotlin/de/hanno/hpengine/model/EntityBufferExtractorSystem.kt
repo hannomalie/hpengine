@@ -8,12 +8,14 @@ import com.artemis.annotations.One
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.graphics.BoundingVolumeType
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.instancing.InstancesComponent
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.transform.AABB
 import org.koin.core.annotation.Single
 import struktgen.api.get
 
@@ -78,9 +80,12 @@ class EntityBufferExtractorSystem(
                                     animationFrame0 = model.animationFrame
                                     isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                                     dummy4 = allocation.indexOffset
-                                    val boundingVolume = modelCacheComponent.meshSpatials[index].boundingVolume
 
-                                    setTrafoAndBoundingVolume(transform.transformation, boundingVolume)
+                                    setTrafoAndBoundingVolume(transform.transformation, AABB().apply {
+                                        min.set(mesh.boundingVolume.min)
+                                        max.set(mesh.boundingVolume.max)
+                                        recalculate(transform) // TODO: Move allocation out of loop
+                                    })
                                 }
                                 entityBufferIndex++
                             }

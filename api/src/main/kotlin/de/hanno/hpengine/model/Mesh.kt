@@ -2,20 +2,20 @@ package de.hanno.hpengine.model
 
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.transform.SimpleSpatial
+import de.hanno.hpengine.transform.AABBData
 import org.joml.Vector2f
 import org.joml.Vector3f
 import java.nio.ByteBuffer
 
 interface Mesh<T> {
     val indexBufferValues: ByteBuffer
+    val boundingVolume: AABBData
 
     val triangleCount: Int
     var material: Material
     var name: String
     val vertices: List<T>
     val faces: List<IndexedFace>
-    val spatial: SimpleSpatial
 
     companion object {
         val IDENTITY: Transform = Transform()

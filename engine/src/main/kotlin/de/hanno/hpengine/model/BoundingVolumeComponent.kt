@@ -13,7 +13,7 @@ import org.joml.Matrix4f
 import org.koin.core.annotation.Singleton
 
 class BoundingVolumeComponent: Component() {
-    lateinit var boundingVolume: AABB
+    val boundingVolume = AABB()
 }
 
 @Singleton(binds = [BaseSystem::class])
@@ -28,7 +28,10 @@ class BoundingVolumeComponentSystem: BaseEntitySystem() {
     override fun processSystem() {
         forEachEntity {
             modelCacheComponentMapper.getOrNull(it)?.let { modelCacheComponent ->
-                boundingVolumeComponentMapper[it].boundingVolume = modelCacheComponent.model.boundingVolume
+                boundingVolumeComponentMapper[it].boundingVolume.apply {
+                    localMin.set(modelCacheComponent.model.boundingVolume.min)
+                    localMax.set(modelCacheComponent.model.boundingVolume.max)
+                }
             }
 
             val boundingVolume = boundingVolumeComponentMapper[it].boundingVolume

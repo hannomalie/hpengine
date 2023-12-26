@@ -10,23 +10,18 @@ import org.joml.*
 
 sealed class BoundingVolume
 
-data class BoundingSphereTrafo(val translation: Vector3f = Vector3f(), var scale: Float = 1f) {
-    companion object {
-        val identity = BoundingSphereData()
-    }
-}
-data class BoundingSphereData(val positionRadius: Vector4fc = Vector4f(0f, 0f, 0f, absoluteMinimum.x))
+data class BoundingSphereTrafo(val translation: Vector3f = Vector3f(), var scale: Float = 1f)
 class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
     private var lastUsedTransformationMatrix: Matrix4f? = null
     private var lastUsedBoundingSphereTrafo: BoundingSphereTrafo? = null
 
-    var localBoundingSphere = BoundingSphereData()
+    var localBoundingSphere = Vector4f(0f, 0f, 0f, 1f) // TODO: Is this a good default?
         set(value) {
             field = value
             actuallyRecalculate(lastUsedTransformationMatrix ?: IDENTITY)
             lastUsedTransformationMatrix = null
         }
-    var boundingSphere = BoundingSphereData()
+    var boundingSphere = Vector4f(0f, 0f, 0f, 1f) // TODO: Is this a good default?
         private set
 
     init {
@@ -62,9 +57,9 @@ class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
             lastUsedBoundingSphereTrafo!!.translation.z,
             0f
         )
-        val positionRadius = Vector4f(localBoundingSphere.positionRadius).add(translation)
-        positionRadius.w = localBoundingSphere.positionRadius.w * lastUsedBoundingSphereTrafo!!.scale
-        boundingSphere = BoundingSphereData(positionRadius)
+        val positionRadius = Vector4f(localBoundingSphere).add(translation)
+        positionRadius.w = localBoundingSphere.w * lastUsedBoundingSphereTrafo!!.scale
+        boundingSphere = positionRadius
     }
 
     private fun recalculateIfNotClean(transform: Matrix4f) {

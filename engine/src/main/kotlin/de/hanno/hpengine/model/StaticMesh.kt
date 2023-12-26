@@ -1,10 +1,11 @@
 package de.hanno.hpengine.model
 
-import de.hanno.hpengine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.Vertex
-import de.hanno.hpengine.transform.*
-import org.joml.*
+import de.hanno.hpengine.transform.AABBData
+import de.hanno.hpengine.transform.x
+import de.hanno.hpengine.transform.y
+import de.hanno.hpengine.transform.z
 import java.io.Serializable
 import java.util.*
 
@@ -18,8 +19,16 @@ class StaticMesh(
 
     val uuid = UUID.randomUUID()
 
-    override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
-        boundingVolume.localAABB.setFrom(calculateAABB(IDENTITY, vertices.map { it.position }, faces))
+    override val boundingVolume = AABBData().apply {
+        vertices.forEach {
+            min.x = minOf(min.x, it.position.x)
+            min.y = minOf(min.y, it.position.y)
+            min.z = minOf(min.x, it.position.z)
+
+            max.x = maxOf(max.x, it.position.x)
+            max.y = maxOf(max.y, it.position.y)
+            max.z = maxOf(max.x, it.position.z)
+        }
     }
 
     override val indexBufferValues = faces.extractIndices()

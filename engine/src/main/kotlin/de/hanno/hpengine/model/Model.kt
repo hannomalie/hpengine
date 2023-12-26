@@ -1,19 +1,15 @@
 package de.hanno.hpengine.model
 
+import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.transform.AABB
-import de.hanno.hpengine.transform.SimpleSpatial
-import de.hanno.hpengine.transform.Spatial
-import de.hanno.hpengine.transform.boundingSphereRadius
-import de.hanno.hpengine.buffers.copyTo
-import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
-import struktgen.api.TypedBuffer
 import struktgen.api.Strukt
+import struktgen.api.TypedBuffer
 import java.io.File
 
 
-sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
+sealed class Model<T>(val _meshes: List<Mesh<T>>) {
     val meshes: Array<Mesh<T>> = _meshes.toTypedArray()
 
     val meshIndexCounts = meshes.map { it.indexBufferValues.capacity() / Integer.BYTES }
@@ -41,7 +37,7 @@ sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
     abstract val verticesPacked: TypedBuffer<out Strukt>
     val boundingSphereRadius: Float
         get() = boundingVolume.boundingSphereRadius
-    abstract override val boundingVolume: AABB
+    abstract val boundingVolume: AABB
 
     val isStatic: Boolean
         get() = when(this) {
@@ -50,9 +46,4 @@ sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
         }
     var isInvertTexCoordY = true
     abstract val bytesPerVertex: Int
-
-    abstract fun calculateBoundingVolume(): AABB
-    fun getBoundingSphereRadius(mesh: Mesh<*>): Float = mesh.spatial.boundingSphereRadius
-    open fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>): AABB = mesh.spatial.getBoundingVolume(transform)
-    fun getBoundingVolume(mesh: Mesh<*>): AABB = mesh.spatial.boundingVolume
 }

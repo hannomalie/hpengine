@@ -21,7 +21,7 @@ class RenderBatch(
     var isVisible: Boolean = false,
     var update: Update = Update.STATIC,
     val drawElementsIndirectCommand: DrawElementsIndirectCommand = DrawElementsIndirectCommand(),
-    var centerWorld: Vector3f = Vector3f(),
+    val centerWorld: Vector3f = Vector3f(),
     var animated : Boolean = false,
     var boundingSphereRadius: Float = 0.0f,
     var material: Material = Material("default"),

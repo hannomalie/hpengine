@@ -10,7 +10,6 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.constants.PrimitiveType
@@ -149,9 +148,9 @@ class EnvironmentSampler(
                 program
             )
             for (e in renderState[defaultBatchesSystem.renderBatchesStatic]) {
-                if (!isInFrustum(camera.frustum, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
+//                if (!isInFrustum(camera.frustum, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
 //				continue;
-                }
+//                }
                 entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                     e.drawElementsIndirectCommand,
                     true,

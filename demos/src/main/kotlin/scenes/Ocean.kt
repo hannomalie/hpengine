@@ -7,13 +7,13 @@ import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.shader.ProgramManager
+import de.hanno.hpengine.model.BoundingVolumeComponent
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ocean.OceanWaterComponent
 import de.hanno.hpengine.ocean.OceanWaterRenderSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.spatial.SpatialComponent
 import de.hanno.hpengine.world.loadScene
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Vector2f
@@ -50,6 +50,7 @@ private fun World.addOceanSurface(
             transform.scaling(10f)
             transform.translate(translation)
         }
+        create(BoundingVolumeComponent::class.java)
         create(ModelComponent::class.java).apply {
             modelComponentDescription = StaticModelComponentDescription(
                 file = "assets/models/plane_tesselated.obj",
@@ -80,7 +81,6 @@ private fun World.addOceanSurface(
             }
         }
         add(OceanWaterComponent())
-        create(SpatialComponent::class.java)
         create(NameComponent::class.java).apply {
             name = "OceanSurface${oceanSurfaceCounter++}"
         }
