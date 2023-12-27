@@ -11,6 +11,10 @@ import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AnimatedVertex
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -47,18 +51,25 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
             ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
-        val materials = (0 until numMaterials).map { i ->
+//        val materials = (0 until numMaterials).map { i ->
+//            val aiMaterial = AIMaterial.create(aiMaterials!![i])
+//            aiMaterial.processMaterial(
+//                Path.of(file).parent.toString(),
+//                resourcesDir,
+//                textureManager
+//            )
+//        }
+        val deferredMaterials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
-            aiMaterial.processMaterial(
-                Path.of(file).parent.toString(),
-                resourcesDir,
-                textureManager
-            )
+            GlobalScope.async { aiMaterial.processMaterial(Path.of(file).parent.toString(), resourcesDir, textureManager) }
         }
 
         val boneList: MutableList<Bone> = ArrayList()
         val numMeshes: Int = aiScene.mNumMeshes()
         val aiMeshes: PointerBuffer = aiScene.mMeshes()!!
+        val materials = runBlocking {
+            deferredMaterials.awaitAll()
+        }
         val meshes: List<AnimatedMesh> = (0 until numMeshes).map { i ->
             val aiMesh = AIMesh.create(aiMeshes[i])
             aiMesh.processMesh(materials, boneList)
@@ -169,18 +180,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
     ): Material {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
-                Assimp.aiGetMaterialTexture(
-                    this,
-                    textureIdentifier,
-                    0,
-                    path,
-                    null as IntBuffer?,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                )
+                Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
                 val textPath = path.dataString()
                 return if (textPath.isNotEmpty()) {
                     val file = resourcesDir.resolve(texturesDir).resolve(textPath)

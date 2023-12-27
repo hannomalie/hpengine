@@ -15,6 +15,9 @@ import de.hanno.hpengine.ocean.oceanModule
 import de.hanno.hpengine.opengl.openglModule
 import glfwModule
 import invoke
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.core.config.Configurator
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 import org.koin.dsl.module
@@ -22,6 +25,7 @@ import org.koin.ksp.generated.module
 import java.io.File
 
 fun main() {
+    Configurator.setAllLevels(LogManager.getRootLogger().name, Level.INFO)
     val demoAndEngineConfig = createDemoAndEngineConfig()
 
     val engine = createEngine(demoAndEngineConfig)
@@ -33,7 +37,6 @@ fun createEngine(demoAndEngineConfig: DemoAndEngineConfig) = Engine(
     listOf(
         glfwModule,
         openglModule,
-//        demoAndEngineConfig.primaryRendererModule,
         deferredRendererModule,
         simpleForwardRendererModule,
         editorModule,
@@ -93,10 +96,5 @@ data class DemoAndEngineConfig(
         single { config }
         single { config.gameDir }
         single { config.engineDir }
-    }
-
-    val primaryRendererModule = when (demoConfig.renderer) {
-        Renderer.Deferred -> deferredRendererModule
-        Renderer.Forward -> simpleForwardRendererModule
     }
 }

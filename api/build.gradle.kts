@@ -40,6 +40,9 @@ dependencies {
     api("net.onedaybeard.artemis:artemis-odb-serializer-json:2.3.0")
     api("net.mostlyoriginal.artemis-odb:contrib-plugin-singleton:2.5.0")
 
+    api("org.apache.logging.log4j:log4j-api:2.22.1")
+    api("org.apache.logging.log4j:log4j-core:2.22.1")
+
     configureCommonTestDependencies()
     testImplementation(Koin.test)
 }

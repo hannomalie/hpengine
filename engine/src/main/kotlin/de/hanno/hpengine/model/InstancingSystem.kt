@@ -31,9 +31,14 @@ class InstancingSystem(
         val transform = transformComponentMapper.getOrNull(sourceId)?.transform ?: transformComponentMapper[targetId].transform
         val parentModelCacheComponent = modelCacheComponentMapper.getOrNull(targetId)
         if (parentModelCacheComponent != null) {
+            world.edit(sourceId).run {
+                add(ModelCacheComponent(
+                    model = parentModelCacheComponent.model,
+                    allocation = parentModelCacheComponent.allocation)
+                )
+            }
             modelCacheComponentMapper.create(sourceId).apply {
-                model = parentModelCacheComponent.model
-                allocation = parentModelCacheComponent.allocation
+
             }
         }
     }

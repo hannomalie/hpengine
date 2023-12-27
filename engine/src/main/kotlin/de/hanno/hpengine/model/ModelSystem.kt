@@ -2,7 +2,6 @@ package de.hanno.hpengine.model
 
 import AnimatedVertexStruktPackedImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
-import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
@@ -11,8 +10,6 @@ import com.artemis.annotations.One
 import com.artemis.utils.IntBag
 import de.hanno.hpengine.artemis.forEach
 import de.hanno.hpengine.artemis.getOrNull
-import de.hanno.hpengine.buffers.copyTo
-import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -38,7 +35,7 @@ import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.ModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Extractor
-import de.hanno.hpengine.transform.AABB
+import org.apache.logging.log4j.LogManager
 import org.joml.Matrix4f
 import org.koin.core.annotation.Single
 import struktgen.api.get
@@ -57,6 +54,7 @@ class ModelSystem(
     private val programManager: ProgramManager,
     private val entitiesStateHolder: EntitiesStateHolder,
 ) : BaseEntitySystem(), Extractor {
+    private val logger = LogManager.getLogger(ModelSystem::class.java)
     private val threadPool = Executors.newFixedThreadPool(1)
 
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
@@ -103,15 +101,15 @@ class ModelSystem(
     }
 
     private fun loadModelToCache(entityId: Int): ModelCacheComponent {
+        logger.info("loading model to cache for entity $entityId")
         val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
         val instanceComponent = instanceComponentMapper.getOrNull(entityId)
 
-        val transformComponent =
-            transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper[instanceComponent!!.targetEntity]
         val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
 
         val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
         val descr = modelComponent.modelComponentDescription
+        logger.info("model description: $descr")
         val dir = when (descr.directory) {
             Directory.Game -> config.gameDir
             Directory.Engine -> config.engineDir
@@ -134,16 +132,16 @@ class ModelSystem(
                 }
             }
         }
+        logger.info("Loaded successfully: $descr")
 
         boundingVolumeComponentMapper[entityId].boundingVolume.apply {
             localMin.set(model.boundingVolume.min)
             localMax.set(model.boundingVolume.max)
         }
         return world.edit(entityId).run {
-            ModelCacheComponent().apply {
-                this.model = model
-                allocateVertexIndexBufferSpace(this, descr)
+            ModelCacheComponent(model, allocateVertexIndexBufferSpace(descr, model)).apply {
                 add(this)
+                logger.info("Added modelcache component for entity $entityId")
             }
         }
     }
@@ -157,8 +155,9 @@ class ModelSystem(
         }
     }
 
-    fun allocateVertexIndexBufferSpace(modelCacheComponent: ModelCacheComponent, descr: ModelComponentDescription) {
-        val allocation = when (val model = modelCacheComponent.model) {
+    fun allocateVertexIndexBufferSpace(
+        descr: ModelComponentDescription, model: Model<*>): Allocation {
+        val allocation = when (model) {
             is AnimatedModel -> {
                 val vertexIndexBuffer = vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForModel(model)
@@ -184,8 +183,8 @@ class ModelSystem(
                 Allocation.Static(vertexIndexOffsetsForMeshes)
             }
         }
-        modelCacheComponent.allocation = allocation
         allocations[descr] = allocation
+        return allocation
     }
 
     private fun VertexIndexBuffer<*>.allocateForModel(model: Model<*>): VertexIndexOffsets {
