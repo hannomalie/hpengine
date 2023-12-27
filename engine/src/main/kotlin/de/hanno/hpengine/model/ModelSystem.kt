@@ -132,6 +132,7 @@ class ModelSystem(
                 }
             }
         }
+
         logger.info("Loaded successfully: $descr")
 
         boundingVolumeComponentMapper[entityId].boundingVolume.apply {
@@ -139,6 +140,12 @@ class ModelSystem(
             localMax.set(model.boundingVolume.max)
         }
         return world.edit(entityId).run {
+            when(model) {
+                is AnimatedModel ->{
+                    add(AnimationControllerComponent(model.animationController))
+                }
+                is StaticModel -> { }
+            }
             ModelCacheComponent(model, allocateVertexIndexBufferSpace(descr, model)).apply {
                 add(this)
                 logger.info("Added modelcache component for entity $entityId")
@@ -167,7 +174,9 @@ class ModelSystem(
                     vertexIndexOffsets
                 )
 
-                val elements = model.animation.frames.flatMap { frame -> frame.jointMatrices.toList() }
+                val elements = model.animations.flatMap {
+                    it.value.frames.flatMap { frame -> frame.jointMatrices.toList() }
+                }
                 val jointsOffset = joints.size
                 joints.addAll(elements)
                 Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)

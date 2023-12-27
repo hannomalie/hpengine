@@ -1,6 +1,7 @@
 package de.hanno.hpengine.model
 
 import com.artemis.Component
+import de.hanno.hpengine.model.animation.AnimationController
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.dsl.ModelComponentDescription
 
@@ -18,6 +19,13 @@ class ModelCacheComponent() : Component() {
     ) : this() {
         this.model = model
         this.allocation = allocation
+    }
+}
+class AnimationControllerComponent(): Component() {
+    lateinit var animationController: AnimationController
+
+    constructor(animationController: AnimationController): this() {
+        this.animationController = animationController
     }
 }
 

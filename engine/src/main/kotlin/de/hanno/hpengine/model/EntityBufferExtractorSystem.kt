@@ -78,7 +78,10 @@ class EntityBufferExtractorSystem(
                                     meshIndex = index
                                     baseVertex = allocation.forMeshes[index].vertexOffset
                                     baseJointIndex = allocation.baseJointIndex
-                                    animationFrame0 = model.animationFrame
+                                    animationFrame0 = model.getAnimationFrame(0)
+                                    animationFrame1 = model.getAnimationFrame(1)
+                                    animationFrame2 = model.getAnimationFrame(2)
+                                    animationFrame3 = model.getAnimationFrame(3)
                                     isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                                     dummy4 = allocation.indexOffset
 
@@ -98,7 +101,10 @@ class EntityBufferExtractorSystem(
     }
 }
 
-private val Model<*>.animationFrame: Int get() = when (this) {
-    is AnimatedModel -> animation.currentFrame
+private fun Model<*>.getAnimationFrame(index: Int): Int = when (this) {
+    is AnimatedModel -> {
+        val animations = animationController.animations.values.toList()
+        if(index > animations.lastIndex) 0 else animations[index].currentFrame
+    }
     is StaticModel -> 0
 }

@@ -26,9 +26,9 @@ interface EntityStrukt : Strukt {
     context(ByteBuffer) var baseVertex: Int
     context(ByteBuffer) var baseJointIndex: Int
     context(ByteBuffer) var animationFrame0: Int
-    context(ByteBuffer) val animationFrame1: Int
-    context(ByteBuffer) val animationFrame2: Int
-    context(ByteBuffer) val animationFrame3: Int
+    context(ByteBuffer) var animationFrame1: Int
+    context(ByteBuffer) var animationFrame2: Int
+    context(ByteBuffer) var animationFrame3: Int
     context(ByteBuffer) var isInvertedTexCoordY: Int
     context(ByteBuffer) val dummy0: Int
     context(ByteBuffer) val dummy1: Int

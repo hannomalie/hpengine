@@ -57,8 +57,7 @@ class AnimatedModel(
         }
     }
 
-    val animation = animations.entries.first().value // TOOD: Use all animations
-    val animationController = AnimationController(animation)
+    val animationController = AnimationController(animations)
 
     override val verticesPacked = TypedBuffer(
         BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes),

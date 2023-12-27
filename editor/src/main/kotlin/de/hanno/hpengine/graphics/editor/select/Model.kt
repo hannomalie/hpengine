@@ -47,12 +47,13 @@ class ModelComponentEditorExtension(
         is ModelSelection -> selection.modelComponent
         else -> null
     }?.let { modelComponent ->
-        modelSystem[modelComponent.modelComponentDescription]?.let {
-            if (ImGui.checkbox("Invert Y Texture Coord", it.isInvertTexCoordY)) {
-                it.isInvertTexCoordY = !it.isInvertTexCoordY
+        modelSystem[modelComponent.modelComponentDescription]?.let { model ->
+            if (ImGui.checkbox("Invert Y Texture Coord", model.isInvertTexCoordY)) {
+                model.isInvertTexCoordY = !model.isInvertTexCoordY
             }
-            val material = it.meshes.first().material
+            val material = model.meshes.first().material
             materialGrid(material, textureManager)
+            modelGrid(model)
         }
         true
     } ?: false

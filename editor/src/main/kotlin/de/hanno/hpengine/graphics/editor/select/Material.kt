@@ -8,7 +8,10 @@ import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.textureSelection
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
+import de.hanno.hpengine.model.AnimatedModel
 import de.hanno.hpengine.model.MaterialComponent
+import de.hanno.hpengine.model.Model
+import de.hanno.hpengine.model.StaticModel
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
 import imgui.ImGui.*
@@ -55,6 +58,21 @@ class MaterialEditorExtension(
     }
 }
 
+fun Window.modelGrid(model: Model<*>) {
+    when(model) {
+        is AnimatedModel -> {
+            text("Animations")
+            model.animationController.animations.forEach { name, animation ->
+                spacing()
+                text(name)
+                floatInput("fps", animation.fps, 0f, 100f) {
+                    animation.fps = it.first()
+                }
+            }
+        }
+        is StaticModel -> {}
+    }
+}
 fun Window.materialGrid(material: Material, textureManager: TextureManagerBaseSystem) {
     text(material.name)
     val colors = floatArrayOf(
