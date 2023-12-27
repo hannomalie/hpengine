@@ -153,6 +153,8 @@ class GlfwWindow(
         // TODO: IS BROKEN
         val isMainContext = parentWindow == null
         gpuExecutor = if (isMainContext) {
+            // TODO: IS BROKEN
+//            OpenGlExecutorImpl(gpuProfiler = profiler) {
             FrameBasedResultOpenGLExecutor(profiler, backgroundWindow?.gpuExecutor) {
                 makeContextCurrent()
                 GL.createCapabilities()

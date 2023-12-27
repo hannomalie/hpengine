@@ -92,28 +92,7 @@ class OpenGlProgramManager(
         ComputeShader(graphicsApi, codeSource, Defines()), graphicsApi, fileMonitor,  Uniforms.Empty,
     )
 
-    var programsSourceCache: WeakHashMap<Shader, Int> = WeakHashMap()
-    override fun update(deltaSeconds: Float) {
-        if(config.debug.isUseFileReloading) {
-            programsCache.forEach { program ->
-                program.shaders.forEach { shader ->
-                    when (val source = shader.source) {
-                        is FileBasedCodeSource -> {// || shader.source is WrappedCodeSource || shader.source is StringBasedCodeSource) { // TODO: Make this possible again
-                            programsSourceCache.putIfAbsent(shader, shader.source.source.hashCode())
-                            if (source.getSourceStringFromFile().hashCode() != programsSourceCache[shader]!!) {
-                                graphicsApi.run {
-//                                 TODO: Make this possible again
-//                                 program.reloadProgram()
-                                    program.reload()
-                                    programsSourceCache[shader] = shader.source.source.hashCode()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    override fun update(deltaSeconds: Float) { }
 
     override fun processSystem() {
         update(world.delta)

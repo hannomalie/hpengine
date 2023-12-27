@@ -8,7 +8,6 @@ import com.artemis.annotations.One
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
-import de.hanno.hpengine.graphics.BoundingVolumeType
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.instancing.InstanceComponent
@@ -36,6 +35,8 @@ class EntityBufferExtractorSystem(
 
     override fun processSystem() {
     }
+
+    private val tempAABB = AABB()
 
     override fun extract(currentWriteState: RenderState) {
         val entitiesBufferToWrite = currentWriteState[entityBuffer.entitiesBuffer]
@@ -81,10 +82,10 @@ class EntityBufferExtractorSystem(
                                     isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                                     dummy4 = allocation.indexOffset
 
-                                    setTrafoAndBoundingVolume(transform.transformation, AABB().apply {
+                                    setTrafoAndBoundingVolume(transform.transformation, tempAABB.apply {
                                         min.set(mesh.boundingVolume.min)
                                         max.set(mesh.boundingVolume.max)
-                                        recalculate(transform) // TODO: Move allocation out of loop
+                                        recalculate(transform)
                                     })
                                 }
                                 entityBufferIndex++
