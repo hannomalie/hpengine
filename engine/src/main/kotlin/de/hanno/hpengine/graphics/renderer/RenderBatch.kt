@@ -27,10 +27,10 @@ class RenderBatch(
     var material: Material = Material("default"),
     var program: ProgramImpl<*>? = null,
     var entityBufferIndex: Int = 0,
-    var contributesToGi: Boolean = true
+    var contributesToGi: Boolean = true,
 ) {
-
     val isShadowCasting: Boolean get() = material.isShadowCasting
+    val neverCull: Boolean get() = material.neverCull
 
     val instanceCount: Int get() = drawElementsIndirectCommand.instanceCount
 

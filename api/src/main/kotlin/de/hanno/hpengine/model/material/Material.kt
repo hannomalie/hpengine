@@ -26,6 +26,7 @@ data class Material(
     val maps: MutableMap<MAP, Texture> = mutableMapOf(),
     var environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
     var isShadowCasting: Boolean = true,
+    var neverCull: Boolean = false,
     var programDescription: ProgramDescription? = null,
 ) {
 

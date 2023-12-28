@@ -3,7 +3,6 @@ package de.hanno.hpengine
 import com.artemis.BaseSystem
 import com.artemis.World
 import com.artemis.WorldConfigurationBuilder
-import com.artemis.link.EntityLinkManager
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import de.hanno.hpengine.config.Config
@@ -13,10 +12,12 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.lifecycle.UpdateCycle
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.system.PrioritySystem
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.mostlyoriginal.api.SingletonPlugin
+import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.util.concurrent.Executors
@@ -28,7 +29,11 @@ class Engine(
     private val window: Window,
     private val addResourceContext: AddResourceContext,
 ) {
-    val systems = baseSystems
+    private val logger = LogManager.getLogger(Engine::class.java)
+
+    val systems = baseSystems.sortedByDescending {
+        (it as? PrioritySystem)?.priority ?: -1
+    }
 
     val extractors = systems.filterIsInstance<Extractor>().distinct() // TODO: bind as Extractor, inject properly, this is flawed
     val renderManager = systems.firstIsInstance<RenderManager>() // TODO: See above
@@ -49,12 +54,12 @@ class Engine(
                 }
             )
     ).apply {
-        getSystem(EntityLinkManager::class.java).apply {
-//            register(InstanceComponent::class.java, modelSystem) // TODO: Figure out what this did
-        }
         process()
     }
 
+    init {
+        logger.info("Registered: ${systems.size} systems, ${extractors.size} extractors")
+    }
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()

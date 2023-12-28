@@ -1,6 +1,7 @@
 package de.hanno.hpengine.config
 
 import de.hanno.hpengine.directory.*
+import org.apache.logging.log4j.Level
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import java.io.File
@@ -14,6 +15,7 @@ annotation class Button
 
 @Single
 data class Config(
+    var logLevel: Level = Level.INFO,
     var quality: QualityConfig = QualityConfig(),
     var debug: DebugConfig = DebugConfig(),
     var effects: EffectsConfig = EffectsConfig(),

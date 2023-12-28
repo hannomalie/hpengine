@@ -136,6 +136,8 @@ class ImGuiEditor(
 
     override fun processSystem() {}
     override fun render(renderState: RenderState) {
+        primaryRendererSelection.primaryRenderer.render(renderState)
+
         layout.update(ImGui.getIO().displaySizeX, ImGui.getIO().displaySizeY)
 
         entityClickListener.consumeClick { entityClicked -> handleClick(entityClicked) }

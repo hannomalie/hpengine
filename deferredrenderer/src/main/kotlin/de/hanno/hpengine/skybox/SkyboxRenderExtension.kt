@@ -86,24 +86,8 @@ class SkyboxRenderExtension(
             textureManager.cubeMap
         }
         bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, skyboxTexture.id)
-        bindImageTexture(
-            4,
-            deferredRenderingBuffer.reflectionBuffer.renderedTextures[0],
-            0,
-            false,
-            0,
-            Access.ReadWrite,
-            InternalTextureFormat.RGBA16F
-        )
-        bindImageTexture(
-            7,
-            deferredRenderingBuffer.reflectionBuffer.renderedTextures[1],
-            0,
-            false,
-            0,
-            Access.ReadWrite,
-            InternalTextureFormat.RGBA16F
-        )
+        bindImageTexture(4, deferredRenderingBuffer.reflectionBuffer.renderedTextures[0], 0, false, 0, Access.ReadWrite, InternalTextureFormat.RGBA16F)
+        bindImageTexture(7, deferredRenderingBuffer.reflectionBuffer.renderedTextures[1], 0, false, 0, Access.ReadWrite, InternalTextureFormat.RGBA16F)
         val camera = renderState[primaryCameraStateHolder.camera]
         secondPassReflectionProgram.use()
         secondPassReflectionProgram.setUniform("screenWidth", config.width.toFloat())

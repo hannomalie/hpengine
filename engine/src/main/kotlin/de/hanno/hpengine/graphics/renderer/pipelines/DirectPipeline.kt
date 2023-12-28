@@ -25,6 +25,7 @@ import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.scene.VertexIndexBuffer
+import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
@@ -38,11 +39,11 @@ open class DirectPipeline(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
     private val fallbackTexture: Texture? = null,
-    // TODO: Use shouldBeSkipped
     protected val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
     }
 ) {
+    private val logger = LogManager.getLogger(this.javaClass)
     private var verticesCount = 0
     private var entitiesCount = 0
     private var renderBatches = emptyList<RenderBatch>()
@@ -53,6 +54,7 @@ open class DirectPipeline(
         entitiesCount = 0
 
         renderBatches = renderState.extractRenderBatches()
+        logger.debug("Prepared ${renderBatches.size} batches")
     }
 
     open fun RenderState.extractRenderBatches(): List<RenderBatch> = this[defaultBatchesSystem.renderBatchesStatic].filterNot {
@@ -87,6 +89,7 @@ open class DirectPipeline(
             uniforms.setCommonUniformValues(renderState, entitiesState, camera)
 
             val batchesWithPipelineProgram = renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }
+            logger.debug("Render ${batchesWithPipelineProgram.size} default pipeline program batches")
             for (batch in batchesWithPipelineProgram) {
                 depthMask = batch.material.writesDepth
                 cullFace = batch.material.cullBackFaces
@@ -115,6 +118,7 @@ open class DirectPipeline(
     ) = graphicsApi.run {
         val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
 
+        logger.debug("Render ${batchesWithOwnProgram.size} custom program batches")
         for (groupedBatches in batchesWithOwnProgram) {
             for (batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
                 val program = batch.program!! as Program<FirstPassUniforms> // TODO: This is not safe
@@ -238,6 +242,7 @@ fun Program<*>.setTextureUniforms(
 }
 
 fun RenderBatch.isCulled(cullCam: Camera): Boolean {
+    if(neverCull) return false
     if (!isVisible) return true
 
     val intersectAABB = cullCam.frustum.frustumIntersection.intersectAab(meshMinWorld, meshMaxWorld)

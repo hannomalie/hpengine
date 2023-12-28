@@ -25,8 +25,8 @@ import org.koin.ksp.generated.module
 import java.io.File
 
 fun main() {
-    Configurator.setAllLevels(LogManager.getRootLogger().name, Level.INFO)
     val demoAndEngineConfig = createDemoAndEngineConfig()
+    Configurator.setAllLevels(LogManager.getRootLogger().name, demoAndEngineConfig.config.logLevel)
 
     val engine = createEngine(demoAndEngineConfig)
 
@@ -65,7 +65,7 @@ fun createDemoAndEngineConfig(): DemoAndEngineConfig {
         gameDirectory
     ) else Directories(gameDir = gameDirectory)
 
-    val config = Config(directories = directories)
+    val config = Config(directories = directories, logLevel = Level.getLevel(demoConfig.logLevel))
 
     return DemoAndEngineConfig(demoConfig, config)
 }
@@ -77,6 +77,7 @@ enum class Demo(val run: (Engine) -> Unit, val additionalModules: List<org.koin.
     Sponza(Engine::runSponza),
     CPUParticles(Engine::runCPUParticles),
     GPUParticles(Engine::runGPUParticles),
+    SkyBox(Engine::runSkyBox),
 }
 enum class Renderer {
     Deferred,
@@ -86,7 +87,8 @@ data class DemoConfig(
     val engineDir: File?,
     val gameDir: File?,
     val demo: Demo = Demo.Ocean,
-    val renderer: Renderer = Renderer.Deferred
+    val renderer: Renderer = Renderer.Deferred,
+    val logLevel: String = "INFO",
 )
 data class DemoAndEngineConfig(
     val demoConfig: DemoConfig,

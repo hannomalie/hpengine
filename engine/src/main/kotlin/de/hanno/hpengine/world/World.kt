@@ -13,12 +13,17 @@ import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.transform.AABBData
+import org.apache.logging.log4j.LogManager
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
 
+private val logger = LogManager.getLogger("World")
+
 fun World.loadScene(block: World.() -> Unit) {
     clear()
+    logger.trace("executing load scene block")
     block()
+    logger.trace("finished load scene block")
 }
 
 fun World.clear() {
@@ -33,7 +38,9 @@ fun World.clear() {
         i++
     }
 
+    logger.trace("clearing world")
     systems.filterIsInstance<Clearable>().forEach { it.clear() }
+    logger.trace("repopulating world")
     systems.filterIsInstance<WorldPopulator>().forEach {
         it.run { populate() }
     }
@@ -41,7 +48,6 @@ fun World.clear() {
 
 fun World.loadDemoScene() = loadScene {
     addStaticModelEntity("Cube", "assets/models/cube.obj", Directory.Engine)
-
 }
 
 fun World.addStaticModelEntity(

@@ -23,10 +23,15 @@ interface PrimaryRenderer: RenderSystem {
 @Single
 class RenderSystemsConfig(allRenderSystems: List<RenderSystem>) {
     val allRenderSystems = allRenderSystems.distinct()
-
-    val nonPrimaryRenderers = allRenderSystems.distinct().filterNot { it is PrimaryRenderer }
+    val nonPrimaryRenderers = allRenderSystems.filterNot { it is PrimaryRenderer }
     val primaryRenderers = allRenderSystems.distinct().filterIsInstance<PrimaryRenderer>().sortedByDescending { it.renderPriority }
     var primaryRenderer = primaryRenderers.first()
+        set(value) {
+            primaryRenderers.forEach {
+                it.enabled = it == value
+            }
+            field = value
+        }
 
     private val renderSystemsEnabled = allRenderSystems.associateWith { true }.toMutableMap()
 
@@ -35,12 +40,12 @@ class RenderSystemsConfig(allRenderSystems: List<RenderSystem>) {
             it.enabled = it != primaryRenderer
         }
     }
-    var renderSystems = nonPrimaryRenderers
+    var renderSystems = allRenderSystems
         private set
     var RenderSystem.enabled: Boolean
         get() = renderSystemsEnabled[this]!!
         set(value) {
-            renderSystemsEnabled[this] = value || primaryRenderer == this
+            renderSystemsEnabled[this] = value
             renderSystems = allRenderSystems.filter { it.enabled }
         }
 }

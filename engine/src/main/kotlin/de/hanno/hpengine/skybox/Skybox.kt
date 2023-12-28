@@ -10,12 +10,14 @@ import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.artemis.forFirstEntityIfPresent
 import de.hanno.hpengine.model.MaterialComponent
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
@@ -28,6 +30,7 @@ import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Extractor
+import org.apache.logging.log4j.LogManager
 import org.koin.core.annotation.Single
 
 
@@ -40,6 +43,8 @@ class SkyBoxSystem(
     private val skyBoxStateHolder: SkyBoxStateHolder,
     private val config: Config,
 ) : BaseEntitySystem(), WorldPopulator, Extractor {
+    val logger = LogManager.getLogger(SkyBoxSystem::class.java)
+
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
     lateinit var tagManager: TagManager
@@ -49,15 +54,14 @@ class SkyBoxSystem(
 
         val primaryCameraEntityId = tagManager.getEntityId(primaryCameraTag)
 
-        if (subscription.entities.size() > 0) {
-            subscription.entities.data.firstOrNull()?.let { skyBoxEntityId ->
-                val transform = transformComponentMapper[skyBoxEntityId].transform
-                val primaryCameraTransform = transformComponentMapper[primaryCameraEntityId].transform
+        forFirstEntityIfPresent { skyBoxEntityId ->
+            logger.trace("SkyBox present (id $skyBoxEntityId), processing")
+            val transform = transformComponentMapper[skyBoxEntityId].transform
+            val primaryCameraTransform = transformComponentMapper[primaryCameraEntityId].transform
 
-                val eyePosition = primaryCameraTransform.position
-                transform.identity().translate(eyePosition)
-                transform.scale(1000f)
-            }
+            val eyePosition = primaryCameraTransform.position
+            transform.identity().translate(eyePosition)
+            transform.scale(1000f)
         }
     }
 
@@ -73,9 +77,7 @@ class SkyBoxSystem(
 }
 
 @Single
-class SkyBoxStateHolder(
-    private val renderStateContext: RenderStateContext
-) {
+class SkyBoxStateHolder(renderStateContext: RenderStateContext) {
     var skyBoxMaterialIndex = renderStateContext.renderState.registerState { -1 }
 }
 
@@ -105,6 +107,7 @@ fun World.addSkyBox(config: Config) {
                 writesDepth = false,
                 depthTest = true,
                 isShadowCasting = false,
+                neverCull = true,
                 programDescription = ProgramDescription(
                     vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
                     fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource().enhanced(

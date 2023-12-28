@@ -19,8 +19,10 @@ import de.hanno.hpengine.instancing.InstancesComponent
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.system.PrioritySystem
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.visibility.InvisibleComponent
+import org.apache.logging.log4j.LogManager
 import org.joml.FrustumIntersection
 import org.koin.core.annotation.Single
 
@@ -33,7 +35,11 @@ class DefaultBatchesSystem(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val modelSystem: ModelSystem,
     private val renderStateContext: RenderStateContext,
-) : BaseEntitySystem(), Extractor {
+) : BaseEntitySystem(), Extractor, PrioritySystem {
+    private val logger = LogManager.getLogger(DefaultBatchesSystem::class.java)
+
+    override val priority = 10000
+
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var preventDefaultRenderingComponentMapper: ComponentMapper<PreventDefaultRendering>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
@@ -55,6 +61,7 @@ class DefaultBatchesSystem(
         currentWriteState[renderBatchesAnimated].clear()
 
         forEachEntity { parentEntityId ->
+            logger.trace("Processing $parentEntityId")
             val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
             val entityIds = listOf(parentEntityId) + instances
             val instanceCount = entityIds.size
@@ -134,6 +141,8 @@ class DefaultBatchesSystem(
                 }
             }
         }
+        logger.trace("Currently ${currentWriteState[renderBatchesStatic].size} static batches")
+        logger.trace("Currently ${currentWriteState[renderBatchesAnimated].size} animated batches")
     }
 
     private fun Camera.contains(aabb: AABB): Boolean {
