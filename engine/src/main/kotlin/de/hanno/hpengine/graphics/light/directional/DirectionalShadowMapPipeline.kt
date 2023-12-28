@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.light.directional
 
+import de.hanno.hpengine.camera.Frustum
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
@@ -12,6 +13,7 @@ import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.model.material.MaterialSystem
+import org.joml.Vector3f
 
 class DirectionalShadowMapPipeline(
     private val graphicsApi: GraphicsApi,
@@ -52,7 +54,10 @@ class DirectionalShadowMapPipeline(
             }
 
             val shadowCasters = defaultBatchesSystem.getRenderBatches(renderState, program.uniforms)
-            for (batch in shadowCasters.filter { it.update == update }) {
+                .filter { it.update == update }
+                .filter { renderState[directionalLightStateHolder.camera].frustum.contains(it.centerWorld, it.boundingSphereRadius) }
+
+            for (batch in shadowCasters) {
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -77,3 +82,5 @@ class DirectionalShadowMapPipeline(
         is StaticDirectionalShadowUniforms -> vertexIndexBufferStatic
     }
 }
+
+private fun Frustum.contains(center: Vector3f, radius: Float): Boolean = sphereInFrustum(center.x, center.y, center.z, radius)

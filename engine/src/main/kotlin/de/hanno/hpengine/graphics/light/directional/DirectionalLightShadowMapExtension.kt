@@ -5,6 +5,7 @@ import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -45,6 +46,7 @@ class DirectionalLightShadowMapExtension(
     private val cycleSystem: CycleSystem,
 ) : Extractor, BaseEntitySystem(), RenderSystem {
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
+    lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
 
     private val cachingHelper = CachingHelper(directionalLightStateHolder, renderStateContext)
 
@@ -99,7 +101,11 @@ class DirectionalLightShadowMapExtension(
     override fun extract(currentWriteState: RenderState) {
         if(world != null) {
             forEachEntity { entityId ->
-                val isStaticAndHasMoved = entityMovementSystem.entityHasMoved(entityId) && modelCacheComponentMapper[entityId].model.isStatic
+                val hasMoved = entityMovementSystem.entityHasMoved(entityId)
+                val model = modelCacheComponentMapper[entityId].model
+                val isShadowCaster = materialComponentMapper.getOrNull(entityId)?.material?.isShadowCasting ?: model.materials.any { it.isShadowCasting }
+                val isStatic = model.isStatic
+                val isStaticAndHasMoved = hasMoved && isShadowCaster && isStatic
                 if(isStaticAndHasMoved) {
                     cachingHelper.setStaticEntityHasMovedInCycle(currentWriteState, entityMovementSystem.cycleEntityHasMovedIn(entityId))
                 }

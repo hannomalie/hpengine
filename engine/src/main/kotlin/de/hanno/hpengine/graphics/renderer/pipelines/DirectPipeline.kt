@@ -94,7 +94,7 @@ open class DirectPipeline(
                 depthMask = batch.material.writesDepth
                 cullFace = batch.material.cullBackFaces
                 depthTest = batch.material.depthTest
-                setTextureUniforms(program, graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -130,7 +130,7 @@ open class DirectPipeline(
                 using(program) { uniforms ->
                     uniforms.setCommonUniformValues(renderState, entitiesState, camera)
                 }
-                setTextureUniforms(program, graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
 
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -188,8 +188,7 @@ val Program<*>.primitiveType get() = if (shaders.firstIsInstanceOrNull<Tesselati
 }
 
 
-fun setTextureUniforms(
-    program: Program<*>,
+fun Program<*>.setTextureUniforms(
     graphicsApi: GraphicsApi,
     maps: Map<Material.MAP, Texture>,
     diffuseFallbackTexture: Texture? = null
@@ -203,41 +202,41 @@ fun setTextureUniforms(
                 when(map.uploadState) {
                     UploadState.Uploaded -> {
                         bindTexture(mapEnumEntry.textureSlot, map)
-                        program.setUniform(mapEnumEntry.uniformKey, true)
+                        setUniform(mapEnumEntry.uniformKey, true)
                         if(isDiffuse) {
-                            program.setUniform("diffuseMipBias", 0)
+                            setUniform("diffuseMipBias", 0)
                         }
                     }
                     UploadState.NotUploaded -> {
                         if(isDiffuse) {
                             if(diffuseFallbackTexture != null) {
                                 bindTexture(mapEnumEntry.textureSlot, diffuseFallbackTexture)
-                                program.setUniform(mapEnumEntry.uniformKey, true)
-                                program.setUniform("diffuseMipBias", 0)
+                                setUniform(mapEnumEntry.uniformKey, true)
+                                setUniform("diffuseMipBias", 0)
                             } else {
-                                program.setUniform(mapEnumEntry.uniformKey, false)
-                                program.setUniform("diffuseMipBias", 0)
+                                setUniform(mapEnumEntry.uniformKey, false)
+                                setUniform("diffuseMipBias", 0)
                             }
                         } else {
-                            program.setUniform(mapEnumEntry.uniformKey, false)
+                            setUniform(mapEnumEntry.uniformKey, false)
                         }
                     }
                     is UploadState.Uploading -> {
                         if(isDiffuse) {
                             bindTexture(mapEnumEntry.textureSlot, map)
-                            program.setUniform(mapEnumEntry.uniformKey, true)
-                            program.setUniform(
+                            setUniform(mapEnumEntry.uniformKey, true)
+                            setUniform(
                                 "diffuseMipBias",
                                 (map.uploadState as UploadState.Uploading).maxMipMapLoaded
                             )
                         } else {
-                            program.setUniform(mapEnumEntry.uniformKey, false)
+                            setUniform(mapEnumEntry.uniformKey, false)
                         }
                     }
                 }
             }
         } else {
-            program.setUniform(mapEnumEntry.uniformKey, false)
+            setUniform(mapEnumEntry.uniformKey, false)
         }
     }
 }
