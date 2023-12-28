@@ -13,3 +13,5 @@ class RenderStateContext(
         currentStaging.cycle < currentRead.cycle
     }
 }
+
+data class Box<T>(var underlying: T)

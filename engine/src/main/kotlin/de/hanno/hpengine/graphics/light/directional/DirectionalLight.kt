@@ -25,7 +25,6 @@ import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.joml.Vector3i
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 import struktgen.api.forIndex
@@ -56,19 +55,20 @@ class DirectionalLightSystem(
         val primaryCameraTrafo = if(primaryCamera == -1) null else transformComponentMapper.getOrNull(primaryCamera)
 
         forEachEntity {
-            val camera = cameraComponentMapper[it]
-            camera.width = 2 * worldAABB.aabb.boundingSphereRadius
-            camera.height = 2 * worldAABB.aabb.boundingSphereRadius
-
             val transform = transformComponentMapper[it].transform
 
-            primaryCameraTrafo?.let {
-                val orientation = transform.transformation.getRotation(AxisAngle4f())
-                val c = it.transform.center
-                val ci = Vector3i(c.x.toInt(), c.y.toInt(), c.z.toInt())
-                transform.translation(Vector3f(ci.x.toFloat(), ci.y.toFloat(), ci.z.toFloat()))
-                transform.rotate(orientation)
-            }
+
+//            TODO: Do this for a smaller shadow map only
+//            val camera = cameraComponentMapper[it]
+//            camera.width = 2 * worldAABB.aabb.boundingSphereRadius
+//            camera.height = 2 * worldAABB.aabb.boundingSphereRadius
+//            primaryCameraTrafo?.let {
+//                val orientation = transform.transformation.getRotation(AxisAngle4f())
+//                val c = it.transform.center
+//                val ci = Vector3i(c.x.toInt(), c.y.toInt(), c.z.toInt())
+//                transform.translation(Vector3f(ci.x.toFloat(), ci.y.toFloat(), ci.z.toFloat()))
+//                transform.rotate(orientation)
+//            }
 
             if (input.isKeyPressed(GLFW.GLFW_KEY_UP)) {
                 transform.rotateAround(Vector3f(0f, 1f, 0f), rotateAmount, Vector3f())

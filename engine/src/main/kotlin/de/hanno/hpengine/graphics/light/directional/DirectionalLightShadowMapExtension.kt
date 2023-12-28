@@ -9,11 +9,19 @@ import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
+import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
+import com.artemis.ComponentMapper
+import com.artemis.annotations.All
+import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
-import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.constants.DepthFunc
+import de.hanno.hpengine.graphics.constants.PrimitiveType
+import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
@@ -26,10 +34,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.math.Matrix4fStrukt
-import de.hanno.hpengine.model.EntitiesStateHolder
-import de.hanno.hpengine.model.EntityBuffer
-import de.hanno.hpengine.model.DefaultBatchesSystem
-import de.hanno.hpengine.model.Update
+import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
@@ -42,10 +47,11 @@ import org.koin.core.annotation.Single
 import struktgen.api.forIndex
 
 
-@Single(binds = [DirectionalLightShadowMapExtension::class, Extractor::class, RenderSystem::class])
+@Single(binds = [DirectionalLightShadowMapExtension::class, Extractor::class, RenderSystem::class, BaseSystem::class])
+@All(ModelCacheComponent::class)
 class DirectionalLightShadowMapExtension(
     private val graphicsApi: GraphicsApi,
-    renderStateContext: RenderStateContext,
+    private val renderStateContext: RenderStateContext,
     config: Config,
     programManager: ProgramManager,
     private val directionalLightStateHolder: DirectionalLightStateHolder,
@@ -54,9 +60,11 @@ class DirectionalLightShadowMapExtension(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
     private val entityMovementSystem: EntityMovementSystem,
-) : Extractor, RenderSystem {
+    private val cycleSystem: CycleSystem,
+) : Extractor, BaseEntitySystem(), RenderSystem {
+    lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
 
-    private var forceRerender = true
+    private val cachingHelper = CachingHelper(directionalLightStateHolder, renderStateContext)
 
     val renderTarget = graphicsApi.RenderTarget(
         OpenGLFrameBuffer(graphicsApi, graphicsApi.DepthBuffer(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
@@ -148,10 +156,22 @@ class DirectionalLightShadowMapExtension(
         }
     }
 
-    private var animatedRenderedInCycle: Long = 0
-    private var staticRenderedInCycle: Long = 0
-
+    override fun processSystem() {}
+    override fun inserted(entityId: Int) {
+        cachingHelper.anyModelEntityAddedInCycle = cycleSystem.cycle
+        super.inserted(entityId)
+    }
     override fun extract(currentWriteState: RenderState) {
+        if(world != null) {
+            forEachEntity { entityId ->
+                val isStaticAndHasMoved = entityMovementSystem.entityHasMoved(entityId) && modelCacheComponentMapper[entityId].model.isStatic
+                if(isStaticAndHasMoved) {
+                    cachingHelper.setStaticEntityHasMovedInCycle(currentWriteState, entityMovementSystem.cycleEntityHasMovedIn(entityId))
+                }
+            }
+        }
+        cachingHelper.extract(currentWriteState)
+
         currentWriteState[directionalLightStateHolder.lightState].typedBuffer.forIndex(0) {
             it.shadowMapHandle = renderTarget.frameBuffer.depthBuffer!!.texture.handle
             it.shadowMapId = renderTarget.frameBuffer.depthBuffer!!.texture.id
@@ -173,27 +193,19 @@ class DirectionalLightShadowMapExtension(
         depthFunc = DepthFunc.LESS
         cullFace = false
 
-        val directionalLightMovedForAnimated = when (renderState[directionalLightStateHolder.entityId].underlying) {
-            -1 -> false
-            else -> { renderState[directionalLightStateHolder.directionalLightHasMovedInCycle].underlying >= animatedRenderedInCycle }
-        }
-        if(forceRerender || directionalLightMovedForAnimated || entitiesState.anyEntityMovedInCycle >= animatedRenderedInCycle) {
+        if (cachingHelper.animatedEntitiesNeedRerender(renderState, entitiesState)) {
             renderTarget.use(true)
             renderState[animatedPipeline].draw(renderState, update = Update.DYNAMIC)
-            animatedRenderedInCycle = renderState.cycle
+            cachingHelper.animatedRenderedInCycle = renderState.cycle
         }
 
-        val directionalLightMovedForStatic = when (renderState[directionalLightStateHolder.entityId].underlying) {
-            -1 -> false
-            else -> { renderState[directionalLightStateHolder.directionalLightHasMovedInCycle].underlying >= staticRenderedInCycle }
-        }
-        if(forceRerender || directionalLightMovedForStatic || entitiesState.staticEntityMovedInCycle >= staticRenderedInCycle) {
+        if (cachingHelper.staticEntitiesNeedRerender(renderState)) {
             staticRenderTarget.use(true)
             renderState[staticPipeline].draw(renderState, update = Update.STATIC)
-            staticRenderedInCycle = renderState.cycle
+            cachingHelper.staticRenderedInCycle = renderState.cycle
         }
 
-        forceRerender = false
+        cachingHelper.forceRerender = false
     }
 
     companion object {

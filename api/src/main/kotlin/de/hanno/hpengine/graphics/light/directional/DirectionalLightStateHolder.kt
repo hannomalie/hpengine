@@ -3,6 +3,7 @@ package  de.hanno.hpengine.graphics.light.directional
 import DirectionalLightStateImpl.Companion.type
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.typed
+import de.hanno.hpengine.graphics.state.Box
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import org.koin.core.annotation.Single
 import struktgen.api.forIndex
@@ -21,8 +22,6 @@ class DirectionalLightStateHolder(
 
         }
     }
-    val directionalLightHasMovedInCycle = renderStateContext.renderState.registerState { LongBox(0L) }
-    val entityId = renderStateContext.renderState.registerState { IntBox(-1) }
-    data class IntBox(var underlying: Int)
-    data class LongBox(var underlying: Long)
+    val directionalLightHasMovedInCycle = renderStateContext.renderState.registerState { Box(0L) }
+    val entityId = renderStateContext.renderState.registerState { Box(-1) }
 }

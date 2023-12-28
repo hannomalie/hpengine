@@ -20,8 +20,6 @@ import de.hanno.hpengine.scene.VertexStruktPacked
 import java.util.HashMap
 
 class EntitiesState(graphicsApi: GraphicsApi) {
-    private val ssboAllocator = PersistentMappedBufferAllocator(graphicsApi)
-
     val cash: MutableMap<BatchKey, RenderBatch> = HashMap()
     var entityMovedInCycle: Long = -1
     var staticEntityMovedInCycle: Long = -1
