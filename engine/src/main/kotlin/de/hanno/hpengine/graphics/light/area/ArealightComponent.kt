@@ -10,11 +10,11 @@ class AreaLightComponent: Component() {
     var scale: Vector3f = Vector3f(10f)
     // TDOO: Move to seperate component
     var camera = CameraComponent().apply {
-        fov = 90f
-        far = 250f
-        near = 1f
-        ratio = 1f
-        perspective = true
+        camera.fov = 90f
+        camera.far = 250f
+        camera.near = 1f
+        camera.ratio = 1f
+        camera.perspective = true
     }
     var transform = TransformComponent()
     val width get() = scale.x

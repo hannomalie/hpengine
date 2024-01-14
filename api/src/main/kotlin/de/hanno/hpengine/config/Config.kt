@@ -92,8 +92,8 @@ data class EffectsConfig (
     var ambientocclusionTotalStrength: Float = 0.5f,
     var ambientocclusionRadius: Float = 0.025f,
     var isUseBloom: Boolean = true,
-    var isAutoExposureEnabled: Boolean = false,
-    var isEnablePostprocessing: Boolean = false,
+    var isAutoExposureEnabled: Boolean = true,
+    var isEnablePostprocessing: Boolean = true,
     var ambientLight: Vector3f = Vector3f(0.1f),
 )
 

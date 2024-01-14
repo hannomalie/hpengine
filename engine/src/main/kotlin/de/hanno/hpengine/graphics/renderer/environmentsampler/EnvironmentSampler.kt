@@ -180,7 +180,7 @@ class EnvironmentSampler(
     }
 
 
-    fun rotateForIndex(i: Int, transform: Transform, camera: CameraComponent) {
+    fun rotateForIndex(i: Int, transform: Transform, camera: Camera) {
         val deltaNear = 0.0f
         val deltaFar = 100.0f
         val halfSizeX = probe.size.x / 2
@@ -239,7 +239,12 @@ class EnvironmentSampler(
     init {
         this.config = config
         this.textureManager = textureManager
-        val camera = Camera(transform, near = 0.1f, far = 5000f, fov = 90f, ratio = 1f)
+        val camera = Camera(transform).apply {
+            near = 0.1f
+            far = 5000f
+            fov = 90f
+            ratio = 1f
+        }
         camera.width = width.toFloat()
         camera.width = height.toFloat()
         this.camera = camera

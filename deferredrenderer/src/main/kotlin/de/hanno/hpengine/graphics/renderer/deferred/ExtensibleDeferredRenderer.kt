@@ -19,6 +19,7 @@ import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
 import de.hanno.hpengine.graphics.feature.BindlessTextures
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.renderer.deferred.extensions.PostProcessingExtensionProxy
 import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.state.RenderStateContext
@@ -29,6 +30,7 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.koin.core.annotation.Single
 
 @Single(binds = [RenderSystem::class, BaseSystem::class, PrimaryRenderer::class])
@@ -61,6 +63,7 @@ class ExtensibleDeferredRenderer(
 
     val combinePassExtension = CombinePassRenderExtension(config, programManager, textureManager, graphicsApi, deferredRenderingBuffer, environmentProbesStateHolder, primaryCameraStateHolder)
     val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, graphicsApi, deferredRenderingBuffer, primaryCameraStateHolder)
+    val postProcessingExtensionProxy = extensions.firstIsInstance<PostProcessingExtensionProxy>()
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
@@ -199,25 +202,16 @@ class ExtensibleDeferredRenderer(
             }
         }
 
-        window.frontBuffer.use(graphicsApi, false)
-        combinePassExtension.renderCombinePass(renderState)
-        deferredRenderingBuffer.use(false)
-
-        runCatching {
-            if (config.effects.isEnablePostprocessing) {
-                // TODO This has to be implemented differently, so that
-                // it is written to the final texture somehow
-                profiled("PostProcessing") {
-                    throw IllegalStateException("Render me to final map")
-                    postProcessingExtension.renderSecondPassFullScreen(renderState)
-                }
-            } else {
-    //                textureRenderer.drawToQuad(deferredRenderingBuffer.finalBuffer, deferredRenderingBuffer.lightAccumulationMapOneId)
-            }
-        }.onFailure {
-            println("Not able to render texture")
-            it.printStackTrace()
+        val postProcessingEnabled = deferredRenderExtensionConfig.run { postProcessingExtensionProxy.enabled }
+        if(!postProcessingEnabled) {
+            window.frontBuffer.use(graphicsApi, false)
+            deferredRenderingBuffer.exposureBuffer.buffer.putFloat(0, 1.0f)
         }
+        combinePassExtension.renderCombinePass(renderState)
+        if(postProcessingEnabled) {
+            postProcessingExtension.renderSecondPassFullScreen(renderState)
+        }
+        deferredRenderingBuffer.use(false)
     }
 
     override fun processSystem() { }

@@ -17,7 +17,6 @@ import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.spatial.WorldAABB
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.EntityMovementSystem
@@ -26,7 +25,6 @@ import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
-import org.lwjgl.glfw.GLFW
 import struktgen.api.forIndex
 
 
@@ -34,7 +32,6 @@ import struktgen.api.forIndex
 @All(DirectionalLightComponent::class, TransformComponent::class)
 class DirectionalLightSystem(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
-    private val input: Input,
     private val entityMovementSystem: EntityMovementSystem,
     private val worldAABB: WorldAABB,
     private val tagManager: TagManager,
@@ -47,16 +44,12 @@ class DirectionalLightSystem(
     private val lightState = directionalLightStateHolder.lightState
 
     override fun processSystem() {
-        val moveAmount = 100 * world.delta
-        val degreesPerSecond = 45f
-        val rotateAmount = Math.toRadians(degreesPerSecond.toDouble()).toFloat() * world.delta
-
         val primaryCamera = tagManager.getEntityId(primaryCameraTag)
         val primaryCameraTrafo = if(primaryCamera == -1) null else transformComponentMapper.getOrNull(primaryCamera)
 
         forEachEntity {
             val transform = transformComponentMapper[it].transform
-
+            val light = directionalLightComponentMapper[it]
 
 //            TODO: Do this for a smaller shadow map only
 //            val camera = cameraComponentMapper[it]
@@ -70,18 +63,10 @@ class DirectionalLightSystem(
 //                transform.rotate(orientation)
 //            }
 
-            if (input.isKeyPressed(GLFW.GLFW_KEY_UP)) {
-                transform.rotateAround(Vector3f(0f, 1f, 0f), rotateAmount, Vector3f())
-            }
-            if (input.isKeyPressed(GLFW.GLFW_KEY_DOWN)) {
-                transform.rotateAround(Vector3f(0f, 1f, 0f), -rotateAmount, Vector3f())
-            }
-            if (input.isKeyPressed(GLFW.GLFW_KEY_LEFT)) {
-                transform.rotateAround(Vector3f(1f, 0f, 0f), rotateAmount, Vector3f())
-            }
-            if (input.isKeyPressed(GLFW.GLFW_KEY_RIGHT)) {
-                transform.rotateAround(Vector3f(1f, 0f, 0f), -rotateAmount, Vector3f())
-            }
+            transform.identity()
+            transform.lookAt(
+                Vector3f(light.direction).mul(light.height).negate(), Vector3f(), Vector3f(0f, 1f, 0f)
+            ).invert()
         }
     }
 
@@ -89,13 +74,18 @@ class DirectionalLightSystem(
         forFirstEntityIfPresent { entityId ->
             val light = directionalLightComponentMapper.get(entityId)
             val transform = transformComponentMapper.get(entityId).transform
-            val camera = cameraComponentMapper.get(entityId)
+            val camera = cameraComponentMapper.get(entityId).camera
 
             currentWriteState[directionalLightStateHolder.entityId].underlying = entityId
             currentWriteState[directionalLightStateHolder.directionalLightHasMovedInCycle].underlying = entityMovementSystem.cycleEntityHasMovedIn(entityId)
             currentWriteState[lightState].typedBuffer.forIndex(0) { directionalLightState ->
                 directionalLightState.color.set(light.color)
-                directionalLightState.direction.set(transform.viewDirection)
+                directionalLightState.direction.apply {
+                    set(light.direction)
+                    x *= -1f
+                    y *= -1f
+                    z *= -1f
+                }
                 directionalLightState.scatterFactor = light.scatterFactor
                 val viewMatrix = Matrix4f(transform).invert()
                 directionalLightState.viewMatrix.set(viewMatrix)
@@ -121,16 +111,16 @@ fun World.addDirectionalLight() {
         create(TransformComponent::class.java).apply {
             transform = Transform().apply {
                 translate(Vector3f(12f, 300f, 2f))
-                rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), 1f, 0f, 0f)), 0f, 0f, 0f)
+                rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), -1f, 0f, 0f)), 0f, 0f, 0f)
             }
         }
         create(
             CameraComponent()::class.java
         ).apply {
-            width = 1500f
-            height = 1500f
-            far = (-5000).toFloat()
-            perspective = false
+            camera.width = 1500f
+            camera.height = 1500f
+            camera.far = (-5000).toFloat()
+            camera.perspective = false
         }
     }
 }

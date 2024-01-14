@@ -43,7 +43,12 @@ class PointLightSystem(
     private val lightState = pointLightStateHolder.lightState
 
     var pointLightMovedInCycle: Long = 0
-    val camera = Camera(Transform(), createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
+    val camera = Camera(Transform()).apply {
+        near = 1f
+        far = 500f
+        fov = 90f
+        ratio = 1f
+    }
 
     val shadowMapStrategy = if (config.quality.isUseDpsm) {
             DualParaboloidShadowMapStrategy(

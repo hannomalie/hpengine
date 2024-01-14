@@ -80,11 +80,10 @@ fun ImGuiEditor.leftPanel(
                         }
                     }
                 }
-
-                extensions.forEach {
-                    it.run {
-                        renderLeftPanelTopLevelNode()
-                    }
+            }
+            extensions.forEach {
+                it.run {
+                    renderLeftPanelTopLevelNode()
                 }
             }
         }

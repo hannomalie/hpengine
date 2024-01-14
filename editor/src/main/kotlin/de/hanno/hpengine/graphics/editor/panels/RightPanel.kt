@@ -1,7 +1,6 @@
 package de.hanno.hpengine.graphics.editor.panels
 
 import de.hanno.hpengine.graphics.RenderManager
-import de.hanno.hpengine.graphics.RenderSystemsConfig
 import de.hanno.hpengine.graphics.editor.*
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import imgui.ImGui
@@ -16,7 +15,6 @@ private const val rightPanelFlags =
 
 fun ImGuiEditor.rightPanel(
     editorConfig: EditorConfig,
-    renderSystemsConfig: RenderSystemsConfig,
     renderManager: RenderManager,
     editorExtensions: List<EditorExtension>
 ): Unit = layout.run {
@@ -28,30 +26,12 @@ fun ImGuiEditor.rightPanel(
         window("Right panel", rightPanelFlags) {
             tabBar("Foo") {
 
-                tab("Entity") {
+                tab("Selection") {
                     editorExtensions.firstOrNull { it.run { renderRightPanel(selection) } }
                 }
 
                 tab("Output") {
                     outputSelection.renderSelection()
-                }
-                tab("RenderSystems") {
-                    renderSystemsConfig.run {
-                        nonPrimaryRenderers.forEach {
-                            if (ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
-                                it.enabled = !it.enabled
-                            }
-                        }
-                    }
-
-                    ImGui.text("Primary Renderer:")
-                    ImGui.text(renderSystemsConfig.primaryRenderer.javaClass.simpleName)
-                    ImGui.text("Current output")
-                    renderSystemsConfig.primaryRenderers.forEach {
-                        if (ImGui.checkbox(it.javaClass.simpleName, primaryRendererSelection.primaryRenderer == it)) {
-                            primaryRendererSelection.primaryRenderer = it
-                        }
-                    }
                 }
                 configTab(config, window)
                 renderTab(this@rightPanel, gpuProfiler, renderManager)

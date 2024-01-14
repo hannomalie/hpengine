@@ -1,89 +1,49 @@
 package de.hanno.hpengine.component
 
+import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.Component
+import com.artemis.ComponentMapper
 import com.artemis.World
+import com.artemis.annotations.All
 import com.artemis.managers.TagManager
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.camera.Camera
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.createOrthogonal
 import de.hanno.hpengine.math.createPerspective
+import de.hanno.hpengine.system.Extractor
 import org.joml.Matrix4f
 import org.koin.core.annotation.Single
 
 class CameraComponent: Component() {
-    var near: Float = 0.1f
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var far: Float = 2000f
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var fov: Float = Camera.Defaults.fov
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var ratio: Float = 1280f / 720f
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var exposure: Float = 5f
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var focalDepth: Float = Camera.Defaults.focalDepth
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var focalLength: Float = Camera.Defaults.focalLength
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var fStop: Float = Camera.Defaults.fStop
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var perspective = true
-        set(value) {
-            field = value
-            updateProjectionMatrix()
-        }
-    var width = 1600f
-        set(width) {
-            field = width
-            updateProjectionMatrix()
-        }
-    var height = 1600f
-        set(height) {
-            field = height
-            updateProjectionMatrix()
-        }
-
-    var projectionMatrix: Matrix4f = createPerspective(fov, ratio, near, far)
-
-    private fun updateProjectionMatrix() {
-        projectionMatrix = if (perspective) {
-            createPerspective(fov, ratio, near, far)
-        } else {
-            createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
-        }
-    }
+    val camera = Camera(Transform())
 }
 
 @Single(binds=[BaseSystem::class, CameraSystem::class])
-class CameraSystem : BaseSystem(), WorldPopulator {
+@All(CameraComponent::class)
+class CameraSystem(
+    private val tagManager: TagManager,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+) : BaseEntitySystem(), WorldPopulator , Extractor{
+    lateinit var cameraComponentMapper: ComponentMapper<CameraComponent>
     override fun processSystem() { }
+
     override fun World.populate() {
         addPrimaryCamera()
+    }
+
+    override fun extract(currentWriteState: RenderState) {
+        tagManager.getEntity(primaryCameraTag)?.let { primaryCamera ->
+            currentWriteState[primaryCameraStateHolder.camera].apply {
+                cameraComponentMapper[primaryCamera].let { component ->
+                    // TODO: Set other values here
+                    lensFlare = component.camera.lensFlare
+                }
+            }
+        }
     }
 }
 

@@ -83,6 +83,7 @@ class CombinePassRenderExtension(private val config: Config,
             bindTexture(14, TextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
             bindTexture(15, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.halfScreenBuffer.renderedTextures[1])
 
+            combineProgram.bind()
             fullscreenBuffer.draw(indexBuffer = null)
 
         }

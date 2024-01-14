@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.imgui.dsl
 import imgui.type.ImBoolean
+import kotlin.reflect.KMutableProperty0
 import imgui.ImGui as IG
 
 object ImGui {
@@ -33,6 +34,15 @@ object Window {
             }
         }
     }
+
+    fun checkBox(label: String, property: KMutableProperty0<Boolean>) {
+        val currentValue = property.get()
+        val booleanValue = ImBoolean(currentValue)
+        if(imgui.ImGui.checkbox(label, booleanValue)) {
+            property.set(booleanValue.get())
+        }
+    }
+
     fun tabBar(label: String, content: TabBar.() -> Unit = { }) {
         if(imgui.ImGui.beginTabBar(label)) {
             TabBar.content()

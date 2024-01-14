@@ -13,8 +13,11 @@ class Camera(
     val transform: Transform,
     ratio: Float = 1280f/720f
 ) {
-
-    var exposure = 5f
+    var lensFlare = true
+    var bloom = true
+    var dof = true
+    var autoExposure = true
+    var exposure = 1f
     var focalDepth = Defaults.focalDepth
     var focalLength = Defaults.focalLength
     var fStop = Defaults.fStop
@@ -24,18 +27,6 @@ class Camera(
             field = value
             updateProjectionMatrixAndFrustum()
         }
-    var viewProjectionMatrixBuffer = BufferUtils.createFloatBuffer(16)
-    var projectionMatrixBuffer = BufferUtils.createFloatBuffer(16)
-    var lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16)
-    val viewMatrixBuffer = BufferUtils.createFloatBuffer(16)
-
-    var viewMatrix = Matrix4f()
-        get() = transform.transformation.invert(field)
-    var projectionMatrix = Matrix4f()
-    var viewProjectionMatrix = Matrix4f()
-
-    var frustum = Frustum()
-
     var near = 0.1f
         set(value) {
             field = value
@@ -65,87 +56,78 @@ class Camera(
         }
 
     var perspective = true
+        set(value) {
+            field = value
+            updateProjectionMatrixAndFrustum()
+        }
+
+    // TODO: Move buffers to separate component
+    var viewProjectionMatrixBuffer = BufferUtils.createFloatBuffer(16)
+    var projectionMatrixBuffer = BufferUtils.createFloatBuffer(16)
+    var lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16)
+    val viewMatrixBuffer = BufferUtils.createFloatBuffer(16)
+
+    var viewMatrix = Matrix4f()
+        get() = transform.transformation.invert(field)
+    var projectionMatrix = Matrix4f()
+    var viewProjectionMatrix = Matrix4f()
+    var frustum = Frustum()
 
     val frustumCorners: Array<Vector3f>
         get() {
             val inverseProjection = projectionMatrix.invert(Matrix4f())
-            val result = mutableListOf<Vector4f>(inverseProjection.transform(Vector4f(-1f, 1f, 1f, 1f)),
-                    inverseProjection.transform(Vector4f(1f, 1f, 1f, 1f)),
-                    inverseProjection.transform(Vector4f(1f, -1f, 1f, 1f)),
-                    inverseProjection.transform(Vector4f(-1f, -1f, 1f, 1f)),
-                    inverseProjection.transform(Vector4f(-1f, 1f, -1f, 1f)),
-                    inverseProjection.transform(Vector4f(1f, 1f, -1f, 1f)),
-                    inverseProjection.transform(Vector4f(1f, -1f, -1f, 1f)),
-                    inverseProjection.transform(Vector4f(-1f, -1f, -1f, 1f)))
+            val result = mutableListOf<Vector4f>(
+                inverseProjection.transform(Vector4f(-1f, 1f, 1f, 1f)),
+                inverseProjection.transform(Vector4f(1f, 1f, 1f, 1f)),
+                inverseProjection.transform(Vector4f(1f, -1f, 1f, 1f)),
+                inverseProjection.transform(Vector4f(-1f, -1f, 1f, 1f)),
+                inverseProjection.transform(Vector4f(-1f, 1f, -1f, 1f)),
+                inverseProjection.transform(Vector4f(1f, 1f, -1f, 1f)),
+                inverseProjection.transform(Vector4f(1f, -1f, -1f, 1f)),
+                inverseProjection.transform(Vector4f(-1f, -1f, -1f, 1f))
+            )
 
             val inverseView = viewMatrix.invert(Matrix4f())
-            val resultVec3 = result.map { it.div(it.w) }.map { inverseView.transform(it) }.map { Vector3f(it.x, it.y, it.z) }
+            val resultVec3 =
+                result.map { it.div(it.w) }.map { inverseView.transform(it) }.map { Vector3f(it.x, it.y, it.z) }
 
             return resultVec3.toTypedArray()
         }
 
     init {
-        init(createPerspective(45f, ratio, this.near, this.far), this.near, this.far, 60f, ratio, 5f,
-            Defaults.focalDepth,
-            Defaults.focalLength,
-            Defaults.fStop
-        )
+        update()
     }
 
-    constructor(transform: Transform, near: Float, far: Float, fov: Float, ratio: Float): this(transform) {
-        init(createPerspective(fov, ratio, near, far), near, far, fov, ratio, 5f,
-            Defaults.focalDepth,
-            Defaults.focalLength,
-            Defaults.fStop
-        )
-    }
-
-    constructor(transform: Transform, camera: Camera): this(transform) {
-        init(camera)
-    }
-
-    constructor(transform: Transform, projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float): this(transform) {
-        init(projectionMatrix, near, far, fov, ratio, 5f, Defaults.focalDepth, Defaults.focalLength, Defaults.fStop)
-    }
-
-    fun init(camera: Camera) {
+    fun setFrom(camera: Camera) {
         transform.set(camera.transform)
-        init(camera.projectionMatrix, camera.near, camera.far,
-                camera.fov, camera.ratio, camera.exposure,
-                camera.focalDepth, camera.focalLength, camera.fStop)
-    }
-
-    fun init(projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float,
-             exposure: Float, focalDepth: Float, focalLength: Float, fStop: Float) {
-
-        this.exposure = exposure
-        this.focalDepth = focalDepth
-        this.focalLength = focalLength
-        this.fStop = fStop
-
-        this.near = near
-        this.far = far
-        this.fov = fov
-        this.ratio = ratio
-        this.projectionMatrix.set(projectionMatrix)
-
-        saveViewMatrixAsLastViewMatrix()
-        transform()
+        lensFlare = camera.lensFlare
+        bloom = camera.bloom
+        dof = camera.dof
+        autoExposure = camera.autoExposure
+        exposure = camera.exposure
+        focalDepth = camera.focalDepth
+        focalLength = camera.focalLength
+        fStop = camera.fStop
+        ratio = camera.ratio
+        near = camera.near
+        far = camera.far
+        fov = camera.fov
         storeMatrices()
+        calculateFrustum()
     }
 
-    fun update(deltaSeconds: Float) {
+    fun update() {
         saveViewMatrixAsLastViewMatrix()
-        projectionMatrix.mul(viewMatrix, viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
+        projectionMatrix.mul(
+            viewMatrix,
+            viewProjectionMatrix
+        ) // TODO: Should move into the block below, but it's currently broken
         frustum.frustumIntersection.set(viewProjectionMatrix)
-//        TODO: Fix this, doesn't work
-//        if (entity.hasMoved())
         transform()
         storeMatrices()
     }
 
-    private fun storeMatrices() {
-
+    internal fun storeMatrices() {
         viewMatrixBuffer.rewind()
         viewMatrix.get(viewMatrixBuffer)
         viewMatrixBuffer.rewind()
@@ -160,13 +142,17 @@ class Camera(
     }
 
     private fun transform() {
-        frustum.calculate(projectionMatrix, viewMatrix)
+        calculateFrustum()
     }
 
-    fun saveViewMatrixAsLastViewMatrix() = lastViewMatrixBuffer.safePut(viewMatrixBuffer)
+    private fun saveViewMatrixAsLastViewMatrix() = lastViewMatrixBuffer.safePut(viewMatrixBuffer)
 
     private fun updateProjectionMatrixAndFrustum() {
         calculateProjectionMatrix()
+        calculateFrustum()
+    }
+
+    private fun calculateFrustum() {
         frustum.calculate(projectionMatrix, viewMatrix)
     }
 

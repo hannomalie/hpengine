@@ -19,12 +19,12 @@ layout(std430, binding=1) buffer _materials {
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 
-uniform float worldExposure = 5;
-
-uniform bool AUTO_EXPOSURE_ENABLED = true;
-
+uniform bool useLensflare = true;
 uniform bool usePostProcessing = true;
-//uniform float exposure = 5;
+uniform bool useBloom = true;
+uniform bool useAutoExposure = true;
+uniform bool useDof = true;
+uniform float worldExposure = 5;
 
 uniform vec3 cameraRightDirection;
 uniform vec3 cameraViewDirection;
@@ -474,7 +474,8 @@ vec3 calculateLensflare(vec2 texcoord) {
 		result.rgb += textureSample * luminance;
 	  }
 
-	  result.rgb *= pow(texture(lensflareMap, 1-texcoord).rgb, vec3(1.0/2.2));
+	result.rgb *= pow(texture(lensflareMap, 1-texcoord).rgb, vec3(1.0/2.2));
+//	result.rgb *= texture(lensflareMap, 1-texcoord).rgb;
 	return result.rgb;
 }
 
@@ -483,15 +484,17 @@ void main()
 	if (usePostProcessing) {
 		vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 0);
 		float depth = textureLod(motionMap, pass_TextureCoord, 0).b;
-	    in_color.rgb = DoDOF(pass_TextureCoord, vec2(1/screenWidth,1/screenHeight), renderedTexture);
-	    
+		if(useDof) {
+			in_color.rgb = DoDOF(pass_TextureCoord, vec2(1/screenWidth,1/screenHeight), renderedTexture);
+		}
+
 	    out_color = in_color;
 	    //out_color.rgb = in_color.rgb;
 	    out_color.a = 1;
 	    vec4 sum = vec4(0);
 	    
 	    // code from http://wp.applesandoranges.eu/?p=14, thank you!
-	    if(USE_BLOOM) {
+	    if(useBloom) {
     	   vec2 texcoord = pass_TextureCoord;
 		   int j;
 		   int i;
@@ -520,7 +523,6 @@ void main()
 
 	    }
 
-        const bool useLensflare = true;
         if(useLensflare) {
             vec3 lensflare = calculateLensflare(pass_TextureCoord);
             out_color.rgb += lensflare;
@@ -535,7 +537,7 @@ void main()
 	}
 	
 	
-	if(AUTO_EXPOSURE_ENABLED && pass_TextureCoord.x <= 0.001 && pass_TextureCoord.y <= 0.001)
+	if(useAutoExposure && pass_TextureCoord.x <= 0.001 && pass_TextureCoord.y <= 0.001)
 	{
 		vec3 averageSampleRGB = textureLod(renderedTexture, vec2(0,0),10).rgb;
 		float brightness = (0.2126f * (averageSampleRGB.r) + 0.7152f * (averageSampleRGB.g) + 0.0722f * (averageSampleRGB.b));
@@ -545,8 +547,8 @@ void main()
 		brightness = brightness < minBrightness ? minBrightness : brightness;
 		float targetExposure = worldExposure / brightness;
 		exposure = (exposure + (targetExposure - exposure) * 0.015f);
-		//out_color.r = 1;
 	}
+//	out_color.r = 1;
 
 //	out_color.r = materials[1].ambient;
 }

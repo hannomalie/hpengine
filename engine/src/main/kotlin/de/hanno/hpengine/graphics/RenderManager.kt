@@ -21,7 +21,7 @@ class RenderManager(
     private val window: Window,
     programManager: ProgramManager,
     private val renderStateContext: RenderStateContext,
-    private val renderSystemsConfig: RenderSystemsConfig,
+    internal val renderSystemsConfig: RenderSystemsConfig,
     private val gpuProfiler: GPUProfiler,
     private val updateCycle: UpdateCycle,
 ) : BaseSystem() {
@@ -33,7 +33,7 @@ class RenderManager(
     private val textureRenderer = SimpleTextureRenderer(
         graphicsApi,
         config,
-        renderSystemsConfig.primaryRenderer.finalOutput.texture2D,
+        null,
         programManager,
         window.frontBuffer
     )
@@ -59,7 +59,7 @@ class RenderManager(
 
                         val renderSystems = profiled("determineRenderSystems") {
                             when (val renderMode = renderMode) {
-                                RenderMode.Normal -> renderSystemsConfig.run { renderSystemsConfig.nonPrimaryRenderers.filter { it.enabled } }
+                                RenderMode.Normal -> renderSystemsConfig.run { nonPrimaryRenderers.filter { it.enabled } }
 
                                 is RenderMode.SingleFrame -> {
                                     renderSystemsConfig.run {
@@ -147,8 +147,6 @@ class RenderManager(
         val currentWriteState = renderStateContext.renderState.currentWriteState
         currentWriteState.cycle = updateCycle.cycle.get()
         currentWriteState.time = System.currentTimeMillis()
-
-        renderSystemsConfig.renderSystems.forEach { it.extract(currentWriteState) }
 
         extractors.forEach { it.extract(currentWriteState) }
 

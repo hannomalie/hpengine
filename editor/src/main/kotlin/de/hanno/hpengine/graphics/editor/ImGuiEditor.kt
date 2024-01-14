@@ -157,7 +157,7 @@ class ImGuiEditor(
 
             if (renderPanels) {
                 menu(layout.windowWidth, layout.windowHeight)
-                rightPanel(editorConfig, renderSystemsConfig.value, renderManager.value, extensions)
+                rightPanel(editorConfig, renderManager.value, extensions)
 
                 if (::artemisWorld.isInitialized) {
                     leftPanel(layout.leftPanelYOffset, layout.leftPanelWidth, layout.windowHeight)
