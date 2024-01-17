@@ -54,7 +54,7 @@ open class DirectPipeline(
         entitiesCount = 0
 
         renderBatches = renderState.extractRenderBatches()
-        logger.debug("Prepared ${renderBatches.size} batches")
+        logger.trace("Prepared ${renderBatches.size} batches")
     }
 
     open fun RenderState.extractRenderBatches(): List<RenderBatch> = this[defaultBatchesSystem.renderBatchesStatic].filterNot {

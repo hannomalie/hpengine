@@ -1,10 +1,6 @@
 package de.hanno.hpengine.component
 
-import com.artemis.BaseEntitySystem
-import com.artemis.BaseSystem
-import com.artemis.Component
-import com.artemis.ComponentMapper
-import com.artemis.World
+import com.artemis.*
 import com.artemis.annotations.All
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.Transform
@@ -12,14 +8,12 @@ import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.math.createOrthogonal
-import de.hanno.hpengine.math.createPerspective
 import de.hanno.hpengine.system.Extractor
-import org.joml.Matrix4f
 import org.koin.core.annotation.Single
 
-class CameraComponent: Component() {
-    val camera = Camera(Transform())
+class CameraComponent(val camera: Camera): Component() {
+    constructor(transform: Transform): this(Camera(transform))
+    constructor(): this(Camera(Transform()))
 }
 
 @Single(binds=[BaseSystem::class, CameraSystem::class])

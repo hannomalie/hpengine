@@ -160,7 +160,7 @@ class Camera(
         projectionMatrix = if (perspective) {
             createPerspective(fov, ratio, near, far)
         } else {
-            createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
+            createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, near, far)
         }
     }
 

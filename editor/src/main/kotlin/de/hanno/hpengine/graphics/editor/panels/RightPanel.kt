@@ -29,15 +29,11 @@ fun ImGuiEditor.rightPanel(
                 tab("Selection") {
                     editorExtensions.firstOrNull { it.run { renderRightPanel(selection) } }
                 }
-
-                tab("Output") {
-                    outputSelection.renderSelection()
-                }
                 configTab(config, window)
                 renderTab(this@rightPanel, gpuProfiler, renderManager)
                 tab("Editor") {
                     if (ImGui.beginCombo("Selection Mode", editorConfig.selectionMode.toString())) {
-                        SelectionMode.values().forEach {
+                        SelectionMode.entries.forEach {
                             val selected = editorConfig.selectionMode == it
                             if (ImGui.selectable(it.toString(), selected)) {
                                 editorConfig.selectionMode = it

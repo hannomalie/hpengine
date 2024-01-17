@@ -65,7 +65,7 @@ class DirectionalLightSystem(
 
             transform.identity()
             transform.lookAt(
-                Vector3f(light.direction).mul(light.height).negate(), Vector3f(), Vector3f(0f, 1f, 0f)
+                Vector3f(light.direction).mul(-light.height), Vector3f(), Vector3f(0f, 1f, 0f)
             ).invert()
         }
     }
@@ -73,7 +73,6 @@ class DirectionalLightSystem(
     override fun extract(currentWriteState: RenderState) {
         forFirstEntityIfPresent { entityId ->
             val light = directionalLightComponentMapper.get(entityId)
-            val transform = transformComponentMapper.get(entityId).transform
             val camera = cameraComponentMapper.get(entityId).camera
 
             currentWriteState[directionalLightStateHolder.entityId].underlying = entityId
@@ -82,12 +81,9 @@ class DirectionalLightSystem(
                 directionalLightState.color.set(light.color)
                 directionalLightState.direction.apply {
                     set(light.direction)
-                    x *= -1f
-                    y *= -1f
-                    z *= -1f
                 }
                 directionalLightState.scatterFactor = light.scatterFactor
-                val viewMatrix = Matrix4f(transform).invert()
+                val viewMatrix = Matrix4f(camera.viewMatrix)
                 directionalLightState.viewMatrix.set(viewMatrix)
                 directionalLightState.projectionMatrix.set(camera.projectionMatrix)
                 directionalLightState.viewProjectionMatrix.set(Matrix4f(camera.projectionMatrix).mul(viewMatrix))
@@ -102,6 +98,10 @@ class DirectionalLightSystem(
 
 
 fun World.addDirectionalLight() {
+    val transform = Transform().apply {
+        translate(Vector3f(12f, 300f, 2f))
+        rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), -1f, 0f, 0f)), 0f, 0f, 0f)
+    }
     edit(create()).apply {
         create(NameComponent::class.java).apply {
             name = "DirectionalLight"
@@ -109,18 +109,15 @@ fun World.addDirectionalLight() {
 
         create(DirectionalLightComponent::class.java).apply { }
         create(TransformComponent::class.java).apply {
-            transform = Transform().apply {
-                translate(Vector3f(12f, 300f, 2f))
-                rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), -1f, 0f, 0f)), 0f, 0f, 0f)
+            this.transform = transform
+        }
+        add(
+            CameraComponent(transform).apply {
+                camera.width = 1500f
+                camera.height = 1500f
+                camera.far = 2000f
+                camera.perspective = false
             }
-        }
-        create(
-            CameraComponent()::class.java
-        ).apply {
-            camera.width = 1500f
-            camera.height = 1500f
-            camera.far = (-5000).toFloat()
-            camera.perspective = false
-        }
+        )
     }
 }

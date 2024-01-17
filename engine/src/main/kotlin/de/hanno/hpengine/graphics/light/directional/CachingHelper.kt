@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.light.directional
 
+import de.hanno.hpengine.graphics.logger
 import de.hanno.hpengine.graphics.state.Box
 import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.RenderState
