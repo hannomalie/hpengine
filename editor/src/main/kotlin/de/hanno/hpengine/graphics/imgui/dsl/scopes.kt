@@ -28,10 +28,7 @@ object Window {
     fun checkBox(label: String, initial: Boolean, onChange: (Boolean) -> Unit = { }) {
         val booleanValue = ImBoolean(initial)
         if(imgui.ImGui.checkbox(label, booleanValue)) {
-            val currentValue = booleanValue.get()
-            if(initial != currentValue) {
-                onChange(currentValue)
-            }
+            onChange(booleanValue.get())
         }
     }
 

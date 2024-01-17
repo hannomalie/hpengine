@@ -43,9 +43,11 @@ class CameraSystem(
 
 const val primaryCameraTag = "PRIMARY_CAMERA"
 
+class DefaultPrimaryCameraComponent: Component()
 fun World.addPrimaryCamera() {
     edit(create()).apply {
         create(TransformComponent::class.java)
+        create(DefaultPrimaryCameraComponent::class.java)
         create(NameComponent::class.java).apply {
             name = "PrimaryCamera"
         }
