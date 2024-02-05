@@ -1,6 +1,5 @@
 package de.hanno.hpengine.scene
 
-import com.google.common.collect.ImmutableSet
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.Vector4iStrukt
 import de.hanno.hpengine.graphics.buffer.vertex.DataChannelComponent.FloatThree
@@ -43,7 +42,7 @@ data class Vertex(
 
     companion object {
         val channels by lazy {
-            ImmutableSet.of(FloatThree("position", "vec3"), FloatTwo("texCoord", "vec2"), FloatThree("normal", "vec3"))
+            setOf(FloatThree("position", "vec3"), FloatTwo("texCoord", "vec2"), FloatThree("normal", "vec3"))
         }
         val sizeInBytes by lazy {
             channels.map { it.byteSize }.reduce { a, b -> a + b }

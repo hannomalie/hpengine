@@ -1,6 +1,10 @@
 package scenes
 
 import de.hanno.hpengine.Engine
+import de.hanno.hpengine.camera.Camera
+import de.hanno.hpengine.component.CameraComponent
+import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.graphics.light.point.PointLightComponent
 import de.hanno.hpengine.transform.AABBData
 import de.hanno.hpengine.world.addAnimatedModelEntity
 import de.hanno.hpengine.world.addStaticModelEntity
@@ -34,6 +38,13 @@ fun Engine.runMultipleObjects() {
                 Vector3f(60f, 130f, 50f)
             )
         )
+        edit(create()).apply {
+            val transform = create(TransformComponent::class.java)
+            create(PointLightComponent::class.java)
+            add(
+                CameraComponent(Camera(transform.transform))
+            )
+        }
     }
     simulate()
 }

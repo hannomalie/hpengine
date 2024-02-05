@@ -1,34 +1,34 @@
 package de.hanno.hpengine.graphics.renderer.environmentsampler
 
 
+import de.hanno.hpengine.Transform
 import de.hanno.hpengine.camera.Camera
-import de.hanno.hpengine.component.CameraComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
+import de.hanno.hpengine.graphics.constants.PrimitiveType
+import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.envprobe.EnvironmentProbeComponent
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
+import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
+import de.hanno.hpengine.graphics.rendertarget.CubeMapArrayRenderTarget
+import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
+import de.hanno.hpengine.graphics.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.Transform
-import de.hanno.hpengine.model.EntitiesStateHolder
-import de.hanno.hpengine.graphics.constants.PrimitiveType
-import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
-import de.hanno.hpengine.graphics.constants.RenderingMode
-import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
-import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
-import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer.invoke
-import de.hanno.hpengine.graphics.envprobe.EnvironmentProbeComponent
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
-import java.util.HashSet
 
 
 class EnvironmentSampler(
@@ -252,16 +252,16 @@ class EnvironmentSampler(
         val cubeMapCamInitialOrientation = Quaternionf().identity()
         transform.rotate(cubeMapCamInitialOrientation)
 
-        cubeMapView = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(0), probeIndex).id
-        cubeMapView1 = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(1), probeIndex).id
-        cubeMapView2 = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(2), probeIndex).id
+        cubeMapView = graphicsApi.createView(cubeMapArrayRenderTarget.textures[0], probeIndex).id
+        cubeMapView1 = graphicsApi.createView(cubeMapArrayRenderTarget.textures[1], probeIndex).id
+        cubeMapView2 = graphicsApi.createView(cubeMapArrayRenderTarget.textures[2], probeIndex).id
 
-        val diffuseInternalFormat = cubeMapArrayRenderTarget.getCubeMapArray(3).internalFormat
+        val diffuseInternalFormat = cubeMapArrayRenderTarget.textures[3].internalFormat
         for (faceIndex in 0..5) {
-            cubeMapFaceViews[0][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(0), probeIndex, faceIndex).id
-            cubeMapFaceViews[1][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(1), probeIndex, faceIndex).id
-            cubeMapFaceViews[2][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(2), probeIndex, faceIndex).id
-            cubeMapFaceViews[3][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.getCubeMapArray(3), probeIndex, faceIndex).id
+            cubeMapFaceViews[0][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.textures[0], probeIndex, faceIndex).id
+            cubeMapFaceViews[1][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.textures[1], probeIndex, faceIndex).id
+            cubeMapFaceViews[2][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.textures[2], probeIndex, faceIndex).id
+            cubeMapFaceViews[3][faceIndex] = graphicsApi.createView(cubeMapArrayRenderTarget.textures[3], probeIndex, faceIndex).id
         }
         renderTarget = graphicsApi.RenderTarget(
             graphicsApi.FrameBuffer(graphicsApi.DepthBuffer(RESOLUTION, RESOLUTION)),

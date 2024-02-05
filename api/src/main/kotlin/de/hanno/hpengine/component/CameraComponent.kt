@@ -11,7 +11,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.system.Extractor
 import org.koin.core.annotation.Single
 
-class CameraComponent(val camera: Camera): Component() {
+class CameraComponent(var camera: Camera): Component() {
     constructor(transform: Transform): this(Camera(transform))
     constructor(): this(Camera(Transform()))
 }

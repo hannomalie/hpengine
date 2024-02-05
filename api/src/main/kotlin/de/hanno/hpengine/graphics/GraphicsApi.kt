@@ -25,6 +25,7 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.nio.LongBuffer
+import java.nio.ShortBuffer
 
 interface GraphicsApi {
     val backgroundContext: GraphicsApi?
@@ -120,7 +121,7 @@ interface GraphicsApi {
 
     fun genFrameBuffer(): Int
 
-    fun clearCubeMap(i: Int, textureFormat: Int)
+    fun clearCubeMap(id: Int, textureFormat: Int)
 
     fun clearCubeMapInCubeMapArray(textureID: Int, internalFormat: Int, width: Int, height: Int, cubeMapIndex: Int)
 
@@ -245,10 +246,11 @@ interface GraphicsApi {
 
     fun generateMipMaps(texture: Texture)
 
-    fun getTextureData(texture: Texture, mipLevel: Int, format: Format, texels: ByteBuffer): ByteBuffer
+    fun getTextureData(texture: Texture, mipLevel: Int, format: Format, texelComponentType: TexelComponentType, texels: ByteBuffer): ByteBuffer
     fun clearTexImage(texture: Texture, format: Format, level: Int, type: TexelComponentType)
     fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType) // TODO: Remove this version
     fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType, buffer: FloatBuffer) // TODO: Remove this version
+    fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType, buffer: ShortBuffer) // TODO: Remove this version
 
     fun bindImageTexture(unit: Int, texture: Texture, level: Int, layered: Boolean, layer: Int, access: Access)
     fun memoryBarrier()
@@ -377,6 +379,7 @@ interface GraphicsApi {
 
     fun unbindPixelBufferObject()
     fun setPointsSize(size: Float)
+    fun <T: Texture> createDepthBuffer(texture: T): DepthBuffer<T>
 }
 
 fun GraphicsApi.RenderTarget(

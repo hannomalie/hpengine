@@ -53,13 +53,6 @@ vec3 decodeNormal(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-float calculateAttenuation(float dist, float lightRadius) {
-    float distDivRadius = (dist / lightRadius);
-    float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
-    atten_factor = pow(atten_factor, 2);
-    return atten_factor;
-}
-
 float chiGGX(float v)
 {
     return v > 0 ? 1 : 0;
@@ -81,11 +74,6 @@ shared uint[MAX_LIGHTS_PER_TILE] pointLightIndicesForTile;
 
 shared uint minDepth = 0xFFFFFFFF;
 shared uint maxDepth = 0;
-
-bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
-	return distance(positionSphere, positionToTest) < radius;
-}
-
 
 float getVisibilityDPSM(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
 
@@ -203,9 +191,9 @@ void main(void) {
 	vec3 positionView = textureLod(positionMap, st, 0).xyz;
 	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 
-	vec3 color = texture2D(diffuseMap, st).xyz;
-	float roughness = texture2D(positionMap, st).w;
-	float metallic = texture2D(diffuseMap, st).w;
+	vec3 color = textureLod(diffuseMap, st, 0).xyz;
+	float roughness = textureLod(positionMap, st, 0).w;
+	float metallic = textureLod(diffuseMap, st, 0).w;
 
 	float glossiness = (1-roughness);
 	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
@@ -218,8 +206,8 @@ void main(void) {
 	dir.w = 0.0;
 	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
 	vec3 normalView = textureLod(normalMap, st, 0).xyz;
-	vec4 specular = texture2D(specularMap, st);
-	float depthFloat = texture2D(normalMap, st).w;
+	vec4 specular = textureLod(specularMap, st, 0);
+	float depthFloat = textureLod(normalMap, st, 0).w;
 	depthFloat = textureLod(visibilityMap, st, 0).g;
 
 	vec4 finalColor = vec4(0);

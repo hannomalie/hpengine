@@ -49,6 +49,7 @@ void main()
 	int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
 	if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
+//	entityBufferIndex = 0;
 	Entity entity = entities[entityBufferIndex];
 	mat4 modelMatrix = entity.modelMatrix;
 

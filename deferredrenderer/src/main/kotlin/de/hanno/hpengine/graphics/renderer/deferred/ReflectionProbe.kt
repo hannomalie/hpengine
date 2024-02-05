@@ -37,8 +37,8 @@ import de.hanno.hpengine.graphics.texture.CubeMap
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.math.OmniCamera
 import de.hanno.hpengine.math.Vector4fStrukt
-import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
@@ -309,6 +309,7 @@ class ReflectionProbeRenderExtension(
 
     }
 
+    private val omniCamera = OmniCamera(Vector3f())
     fun ReflectionProbeRenderer.renderProbes(renderState: RenderState, startIndex: Int, probesPerFrame: Int): Unit = graphicsApi.run {
         val currentReflectionProbeRenderState = renderState[reflectionProbeRenderState]
         if (currentReflectionProbeRenderState.probeCount == 0) return
@@ -353,16 +354,15 @@ class ReflectionProbeRenderExtension(
                     )
                 }
                 bindTexture(8, skyBox)
-                val viewProjectionMatrices =
-                    getCubeViewProjectionMatricesForPosition(currentReflectionProbeRenderState.probePositions[probeIndex])
+                omniCamera.updatePosition(currentReflectionProbeRenderState.probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
                 for (floatBufferIndex in 0..5) {
                     viewMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
                     projectionMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
 
-                    viewProjectionMatrices.first[floatBufferIndex].get(viewMatrices[floatBufferIndex])
-                    viewProjectionMatrices.second[floatBufferIndex].get(projectionMatrices[floatBufferIndex])
+                    omniCamera.cameras[floatBufferIndex].viewMatrix.get(viewMatrices[floatBufferIndex])
+                    omniCamera.cameras[floatBufferIndex].projectionMatrix.get(projectionMatrices[floatBufferIndex])
 
                     viewMatrices[floatBufferIndex]!!.rewind()
                     projectionMatrices[floatBufferIndex]!!.rewind()
@@ -378,7 +378,7 @@ class ReflectionProbeRenderExtension(
 
                 profiled("ReflectionProbe entity rendering") {
                     for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
-                        pointCubeShadowPassProgram.setTextureUniforms(graphicsApi, batch.material.maps)
+                        setTextureUniforms(pointCubeShadowPassProgram, graphicsApi, batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch
                                 .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill

@@ -31,4 +31,5 @@ interface Window {
     val frontBuffer: FrontBufferTarget
     fun shouldClose(): Boolean
     fun closeIfReqeusted()
+    fun setVisible(visible: Boolean)
 }

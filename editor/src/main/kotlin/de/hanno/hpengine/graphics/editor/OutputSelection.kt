@@ -3,15 +3,12 @@ package de.hanno.hpengine.graphics.editor
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.RenderTargetImpl
+import de.hanno.hpengine.graphics.rendertarget.RenderTargetImpl
 import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.output.DebugOutput
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
-import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
-import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
-import de.hanno.hpengine.graphics.rendertarget.toTextures
+import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
@@ -60,14 +57,27 @@ class OutputSelection(
     val textureOutputOptions: List<TextureOutputSelection>
         get() {
             return graphicsApi.registeredRenderTargets.flatMap { target ->
-                target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
+                val texture2DSelections = target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
                     TextureOutputSelection(target.name + "[$index]", texture)
-                } + ((target.frameBuffer.depthBuffer?.texture as? Texture2D)?.let {
+                }
+
+                val depthTexturesSelections = (target.frameBuffer.depthBuffer?.texture as? Texture2D)?.let {
                     TextureOutputSelection(
                         target.name + "[depth]",
                         it
                     )
-                })
+                }
+
+                val cubeMapFaceViews = if (target is CubeMapArrayRenderTarget) target.cubeMapFaceViews else emptyList()
+                val cubeMapFaceViewSelections = cubeMapFaceViews.mapIndexed { index, it ->
+                    TextureOutputSelection(
+                        target.name + "[$index]",
+                        it
+                    )
+                }
+
+                texture2DSelections + depthTexturesSelections + cubeMapFaceViewSelections
+
             }.filterNotNull() +
                     textureManager.texturesForDebugOutput.filterValues { it is Texture2D }
                         .map { TextureOutputSelection(it.key, it.value as Texture2D) } +

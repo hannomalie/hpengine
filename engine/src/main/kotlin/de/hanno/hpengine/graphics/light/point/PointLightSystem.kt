@@ -14,6 +14,7 @@ import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.artemis.mapEntity
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.buffers.enlarge
@@ -22,19 +23,27 @@ import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.state.*
 import de.hanno.hpengine.math.createPerspective
+import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.material.MaterialSystem
+import de.hanno.hpengine.transform.EntityMovementSystem
 import org.koin.core.annotation.Single
 import struktgen.api.forIndex
 
 // TODO: Autoadd Transform
 @All(PointLightComponent::class, TransformComponent::class)
-@Single(binds = [BaseSystem::class, PointLightSystem::class])
+@Single(binds = [BaseSystem::class, PointLightSystem::class, RenderSystem::class])
 class PointLightSystem(
     private val graphicsApi: GraphicsApi,
     private val renderStateContext: RenderStateContext,
-    config: Config,
-    programManager: ProgramManager,
-    pointLightStateHolder: PointLightStateHolder,
     private val entitiesStateHolder: EntitiesStateHolder,
+    private val config: Config,
+    private val programManager: ProgramManager,
+    private val pointLightStateHolder: PointLightStateHolder,
+    private val movementSystem: EntityMovementSystem,
+    private val entityBuffer: EntityBuffer,
+    private val materialSystem: MaterialSystem,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ): BaseEntitySystem(), RenderSystem, Extractor {
     private var gpuPointLights = graphicsApi.PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
@@ -58,7 +67,17 @@ class PointLightSystem(
                 config
             )
         } else {
-            CubeShadowMapStrategy(graphicsApi, config, programManager)
+            CubeShadowMapStrategy(
+                graphicsApi,
+        config,
+        programManager,
+        pointLightStateHolder,
+        movementSystem,
+        entitiesStateHolder,
+        entityBuffer,
+        materialSystem,
+        defaultBatchesSystem,
+                )
         }
 
     private var shadowMapsRenderedInCycle: Long = -1
@@ -80,6 +99,7 @@ class PointLightSystem(
 
         currentWriteState[lightState].pointLightBuffer.ensureCapacityInBytes(gpuPointLights.sizeInBytes)
         gpuPointLights.buffer.copyTo(currentWriteState[lightState].pointLightBuffer.buffer)
+        currentWriteState[lightState].pointLightCount = mapEntity { 1 }.count()
     }
 
     companion object {

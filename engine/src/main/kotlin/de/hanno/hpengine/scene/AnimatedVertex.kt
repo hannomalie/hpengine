@@ -1,6 +1,5 @@
 package de.hanno.hpengine.scene
 
-import com.google.common.collect.ImmutableSet
 import de.hanno.hpengine.graphics.buffer.vertex.DataChannelComponent.*
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -17,7 +16,7 @@ data class AnimatedVertex (
 
     companion object {
 
-        val channels = ImmutableSet.of(
+        val channels = setOf(
             FloatThree("position", "vec3"),
             FloatTwo("texCoord", "vec2"),
             FloatThree("normal", "vec3"),

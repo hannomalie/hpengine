@@ -17,15 +17,15 @@ data class TextureDimension1D(val width: Int): TextureDimension() {
 data class TextureDimension2D(val width: Int, val height: Int): TextureDimension() {
     init {
         require(width >= 1) { "width has wrong value: $width" }
-        require(height >= 1) { "width has wrong value: $height" }
+        require(height >= 1) { "height has wrong value: $height" }
     }
     override fun getMipMapCount() = getMipMapCountForDimension(width, height, 0)
 }
 data class TextureDimension3D(val width: Int, val height: Int, val depth: Int): TextureDimension() {
     init {
         require(width >= 1) { "width has wrong value: $width" }
-        require(height >= 1) { "width has wrong value: $height" }
-        require(depth >= 1) { "width has wrong value: $depth" }
+        require(height >= 1) { "height has wrong value: $height" }
+        require(depth >= 1) { "depth has wrong value: $depth" }
     }
     override fun getMipMapCount() = getMipMapCountForDimension(width, height, depth)
 }

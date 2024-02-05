@@ -65,6 +65,7 @@ void main() {
               pass_Material = vs_pass_Material[i];
 
               gl_Position = projectedPosition;
+
               clip = 1.0;
               EmitVertex();
             }

@@ -172,7 +172,7 @@ class VoxelConeTracingExtension(
                         currentVoxelGrid.albedoGrid != 0
                     ) {
                         clearTexImage(currentVoxelGrid.grid, gridTextureFormat, 0, TexelComponentType.Float)
-                        clearTexImage(currentVoxelGrid.indexGrid, indexGridTextureFormat, 0, TexelComponentType.Int)
+                        clearTexImage(currentVoxelGrid.indexGrid, indexGridTextureFormat, 0, TexelComponentType.UnsignedInt)
                         clearTexImage(currentVoxelGrid.normalGrid, gridTextureFormat, 0, TexelComponentType.Float)
                         clearTexImage(currentVoxelGrid.albedoGrid, gridTextureFormat, 0, TexelComponentType.Float)
                     }
@@ -211,7 +211,7 @@ class VoxelConeTracingExtension(
 
                 renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.bind()
                 for (entity in batches) {
-                    voxelizerStatic.setTextureUniforms(graphicsApi, entity.material.maps)
+                    setTextureUniforms(voxelizerStatic, graphicsApi, entity.material.maps)
                     renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.draw(
                         entity.drawElementsIndirectCommand,
                         bindIndexBuffer = false,

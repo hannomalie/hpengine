@@ -25,8 +25,8 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.TextureDimension
+import de.hanno.hpengine.math.OmniCamera
 import de.hanno.hpengine.math.Vector4fStrukt
-import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
@@ -133,6 +133,7 @@ class ProbeRenderer(
         clear = Vector4f(),
     )
 
+    private val omniCamera = OmniCamera(Vector3f())
     fun renderProbes(renderState: RenderState, probeStartIndex: Int, probesPerFrame: Int) = graphicsApi.run {
         val worldAABBState = renderState[worldAABBStateHolder.worldAABBState]
         if (sceneMin != worldAABBState.min || sceneMax != worldAABBState.max) {
@@ -186,15 +187,16 @@ class ProbeRenderer(
                     )
                 }
                 graphicsApi.bindTexture(8, skyBox)
-                val viewProjectionMatrices = getCubeViewProjectionMatricesForPosition(probePositions[probeIndex])
+
+                omniCamera.updatePosition(probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
                 for (floatBufferIndex in 0..5) {
                     viewMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
                     projectionMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
 
-                    viewProjectionMatrices.first[floatBufferIndex].get(viewMatrices[floatBufferIndex])
-                    viewProjectionMatrices.second[floatBufferIndex].get(projectionMatrices[floatBufferIndex])
+                    omniCamera.cameras[floatBufferIndex].viewMatrix.get(viewMatrices[floatBufferIndex])
+                    omniCamera.cameras[floatBufferIndex].projectionMatrix.get(projectionMatrices[floatBufferIndex])
 
                     viewMatrices[floatBufferIndex]!!.rewind()
                     projectionMatrices[floatBufferIndex]!!.rewind()
@@ -210,7 +212,7 @@ class ProbeRenderer(
 
                 profiled("Probe entity rendering") {
                     for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
-                        pointCubeShadowPassProgram.setTextureUniforms(graphicsApi, batch.material.maps)
+                        setTextureUniforms(pointCubeShadowPassProgram, graphicsApi, batch.material.maps)
                         entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill
                         )

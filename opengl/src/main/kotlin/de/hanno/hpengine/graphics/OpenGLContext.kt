@@ -21,6 +21,7 @@ import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.*
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
+import de.hanno.hpengine.toHalfFloat
 import glValue
 import kotlinx.coroutines.*
 import org.joml.Vector4f
@@ -32,20 +33,15 @@ import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL11.GL_FALSE
 import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
-import org.lwjgl.opengl.GL32.*
 import org.lwjgl.opengl.GL40.*
 import org.lwjgl.opengl.GL45.glGetTextureSubImage
 import org.lwjgl.system.MemoryStack
 import java.awt.image.BufferedImage
 import java.lang.Integer.max
-import java.nio.ByteBuffer
-import java.nio.FloatBuffer
-import java.nio.IntBuffer
-import java.nio.LongBuffer
+import java.nio.*
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
-import kotlin.math.floor
 import kotlin.math.min
 
 class OpenGLContext private constructor(
@@ -88,6 +84,7 @@ class OpenGLContext private constructor(
     override fun setPointsSize(size: Float) {
         GL30.glPointSize(size)
     }
+
     override val maxLineWidth = onGpuInline { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
     override fun Texture2D(
         dimension: TextureDimension2D,
@@ -153,7 +150,7 @@ class OpenGLContext private constructor(
                     texture.id,
                     internalFormat.glValue,
                     0,
-                    texture.mipmapCount,
+                    texture.mipmapCount + 1,
                     6 * cubeMapIndex,
                     6
                 )
@@ -170,25 +167,28 @@ class OpenGLContext private constructor(
             override val id = viewTextureId
             override val target = TextureTarget.TEXTURE_CUBE_MAP
             override val internalFormat = texture.internalFormat
-            override var handle: Long = glGetTextureHandleARB(viewTextureId)
+            override var handle: Long = if(!isSupported(BindlessTextures)) -1 else onGpuInline { glGetTextureHandleARB(viewTextureId) }
             override val textureFilterConfig = texture.textureFilterConfig
             override val wrapMode = texture.wrapMode
             override var uploadState: UploadState = UploadState.Uploaded
         }.apply {
-            GL43.glTextureView(
-                id,
-                GL_TEXTURE_2D,
-                texture.id,
-                texture.internalFormat.glValue,
-                0,
-                1,
-                6 * cubemapIndex + faceIndex,
-                1
-            )
+            onGpuInline {
+                GL43.glTextureView(
+                    id,
+                    GL_TEXTURE_2D,
+                    texture.id,
+                    texture.internalFormat.glValue,
+                    0,
+                    1,
+                    6 * cubemapIndex + faceIndex,
+                    1
+                )
+            }
         }
     }
 
-    override val registeredRenderTargets = ArrayList<BackBufferRenderTarget<*>>()
+    private val _registeredRenderTargets = mutableListOf<BackBufferRenderTarget<*>>()
+    override val registeredRenderTargets: List<BackBufferRenderTarget<*>> = _registeredRenderTargets
 
     override var maxTextureUnits = onGpuInline { getMaxCombinedTextureImageUnits() }
 
@@ -350,7 +350,7 @@ class OpenGLContext private constructor(
         set(value) = onGpuInline { GlFlag.DEPTH_MASK.run { if (value) enable() else disable() } }
 
     override var depthFunc: DepthFunc
-        get() = DepthFunc.values().first { it.glFunc == glGetInteger(GL_DEPTH_FUNC) }
+        get() = DepthFunc.entries.first { it.glFunc == glGetInteger(GL_DEPTH_FUNC) }
         set(value) = onGpuInline { glDepthFunc(value.glFunc) }
 
 
@@ -366,7 +366,7 @@ class OpenGLContext private constructor(
     }
 
     override var blendEquation: BlendMode
-        get() = BlendMode.values().first { it.mode == glGetInteger(GL20.GL_BLEND_EQUATION_RGB) }
+        get() = BlendMode.entries.first { it.mode == glGetInteger(GL20.GL_BLEND_EQUATION_RGB) }
         set(value) = onGpuInline { GL14.glBlendEquation(value.mode) }
 
     override fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor) = onGpuInline {
@@ -434,8 +434,8 @@ class OpenGLContext private constructor(
 
     override fun genFrameBuffer() = onGpuInline { glGenFramebuffers() }
 
-    override fun clearCubeMap(textureId: Int, textureFormat: Int) = onGpuInline {
-        glClearTexImage(textureId, 0, textureFormat, GL_UNSIGNED_BYTE, ZERO_BUFFER)
+    override fun clearCubeMap(id: Int, textureFormat: Int) = onGpuInline {
+        glClearTexImage(id, 0, textureFormat, GL_UNSIGNED_BYTE, ZERO_BUFFER_FLOAT)
     }
 
     override fun clearCubeMapInCubeMapArray(
@@ -456,7 +456,7 @@ class OpenGLContext private constructor(
             6,
             internalFormat,
             GL_UNSIGNED_BYTE,
-            ZERO_BUFFER
+            ZERO_BUFFER_FLOAT
         )
     }
 
@@ -477,11 +477,11 @@ class OpenGLContext private constructor(
     }
     override fun register(target: BackBufferRenderTarget<*>) {
         if (registeredRenderTargets.any { it.name == target.name } || registeredRenderTargets.contains(target)) return
-        registeredRenderTargets.add(target)
+        _registeredRenderTargets.add(target)
     }
 
     override fun clearRenderTargets() {
-        registeredRenderTargets.clear()
+        _registeredRenderTargets.clear()
     }
 
     override fun finishFrame(renderState: IRenderState) {
@@ -568,9 +568,9 @@ class OpenGLContext private constructor(
     ): OpenGLTexture2D {
         val compressInternal = config.performance.textureCompressionByDefault
         val internalFormat = if (compressInternal) {
-            if (srgba) InternalTextureFormat.COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT
+            if (srgba) InternalTextureFormat.COMPRESSED_SRGB_ALPHA_S3TC_DXT5 else InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
         } else {
-            if (srgba) InternalTextureFormat.SRGB8_ALPHA8_EXT else InternalTextureFormat.RGBA16F
+            if (srgba) InternalTextureFormat.SRGB8_ALPHA8 else InternalTextureFormat.RGBA16F
         }
 
         val precalculateMipMapsOnCpu = true
@@ -635,7 +635,7 @@ class OpenGLContext private constructor(
         image: BufferedImage,
         internalFormat: InternalTextureFormat
     ): UploadInfo.AllMipLevelsLazyTexture2DUploadInfo {
-        val srgba = internalFormat == InternalTextureFormat.SRGB8_ALPHA8_EXT || internalFormat == InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT
+        val srgba = internalFormat == InternalTextureFormat.SRGB8_ALPHA8 || internalFormat == InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
         val mipMapSizes = calculateMipMapSizes(image.width, image.height)
 
         val data = mipMapSizes.map {
@@ -861,22 +861,37 @@ class OpenGLContext private constructor(
         GL30.glGenerateMipmap(texture.target.glValue)
     }
 
-    override fun getTextureData(texture: Texture, mipLevel: Int, format: Format, texels: ByteBuffer): ByteBuffer {
+    override fun getTextureData(
+        texture: Texture,
+        mipLevel: Int,
+        format: Format,
+        texelComponentType: TexelComponentType,
+        texels: ByteBuffer
+    ): ByteBuffer = onGpuInline {
         bindTexture(texture)
-        glGetTexImage(texture.target.glValue, mipLevel, format.glValue, GL_UNSIGNED_BYTE, texels)
-        return texels
+        glGetTexImage(texture.target.glValue, mipLevel, format.glValue, texelComponentType.glValue, texels)
+        texels
     }
     override fun clearTexImage(texture: Texture, format: Format, level: Int, type: TexelComponentType) {
         clearTexImage(texture.id, format, level, type)
     }
-    override fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType, floatBuffer: FloatBuffer) = onGpuInline {
-        glClearTexImage(textureId, level, format.glValue, type.glValue, floatBuffer)
+    override fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType, buffer: FloatBuffer) = onGpuInline {
+        glClearTexImage(textureId, level, format.glValue, type.glValue, buffer)
+    }
+    override fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType, buffer: ShortBuffer) = onGpuInline {
+        glClearTexImage(textureId, level, format.glValue, type.glValue, buffer)
     }
     override fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType) = onGpuInline {
         when(type) {
-            TexelComponentType.Float -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER)
-            TexelComponentType.Int -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
+            TexelComponentType.Float -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_DOUBLE)
+            TexelComponentType.UnsignedInt -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
             TexelComponentType.UnsignedByte -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_BYTE)
+            TexelComponentType.HalfFloat -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_HALF_FLOAT)
+            TexelComponentType.Int -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
+            TexelComponentType.Byte -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_BYTE)
+            TexelComponentType.UnsignedShort -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_SHORT)
+            TexelComponentType.UnsignedInt_10_10_10_2 -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
+            TexelComponentType.UnsignedInt_24_8 -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
         }
     }
     override fun bindImageTexture(unit: Int, texture: Texture, level: Int, layered: Boolean, layer: Int, access: Access) {
@@ -930,13 +945,11 @@ class OpenGLContext private constructor(
                 )
             }
             TextureTarget.TEXTURE_CUBE_MAP_ARRAY -> {
-                glFramebufferTexture3D(
+                glFramebufferTexture(
                     GL_FRAMEBUFFER,
                     GL_COLOR_ATTACHMENT0 + index,
-                    textureTarget.glValue,
                     textureId,
                     level,
-                    0 // TODO: Make it possible to pass layer
                 )
             }
             TextureTarget.TEXTURE_2D_ARRAY -> {
@@ -1332,8 +1345,10 @@ class OpenGLContext private constructor(
         name: String,
         clear: Vector4f,
     ) = CubeMapRenderTarget(
-        this, RenderTargetImpl(this, frameBuffer, width, height, textures, name, clear)
+        this,
+        RenderTargetImpl(this, frameBuffer, width, height, textures, name, clear)
     )
+
 
     override fun CubeMapArray(
         dimension: TextureDimension3D,
@@ -1357,7 +1372,6 @@ class OpenGLContext private constructor(
             UploadState.Uploaded
         )
     }
-
     override fun DepthBuffer(width: Int, height: Int): DepthBuffer<Texture2D> {
         val dimension = TextureDimension(width, height)
         val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
@@ -1384,6 +1398,16 @@ class OpenGLContext private constructor(
             )
         )
     }
+    override fun <T: Texture> createDepthBuffer(texture: T): DepthBuffer<T> {
+        require(texture.internalFormat == InternalTextureFormat.DEPTH_COMPONENT24) {
+            "Required format for depth buffer is InternalTextureFormat.DEPTH_COMPONENT24"
+        }
+        require(!texture.textureFilterConfig.minFilter.isMipMapped) {
+            "${texture.textureFilterConfig.minFilter} should not be a mipmapped one"
+        }
+
+        return DepthBuffer(texture)
+    }
 
     override fun IndexBuffer.draw(
         drawElementsIndirectCommand: DrawElementsIndirectCommand,
@@ -1397,11 +1421,32 @@ class OpenGLContext private constructor(
         val OPENGL_THREAD_NAME_BASE = "OpenGLContext"
         fun createOpenGLThreadName() = "${OPENGL_THREAD_NAME_BASE}_${counter++}"
 
-        val ZERO_BUFFER: FloatBuffer = BufferUtils.createFloatBuffer(4).apply {
+        val ZERO_BUFFER_FLOAT: FloatBuffer = BufferUtils.createFloatBuffer(4).apply {
             put(0f)
             put(0f)
             put(0f)
             put(0f)
+            rewind()
+        }
+        val ZERO_BUFFER_HALF_FLOAT: ShortBuffer = BufferUtils.createShortBuffer(4).apply {
+            put(0f.toHalfFloat())
+            put(0f.toHalfFloat())
+            put(0f.toHalfFloat())
+            put(0f.toHalfFloat())
+            rewind()
+        }
+        val ZERO_BUFFER_SHORT = BufferUtils.createShortBuffer(4).apply {
+            put(0)
+            put(0)
+            put(0)
+            put(0)
+            rewind()
+        }
+        val ZERO_BUFFER_DOUBLE = BufferUtils.createDoubleBuffer(4).apply {
+            put(0.0)
+            put(0.0)
+            put(0.0)
+            put(0.0)
             rewind()
         }
         val RED_BUFFER: FloatBuffer = BufferUtils.createFloatBuffer(4).apply {

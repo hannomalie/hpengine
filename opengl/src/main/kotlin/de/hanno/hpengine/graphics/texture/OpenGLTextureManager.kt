@@ -110,9 +110,9 @@ class OpenGLTextureManager(
 
         val compressInternal = config.performance.textureCompressionByDefault
         val internalFormat = if (compressInternal) {
-            if (srgba) InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT else InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT
+            if (srgba) InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5 else InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
         } else {
-            if (srgba) InternalTextureFormat.SRGB8_ALPHA8_EXT else InternalTextureFormat.RGBA16F
+            if (srgba) InternalTextureFormat.SRGB8_ALPHA8 else InternalTextureFormat.RGBA16F
         }
 
         val openGLTexture = if (file.extension == "dds") {

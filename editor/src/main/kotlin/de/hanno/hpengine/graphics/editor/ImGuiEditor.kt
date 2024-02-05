@@ -26,10 +26,7 @@ import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.output.FinalOutputImpl
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
-import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
-import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
-import de.hanno.hpengine.graphics.rendertarget.toTextures
+import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState

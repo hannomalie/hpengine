@@ -53,8 +53,6 @@ allprojects {
             setUrl("https://oss.sonatype.org")
         }
 
-        jcenter()
-
         maven { setUrl("https://jitpack.io") }
     }
 }
@@ -65,7 +63,6 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
     implementation(kotlin("compiler-embeddable"))
 
     implementation(project("engine"))

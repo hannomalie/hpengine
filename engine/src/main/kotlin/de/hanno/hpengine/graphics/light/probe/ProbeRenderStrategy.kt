@@ -18,7 +18,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
-import de.hanno.hpengine.math.getCubeViewProjectionMatricesForPosition
+import de.hanno.hpengine.math.OmniCamera
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
@@ -98,6 +98,7 @@ class ProbeRenderStrategy(
 
     var z = 0
 
+    private val omniCamera = OmniCamera(Vector3f())
     fun renderProbes(renderState: RenderState) = graphicsApi.run {
         profiled("PointLight shadowmaps") {
 
@@ -127,26 +128,21 @@ class ProbeRenderStrategy(
                 probeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
                 probeProgram.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
                 probeProgram.setUniform("probePositionWorld", probePosition)
-                val viewProjectionMatrices = getCubeViewProjectionMatricesForPosition(probePosition)
+                omniCamera.updatePosition(probePosition)
+
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
                 for (floatBufferIndex in 0..5) {
                     viewMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
                     projectionMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
 
-                    viewProjectionMatrices.first[floatBufferIndex].get(viewMatrices[floatBufferIndex])
-                    viewProjectionMatrices.second[floatBufferIndex].get(projectionMatrices[floatBufferIndex])
+                    omniCamera.cameras[floatBufferIndex].viewMatrix.get(viewMatrices[floatBufferIndex])
+                    omniCamera.cameras[floatBufferIndex].projectionMatrix.get(projectionMatrices[floatBufferIndex])
 
                     viewMatrices[floatBufferIndex]!!.rewind()
                     projectionMatrices[floatBufferIndex]!!.rewind()
-                    probeProgram.setUniformAsMatrix4(
-                        "viewMatrices[$floatBufferIndex]",
-                        viewMatrices[floatBufferIndex]!!
-                    )
-                    probeProgram.setUniformAsMatrix4(
-                        "projectionMatrices[$floatBufferIndex]",
-                        projectionMatrices[floatBufferIndex]!!
-                    )
+                    probeProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex]!!)
+                    probeProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex]!!)
                     probeProgram.bindShaderStorageBuffer(5, renderState[directionalLightStateHolder.lightState])
                 }
 

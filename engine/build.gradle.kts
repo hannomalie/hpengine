@@ -39,8 +39,6 @@ dependencies {
     api(kotlin("reflect"))
     api(kotlin("compiler-embeddable"))
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
-
     api(project(":api"))
     api(project(":glfw")) // TODO: Can I remove this somehow?
     implementation(project(":opengl"))
@@ -50,14 +48,12 @@ dependencies {
     api("com.github.s1monw1:KtsRunner:v0.0.7")
 
     api(fileTree(mapOf("dir" to "../libs", "include" to "*.jar")))
-    api("", "PNGDecoder")
     api("", "dds", "1.0.1-SNAPSHOT")
     api("", "DDSUtils")
 
     api("org.lwjgl:lwjgl:${LWJGL.version}")
     api("org.lwjgl:lwjgl-glfw:${LWJGL.version}")
     api("org.lwjgl:lwjgl-jawt:${LWJGL.version}")
-    api("org.lwjglx:lwjgl3-awt:0.1.8")
     api("org.lwjgl:lwjgl-jemalloc:${LWJGL.version}")
     api("org.lwjgl:lwjgl-nanovg:${LWJGL.version}")
     api("org.lwjgl:lwjgl-opencl:${LWJGL.version}")
@@ -71,7 +67,6 @@ dependencies {
     api("org.lwjgl", "lwjgl-meshoptimizer", LWJGL.version, classifier = LWJGL.natives)
 
     api("org.joml:joml:1.9.3")
-    api("", "lwjgl3-awt", "0.1.6")
     api("javax.vecmath:vecmath:1.5.2")
     api("jcommon:jcommon:0.9.5")
     api("commons-lang:commons-lang:2.3")
@@ -80,7 +75,6 @@ dependencies {
     api("net.engio:mbassador:1.2.4")
     api("de.ruedigermoeller:fst:2.33")
     api("commons-beanutils:commons-beanutils:1.9.3")
-    api("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
     api("com.dreizak:miniball:1.0.3")
     api("org.apache.logging.log4j:log4j-api:2.13.0")
     api("org.apache.logging.log4j:log4j-core:2.13.0")

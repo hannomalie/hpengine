@@ -1,9 +1,11 @@
-package de.hanno.hpengine.graphics.light.point
+package de.hanno.hpengine.graphics.renderer.deferred.extensions
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.TextureTarget
+import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
+import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
@@ -12,7 +14,9 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.material.MaterialSystem
+import org.koin.core.annotation.Single
 
+@Single(binds = [DeferredRenderExtension::class])
 class PointLightSecondPassExtension(
     private val graphicsApi: GraphicsApi,
     private val deferredRenderingBuffer: DeferredRenderingBuffer,
@@ -34,6 +38,7 @@ class PointLightSecondPassExtension(
             return
         }
 
+        // TODO: This doesn't work, find out why
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         profiled("Seconds pass PointLights") {
 

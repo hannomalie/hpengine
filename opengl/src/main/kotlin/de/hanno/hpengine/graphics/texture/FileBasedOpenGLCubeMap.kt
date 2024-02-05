@@ -103,7 +103,7 @@ data class FileBasedOpenGLCubeMap(
             files: List<File>,
             srgba: Boolean = false
         ): FileBasedOpenGLCubeMap = graphicsApi.run {
-            val internalFormat = if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else COMPRESSED_RGBA_S3TC_DXT5_EXT
+            val internalFormat = if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5 else COMPRESSED_RGBA_S3TC_DXT5
 
             val bufferedImage: BufferedImage = ImageIO.read(files.first())
             val width = bufferedImage.width
@@ -134,7 +134,7 @@ data class FileBasedOpenGLCubeMap(
             file: File,
             srgba: Boolean = false
         ): FileBasedOpenGLCubeMap = graphicsApi.run {
-            val internalFormat = if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else COMPRESSED_RGBA_S3TC_DXT5_EXT
+            val internalFormat = if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5 else COMPRESSED_RGBA_S3TC_DXT5
 
             val bufferedImage: BufferedImage = ImageIO.read(file)
             val width = bufferedImage.width

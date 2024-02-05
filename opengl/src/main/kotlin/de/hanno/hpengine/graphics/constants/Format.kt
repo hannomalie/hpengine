@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.constants
 
+import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL30.*
 
 

@@ -50,7 +50,7 @@ class RenderManager(
     }
 
     private fun frame() {
-        logger.debug("frame")
+        logger.trace("frame")
         gpuProfiler.run {
             graphicsApi.run {
                 rendering.getAndSet(true)
@@ -79,7 +79,7 @@ class RenderManager(
                             }
                         }
 
-                        logger.debug("renderSystems.render")
+                        logger.trace("renderSystems.render")
                         profiled("renderSystems") {
                             renderSystems.groupBy { it.sharedRenderTarget }
                                 .forEach { (renderTarget, renderSystems) ->
@@ -96,7 +96,7 @@ class RenderManager(
                                 }
                         }
 
-                        logger.debug("present")
+                        logger.trace("present")
                         profiled("present") {
                             window.frontBuffer.use(graphicsApi, true)
                             val finalOutput = renderSystemsConfig.primaryRenderer.finalOutput
@@ -119,7 +119,7 @@ class RenderManager(
                         profiled("finish") {
                             finish()
                         }
-                        logger.debug("swapBuffers")
+                        logger.trace("swapBuffers")
                         profiled("swapBuffers") {
                             window.swapBuffers()
                             window.closeIfReqeusted()

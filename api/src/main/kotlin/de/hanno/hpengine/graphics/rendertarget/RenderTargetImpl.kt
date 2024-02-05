@@ -1,9 +1,8 @@
-package de.hanno.hpengine.graphics
+package de.hanno.hpengine.graphics.rendertarget
 
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.TextureTarget
-import de.hanno.hpengine.graphics.rendertarget.BackBufferRenderTarget
-import de.hanno.hpengine.graphics.rendertarget.FrameBuffer
-import de.hanno.hpengine.graphics.texture.OpenGLCubeMapArray
+import de.hanno.hpengine.graphics.texture.CubeMapArray
 import de.hanno.hpengine.graphics.texture.Texture
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import org.joml.Vector4f
@@ -37,9 +36,9 @@ class RenderTargetImpl<T : Texture>(
             bindFrameBuffer(frameBuffer)
 
             // TODO: This is broken, reimplement
-            if (textures.firstOrNull() is OpenGLCubeMapArray) {
+            if (textures.firstOrNull() is CubeMapArray) {
                 textures.forEachIndexed { index, it ->
-                    framebufferTextureLayer(index, it, 0, 0)
+                    framebufferTextureLayer(index, it, 0, index * 6)
                 }
             } else {
                 textures.forEachIndexed { index, it ->
@@ -52,12 +51,10 @@ class RenderTargetImpl<T : Texture>(
 
             drawBuffers(drawBuffers)
 
-            validateFrameBufferState(this@RenderTargetImpl)
+            validateFrameBufferState(this)
 
             clearColor(clear.x, clear.y, clear.z, clear.w)
         }
-
-        graphicsApi.register(this)
     }
 
     override val renderedTexture: Int
