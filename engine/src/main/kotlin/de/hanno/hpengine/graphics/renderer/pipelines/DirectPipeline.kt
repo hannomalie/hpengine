@@ -48,21 +48,21 @@ open class DirectPipeline(
     private var entitiesCount = 0
     private var renderBatches = emptyList<RenderBatch>()
 
-    fun prepare(renderState: RenderState) {
+    fun prepare(renderState: RenderState, camera: Camera = renderState[primaryCameraStateHolder.camera]) {
         if(config.debug.freezeCulling) return
         verticesCount = 0
         entitiesCount = 0
 
-        renderBatches = renderState.extractRenderBatches()
+        renderBatches = renderState.extractRenderBatches(camera)
         logger.trace("Prepared ${renderBatches.size} batches")
     }
 
-    open fun RenderState.extractRenderBatches(): List<RenderBatch> = this[defaultBatchesSystem.renderBatchesStatic].filterNot {
-        it.shouldBeSkipped(this[primaryCameraStateHolder.camera])
+    open fun RenderState.extractRenderBatches(camera: Camera): List<RenderBatch> = this[defaultBatchesSystem.renderBatchesStatic].filterNot {
+        it.shouldBeSkipped(camera)
     }
     open fun RenderState.selectVertexIndexBuffer(): VertexIndexBuffer<*> = this[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
 
-    fun draw(renderState: RenderState): Unit = graphicsApi.run {
+    fun draw(renderState: RenderState, camera: Camera = renderState[primaryCameraStateHolder.camera]): Unit = graphicsApi.run {
         profiled("Actual draw entities") {
 
             val mode = if (config.debug.isDrawLines) Lines else Fill
@@ -71,7 +71,6 @@ open class DirectPipeline(
             vertexIndexBuffer.indexBuffer.bind()
 
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
-            val camera = renderState[primaryCameraStateHolder.camera]
 
             drawCustomProgramBatches(camera, entitiesState, renderState, vertexIndexBuffer, mode)
             drawDefaultProgramBatches(camera, entitiesState, renderState, vertexIndexBuffer, mode)
@@ -94,7 +93,7 @@ open class DirectPipeline(
                 depthMask = batch.material.writesDepth
                 cullFace = batch.material.cullBackFaces
                 depthTest = batch.material.depthTest
-                setTextureUniforms(program, graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -130,7 +129,7 @@ open class DirectPipeline(
                 using(program) { uniforms ->
                     uniforms.setCommonUniformValues(renderState, entitiesState, camera)
                 }
-                setTextureUniforms(program, graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
 
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -188,8 +187,7 @@ val Program<*>.primitiveType get() = if (shaders.firstIsInstanceOrNull<Tesselati
 }
 
 
-fun setTextureUniforms(
-    program: Program<*>,
+fun Program<*>.setTextureUniforms(
     graphicsApi: GraphicsApi,
     maps: Map<Material.MAP, Texture>,
     diffuseFallbackTexture: Texture? = null
@@ -203,41 +201,41 @@ fun setTextureUniforms(
                 when(map.uploadState) {
                     UploadState.Uploaded -> {
                         bindTexture(mapEnumEntry.textureSlot, map)
-                        program.setUniform(mapEnumEntry.uniformKey, true)
+                        setUniform(mapEnumEntry.uniformKey, true)
                         if(isDiffuse) {
-                            program.setUniform("diffuseMipBias", 0)
+                            setUniform("diffuseMipBias", 0)
                         }
                     }
                     UploadState.NotUploaded -> {
                         if(isDiffuse) {
                             if(diffuseFallbackTexture != null) {
                                 bindTexture(mapEnumEntry.textureSlot, diffuseFallbackTexture)
-                                program.setUniform(mapEnumEntry.uniformKey, true)
-                                program.setUniform("diffuseMipBias", 0)
+                                setUniform(mapEnumEntry.uniformKey, true)
+                                setUniform("diffuseMipBias", 0)
                             } else {
-                                program.setUniform(mapEnumEntry.uniformKey, false)
-                                program.setUniform("diffuseMipBias", 0)
+                                setUniform(mapEnumEntry.uniformKey, false)
+                                setUniform("diffuseMipBias", 0)
                             }
                         } else {
-                            program.setUniform(mapEnumEntry.uniformKey, false)
+                            setUniform(mapEnumEntry.uniformKey, false)
                         }
                     }
                     is UploadState.Uploading -> {
                         if(isDiffuse) {
                             bindTexture(mapEnumEntry.textureSlot, map)
-                            program.setUniform(mapEnumEntry.uniformKey, true)
-                            program.setUniform(
+                            setUniform(mapEnumEntry.uniformKey, true)
+                            setUniform(
                                 "diffuseMipBias",
                                 (map.uploadState as UploadState.Uploading).maxMipMapLoaded
                             )
                         } else {
-                            program.setUniform(mapEnumEntry.uniformKey, false)
+                            setUniform(mapEnumEntry.uniformKey, false)
                         }
                     }
                 }
             }
         } else {
-            program.setUniform(mapEnumEntry.uniformKey, false)
+            setUniform(mapEnumEntry.uniformKey, false)
         }
     }
 }

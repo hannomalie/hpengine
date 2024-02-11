@@ -44,8 +44,10 @@ class PointLightSystem(
     private val entityBuffer: EntityBuffer,
     private val materialSystem: MaterialSystem,
     private val defaultBatchesSystem: DefaultBatchesSystem,
-): BaseEntitySystem(), RenderSystem, Extractor {
-    private var gpuPointLights = graphicsApi.PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
+    primaryCameraStateHolder: PrimaryCameraStateHolder,
+) : BaseEntitySystem(), RenderSystem, Extractor {
+    private var gpuPointLights =
+        graphicsApi.PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
@@ -60,25 +62,27 @@ class PointLightSystem(
     }
 
     val shadowMapStrategy = if (config.quality.isUseDpsm) {
-            DualParaboloidShadowMapStrategy(
-                graphicsApi,
-                this,
-                programManager,
-                config
-            )
-        } else {
-            CubeShadowMapStrategy(
-                graphicsApi,
-        config,
-        programManager,
-        pointLightStateHolder,
-        movementSystem,
-        entitiesStateHolder,
-        entityBuffer,
-        materialSystem,
-        defaultBatchesSystem,
-                )
-        }
+        DualParaboloidShadowMapStrategy(
+            graphicsApi,
+            this,
+            programManager,
+            config
+        )
+    } else {
+        CubeShadowMapStrategy(
+            graphicsApi,
+            config,
+            programManager,
+            pointLightStateHolder,
+            movementSystem,
+            entitiesStateHolder,
+            entityBuffer,
+            materialSystem,
+            defaultBatchesSystem,
+            renderStateContext,
+            primaryCameraStateHolder,
+        )
+    }
 
     private var shadowMapsRenderedInCycle: Long = -1
 
@@ -88,7 +92,7 @@ class PointLightSystem(
                 entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||
                 entitiesState.entityAddedInCycle > shadowMapsRenderedInCycle ||
                 entitiesState.componentAddedInCycle > shadowMapsRenderedInCycle
-        if(needsRerender) {
+        if (needsRerender) {
             shadowMapStrategy.renderPointLightShadowMaps(renderState)
             shadowMapsRenderedInCycle = renderState.cycle
         }
@@ -103,7 +107,8 @@ class PointLightSystem(
     }
 
     companion object {
-        @JvmField val MAX_POINTLIGHT_SHADOWMAPS = 5
+        @JvmField
+        val MAX_POINTLIGHT_SHADOWMAPS = 5
     }
 
     override fun processSystem() {

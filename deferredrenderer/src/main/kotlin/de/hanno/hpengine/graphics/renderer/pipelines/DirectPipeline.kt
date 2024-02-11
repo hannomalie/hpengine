@@ -40,7 +40,7 @@ fun DirectDrawDescription<FirstPassUniforms>.draw() {
             cullFace = batch.material.cullBackFaces
             depthTest = batch.material.depthTest
             depthMask = batch.material.writesDepth
-            setTextureUniforms(program, this@GraphicsApi, batch.material.maps)
+            program.setTextureUniforms(this@GraphicsApi, batch.material.maps)
             val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
 
             program.bind()
@@ -59,7 +59,7 @@ fun DirectDrawDescription<FirstPassUniforms>.draw() {
         depthMask = batch.material.writesDepth
         cullFace = batch.material.cullBackFaces
         depthTest = batch.material.depthTest
-        setTextureUniforms(program, this@GraphicsApi, batch.material.maps)
+        program.setTextureUniforms(this@GraphicsApi, batch.material.maps)
         program.uniforms.entityIndex = batch.entityBufferIndex
         program.bind()
         vertexIndexBuffer.indexBuffer.draw(

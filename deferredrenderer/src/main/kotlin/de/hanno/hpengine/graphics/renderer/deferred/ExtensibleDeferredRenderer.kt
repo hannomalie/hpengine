@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.deferred
 
 import com.artemis.BaseSystem
+import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
@@ -89,7 +90,7 @@ class ExtensibleDeferredRenderer(
     }
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
         object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture) {
-            override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
+            override fun RenderState.extractRenderBatches(camera: Camera) = if(useIndirectRendering) {
                 this[defaultBatchesSystem.renderBatchesStatic].filterNot { it.canBeRenderedInIndirectBatch }
             } else {
                 this[defaultBatchesSystem.renderBatchesStatic].filterNot {
@@ -100,7 +101,7 @@ class ExtensibleDeferredRenderer(
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
         object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture) {
-            override fun RenderState.extractRenderBatches() = if(useIndirectRendering) {
+            override fun RenderState.extractRenderBatches(camera: Camera) = if(useIndirectRendering) {
                 this[defaultBatchesSystem.renderBatchesAnimated].filterNot { it.canBeRenderedInIndirectBatch }
             } else {
                 this[defaultBatchesSystem.renderBatchesAnimated].filterNot {

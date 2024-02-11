@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics
 
+import CubeMapFace
 import de.hanno.hpengine.graphics.constants.Facing
 import InternalTextureFormat
 import de.hanno.hpengine.graphics.constants.PrimitiveType
@@ -247,6 +248,8 @@ interface GraphicsApi {
     fun generateMipMaps(texture: Texture)
 
     fun getTextureData(texture: Texture, mipLevel: Int, format: Format, texelComponentType: TexelComponentType, texels: ByteBuffer): ByteBuffer
+    fun getTextureData(texture: CubeMap, face: CubeMapFace, mipLevel: Int, format: Format, texelComponentType: TexelComponentType, texels: ByteBuffer): ByteBuffer
+
     fun clearTexImage(texture: Texture, format: Format, level: Int, type: TexelComponentType)
     fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType) // TODO: Remove this version
     fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType, buffer: FloatBuffer) // TODO: Remove this version

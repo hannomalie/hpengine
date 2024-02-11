@@ -168,7 +168,7 @@ class GrassSystem(
                 depthMask = materialComponent.material.writesDepth
                 cullFace = materialComponent.material.cullBackFaces
                 depthTest = materialComponent.material.depthTest
-                setTextureUniforms(program, graphicsApi, materialComponent.material.maps)
+                program.setTextureUniforms(graphicsApi, materialComponent.material.maps)
 
                 program.uniforms.entityIndex = entityIndex
 

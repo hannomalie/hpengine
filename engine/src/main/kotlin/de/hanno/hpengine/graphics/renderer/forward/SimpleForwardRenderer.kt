@@ -9,11 +9,11 @@ import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.Transform
+import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.DepthFunc
-import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
@@ -72,12 +72,12 @@ class SimpleForwardRenderer(
 
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
         object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
-            override fun RenderState.extractRenderBatches() = this[defaultBatchesSystem.renderBatchesStatic]
+            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic]
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
         object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
-            override fun RenderState.extractRenderBatches() = this[defaultBatchesSystem.renderBatchesAnimated]
+            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated]
 
             override fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated
         }

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics
 
+import CubeMapFace
 import InternalTextureFormat
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.buffer.*
@@ -165,7 +166,7 @@ class OpenGLContext private constructor(
         return object: Texture2D {
             override val dimension = TextureDimension2D(texture.dimension.width, texture.dimension.height)
             override val id = viewTextureId
-            override val target = TextureTarget.TEXTURE_CUBE_MAP
+            override val target = TextureTarget.TEXTURE_2D
             override val internalFormat = texture.internalFormat
             override var handle: Long = if(!isSupported(BindlessTextures)) -1 else onGpuInline { glGetTextureHandleARB(viewTextureId) }
             override val textureFilterConfig = texture.textureFilterConfig
@@ -872,6 +873,19 @@ class OpenGLContext private constructor(
     ): ByteBuffer = onGpuInline {
         bindTexture(texture)
         glGetTexImage(texture.target.glValue, mipLevel, format.glValue, texelComponentType.glValue, texels)
+        texels
+    }
+
+    override fun getTextureData(
+        texture: CubeMap,
+        face: CubeMapFace,
+        mipLevel: Int,
+        format: Format,
+        texelComponentType: TexelComponentType,
+        texels: ByteBuffer
+    ): ByteBuffer = onGpuInline {
+        bindTexture(texture)
+        glGetTexImage(face.glValue, mipLevel, format.glValue, texelComponentType.glValue, texels)
         texels
     }
     override fun clearTexImage(texture: Texture, format: Format, level: Int, type: TexelComponentType) {

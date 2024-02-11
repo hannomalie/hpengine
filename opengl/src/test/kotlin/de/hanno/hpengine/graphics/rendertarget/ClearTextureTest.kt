@@ -27,6 +27,7 @@ val redBufferHalfFloat = BufferUtils.createShortBuffer(4).apply {
     put(1f.toHalfFloat())
     rewind()
 }
+
 class ClearTextureTest {
 
     @Test
@@ -59,7 +60,13 @@ class ClearTextureTest {
         val floatBuffer = buffer.apply { rewind() }.asFloatBuffer()
         val halfBuffer = buffer.apply { rewind() }.asShortBuffer()
 
-        graphicsApi.clearTexImage(texture.id, texture.internalFormat.format, 0, TexelComponentType.Float, redBufferFloat)
+        graphicsApi.clearTexImage(
+            texture.id,
+            texture.internalFormat.format,
+            0,
+            TexelComponentType.Float,
+            redBufferFloat
+        )
         graphicsApi.getTextureData(texture, 0, texture.internalFormat.format, TexelComponentType.Float, buffer)
         graphicsApi.finish()
         Vector4f(floatBuffer[0], floatBuffer[1], floatBuffer[2], floatBuffer[3]) shouldBe Vector4f(1f, 0f, 0f, 1f)
@@ -95,7 +102,8 @@ class ClearTextureTest {
                         TextureDimension(
                             texture.dimension.width,
                             texture.dimension.height,
-                            texture.dimension.depth),
+                            texture.dimension.depth
+                        ),
                         TextureFilterConfig(minFilter = MinFilter.NEAREST),
                         internalFormat = InternalTextureFormat.DEPTH_COMPONENT24,
                         wrapMode = WrapMode.ClampToEdge
@@ -108,11 +116,18 @@ class ClearTextureTest {
             "PointLightCubeMapArrayRenderTarget",
             Vector4f(1f, 0f, 0f, 0f)
         )
-        val buffer = BufferUtils.createByteBuffer(texture.dimension.depth * texture.dimension.width * texture.dimension.height * 4 * 32)
+        val buffer =
+            BufferUtils.createByteBuffer(texture.dimension.depth * texture.dimension.width * texture.dimension.height * 4 * 32)
         val floatBuffer = buffer.asFloatBuffer()
 
 
-        graphicsApi.clearTexImage(texture.id, texture.internalFormat.format, 0, TexelComponentType.Float, redBufferFloat)
+        graphicsApi.clearTexImage(
+            texture.id,
+            texture.internalFormat.format,
+            0,
+            TexelComponentType.Float,
+            redBufferFloat
+        )
         graphicsApi.getTextureData(texture, 0, texture.internalFormat.format, TexelComponentType.Float, buffer)
         graphicsApi.finish()
         Vector4f(floatBuffer[0], floatBuffer[1], floatBuffer[2], floatBuffer[3]) shouldBe Vector4f(1f, 0f, 0f, 1f)
@@ -121,6 +136,22 @@ class ClearTextureTest {
         cubeMapArrayRenderTarget.use(true)
 
         graphicsApi.getTextureData(texture, 0, texture.internalFormat.format, TexelComponentType.Float, buffer)
-        Vector4f(floatBuffer[0], floatBuffer[1],floatBuffer[2], floatBuffer[3]) shouldBe Vector4f(0f, 1f, 0f, 0f)
+        Vector4f(floatBuffer[0], floatBuffer[1], floatBuffer[2], floatBuffer[3]) shouldBe Vector4f(0f, 1f, 0f, 0f)
+
+        cubeMapArrayRenderTarget.cubeMapFaceViews.first().let { texture ->
+            graphicsApi.getTextureData(texture, 0, texture.internalFormat.format, TexelComponentType.Float, buffer)
+            Vector4f(floatBuffer[0], floatBuffer[1], floatBuffer[2], floatBuffer[3]) shouldBe Vector4f(0f, 1f, 0f, 0f)
+        }
+        cubeMapArrayRenderTarget.cubeMapViews.first().let { texture ->
+            graphicsApi.getTextureData(
+                texture,
+                CubeMapFace.POSITIVE_X,
+                0,
+                texture.internalFormat.format,
+                TexelComponentType.Float,
+                buffer
+            )
+            Vector4f(floatBuffer[0], floatBuffer[1], floatBuffer[2], floatBuffer[3]) shouldBe Vector4f(0f, 1f, 0f, 0f)
+        }
     }
 }

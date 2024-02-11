@@ -96,6 +96,7 @@ class Camera(
 
     init {
         update()
+        updateProjectionMatrixAndFrustum()
     }
 
     fun setFrom(camera: Camera) {
