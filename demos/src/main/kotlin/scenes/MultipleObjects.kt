@@ -3,7 +3,9 @@ package scenes
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.component.CameraComponent
+import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.graphics.envprobe.EnvironmentProbeComponent
 import de.hanno.hpengine.graphics.light.point.PointLightComponent
 import de.hanno.hpengine.transform.AABBData
 import de.hanno.hpengine.world.addAnimatedModelEntity
@@ -41,9 +43,22 @@ fun Engine.runMultipleObjects() {
         edit(create()).apply {
             val transform = create(TransformComponent::class.java)
             create(PointLightComponent::class.java)
+            add(NameComponent().apply { name = "PointLight" })
             add(
                 CameraComponent(Camera(transform.transform))
             )
+        }
+        edit(create()).apply {
+            create(TransformComponent::class.java)
+            create(EnvironmentProbeComponent::class.java)
+            add(NameComponent().apply { name = "EnvProbe0" })
+        }
+        edit(create()).apply {
+            create(TransformComponent::class.java).apply {
+                transform.translation(Vector3f(30f, 50f, 20f))
+            }
+            create(EnvironmentProbeComponent::class.java)
+            add(NameComponent().apply { name = "EnvProbe1" })
         }
     }
     simulate()

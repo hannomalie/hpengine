@@ -180,7 +180,7 @@ class OpenGLContext private constructor(
                     texture.id,
                     texture.internalFormat.glValue,
                     0,
-                    1,
+                    texture.mipmapCount + 1,
                     6 * cubeMapIndex + faceIndex,
                     1
                 )

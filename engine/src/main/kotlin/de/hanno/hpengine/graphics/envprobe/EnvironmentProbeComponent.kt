@@ -1,17 +1,48 @@
 package de.hanno.hpengine.graphics.envprobe
 
+import InternalTextureFormat
+import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
 import com.artemis.Component
-import de.hanno.hpengine.graphics.renderer.environmentsampler.EnvironmentSampler
+import com.artemis.ComponentMapper
+import com.artemis.EntitySystem
+import com.artemis.annotations.All
+import de.hanno.hpengine.artemis.forEachEntity
+import de.hanno.hpengine.camera.Camera
+import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
+import de.hanno.hpengine.graphics.light.point.PointLightSystem
+import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
+import de.hanno.hpengine.graphics.shader.ProgramManager
+import de.hanno.hpengine.graphics.shader.define.Define
+import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
+import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.graphics.state.StateRef
+import de.hanno.hpengine.graphics.texture.TextureDimension
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
+import de.hanno.hpengine.math.OmniCamera
+import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntityBuffer
+import de.hanno.hpengine.model.material.MaterialSystem
+import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.system.Extractor
 import org.joml.Vector3f
+import org.joml.Vector4f
 import org.koin.core.annotation.Single
+import org.lwjgl.BufferUtils
 
 class EnvironmentProbeComponent: Component() {
     var size = Vector3f(10f)
+    val position = Vector3f() // TODO: Remove, make better renderstate for that
     var weight = 1f
-
-    // TODO: I don't want to have this here
-    lateinit var sampler: EnvironmentSampler
 }
 
 @Single
@@ -20,6 +51,147 @@ class EnvironmentProbesStateHolder(
 ) {
     val environmentProbesState = renderStateContext.renderState.registerState {
         EnvironmentProbesState()
+    }
+}
+
+private const val envProbeResolution = 512
+private const val maxEnvProbes = 4
+
+@All(EnvironmentProbeComponent::class, TransformComponent::class)
+@Single(binds = [BaseSystem::class, EnvironmentProbeSystem::class, RenderSystem::class])
+class EnvironmentProbeSystem(
+    private val graphicsApi: GraphicsApi,
+    config: Config,
+    programManager: ProgramManager,
+    private val renderStateContext: RenderStateContext,
+    private val entitiesStateHolder: EntitiesStateHolder,
+    private val entityBuffer: EntityBuffer,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val materialSystem: MaterialSystem,
+    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val textureManager: TextureManagerBaseSystem,
+): BaseEntitySystem(), RenderSystem, Extractor {
+
+    lateinit var environmentProbeComponentMapper: ComponentMapper<EnvironmentProbeComponent>
+    lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
+
+    val simpleColorProgramStatic = programManager.getProgram(
+        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
+        null,
+        Defines(Define("COLOR_OUTPUT_0", true)),
+        StaticFirstPassUniforms(graphicsApi)
+    )
+
+    val cubeMapArray = graphicsApi.CubeMapArray(
+        TextureDimension(envProbeResolution, envProbeResolution, maxEnvProbes),
+        TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
+        InternalTextureFormat.RGBA8,
+        WrapMode.Repeat
+    )
+    val depthCubeMapArray = graphicsApi.CubeMapArray(
+        TextureDimension(
+            cubeMapArray.dimension.width,
+            cubeMapArray.dimension.height,
+            cubeMapArray.dimension.depth
+        ),
+        TextureFilterConfig(minFilter = MinFilter.NEAREST),
+        internalFormat = InternalTextureFormat.DEPTH_COMPONENT24,
+        wrapMode = WrapMode.ClampToEdge
+    )
+
+    var cubemapArrayRenderTarget = graphicsApi.RenderTarget(
+        graphicsApi.FrameBuffer(graphicsApi.createDepthBuffer(depthCubeMapArray)),
+        cubeMapArray.dimension.width,
+        cubeMapArray.dimension.height,
+        listOf(cubeMapArray),
+        "EnvProbeCubeMapArrayRenderTarget",
+        Vector4f(1f, 0f, 0f, 0f)
+    ).apply {
+        cubeMapViews.forEachIndexed { index, it ->
+            textureManager.registerGeneratedCubeMap("EnvProbe[$index]", it)
+        }
+    }
+
+    val renderTarget2D = graphicsApi.RenderTarget(
+        graphicsApi.FrameBuffer(
+            graphicsApi.DepthBuffer(
+                cubeMapArray.dimension.width,
+                cubeMapArray.dimension.height,
+            )
+        ),
+        500,
+        500,
+        listOf(cubemapArrayRenderTarget.cubeMapFaceViews.first()),
+        "EnvProbeRenderTarget2D",
+        Vector4f(1f, 0f, 0f, 0f)
+    )
+    private val omniCamera = OmniCamera(Vector3f())
+
+    private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
+        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
+            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic]
+        }
+    }
+
+    // TODO: Better state, without allocations
+    val environmentProbeState = renderStateContext.renderState.registerState {
+        mutableListOf<EnvironmentProbeComponent>()
+    }
+
+    override fun render(renderState: RenderState): Unit = graphicsApi.run {
+        depthMask = true
+        depthTest = true
+        cullFace = true
+        // TODO: Don't clear all imges always
+        cubemapArrayRenderTarget.cubeMapViews.forEach {
+            graphicsApi.clearTexImage(
+                it.id,
+                Format.RGBA,
+                0,
+                TexelComponentType.Float,
+                BufferUtils.createFloatBuffer(4).apply {
+                    put(0f)
+                    put(0f)
+                    put(0f)
+                    put(0f)
+                    rewind()
+                }
+            )
+        }
+
+        renderTarget2D.use(true)
+
+        graphicsApi.viewPort(0, 0, envProbeResolution, envProbeResolution)
+
+        renderState[environmentProbeState].apply {
+            forEachIndexed { probeIndex, probe ->
+                omniCamera.updatePosition(probe.position)
+                for (faceIndex in 0..5) {
+                    graphicsApi.framebufferDepthTexture(cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * probeIndex + faceIndex], 0)
+                    graphicsApi.clearDepthBuffer()
+                    graphicsApi.framebufferTextureLayer(0, cubemapArrayRenderTarget.cubeMapFaceViews[6 * probeIndex + faceIndex], 0, 0)
+
+                    renderState[staticDirectPipeline].prepare(renderState, omniCamera.cameras[faceIndex])
+                    renderState[staticDirectPipeline].draw(renderState, omniCamera.cameras[faceIndex])
+                }
+                graphicsApi.generateMipMaps(cubemapArrayRenderTarget.cubeMapViews[probeIndex])
+            }
+        }
+    }
+
+    override fun extract(renderState: RenderState) {
+        renderState[environmentProbeState].apply {
+            clear()
+            forEachEntity {
+                add(EnvironmentProbeComponent().apply {
+                    this.position.set(transformComponentMapper[it].transform.position)
+                    this.size.set(environmentProbeComponentMapper[it].size)
+                })
+            }
+        }
+    }
+    override fun processSystem() {
     }
 }
 

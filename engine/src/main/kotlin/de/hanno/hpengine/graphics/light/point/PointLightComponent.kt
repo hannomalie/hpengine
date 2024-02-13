@@ -5,6 +5,6 @@ import org.joml.Vector4f
 
 class PointLightComponent: Component() {
     val color: Vector4f = Vector4f(1f)
-    var radius: Float = 50f
+    var radius: Float = 100f
     var shadow: Boolean = true
 }

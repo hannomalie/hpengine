@@ -75,7 +75,7 @@ class CubeShadowMapStrategy(
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-        config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
+        null,//config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(Define("COLOR_OUTPUT_0", true)),
         StaticFirstPassUniforms(graphicsApi)
@@ -135,9 +135,6 @@ class CubeShadowMapStrategy(
     }
 
     private val omniCamera = OmniCamera(Vector3f())
-    private val cameras = (0 until 6).map {
-        Camera(Transform().apply { translation(Vector3f(5f)) })
-    }
     override fun renderPointLightShadowMaps(renderState: RenderState) = graphicsApi.run {
         val pointLights = renderState[pointLightStateHolder.lightState].pointLightBuffer
         val pointLightCount = renderState[pointLightStateHolder.lightState].pointLightCount
@@ -165,8 +162,7 @@ class CubeShadowMapStrategy(
                 )
             }
 
-            val renderWithPointCubeShadowProgram = false
-//            cubemapArrayRenderTarget.use(true)
+            val renderWithPointCubeShadowProgram = false // TODO: Using single pass rendering doesn't work
             if(renderWithPointCubeShadowProgram) {
                 cubemapArrayRenderTarget.use(true)
             } else {
@@ -229,7 +225,6 @@ class CubeShadowMapStrategy(
                     }
                 } else {
                     for (faceIndex in 0..5) {
-
                         graphicsApi.framebufferDepthTexture(cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * lightIndex + faceIndex], 0)
                         graphicsApi.clearDepthBuffer()
                         graphicsApi.framebufferTextureLayer(0, cubemapArrayRenderTarget.cubeMapFaceViews[6 * lightIndex + faceIndex], 0, 0)
