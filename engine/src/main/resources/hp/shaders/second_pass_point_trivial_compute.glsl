@@ -150,6 +150,15 @@ float getVisibilityDPSM(vec3 positionWorld, uint pointLightIndex, PointLight poi
 
 	return litFactor;
 }
+// https://stackoverflow.com/questions/10786951/omnidirectional-shadow-mapping-with-depth-cubemap
+float VectorToDepthValue(vec3 Vec, float far) {
+	vec3 AbsVec = abs(Vec);
+	float LocalZcomp = max(AbsVec.x, max(AbsVec.y, AbsVec.z));
+
+	const float n = 0.1;
+	float NormZComp = (far+n) / (far-n) - (2*far*n)/(far-n)/LocalZcomp;
+	return (NormZComp + 1.0) * 0.5;
+}
 float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
 	if(pointLightIndex > maxPointLightShadowmaps) { return 1.0f; }
 	vec3 pointLightPositionWorld = pointLight.position;
@@ -159,8 +168,8 @@ float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight 
     float closestDepth = textureSample.r;
     vec2 moments = textureSample.xy;
 //    closestDepth *= 250.0;
-    float currentDepth = length(fragToLight);
-    float bias = 0.2;
+    float currentDepth = VectorToDepthValue(fragToLight, pointLight.radius);//length(fragToLight);
+    float bias = 0.0002;
     float shadow = currentDepth - bias < closestDepth ? 1.0 : 0.0;
 
 //	const float SHADOW_EPSILON = 0.001;
@@ -241,9 +250,13 @@ void main(void) {
 			}
 			temp = temp * lightDiffuse * attenuation;
 
-			float visibility = getVisibility(positionWorld, lightIndex, pointLight);
+			float visibility = 1.0f;
 
-			finalColor.rgb += temp*visibility;
+			if(pointLight.shadow != 0) {
+				visibility = getVisibility(positionWorld, lightIndex, pointLight);
+			}
+
+			finalColor.rgb += temp * visibility;
 		}
 	}
 

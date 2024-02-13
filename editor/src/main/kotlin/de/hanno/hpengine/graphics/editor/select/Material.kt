@@ -108,7 +108,7 @@ fun Window.materialGrid(material: Material, textureManager: TextureManagerBaseSy
         material.useWorldSpaceXZAsTexCoords = !material.useWorldSpaceXZAsTexCoords
     }
     if (beginCombo("Type", material.materialType.toString())) {
-        Material.MaterialType.values().forEach { type ->
+        Material.MaterialType.entries.forEach { type ->
             val selected = material.materialType == type
             if (selectable(type.toString(), selected)) {
                 material.materialType = type
@@ -120,7 +120,7 @@ fun Window.materialGrid(material: Material, textureManager: TextureManagerBaseSy
         endCombo()
     }
     if (beginCombo("TransparencyType", material.transparencyType.toString())) {
-        Material.TransparencyType.values().forEach { type ->
+        Material.TransparencyType.entries.forEach { type ->
             val selected = material.transparencyType == type
             if (selectable(type.toString(), selected)) {
                 material.transparencyType = type
@@ -138,7 +138,7 @@ fun Window.materialGrid(material: Material, textureManager: TextureManagerBaseSy
         material.depthTest = !material.depthTest
     }
     if (beginCombo("EnvironmentMapType", material.environmentMapType.toString())) {
-        Material.ENVIRONMENTMAP_TYPE.values().forEach { type ->
+        Material.ENVIRONMENTMAP_TYPE.entries.forEach { type ->
             val selected = material.environmentMapType == type
             if (selectable(type.toString(), selected)) {
                 material.environmentMapType = type

@@ -44,6 +44,7 @@ class OpenGLTextureManager(
     /** The table of textures that have been loaded in this loader  */
     override var textures: MutableMap<String, Texture> = LinkedHashMap()
     override val texturesForDebugOutput: MutableMap<String, Texture> = LinkedHashMap()
+    override val generatedCubeMaps = mutableMapOf<String, CubeMap>()
 
     init {
 //    	loadAllAvailableTextures();
@@ -65,6 +66,10 @@ class OpenGLTextureManager(
     }
 
     override val lensFlareTexture = getTexture("assets/textures/lens_flare_tex.jpg", true, engineDir)
+    override fun registerGeneratedCubeMap(s: String, texture: CubeMap) {
+        generatedCubeMaps[s] = texture
+    }
+
     override var cubeMap = getCubeMap(
         "assets/textures/skybox/skybox.png",
         config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")

@@ -52,7 +52,7 @@ class OutputSelection(
         window.frontBuffer
     )
 
-    data class TextureOutputSelection(val identifier: String, val texture: Texture2D)
+    data class TextureOutputSelection(val identifier: String, val texture: Texture2D, val isDepthMap: Boolean = false)
 
     val textureOutputOptions: List<TextureOutputSelection>
         get() {
@@ -76,7 +76,16 @@ class OutputSelection(
                     )
                 }
 
-                texture2DSelections + depthTexturesSelections + cubeMapFaceViewSelections
+                val cubeMapDepthFaceViews = if (target is CubeMapArrayRenderTarget) target.cubeMapDepthFaceViews else emptyList()
+                val cubeMapDepthFaceViewSelections = cubeMapDepthFaceViews.mapIndexed { index, it ->
+                    TextureOutputSelection(
+                        target.name + "[Depth][$index]",
+                        it,
+                        true,
+                    )
+                }
+
+                texture2DSelections + depthTexturesSelections + cubeMapFaceViewSelections + cubeMapDepthFaceViewSelections
 
             }.filterNotNull() +
                     textureManager.texturesForDebugOutput.filterValues { it is Texture2D }
@@ -113,6 +122,7 @@ class OutputSelection(
         textureOutputOptions.forEachIndexed { index, option ->
             if (ImGui.radioButton(option.identifier, output, index)) {
                 debugOutput.texture2D = option.texture
+                debugOutput.factorForDebugRendering = if(option.isDepthMap) 0.1f else 1.0f
             }
         }
     }

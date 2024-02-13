@@ -6,19 +6,18 @@ import imgui.ImGui
 
 fun textureSelection(
     material: Material,
-    textureManager: TextureManagerBaseSystem
+    textureManager: TextureManagerBaseSystem,
 ) {
     ImGui.text("Textures")
     val all2DTextures = textureManager
         .textures.filterValues { it is Texture2D } + textureManager.texturesForDebugOutput
 
-    val all3DTextures = textureManager
-        .textures.filterValues { it is CubeMap }
+    val all3DTextures = textureManager.textures.filterValues { it is CubeMap } + textureManager.generatedCubeMaps
 
     val all2DTexturesNames = all2DTextures.keys.toTypedArray()
     val all3DTexturesNames = all3DTextures.keys.toTypedArray()
 
-    Material.MAP.values().forEach { type ->
+    Material.MAP.entries.forEach { type ->
         if(type == Material.MAP.ENVIRONMENT) {
             material.maps[type].let { currentTexture ->
                 val currentIndex = all3DTextures.values.indexOf(currentTexture)

@@ -26,6 +26,7 @@ import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.TextureDimension3D
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.graphics.texture.UploadInfo
 import de.hanno.hpengine.graphics.texture.UploadInfo.SingleMipLevelTexture2DUploadInfo
 import de.hanno.hpengine.math.OmniCamera
@@ -61,6 +62,7 @@ class CubeShadowMapStrategy(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val renderStateContext: RenderStateContext,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val textureManager: TextureManagerBaseSystem,
 ): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram = programManager.getProgram(
@@ -90,27 +92,29 @@ class CubeShadowMapStrategy(
         RGBA16F,
         Repeat
     )
-    val pointLightDepthMapsArrayCube = cubeMapArray.id
-    var cubemapArrayRenderTarget = graphicsApi.RenderTarget(
-        graphicsApi.FrameBuffer(
-            graphicsApi.createDepthBuffer(
-                graphicsApi.CubeMapArray(
-                    TextureDimension(
-                    cubeMapArray.dimension.width,
-                    cubeMapArray.dimension.height,
-                    cubeMapArray.dimension.depth),
-                    TextureFilterConfig(minFilter = MinFilter.NEAREST),
-                    internalFormat = DEPTH_COMPONENT24,
-                    wrapMode = ClampToEdge
-                )
-            )
+    val depthCubeMapArray = graphicsApi.CubeMapArray(
+        TextureDimension(
+            cubeMapArray.dimension.width,
+            cubeMapArray.dimension.height,
+            cubeMapArray.dimension.depth
         ),
+        TextureFilterConfig(minFilter = MinFilter.NEAREST),
+        internalFormat = DEPTH_COMPONENT24,
+        wrapMode = ClampToEdge
+    )
+    val pointLightDepthMapsArrayCube = depthCubeMapArray.id
+    var cubemapArrayRenderTarget = graphicsApi.RenderTarget(
+        graphicsApi.FrameBuffer(graphicsApi.createDepthBuffer(depthCubeMapArray)),
         cubeMapArray.dimension.width,
         cubeMapArray.dimension.height,
         listOf(cubeMapArray),
         "PointLightCubeMapArrayRenderTarget",
         Vector4f(1f, 0f, 0f, 0f)
-    )
+    ).apply {
+        cubeMapViews.forEachIndexed { index, it ->
+            textureManager.registerGeneratedCubeMap("PointLight[$index]", it)
+        }
+    }
 
     val renderTarget2D = graphicsApi.RenderTarget(
         graphicsApi.FrameBuffer(
@@ -177,9 +181,13 @@ class CubeShadowMapStrategy(
 
                 val light = pointLights.typedBuffer.byteBuffer.run {
                     val light = pointLights.typedBuffer[lightIndex]
+                    omniCamera.cameras.forEach { camera ->
+                        camera.far = light.radius
+                    }
                     omniCamera.updatePosition(light.position.toJoml())
                     light
                 }
+                if(pointLights.typedBuffer.byteBuffer.run { !light.shadow }) continue // TODO: This messes up the index, do differently
 
                 if(renderWithPointCubeShadowProgram) {
                     pointLights.typedBuffer.byteBuffer.run {
@@ -220,10 +228,12 @@ class CubeShadowMapStrategy(
                         }
                     }
                 } else {
-
                     for (faceIndex in 0..5) {
+
+                        graphicsApi.framebufferDepthTexture(cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * lightIndex + faceIndex], 0)
                         graphicsApi.clearDepthBuffer()
                         graphicsApi.framebufferTextureLayer(0, cubemapArrayRenderTarget.cubeMapFaceViews[6 * lightIndex + faceIndex], 0, 0)
+
                         renderState[staticDirectPipeline].prepare(renderState, omniCamera.cameras[faceIndex])
                         renderState[staticDirectPipeline].draw(renderState, omniCamera.cameras[faceIndex])
                     }

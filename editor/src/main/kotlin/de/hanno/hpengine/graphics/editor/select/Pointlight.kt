@@ -46,6 +46,9 @@ class PointLightEditorExtension(
     } else null
 
     override fun Window.renderRightPanel(selection: Selection?): Boolean = if (selection is PointLightSelection) {
+        floatInput("Radius", selection.pointLightComponent::radius, min = 1f, max = 100f)
+        checkBox("Shadow", selection.pointLightComponent::shadow)
+
         selection.omniCamera.cameras.forEachIndexed { index, camera ->
             val isPrimaryCamera = tagManager.getEntityId(primaryCameraTag) == selection.entity && selection.cameraComponent.camera == camera
 

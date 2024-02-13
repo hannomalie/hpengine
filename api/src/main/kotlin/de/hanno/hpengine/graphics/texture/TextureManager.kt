@@ -11,9 +11,11 @@ interface TextureManager {
     val defaultTexture: Texture
     val textures: Map<String, Texture>
     val texturesForDebugOutput : Map<String, Texture>
+    val generatedCubeMaps: Map<String, CubeMap>
     val cubeMap: CubeMap
     val lensFlareTexture: Texture
 
+    fun registerGeneratedCubeMap(s: String, texture: CubeMap)
     fun registerTextureForDebugOutput(s: String, texture2D: Texture)
     fun getTexture3D(
         gridResolution: Int,

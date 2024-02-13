@@ -70,6 +70,7 @@ class CubeMapArrayRenderTarget(
     }
     val cubeMapViews = ArrayList<CubeMap>()
     val cubeMapFaceViews = ArrayList<Texture2D>()
+    val cubeMapDepthFaceViews = ArrayList<Texture2D>()
 
     init {
         for (cubeMapArrayIndex in textures.indices) {
@@ -81,6 +82,9 @@ class CubeMapArrayRenderTarget(
                     cubeMapViews.add(cubeMapView)
                     for (faceIndex in 0..5) {
                         cubeMapFaceViews.add(createView(cma, cubeMapIndex, faceIndex))
+                        frameBuffer.depthBuffer?.let {
+                            cubeMapDepthFaceViews.add(createView(it.texture as CubeMapArray, cubeMapIndex, faceIndex))
+                        }
                     }
                 }
             }

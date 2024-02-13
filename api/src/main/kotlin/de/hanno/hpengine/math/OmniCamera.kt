@@ -7,7 +7,8 @@ import org.joml.Vector3f
 
 data class OmniCamera(val position: Vector3f) {
     val cameras = (0 until 6).map { index ->
-        Camera(Transform()).apply {
+        Camera(Transform(), 1f).apply {
+            fov = 90f
             updateCameraAtIndexForPosition(index, position)
         }
     }
@@ -33,10 +34,7 @@ data class OmniCamera(val position: Vector3f) {
                 transform.rotate(Vector3f(0f, 1f, 0f), -90)
             }
             2 -> {
-                transform.rotate(Vector3f(0f, 0f, 1f), 180)
                 transform.rotate(Vector3f(1f, 0f, 0f), 90)
-                transform.rotate(Vector3f(0f, 1f, 0f), 180)
-
             }
             3 -> {
                 transform.rotate(Vector3f(0f, 0f, 1f), 180)

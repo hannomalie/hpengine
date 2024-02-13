@@ -36,7 +36,7 @@ struct PointLight {
 	float radius;
 
     vec3 color;
-    float xxx;
+    int shadow;
 };
 
 struct AreaLight {

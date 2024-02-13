@@ -159,7 +159,7 @@ class OpenGLContext private constructor(
         }
     }
 
-    override fun createView(texture: CubeMapArray, cubemapIndex: Int, faceIndex: Int): Texture2D {
+    override fun createView(texture: CubeMapArray, cubeMapIndex: Int, faceIndex: Int): Texture2D {
         require(faceIndex in 0..5) { "Face index must identify one of the six cubemap sides" }
 
         val viewTextureId = onGpuInline { glGenTextures() }
@@ -181,7 +181,7 @@ class OpenGLContext private constructor(
                     texture.internalFormat.glValue,
                     0,
                     1,
-                    6 * cubemapIndex + faceIndex,
+                    6 * cubeMapIndex + faceIndex,
                     1
                 )
             }
@@ -933,6 +933,9 @@ class OpenGLContext private constructor(
     }
     override fun framebufferTextureLayer(index: Int, textureId: Int, level: Int, layer: Int) {
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureId, level, layer)
+    }
+    override fun framebufferDepthTextureLayer(texture: Texture, level: Int, layer: Int) {
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture.id, level, layer)
     }
     override fun framebufferTexture(index: Int, texture: Texture, level: Int) {
         framebufferTexture(index, texture.id, level)

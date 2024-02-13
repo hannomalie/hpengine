@@ -259,7 +259,7 @@ interface GraphicsApi {
     fun memoryBarrier()
     fun memoryBarrier(barrier: Barrier)
     fun createView(texture: CubeMapArray, cubeMapIndex: Int): CubeMap
-    fun createView(texture: CubeMapArray, cubemapIndex: Int, faceIndex: Int): Texture2D
+    fun createView(texture: CubeMapArray, cubeMapIndex: Int, faceIndex: Int): Texture2D
 
     // TODO: This currently gets the smallest mipmap level content, adjust for other usecases
     fun getTextureSubImage(cubeMap: CubeMap): FloatArray
@@ -281,6 +281,7 @@ interface GraphicsApi {
 
     fun framebufferTextureLayer(index: Int, texture: Texture, level: Int, layer: Int)
     fun framebufferTextureLayer(index: Int, textureId: Int, level: Int, layer: Int) // TODO: Remove this
+    fun framebufferDepthTextureLayer(texture: Texture, level: Int, layer: Int)
     fun framebufferTexture(index: Int, texture: Texture, level: Int)
     fun framebufferTexture(index: Int, textureId: Int, level: Int) // TODO: Remove this
     fun framebufferTexture(index: Int, textureTarget: TextureTarget, textureId: Int, faceIndex: Int, level: Int) // TODO: Take cubemap here

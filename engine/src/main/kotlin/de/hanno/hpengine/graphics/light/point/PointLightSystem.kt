@@ -22,6 +22,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.state.*
+import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.math.createPerspective
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntityBuffer
@@ -45,6 +46,7 @@ class PointLightSystem(
     private val materialSystem: MaterialSystem,
     private val defaultBatchesSystem: DefaultBatchesSystem,
     primaryCameraStateHolder: PrimaryCameraStateHolder,
+    private val textureManager: TextureManagerBaseSystem,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     private var gpuPointLights =
         graphicsApi.PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
@@ -81,6 +83,7 @@ class PointLightSystem(
             defaultBatchesSystem,
             renderStateContext,
             primaryCameraStateHolder,
+            textureManager,
         )
     }
 
@@ -127,6 +130,7 @@ class PointLightSystem(
                 target.position.set(transform.position)
                 target.radius = pointLight.radius
                 target.color.set(pointLight.color)
+                target.shadow = pointLight.shadow
             }
             index++
         }

@@ -8,7 +8,7 @@ interface PointLightStruct : Strukt {
     context(ByteBuffer) val position: Vector3fStrukt
     context(ByteBuffer) var radius: Float
     context(ByteBuffer) val color: Vector3fStrukt
-    context(ByteBuffer) val dummy: Float
+    context(ByteBuffer) var shadow: Boolean
 
     companion object
 }
