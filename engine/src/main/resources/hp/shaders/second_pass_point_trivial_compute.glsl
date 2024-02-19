@@ -184,11 +184,7 @@ float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight 
 }
 
 float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
-	if(USE_DPSM) {
-		return getVisibilityDPSM(positionWorld, pointLightIndex, pointLight);
-	} else {
-		return getVisibilityCubemap(positionWorld, pointLightIndex, pointLight);
-	}
+	return getVisibilityCubemap(positionWorld, pointLightIndex, pointLight);
 }
 void main(void) {
 	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);

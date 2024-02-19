@@ -35,18 +35,10 @@ import struktgen.api.forIndex
 @All(PointLightComponent::class, TransformComponent::class)
 @Single(binds = [BaseSystem::class, PointLightSystem::class, RenderSystem::class])
 class PointLightSystem(
-    private val graphicsApi: GraphicsApi,
-    private val renderStateContext: RenderStateContext,
+    graphicsApi: GraphicsApi,
     private val entitiesStateHolder: EntitiesStateHolder,
-    private val config: Config,
-    private val programManager: ProgramManager,
-    private val pointLightStateHolder: PointLightStateHolder,
-    private val movementSystem: EntityMovementSystem,
-    private val entityBuffer: EntityBuffer,
-    private val materialSystem: MaterialSystem,
-    private val defaultBatchesSystem: DefaultBatchesSystem,
-    primaryCameraStateHolder: PrimaryCameraStateHolder,
-    private val textureManager: TextureManagerBaseSystem,
+    pointLightStateHolder: PointLightStateHolder,
+    val shadowMapStrategy: CubeShadowMapStrategy,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     private var gpuPointLights =
         graphicsApi.PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
@@ -56,36 +48,6 @@ class PointLightSystem(
     private val lightState = pointLightStateHolder.lightState
 
     var pointLightMovedInCycle: Long = 0
-    val camera = Camera(Transform()).apply {
-        near = 1f
-        far = 500f
-        fov = 90f
-        ratio = 1f
-    }
-
-    val shadowMapStrategy = if (config.quality.isUseDpsm) {
-        DualParaboloidShadowMapStrategy(
-            graphicsApi,
-            this,
-            programManager,
-            config
-        )
-    } else {
-        CubeShadowMapStrategy(
-            graphicsApi,
-            config,
-            programManager,
-            pointLightStateHolder,
-            movementSystem,
-            entitiesStateHolder,
-            entityBuffer,
-            materialSystem,
-            defaultBatchesSystem,
-            renderStateContext,
-            primaryCameraStateHolder,
-            textureManager,
-        )
-    }
 
     private var shadowMapsRenderedInCycle: Long = -1
 

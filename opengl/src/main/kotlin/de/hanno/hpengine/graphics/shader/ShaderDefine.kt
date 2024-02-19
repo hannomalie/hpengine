@@ -74,7 +74,6 @@ enum class ShaderDefine(private val map: MAP) {
             )
             appendWithSemicolonAndNewLine(builder, "const bool USE_BLOOM = " + config.effects.isUseBloom)
             appendWithSemicolonAndNewLine(builder, "const bool USE_PCF = " + config.quality.isUsePcf)
-            appendWithSemicolonAndNewLine(builder, "const bool USE_DPSM = " + config.quality.isUseDpsm)
             builder.append("\n")
             return builder.toString()
         }

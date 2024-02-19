@@ -53,7 +53,6 @@ data class QualityConfig(
     var isSsrTemporalFiltering: Boolean = true,
     var isContinuousDrawProbes: Boolean = false,
     var isDrawProbes: Boolean = false,
-    var isUseDpsm: Boolean = false,
     var isUsePcf: Boolean = false,
 )
 
