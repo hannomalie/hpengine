@@ -105,13 +105,7 @@ class EntityMovementSystem(
         val entitiesState = currentWriteState[entitiesStateHolder.entitiesState]
         entitiesState.entityMovedInCycle = anyEntityMovedInCycle
         entitiesState.staticEntityMovedInCycle = anyStaticEntityHasMovedInCycle
-        entitiesState.entityAddedInCycle = anyEntityMovedInCycle // TODO: Not entirely correct, remove usage sited
-        entitiesState.componentAddedInCycle = anyEntityMovedInCycle // TODO: Not entirely correct, remove usage sited
     }
-
-//    override fun inserted(entityId: Int) {
-//        TODO: Treat entity or component addition here
-//    }
 
     fun cycleEntityHasMovedIn(entityId: Int) = cache[entityId]?.movedInCycle ?: 0
 }

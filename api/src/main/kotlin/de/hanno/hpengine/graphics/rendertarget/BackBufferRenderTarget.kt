@@ -90,10 +90,6 @@ class CubeMapArrayRenderTarget(
             }
         }
 
-//        cubeMapFaceViews.forEachIndexed { index, it ->
-//            graphicsApi.framebufferTextureLayer(0, it.id, 0, index)
-//        }
-
         graphicsApi.register(this)
     }
 

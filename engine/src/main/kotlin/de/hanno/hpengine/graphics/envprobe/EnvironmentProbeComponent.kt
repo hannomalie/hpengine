@@ -5,7 +5,6 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
-import com.artemis.EntitySystem
 import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.camera.Camera
@@ -14,8 +13,6 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.*
-import de.hanno.hpengine.graphics.light.area.AreaLightSystem
-import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -37,10 +34,10 @@ import de.hanno.hpengine.system.Extractor
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
-import org.lwjgl.BufferUtils
 
 class EnvironmentProbeComponent: Component() {
     var size = Vector3f(10f)
+    var captureAnimatedObjects = false
     val position = Vector3f() // TODO: Remove, make better renderstate for that
     var weight = 1f
 }
@@ -100,7 +97,7 @@ class EnvironmentProbeSystem(
         wrapMode = WrapMode.ClampToEdge
     )
 
-    var cubemapArrayRenderTarget = graphicsApi.RenderTarget(
+    var cubeMapArrayRenderTarget = graphicsApi.RenderTarget(
         graphicsApi.FrameBuffer(graphicsApi.createDepthBuffer(depthCubeMapArray)),
         cubeMapArray.dimension.width,
         cubeMapArray.dimension.height,
@@ -122,7 +119,7 @@ class EnvironmentProbeSystem(
         ),
         500,
         500,
-        listOf(cubemapArrayRenderTarget.cubeMapFaceViews.first()),
+        listOf(cubeMapArrayRenderTarget.cubeMapFaceViews.first()),
         "EnvProbeRenderTarget2D",
         Vector4f(1f, 0f, 0f, 0f)
     )
@@ -135,47 +132,51 @@ class EnvironmentProbeSystem(
     }
 
     // TODO: Better state, without allocations
-    val environmentProbeState = renderStateContext.renderState.registerState {
+    private val environmentProbeState = renderStateContext.renderState.registerState {
         mutableListOf<EnvironmentProbeComponent>()
     }
+
+    private val probeRenderedInCycle = mutableMapOf<Int, Long>()
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
         depthMask = true
         depthTest = true
         cullFace = true
-        // TODO: Don't clear all imges always
-        cubemapArrayRenderTarget.cubeMapViews.forEach {
-            graphicsApi.clearTexImage(
-                it.id,
-                Format.RGBA,
-                0,
-                TexelComponentType.Float,
-                BufferUtils.createFloatBuffer(4).apply {
-                    put(0f)
-                    put(0f)
-                    put(0f)
-                    put(0f)
-                    rewind()
-                }
-            )
-        }
 
         renderTarget2D.use(true)
 
         graphicsApi.viewPort(0, 0, envProbeResolution, envProbeResolution)
 
         renderState[environmentProbeState].apply {
+            val entitiesState = renderState[entitiesStateHolder.entitiesState]
             forEachIndexed { probeIndex, probe ->
-                omniCamera.updatePosition(probe.position)
-                for (faceIndex in 0..5) {
-                    graphicsApi.framebufferDepthTexture(cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * probeIndex + faceIndex], 0)
-                    graphicsApi.clearDepthBuffer()
-                    graphicsApi.framebufferTextureLayer(0, cubemapArrayRenderTarget.cubeMapFaceViews[6 * probeIndex + faceIndex], 0, 0)
+                val renderedInCycle = probeRenderedInCycle[probeIndex]
 
-                    renderState[staticDirectPipeline].prepare(renderState, omniCamera.cameras[faceIndex])
-                    renderState[staticDirectPipeline].draw(renderState, omniCamera.cameras[faceIndex])
+                val needsRerender = renderedInCycle?.let { renderedInCycle ->
+                    renderedInCycle <= entitiesState.staticEntityMovedInCycle
+                            || renderedInCycle <= entitiesState.entityAddedInCycle
+                            || !probeRenderedInCycle.containsKey(probeIndex)
+                } ?: true
+                if(needsRerender) {
+                    omniCamera.updatePosition(probe.position)
+                    val allDiffuseTextureMip0Loaded = (0..5).map  {faceIndex ->
+                        graphicsApi.framebufferDepthTexture(cubeMapArrayRenderTarget.cubeMapDepthFaceViews[6 * probeIndex + faceIndex], 0)
+                        graphicsApi.clearDepthBuffer()
+                        graphicsApi.framebufferTextureLayer(0, cubeMapArrayRenderTarget.cubeMapFaceViews[6 * probeIndex + faceIndex], 0, 0)
+                        graphicsApi.clearColorBuffer()
+
+                        renderState[staticDirectPipeline].prepare(renderState, omniCamera.cameras[faceIndex])
+                        renderState[staticDirectPipeline].draw(renderState, omniCamera.cameras[faceIndex])
+                        val anyDiffuseTextureMip0Loaded = renderState[staticDirectPipeline].preparedBatches.any { batch ->
+                            materialSystem.run { batch.material.finishedLoadingInCycle() > (renderedInCycle ?: 0) }
+                        }
+                        anyDiffuseTextureMip0Loaded
+                    }
+                    graphicsApi.generateMipMaps(cubeMapArrayRenderTarget.cubeMapViews[probeIndex])
+                    if(allDiffuseTextureMip0Loaded.all { it }) {
+                        probeRenderedInCycle[probeIndex] = renderState.cycle
+                    }
                 }
-                graphicsApi.generateMipMaps(cubemapArrayRenderTarget.cubeMapViews[probeIndex])
             }
         }
     }

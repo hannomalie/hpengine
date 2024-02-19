@@ -42,6 +42,10 @@ class MaterialSystem(
     private val graphicsApi: GraphicsApi,
 ) : BaseEntitySystem(), Clearable, Extractor {
 
+    private val materialsFinishedLoadingInCycle = mutableMapOf<Material, Int>()
+
+    var cycle = 0
+
     val materialBuffer = renderStateContext.renderState.registerState {
         graphicsApi.PersistentShaderStorageBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
     }
@@ -154,19 +158,32 @@ class MaterialSystem(
         }
     } ?: 0
 
+    fun Material.finishedLoadingInCycle(): Int = materialsFinishedLoadingInCycle[this] ?: -1
+
+    override fun processSystem() {
+        materials.filter { !materialsFinishedLoadingInCycle.containsKey(it) }.forEach { material ->
+            when(val texture = material.maps[MAP.DIFFUSE]) {
+                null -> { materialsFinishedLoadingInCycle[material] = 0 }
+                else -> when(texture.uploadState) {
+                    UploadState.Uploaded -> materialsFinishedLoadingInCycle[material]  = cycle
+                    is UploadState.Uploading -> { }
+                    UploadState.NotUploaded -> { }
+                }
+            }
+        }
+        cycle++
+    }
+    override fun clear() {
+        materials.clear()
+    }
+
+    fun indexOf(material: Material): Int = materials.indexOf(material)
 
     companion object {
         fun createDefaultMaterial(config: Config, textureManager: OpenGLTextureManager) = Material("default", diffuse = Vector3f(1f, 0f, 0f)).apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, config.engineDir))
         }
     }
-
-    override fun processSystem() { }
-    override fun clear() {
-        materials.clear()
-    }
-
-    fun indexOf(material: Material): Int = materials.indexOf(material)
 }
 
 private fun TypedBuffer<MaterialStrukt>.resize(sizeInBytes: Int): TypedBuffer<MaterialStrukt> = this.let {

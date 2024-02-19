@@ -47,6 +47,7 @@ open class DirectPipeline(
     private var verticesCount = 0
     private var entitiesCount = 0
     private var renderBatches = emptyList<RenderBatch>()
+    val preparedBatches: List<RenderBatch> get() = renderBatches
 
     fun prepare(renderState: RenderState, camera: Camera = renderState[primaryCameraStateHolder.camera]) {
         if(config.debug.freezeCulling) return
