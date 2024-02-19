@@ -10,7 +10,7 @@ import org.koin.core.annotation.Single
 class PointLightState(graphicsApi: GraphicsApi) {
     var pointLightBuffer = graphicsApi.PersistentShaderStorageBuffer(PointLightStruct.sizeInBytes).typed(PointLightStruct.type)
     var pointLightCount = 0
-    var pointLightMovedInCycle: Long = 0
+    var pointLightMovedInCycle = mutableMapOf<Int, Long>()
 }
 
 @Single

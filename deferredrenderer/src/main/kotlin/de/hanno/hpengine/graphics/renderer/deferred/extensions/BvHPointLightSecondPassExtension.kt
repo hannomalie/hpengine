@@ -240,7 +240,8 @@ class BvHPointLightSecondPassExtension(
         }
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
         // TODO: Move this to update
-        if (bvhReconstructedInCycle < pointLightState.pointLightMovedInCycle) {
+        val anyPointLightHasMoved = pointLightState.pointLightMovedInCycle.entries.any { bvhReconstructedInCycle <= it.value }
+        if (anyPointLightHasMoved) {
 //             TODO: Reimplement this
 //            bvhReconstructedInCycle = renderState.cycle
 //            val leafNodes = renderState.lightState.pointLights.mapIndexed { index, light ->

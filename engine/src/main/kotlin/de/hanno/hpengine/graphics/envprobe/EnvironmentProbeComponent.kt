@@ -31,6 +31,7 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.transform.EntityMovementSystem
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
@@ -40,6 +41,7 @@ class EnvironmentProbeComponent: Component() {
     var captureAnimatedObjects = false
     val position = Vector3f() // TODO: Remove, make better renderstate for that
     var weight = 1f
+    var movedInCycle = -1L
 }
 
 @Single
@@ -67,6 +69,7 @@ class EnvironmentProbeSystem(
     private val materialSystem: MaterialSystem,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val textureManager: TextureManagerBaseSystem,
+    private val entityMovementSystem: EntityMovementSystem,
 ): BaseEntitySystem(), RenderSystem, Extractor {
 
     lateinit var environmentProbeComponentMapper: ComponentMapper<EnvironmentProbeComponent>
@@ -149,34 +152,39 @@ class EnvironmentProbeSystem(
 
         renderState[environmentProbeState].apply {
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
-            forEachIndexed { probeIndex, probe ->
-                val renderedInCycle = probeRenderedInCycle[probeIndex]
+            var index = 0
+            forEach { probe ->
+                val renderedInCycle = probeRenderedInCycle[index]
 
                 val needsRerender = renderedInCycle?.let { renderedInCycle ->
+                    val probeHasMoved = probe.movedInCycle >= renderedInCycle
+
                     renderedInCycle <= entitiesState.staticEntityMovedInCycle
                             || renderedInCycle <= entitiesState.entityAddedInCycle
-                            || !probeRenderedInCycle.containsKey(probeIndex)
+                            || !probeRenderedInCycle.containsKey(index)
+                            || probeHasMoved
                 } ?: true
                 if(needsRerender) {
                     omniCamera.updatePosition(probe.position)
-                    val allDiffuseTextureMip0Loaded = (0..5).map  {faceIndex ->
-                        graphicsApi.framebufferDepthTexture(cubeMapArrayRenderTarget.cubeMapDepthFaceViews[6 * probeIndex + faceIndex], 0)
+                    val anyDiffuseTextureMip0Loaded = (0..5).map  { faceIndex ->
+                        graphicsApi.framebufferDepthTexture(cubeMapArrayRenderTarget.cubeMapDepthFaceViews[6 * index + faceIndex], 0)
                         graphicsApi.clearDepthBuffer()
-                        graphicsApi.framebufferTextureLayer(0, cubeMapArrayRenderTarget.cubeMapFaceViews[6 * probeIndex + faceIndex], 0, 0)
+                        graphicsApi.framebufferTextureLayer(0, cubeMapArrayRenderTarget.cubeMapFaceViews[6 * index + faceIndex], 0, 0)
                         graphicsApi.clearColorBuffer()
 
                         renderState[staticDirectPipeline].prepare(renderState, omniCamera.cameras[faceIndex])
                         renderState[staticDirectPipeline].draw(renderState, omniCamera.cameras[faceIndex])
                         val anyDiffuseTextureMip0Loaded = renderState[staticDirectPipeline].preparedBatches.any { batch ->
-                            materialSystem.run { batch.material.finishedLoadingInCycle() > (renderedInCycle ?: 0) }
+                            materialSystem.run { batch.material.finishedLoadingInCycle > (renderedInCycle ?: 0) }
                         }
                         anyDiffuseTextureMip0Loaded
                     }
-                    graphicsApi.generateMipMaps(cubeMapArrayRenderTarget.cubeMapViews[probeIndex])
-                    if(allDiffuseTextureMip0Loaded.all { it }) {
-                        probeRenderedInCycle[probeIndex] = renderState.cycle
+                    graphicsApi.generateMipMaps(cubeMapArrayRenderTarget.cubeMapViews[index])
+                    if(anyDiffuseTextureMip0Loaded.none { it }) {
+                        probeRenderedInCycle[index] = renderState.cycle
                     }
                 }
+                index++
             }
         }
     }
@@ -184,15 +192,21 @@ class EnvironmentProbeSystem(
     override fun extract(renderState: RenderState) {
         renderState[environmentProbeState].apply {
             clear()
-            forEachEntity {
+            forEachEntity { entityId ->
                 add(EnvironmentProbeComponent().apply {
-                    this.position.set(transformComponentMapper[it].transform.position)
-                    this.size.set(environmentProbeComponentMapper[it].size)
+                    this.position.set(transformComponentMapper[entityId].transform.position)
+                    this.size.set(environmentProbeComponentMapper[entityId].size)
+                    this.movedInCycle = environmentProbeComponentMapper[entityId].movedInCycle
                 })
             }
         }
     }
     override fun processSystem() {
+        var index = 0
+        forEachEntity { entityId ->
+            environmentProbeComponentMapper[entityId].movedInCycle = entityMovementSystem.cycleEntityHasMovedIn(entityId)
+            index++
+        }
     }
 }
 

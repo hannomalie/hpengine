@@ -158,7 +158,8 @@ class MaterialSystem(
         }
     } ?: 0
 
-    fun Material.finishedLoadingInCycle(): Int = materialsFinishedLoadingInCycle[this] ?: -1
+    val Material.finishedLoadingInCycle: Int
+        get() = materialsFinishedLoadingInCycle[this] ?: -1
 
     override fun processSystem() {
         materials.filter { !materialsFinishedLoadingInCycle.containsKey(it) }.forEach { material ->

@@ -39,6 +39,7 @@ class PointLightSystem(
     private val entitiesStateHolder: EntitiesStateHolder,
     pointLightStateHolder: PointLightStateHolder,
     val shadowMapStrategy: CubeShadowMapStrategy,
+    private val entityMovementSystem: EntityMovementSystem,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     private var gpuPointLights =
         graphicsApi.PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
@@ -47,24 +48,36 @@ class PointLightSystem(
 
     private val lightState = pointLightStateHolder.lightState
 
-    var pointLightMovedInCycle: Long = 0
+    val pointLightMovedInCycle = mutableMapOf<Int, Long>()
 
-    private var shadowMapsRenderedInCycle: Long = -1
+    private val shadowMapsRenderedInCycle = mutableMapOf<Int, Long>()
 
     override fun render(renderState: RenderState) {
         val entitiesState = renderState[entitiesStateHolder.entitiesState]
-        val needsRerender = renderState[lightState].pointLightMovedInCycle > shadowMapsRenderedInCycle ||
-                entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||
-                entitiesState.entityAddedInCycle > shadowMapsRenderedInCycle ||
-                entitiesState.componentAddedInCycle > shadowMapsRenderedInCycle
-        if (needsRerender) {
-            shadowMapStrategy.renderPointLightShadowMaps(renderState)
-            shadowMapsRenderedInCycle = renderState.cycle
+        val lightState = renderState[lightState]
+
+        repeat(lightState.pointLightCount) { lightIndex ->
+            val renderedInCycle = shadowMapsRenderedInCycle[lightIndex]
+
+            val needsRerender = renderedInCycle?.let { renderedInCycle ->
+                val lightHasMoved = (lightState.pointLightMovedInCycle[lightIndex] ?: -1) >= renderedInCycle
+
+                renderedInCycle <= entitiesState.staticEntityMovedInCycle
+                        || renderedInCycle <= entitiesState.entityAddedInCycle
+                        || !shadowMapsRenderedInCycle.containsKey(lightIndex)
+                        || lightHasMoved
+            } ?: true
+
+            if (needsRerender) {
+                shadowMapStrategy.renderPointLightShadowMap(lightIndex, renderState)
+                shadowMapsRenderedInCycle[lightIndex] = renderState.cycle
+            }
         }
     }
 
     override fun extract(currentWriteState: RenderState) {
-        currentWriteState[lightState].pointLightMovedInCycle = pointLightMovedInCycle
+        currentWriteState[lightState].pointLightMovedInCycle.clear()
+        currentWriteState[lightState].pointLightMovedInCycle.putAll(pointLightMovedInCycle)
 
         currentWriteState[lightState].pointLightBuffer.ensureCapacityInBytes(gpuPointLights.sizeInBytes)
         gpuPointLights.buffer.copyTo(currentWriteState[lightState].pointLightBuffer.buffer)
@@ -94,18 +107,9 @@ class PointLightSystem(
                 target.color.set(pointLight.color)
                 target.shadow = pointLight.shadow
             }
+            pointLightMovedInCycle[index] = entityMovementSystem.cycleEntityHasMovedIn(entityId)
             index++
         }
-
-        // TODO: Reimplement
-//        for (i in 0 until pointLights.size) {
-//            val pointLight = pointLights[i]
-//            val pointLightHasMoved = scene.entityManager.run { pointLight.entity.hasMoved }
-//            if (!pointLightHasMoved) {
-//                continue
-//            }
-//            this@PointLightSystem.pointLightMovedInCycle = scene.currentCycle
-//        }
 
     }
 }

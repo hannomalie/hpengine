@@ -56,7 +56,6 @@ class CubeShadowMapStrategy(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val textureManager: TextureManagerBaseSystem,
 ) {
-    var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/pointlight_shadow_cubemap_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/pointlight_shadow_cube_fragment.glsl")),
@@ -227,6 +226,41 @@ class CubeShadowMapStrategy(
                 }
             }
         }
-        pointLightShadowMapsRenderedInCycle = renderState.cycle
+    }
+
+    fun renderPointLightShadowMap(lightIndex: Int, renderState: RenderState) = graphicsApi.run {
+        val pointLights = renderState[pointLightStateHolder.lightState].pointLightBuffer
+
+        profiled("PointLight shadowmaps") {
+            depthMask = true
+            depthTest = true
+            cullFace = true
+            cubemapArrayRenderTarget.cubeMapViews[lightIndex].let {
+                graphicsApi.clearTexImage(it.id, Format.RGBA, 0, TexelComponentType.Float)
+            }
+
+            renderTarget2D.use(true)
+
+            viewPort(0, 0, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
+
+            val light = pointLights.typedBuffer.byteBuffer.run {
+                val light = pointLights.typedBuffer[lightIndex]
+                omniCamera.cameras.forEach { camera ->
+                    camera.far = light.radius
+                }
+                omniCamera.updatePosition(light.position.toJoml())
+                light
+            }
+            if(pointLights.typedBuffer.byteBuffer.run { !light.shadow }) return // TODO: This messes up the index, do differently
+
+            for (faceIndex in 0..5) {
+                graphicsApi.framebufferDepthTexture(cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * lightIndex + faceIndex], 0)
+                graphicsApi.clearDepthBuffer()
+                graphicsApi.framebufferTextureLayer(0, cubemapArrayRenderTarget.cubeMapFaceViews[6 * lightIndex + faceIndex], 0, 0)
+
+                renderState[staticDirectPipeline].prepare(renderState, omniCamera.cameras[faceIndex])
+                renderState[staticDirectPipeline].draw(renderState, omniCamera.cameras[faceIndex])
+            }
+        }
     }
 }

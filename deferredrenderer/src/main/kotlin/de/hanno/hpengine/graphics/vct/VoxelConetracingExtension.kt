@@ -124,7 +124,7 @@ class VoxelConeTracingExtension(
             if(noGridsInUse) return
 
             val directionalLightMoved = renderState[directionalLightStateHolder.directionalLightHasMovedInCycle].underlying > litInCycle
-            val pointlightMoved = renderState[pointLightStateHolder.lightState].pointLightMovedInCycle > litInCycle
+            val anyPointLightHasMoved = renderState[pointLightStateHolder.lightState].pointLightMovedInCycle.entries.any { litInCycle <= it.value }
             val bounces = 1
 
             val entitiesToVoxelize = if(!sceneInitiallyDrawn || config.debug.isForceRevoxelization) {
@@ -146,7 +146,7 @@ class VoxelConeTracingExtension(
             voxelizeScene(renderState, entitiesToVoxelize)
 
 
-            if ((config.performance.updateGiOnSceneChange || config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || pointlightMoved)) {
+            if ((config.performance.updateGiOnSceneChange || config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || anyPointLightHasMoved)) {
                 lightInjectedFramesAgo = 0
             }
             val needsLightInjection = lightInjectedFramesAgo < bounces
