@@ -50,14 +50,18 @@ fun Engine.runMultipleObjects() {
         }
         edit(create()).apply {
             create(TransformComponent::class.java)
-            create(EnvironmentProbeComponent::class.java)
+            create(EnvironmentProbeComponent::class.java).apply {
+                size.set(100f)
+            }
             add(NameComponent().apply { name = "EnvProbe0" })
         }
         edit(create()).apply {
             create(TransformComponent::class.java).apply {
                 transform.translation(Vector3f(30f, 50f, 20f))
             }
-            create(EnvironmentProbeComponent::class.java)
+            create(EnvironmentProbeComponent::class.java).apply {
+                size.set(100f)
+            }
             add(NameComponent().apply { name = "EnvProbe1" })
         }
     }

@@ -55,9 +55,7 @@ class EvaluateProbeRenderExtension(
         Defines()
     )
 
-    override fun renderFirstPass(
-        renderState: RenderState
-    ) {
+    override fun renderFirstPass(renderState: RenderState) {
         probeRenderStrategy.renderProbes(renderState)
 
     }
@@ -76,10 +74,7 @@ class EvaluateProbeRenderExtension(
         val camera = renderState[primaryCameraStateHolder.camera]
         evaluateProbeProgram.use()
         val camTranslation = Vector3f()
-        evaluateProbeProgram.setUniform(
-            "eyePosition",
-            camera.transform.getTranslation(camTranslation)
-        )
+        evaluateProbeProgram.setUniform("eyePosition", camera.transform.getTranslation(camTranslation))
         evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)

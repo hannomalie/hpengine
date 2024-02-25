@@ -12,7 +12,9 @@ import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
-import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.constants.MinFilter
+import de.hanno.hpengine.graphics.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.constants.WrapMode
 import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -38,7 +40,7 @@ import org.koin.core.annotation.Single
 
 class EnvironmentProbeComponent: Component() {
     var size = Vector3f(10f)
-    var captureAnimatedObjects = false
+    var captureAnimatedObjects = false // TODO: Actually use
     val position = Vector3f() // TODO: Remove, make better renderstate for that
     var weight = 1f
     var movedInCycle = -1L
@@ -48,9 +50,14 @@ class EnvironmentProbeComponent: Component() {
 class EnvironmentProbesStateHolder(
     renderStateContext: RenderStateContext,
 ) {
-    val environmentProbesState = renderStateContext.renderState.registerState {
+    val state = renderStateContext.renderState.registerState {
         EnvironmentProbesState()
     }
+    val probes = renderStateContext.renderState.registerState {
+        mutableListOf<EnvironmentProbeComponent>()
+    }
+    internal val probeForBatches = renderStateContext.renderState.registerState { mutableMapOf<Int, Int>() }
+    fun getProbeForBatch(renderState: RenderState, entityBufferIndex: Int): Int? = renderState[probeForBatches][entityBufferIndex]
 }
 
 private const val envProbeResolution = 512
@@ -70,6 +77,7 @@ class EnvironmentProbeSystem(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val textureManager: TextureManagerBaseSystem,
     private val entityMovementSystem: EntityMovementSystem,
+    private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
 ): BaseEntitySystem(), RenderSystem, Extractor {
 
     lateinit var environmentProbeComponentMapper: ComponentMapper<EnvironmentProbeComponent>
@@ -134,11 +142,6 @@ class EnvironmentProbeSystem(
         }
     }
 
-    // TODO: Better state, without allocations
-    private val environmentProbeState = renderStateContext.renderState.registerState {
-        mutableListOf<EnvironmentProbeComponent>()
-    }
-
     private val probeRenderedInCycle = mutableMapOf<Int, Long>()
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
@@ -150,12 +153,13 @@ class EnvironmentProbeSystem(
 
         graphicsApi.viewPort(0, 0, envProbeResolution, envProbeResolution)
 
-        renderState[environmentProbeState].apply {
+        renderState[environmentProbesStateHolder.probes].apply {
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
             var index = 0
             forEach { probe ->
                 val renderedInCycle = probeRenderedInCycle[index]
 
+                // TODO: This doesn't work sometimes, fix me
                 val needsRerender = renderedInCycle?.let { renderedInCycle ->
                     val probeHasMoved = probe.movedInCycle >= renderedInCycle
 
@@ -166,7 +170,7 @@ class EnvironmentProbeSystem(
                 } ?: true
                 if(needsRerender) {
                     omniCamera.updatePosition(probe.position)
-                    val anyDiffuseTextureMip0Loaded = (0..5).map  { faceIndex ->
+                    val diffueMipLevel0Loaded = (0..5).map  { faceIndex ->
                         graphicsApi.framebufferDepthTexture(cubeMapArrayRenderTarget.cubeMapDepthFaceViews[6 * index + faceIndex], 0)
                         graphicsApi.clearDepthBuffer()
                         graphicsApi.framebufferTextureLayer(0, cubeMapArrayRenderTarget.cubeMapFaceViews[6 * index + faceIndex], 0, 0)
@@ -180,8 +184,10 @@ class EnvironmentProbeSystem(
                         anyDiffuseTextureMip0Loaded
                     }
                     graphicsApi.generateMipMaps(cubeMapArrayRenderTarget.cubeMapViews[index])
-                    if(anyDiffuseTextureMip0Loaded.none { it }) {
+                    if(diffueMipLevel0Loaded.all { it }) {
                         probeRenderedInCycle[index] = renderState.cycle
+                        println("#######################")
+                        println("$index rendered in cycle ${renderState.cycle}")
                     }
                 }
                 index++
@@ -190,7 +196,7 @@ class EnvironmentProbeSystem(
     }
 
     override fun extract(renderState: RenderState) {
-        renderState[environmentProbeState].apply {
+        renderState[environmentProbesStateHolder.probes].apply {
             clear()
             forEachEntity { entityId ->
                 add(EnvironmentProbeComponent().apply {
@@ -200,7 +206,24 @@ class EnvironmentProbeSystem(
                 })
             }
         }
+        val batches = renderState[environmentProbesStateHolder.probeForBatches]
+        batches.clear()
+        renderState[defaultBatchesSystem.renderBatchesStatic].forEach { batch ->
+            renderState[environmentProbesStateHolder.probes].forEachIndexed { probeIndex, probe ->
+                val min = Vector3f(probe.size).mul(-0.5f).add(probe.position)
+                val max = Vector3f(probe.size).mul(0.5f).add(probe.position)
+                val isInside = batch.meshMaxWorld.allLessThanOrEqual(max)
+                        && batch.meshMinWorld.allGreaterThanOrEqual(min)
+
+                if(isInside) {
+                    batches[batch.entityBufferIndex] = probeIndex
+                }
+            }
+        }
     }
+    private fun Vector3f.allLessThanOrEqual(other: Vector3f) = x <= other.x && y <= other.y && z <= other.z
+    private fun Vector3f.allGreaterThanOrEqual(other: Vector3f) = x >= other.x && y >= other.y && z >= other.z
+
     override fun processSystem() {
         var index = 0
         forEachEntity { entityId ->

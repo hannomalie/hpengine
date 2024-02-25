@@ -22,7 +22,6 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
 import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL32
-import org.lwjgl.opengl.GLUtil
 import org.lwjgl.system.APIUtil
 import java.lang.reflect.Field
 import kotlin.system.exitProcess
@@ -68,6 +67,7 @@ class GlfwWindow(
     override val profiler: GPUProfiler,
     createBackgroundContext: Boolean = config.performance.useBackgroundContext,
     parentWindow: GlfwWindow? = null,
+    logLevel: GLUtil.Severity = GLUtil.Severity.HIGH,
 ) : Window {
 
     final override val gpuExecutor: GpuExecutor
@@ -132,7 +132,7 @@ class GlfwWindow(
         glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
         glfwSwapInterval(if (this.vSync) 1 else 0)
         GL.createCapabilities()
-        GLUtil.setupDebugMessageCallback()
+        GLUtil.setupDebugMessageCallback(logLevel = logLevel)
         GL32.glViewport(0, 0, Integer.max(width, 0), Integer.max(height, 0))
 
         // Don't remove that, or some operating systems won't make context current on another thread

@@ -88,7 +88,7 @@ void main(void) {
 	vec3 PN_world = normalize(normal_world);
 	vec3 old_PN_world = PN_world;
 
-	vec4 color = vec4(vertexShaderOutput.color.rgb, 1);//vec4(material.diffuse, 1); // TODO: Make material configurable for per vertex colors
+	vec4 color = vec4(material.diffuse, 1); // TODO: Make material configurable for per vertex colors
 	vec2 uvParallax = vec2(0,0);
 	float alpha = material.transparency;
 

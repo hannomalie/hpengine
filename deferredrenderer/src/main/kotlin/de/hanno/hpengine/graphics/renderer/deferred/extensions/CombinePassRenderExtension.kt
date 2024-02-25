@@ -60,7 +60,7 @@ class CombinePassRenderExtension(private val config: Config,
             combineProgram.setUniform("worldExposure", camera.exposure)
             combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", config.effects.isAutoExposureEnabled)
             combineProgram.setUniform("fullScreenMipmapCount", deferredRenderingBuffer.fullScreenMipmapCount)
-            combineProgram.setUniform("activeProbeCount", state[environmentProbesStateHolder.environmentProbesState].activeProbeCount)
+            combineProgram.setUniform("activeProbeCount", state[environmentProbesStateHolder.state].activeProbeCount)
             combineProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
 
             disable(Capability.DEPTH_TEST)

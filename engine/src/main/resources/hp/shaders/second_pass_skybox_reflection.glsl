@@ -11,6 +11,7 @@ layout(binding=4, rgba16f) uniform image2D out_Diffuse;
 layout(binding=5) uniform sampler2D visibilityMap;
 layout(binding=6) uniform samplerCube skyBox;
 layout(binding=7, rgba16f) uniform image2D out_Specular;
+layout(binding=8) uniform samplerCubeArray probes;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -22,6 +23,9 @@ uniform mat4 modelMatrix;
 
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
+};
+layout(std430, binding=3) buffer _entities {
+	Entity entities[2000];
 };
 layout(std430, binding=2) buffer _directionalLightState {
 	DirectionalLightState directionalLight;
@@ -58,14 +62,21 @@ void main(void) {
 	vec3 normalWorld = normalize(inverse(viewMatrix) * vec4(normalView,0)).xyz;
 	vec4 specular = textureLod(specularMap, st, 0);
 	float depthFloat = textureLod(normalMap, st, 0).w;
-	depthFloat = textureLod(visibilityMap, st, 0).g;
 
+	vec4 indices = textureLod(visibilityMap, st, 0);
+	int entityIndex = int(indices.g);
+	int probeIndex = entities[entityIndex].probeIndex;
 
 	vec3 normal = boxProject(positionWorld, normalWorld, vec3(-500), vec3(500));
 	vec3 reflectedNormal = boxProject(positionWorld, reflect(V, normalWorld), vec3(-500), vec3(500));
 
 	vec4 resultDiffuse = vec4(textureLod(skyBox, normal, 8).rgb, 0);
 	vec4 resultSpecular = vec4(textureLod(skyBox, reflectedNormal, roughness * 8).rgb, 0);
+
+	if(probeIndex >= 0)	{
+		resultDiffuse = textureLod(probes, vec4(normal, probeIndex), 8);
+		resultSpecular = textureLod(probes, vec4(reflectedNormal, probeIndex), roughness * 8);
+	}
 
 	imageStore(out_Diffuse, storePos, resultDiffuse);
 	imageStore(out_Specular, storePos, resultSpecular);

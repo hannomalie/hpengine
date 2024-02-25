@@ -9,6 +9,7 @@ import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.EntityStrukt
+import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.instancing.InstancesComponent
@@ -25,6 +26,7 @@ import struktgen.api.get
 class EntityBufferExtractorSystem(
     private val materialSystem: MaterialSystem,
     private val entityBuffer: EntityBuffer,
+    private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
 ) : BaseEntitySystem(), Extractor {
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
@@ -83,6 +85,7 @@ class EntityBufferExtractorSystem(
                                     animationFrame2 = model.getAnimationFrame(2)
                                     animationFrame3 = model.getAnimationFrame(3)
                                     isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
+                                    probeIndex = 1//environmentProbesStateHolder.getProbeForBatch(currentWriteState, entityBufferIndex) ?: -1
                                     dummy4 = allocation.indexOffset
 
                                     setTrafoAndBoundingVolume(transform.transformation, tempAABB.apply {

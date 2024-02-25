@@ -62,7 +62,7 @@ class AOScatteringExtension(
                 bindTexture(6, TextureTarget.TEXTURE_2D, directionalShadowMap)
             }
             pointLightSystem.shadowMapStrategy.bindTextures()
-            val environmentProbesState = renderState[environmentProbesStateHolder.environmentProbesState]
+            val environmentProbesState = renderState[environmentProbesStateHolder.state]
             if(environmentProbesState.environmapsArray3Id > 0) {
                 graphicsApi.bindTexture(8, TextureTarget.TEXTURE_CUBE_MAP_ARRAY, environmentProbesState.environmapsArray3Id)
             }

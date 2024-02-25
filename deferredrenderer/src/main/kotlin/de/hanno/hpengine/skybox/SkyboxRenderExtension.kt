@@ -5,6 +5,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.TextureTarget
+import de.hanno.hpengine.graphics.envprobe.EnvironmentProbeSystem
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -27,6 +28,7 @@ class SkyboxRenderExtension(
     private val entitiesStateHolder: EntitiesStateHolder,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val skyBoxStateHolder: SkyBoxStateHolder,
+    private val probeSystem: EnvironmentProbeSystem,
 ) : DeferredRenderExtension {
 
     init {
@@ -86,8 +88,10 @@ class SkyboxRenderExtension(
             textureManager.cubeMap
         }
         bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, skyboxTexture.id)
+        bindTexture(8, probeSystem.cubeMapArray)
         bindImageTexture(4, deferredRenderingBuffer.reflectionBuffer.renderedTextures[0], 0, false, 0, Access.ReadWrite, InternalTextureFormat.RGBA16F)
         bindImageTexture(7, deferredRenderingBuffer.reflectionBuffer.renderedTextures[1], 0, false, 0, Access.ReadWrite, InternalTextureFormat.RGBA16F)
+
         val camera = renderState[primaryCameraStateHolder.camera]
         secondPassReflectionProgram.use()
         secondPassReflectionProgram.setUniform("screenWidth", config.width.toFloat())

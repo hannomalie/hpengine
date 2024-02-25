@@ -3,6 +3,7 @@ package de.hanno.hpengine.graphics.renderer.deferred
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.envprobe.EnvironmentProbeSystem
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.gi.GiVolumeStateHolder
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
@@ -124,6 +125,7 @@ class DeferredRendererModule {
         entitiesStateHolder: EntitiesStateHolder,
         primaryCameraStateHolder: PrimaryCameraStateHolder,
         skyBoxStateHolder: SkyBoxStateHolder,
+        probeSystem: EnvironmentProbeSystem,
     ) = SkyboxRenderExtension(
         graphicsApi,
         config,
@@ -134,6 +136,7 @@ class DeferredRendererModule {
         entitiesStateHolder,
         primaryCameraStateHolder,
         skyBoxStateHolder,
+        probeSystem,
     )
 }
 

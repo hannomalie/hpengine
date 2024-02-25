@@ -31,8 +31,8 @@ interface EntityStrukt : Strukt {
     context(ByteBuffer) var animationFrame3: Int
     context(ByteBuffer) var isInvertedTexCoordY: Int
     context(ByteBuffer) val dummy0: Int
+    context(ByteBuffer) var probeIndex: Int
     context(ByteBuffer) val dummy1: Int
-    context(ByteBuffer) val dummy2: Int
     context(ByteBuffer) val min: Vector3fStrukt
     context(ByteBuffer) var boundingVolumeType: BoundingVolumeType
     context(ByteBuffer) val max: Vector3fStrukt

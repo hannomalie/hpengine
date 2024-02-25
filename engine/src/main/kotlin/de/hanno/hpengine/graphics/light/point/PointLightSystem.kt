@@ -5,33 +5,21 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
-
-import de.hanno.hpengine.camera.Camera
-import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
-import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.buffer.typed
-import de.hanno.hpengine.graphics.shader.ProgramManager
-import de.hanno.hpengine.system.Extractor
-import de.hanno.hpengine.Transform
 import de.hanno.hpengine.artemis.mapEntity
-import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.buffers.enlarge
+import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.RenderSystem
-import de.hanno.hpengine.graphics.state.*
-import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
-import de.hanno.hpengine.math.createPerspective
-import de.hanno.hpengine.model.DefaultBatchesSystem
-import de.hanno.hpengine.model.EntityBuffer
-import de.hanno.hpengine.model.material.MaterialSystem
+import de.hanno.hpengine.graphics.buffer.typed
+import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.EntityMovementSystem
 import org.koin.core.annotation.Single
 import struktgen.api.forIndex
 
-// TODO: Autoadd Transform
 @All(PointLightComponent::class, TransformComponent::class)
 @Single(binds = [BaseSystem::class, PointLightSystem::class, RenderSystem::class])
 class PointLightSystem(

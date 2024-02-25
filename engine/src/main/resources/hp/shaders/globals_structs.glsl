@@ -71,7 +71,7 @@ struct Entity {
 
     int invertTexcoordY;
     int visible;
-    int b;
+    int probeIndex;
     int c;
 
     vec3 min;
