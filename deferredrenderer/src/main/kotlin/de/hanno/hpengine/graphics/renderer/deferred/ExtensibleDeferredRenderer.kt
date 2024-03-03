@@ -21,8 +21,8 @@ import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
 import de.hanno.hpengine.graphics.feature.BindlessTextures
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.deferred.extensions.PostProcessingExtensionProxy
-import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.AnimatedDefaultUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.graphics.texture.TextureManager
@@ -71,7 +71,7 @@ class ExtensibleDeferredRenderer(
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(),
-        StaticFirstPassUniforms(graphicsApi)
+        StaticDefaultUniforms(graphicsApi)
     )
 
     val simpleColorProgramAnimated = programManager.getProgram(
@@ -79,7 +79,7 @@ class ExtensibleDeferredRenderer(
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(Define("ANIMATED", true)),
-        AnimatedFirstPassUniforms(graphicsApi)
+        AnimatedDefaultUniforms(graphicsApi)
     )
 
     private val useIndirectRendering

@@ -103,6 +103,7 @@ class DefaultBatchesSystem(
 
                     val batch = getOrCreateBatch(currentWriteState, mesh, entityIndexOf)
 
+                    batch.entityId = parentEntityId
                     batch.entityBufferIndex = meshBufferIndex
                     batch.movedInCycle = currentWriteState.cycle// entity.movedInCycle TODO: reimplement
                     batch.isDrawLines = config.debug.isDrawLines

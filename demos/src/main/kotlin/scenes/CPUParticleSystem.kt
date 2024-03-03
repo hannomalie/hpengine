@@ -17,7 +17,7 @@ import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -88,9 +88,9 @@ class CPUParticleSystem(
     }
     private val state = renderStateContext.renderState.registerState { CPUParticles() }
 
-    private val uniforms1 = GPUParticlesFirstPassUniforms()
+    private val uniforms1 = GPUParticlesDefaultUniforms()
 
-    inner class GPUParticlesFirstPassUniforms : StaticFirstPassUniforms(graphicsApi) {
+    inner class GPUParticlesDefaultUniforms : StaticDefaultUniforms(graphicsApi) {
         var positions by SSBO(
             "vec4", 5, graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
         )
@@ -184,7 +184,7 @@ class CPUParticleSystem(
                 depthMask = materialComponent.material.writesDepth
                 cullFace = materialComponent.material.cullBackFaces
                 depthTest = materialComponent.material.depthTest
-                setTextureUniforms(program, graphicsApi, materialComponent.material.maps)
+                program.setTextureUniforms(graphicsApi, materialComponent.material.maps)
 
                 program.uniforms.entityIndex = entityIndex
             }

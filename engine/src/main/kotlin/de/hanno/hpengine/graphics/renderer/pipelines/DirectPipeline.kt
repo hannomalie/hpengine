@@ -11,9 +11,9 @@ import de.hanno.hpengine.graphics.constants.RenderingMode.Fill
 import de.hanno.hpengine.graphics.constants.RenderingMode.Lines
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.AnimatedDefaultUniforms
+import de.hanno.hpengine.graphics.renderer.forward.DefaultUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
@@ -32,7 +32,7 @@ import org.joml.FrustumIntersection
 open class DirectPipeline(
     private val graphicsApi: GraphicsApi,
     private val config: Config,
-    private val program: Program<out FirstPassUniforms>,
+    private val program: Program<out DefaultUniforms>,
     private val entitiesStateHolder: EntitiesStateHolder,
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
@@ -85,8 +85,8 @@ open class DirectPipeline(
         vertexIndexBuffer: VertexIndexBuffer<*>,
         mode: RenderingMode
     ) = graphicsApi.run {
-        using(program) { uniforms: FirstPassUniforms ->
-            uniforms.setCommonUniformValues(renderState, entitiesState, camera)
+        using(program) { uniforms: DefaultUniforms ->
+            uniforms.setCommonUniformValues(renderState, entitiesState, camera, config, materialSystem, entityBuffer)
 
             val batchesWithPipelineProgram = renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }
             logger.trace("Render ${batchesWithPipelineProgram.size} default pipeline program batches")
@@ -94,7 +94,7 @@ open class DirectPipeline(
                 depthMask = batch.material.writesDepth
                 cullFace = batch.material.cullBackFaces
                 depthTest = batch.material.depthTest
-                setTextureUniforms(program, graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -121,16 +121,16 @@ open class DirectPipeline(
         logger.trace("Render ${batchesWithOwnProgram.size} custom program batches")
         for (groupedBatches in batchesWithOwnProgram) {
             for (batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
-                val program = batch.program!! as Program<FirstPassUniforms> // TODO: This is not safe
+                val program = batch.program!! as Program<DefaultUniforms> // TODO: This is not safe
 
                 cullFace = batch.material.cullBackFaces
                 depthTest = batch.material.depthTest
                 depthMask = batch.material.writesDepth
 
                 using(program) { uniforms ->
-                    uniforms.setCommonUniformValues(renderState, entitiesState, camera)
+                    uniforms.setCommonUniformValues(renderState, entitiesState, camera, config, materialSystem, entityBuffer)
                 }
-                setTextureUniforms(program, graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
 
                 program.bind()
                 vertexIndexBuffer.indexBuffer.draw(
@@ -144,41 +144,6 @@ open class DirectPipeline(
             }
         }
     }
-
-    private fun FirstPassUniforms.setCommonUniformValues(
-        renderState: RenderState,
-        entitiesState: EntitiesState,
-        camera: Camera
-    ) {
-        materials = renderState[materialSystem.materialBuffer]
-        entities = renderState[entityBuffer.entitiesBuffer]
-        indirect = false
-        when (this) {
-            is StaticFirstPassUniforms -> vertices =
-                entitiesState.vertexIndexBufferStatic.vertexStructArray
-
-            is AnimatedFirstPassUniforms -> {
-                joints = entitiesState.jointsBuffer
-                vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
-            }
-        }
-        useRainEffect = config.effects.rainEffect != 0.0f
-        rainEffect = config.effects.rainEffect
-        viewMatrix = camera.viewMatrixBuffer
-        lastViewMatrix = camera.viewMatrixBuffer
-        projectionMatrix = camera.projectionMatrixBuffer
-        viewProjectionMatrix = camera.viewProjectionMatrixBuffer
-
-        eyePosition = camera.getPosition()
-        near = camera.near
-        far = camera.far
-        time = renderState.time.toInt()
-        useParallax = config.quality.isUseParallax
-        useSteepParallax = config.quality.isUseSteepParallax
-        entityBaseIndex = 0
-        indirect = false
-    }
-
 }
 
 val Program<*>.primitiveType get() = if (shaders.firstIsInstanceOrNull<TesselationControlShader>() != null) {
@@ -188,8 +153,44 @@ val Program<*>.primitiveType get() = if (shaders.firstIsInstanceOrNull<Tesselati
 }
 
 
-fun setTextureUniforms(
-    program: Program<*>,
+fun DefaultUniforms.setCommonUniformValues(
+    renderState: RenderState,
+    entitiesState: EntitiesState,
+    camera: Camera,
+    config: Config,
+    materialSystem: MaterialSystem,
+    entityBuffer: EntityBuffer,
+) {
+    materials = renderState[materialSystem.materialBuffer]
+    entities = renderState[entityBuffer.entitiesBuffer]
+    indirect = false
+    when (this) {
+        is StaticDefaultUniforms -> vertices =
+            entitiesState.vertexIndexBufferStatic.vertexStructArray
+
+        is AnimatedDefaultUniforms -> {
+            joints = entitiesState.jointsBuffer
+            vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
+        }
+    }
+    useRainEffect = config.effects.rainEffect != 0.0f
+    rainEffect = config.effects.rainEffect
+    viewMatrix = camera.viewMatrixBuffer
+    lastViewMatrix = camera.viewMatrixBuffer
+    projectionMatrix = camera.projectionMatrixBuffer
+    viewProjectionMatrix = camera.viewProjectionMatrixBuffer
+
+    eyePosition = camera.getPosition()
+    near = camera.near
+    far = camera.far
+    time = renderState.time.toInt()
+    useParallax = config.quality.isUseParallax
+    useSteepParallax = config.quality.isUseSteepParallax
+    entityBaseIndex = 0
+    indirect = false
+}
+
+fun Program<*>.setTextureUniforms(
     graphicsApi: GraphicsApi,
     maps: Map<Material.MAP, Texture>,
     diffuseFallbackTexture: Texture? = null
@@ -203,41 +204,41 @@ fun setTextureUniforms(
                 when(map.uploadState) {
                     UploadState.Uploaded -> {
                         bindTexture(mapEnumEntry.textureSlot, map)
-                        program.setUniform(mapEnumEntry.uniformKey, true)
+                        setUniform(mapEnumEntry.uniformKey, true)
                         if(isDiffuse) {
-                            program.setUniform("diffuseMipBias", 0)
+                            setUniform("diffuseMipBias", 0)
                         }
                     }
                     UploadState.NotUploaded -> {
                         if(isDiffuse) {
                             if(diffuseFallbackTexture != null) {
                                 bindTexture(mapEnumEntry.textureSlot, diffuseFallbackTexture)
-                                program.setUniform(mapEnumEntry.uniformKey, true)
-                                program.setUniform("diffuseMipBias", 0)
+                                setUniform(mapEnumEntry.uniformKey, true)
+                                setUniform("diffuseMipBias", 0)
                             } else {
-                                program.setUniform(mapEnumEntry.uniformKey, false)
-                                program.setUniform("diffuseMipBias", 0)
+                                setUniform(mapEnumEntry.uniformKey, false)
+                                setUniform("diffuseMipBias", 0)
                             }
                         } else {
-                            program.setUniform(mapEnumEntry.uniformKey, false)
+                            setUniform(mapEnumEntry.uniformKey, false)
                         }
                     }
                     is UploadState.Uploading -> {
                         if(isDiffuse) {
                             bindTexture(mapEnumEntry.textureSlot, map)
-                            program.setUniform(mapEnumEntry.uniformKey, true)
-                            program.setUniform(
+                            setUniform(mapEnumEntry.uniformKey, true)
+                            setUniform(
                                 "diffuseMipBias",
                                 (map.uploadState as UploadState.Uploading).maxMipMapLoaded
                             )
                         } else {
-                            program.setUniform(mapEnumEntry.uniformKey, false)
+                            setUniform(mapEnumEntry.uniformKey, false)
                         }
                     }
                 }
             }
         } else {
-            program.setUniform(mapEnumEntry.uniformKey, false)
+            setUniform(mapEnumEntry.uniformKey, false)
         }
     }
 }

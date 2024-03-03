@@ -18,10 +18,13 @@ import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.RenderManager
+import de.hanno.hpengine.graphics.renderer.RenderBatch
+import de.hanno.hpengine.graphics.state.Box
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.model.BoundingVolumeComponent
+import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.model.material.ProgramDescription
@@ -42,6 +45,7 @@ class SkyBoxSystem(
     private val materialSystem: MaterialSystem,
     private val skyBoxStateHolder: SkyBoxStateHolder,
     private val config: Config,
+    private val defaultBatchesSystem: DefaultBatchesSystem,
 ) : BaseEntitySystem(), WorldPopulator, Extractor {
     val logger = LogManager.getLogger(SkyBoxSystem::class.java)
 
@@ -66,8 +70,13 @@ class SkyBoxSystem(
     }
 
     override fun extract(currentWriteState: RenderState) {
-        forEachEntity {
-            currentWriteState.set(skyBoxStateHolder.skyBoxMaterialIndex, materialSystem.indexOf(materialComponentMapper[it].material))
+        forEachEntity { entityId ->
+            currentWriteState.set(skyBoxStateHolder.skyBoxMaterialIndex, materialSystem.indexOf(materialComponentMapper[entityId].material))
+            currentWriteState[defaultBatchesSystem.renderBatchesStatic].firstOrNull { batch ->
+                batch.entityId == entityId
+            }?.let { batch ->
+                currentWriteState[skyBoxStateHolder.batch].underlying = batch
+            }
         }
     }
 
@@ -79,6 +88,7 @@ class SkyBoxSystem(
 @Single
 class SkyBoxStateHolder(renderStateContext: RenderStateContext) {
     var skyBoxMaterialIndex = renderStateContext.renderState.registerState { -1 }
+    val batch = renderStateContext.renderState.registerState { Box(RenderBatch()) }
 }
 
 fun World.addSkyBox(config: Config) {

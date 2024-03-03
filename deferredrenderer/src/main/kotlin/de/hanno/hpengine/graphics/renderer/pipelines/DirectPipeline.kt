@@ -6,7 +6,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.DefaultUniforms
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.TesselationControlShader
 import de.hanno.hpengine.graphics.shader.Uniforms
@@ -18,7 +18,7 @@ private val <T: Uniforms> Program<T>.tesselationControlShader: TesselationContro
     get() = shaders.firstIsInstanceOrNull<TesselationControlShader>()
 
 context(GraphicsApi)
-fun DirectDrawDescription<FirstPassUniforms>.draw() {
+fun DirectDrawDescription<DefaultUniforms>.draw() {
     beforeDraw(renderState, program, drawCam)
     if(ignoreCustomPrograms) {
         program.use()
@@ -27,10 +27,10 @@ fun DirectDrawDescription<FirstPassUniforms>.draw() {
     val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
-        var program: Program<FirstPassUniforms> // TODO: Assign this program in the loop below and use() only on change
+        var program: Program<DefaultUniforms> // TODO: Assign this program in the loop below and use() only on change
         for(batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
             if (!ignoreCustomPrograms) {
-                program = ((batch.program ?: this.program) as Program<FirstPassUniforms>) // TODO: This is not safe
+                program = ((batch.program ?: this.program) as Program<DefaultUniforms>) // TODO: This is not safe
                 program.use()
             } else {
                 program = this.program
@@ -40,7 +40,7 @@ fun DirectDrawDescription<FirstPassUniforms>.draw() {
             cullFace = batch.material.cullBackFaces
             depthTest = batch.material.depthTest
             depthMask = batch.material.writesDepth
-            setTextureUniforms(program, this@GraphicsApi, batch.material.maps)
+            program.setTextureUniforms(this@GraphicsApi, batch.material.maps)
             val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
 
             program.bind()
@@ -59,7 +59,7 @@ fun DirectDrawDescription<FirstPassUniforms>.draw() {
         depthMask = batch.material.writesDepth
         cullFace = batch.material.cullBackFaces
         depthTest = batch.material.depthTest
-        setTextureUniforms(program, this@GraphicsApi, batch.material.maps)
+        program.setTextureUniforms(this@GraphicsApi, batch.material.maps)
         program.uniforms.entityIndex = batch.entityBufferIndex
         program.bind()
         vertexIndexBuffer.indexBuffer.draw(

@@ -27,6 +27,7 @@ class RenderBatch(
     var material: Material = Material("default"),
     var program: ProgramImpl<*>? = null,
     var entityBufferIndex: Int = 0,
+    var entityId: Int = 0,
     var contributesToGi: Boolean = true,
 ) {
     val isShadowCasting: Boolean get() = material.isShadowCasting

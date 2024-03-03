@@ -14,7 +14,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -69,9 +69,9 @@ class GrassSystem(
         graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
     }
 
-    private val uniforms1 = GrassFirstPassUniforms()
+    private val uniforms1 = GrassDefaultUniforms()
 
-    inner class GrassFirstPassUniforms : StaticFirstPassUniforms(graphicsApi) {
+    inner class GrassDefaultUniforms : StaticDefaultUniforms(graphicsApi) {
         var positions by SSBO(
             "vec4", 5, graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
         )
@@ -168,7 +168,7 @@ class GrassSystem(
                 depthMask = materialComponent.material.writesDepth
                 cullFace = materialComponent.material.cullBackFaces
                 depthTest = materialComponent.material.depthTest
-                setTextureUniforms(program, graphicsApi, materialComponent.material.maps)
+                program.setTextureUniforms(graphicsApi, materialComponent.material.maps)
 
                 program.uniforms.entityIndex = entityIndex
 

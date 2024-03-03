@@ -14,9 +14,9 @@ import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.DepthFunc
-import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
-import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
-import de.hanno.hpengine.graphics.renderer.pipelines.typed
+import de.hanno.hpengine.graphics.constants.PrimitiveType
+import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Define
@@ -33,13 +33,14 @@ import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexStruktPacked
+import de.hanno.hpengine.skybox.SkyBoxStateHolder
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import org.koin.ksp.generated.module
 import org.lwjgl.BufferUtils
 
 @Single(binds = [RenderSystem::class, PrimaryRenderer::class])
-class SimpleForwardRenderer(
+class ColorOnlyRenderer(
     private val graphicsApi: GraphicsApi,
     private val renderStateContext: RenderStateContext,
     private val renderTarget: RenderTarget2D,
@@ -50,34 +51,47 @@ class SimpleForwardRenderer(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
+    private val skyBoxStateHolder: SkyBoxStateHolder,
 ): PrimaryRenderer {
 
     override val finalOutput = ForwardFinalOutput(renderTarget.textures.first(), 0, this)
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-        config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/color_only/color_out_fragment.glsl").toCodeSource(),
         null,
-        Defines(Define("COLOR_OUTPUT_0", true)),
-        StaticFirstPassUniforms(graphicsApi)
+        Defines(),
+        StaticDefaultUniforms(graphicsApi)
     )
 
     val simpleColorProgramAnimated = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-        config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/color_only/color_out_fragment.glsl").toCodeSource(),
         null,
-        Defines(Define("ANIMATED", true), Define("COLOR_OUTPUT_0", true)),
-        AnimatedFirstPassUniforms(graphicsApi)
+        Defines(Define("ANIMATED", true)),
+        AnimatedDefaultUniforms(graphicsApi)
+    )
+
+    val simpleColorProgramSkyBox = programManager.getProgram(
+        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/color_only/first_pass_skybox_fragment.glsl").toCodeSource(),
+        null,
+        Defines(),
+        StaticDefaultUniforms(graphicsApi)
     )
 
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
         object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
-            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic]
+            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic].filter {
+                !it.hasOwnProgram
+            }
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
         object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
-            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated]
+            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated].filter {
+                !it.hasOwnProgram
+            }
 
             override fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated
         }
@@ -101,12 +115,30 @@ class SimpleForwardRenderer(
         profiled("MainPipeline") {
             renderState[staticDirectPipeline].draw(renderState)
             renderState[animatedDirectPipeline].draw(renderState)
+
+            val batch = renderState[skyBoxStateHolder.batch].underlying
+
+            simpleColorProgramSkyBox.useAndBind(setUniforms = {
+                setCommonUniformValues(
+                    renderState,
+                    renderState[entitiesStateHolder.entitiesState],
+                    renderState[primaryCameraStateHolder.camera],
+                    config, materialSystem, entityBuffer
+                )
+                simpleColorProgramSkyBox.setTextureUniforms(graphicsApi, batch.material.maps, null)
+            }, block = {
+                renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.draw(
+                    batch.drawElementsIndirectCommand,
+                    primitiveType = PrimitiveType.Triangles,
+                    mode = RenderingMode.Fill,
+                    bindIndexBuffer = true,
+                )
+            })
         }
     }
 }
 
-// TODO: Remove those duplicated code (also present in deferred renderer module)
-sealed class FirstPassUniforms(graphicsApi: GraphicsApi): Uniforms() {
+sealed class DefaultUniforms(graphicsApi: GraphicsApi): Uniforms() {
     var materials by SSBO("Material", 1, graphicsApi.PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
     var entities by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
     var entityOffsets by SSBO("int", 4, graphicsApi.PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
@@ -129,10 +161,10 @@ sealed class FirstPassUniforms(graphicsApi: GraphicsApi): Uniforms() {
     var indirect by BooleanType(true)
 }
 
-open class StaticFirstPassUniforms(graphicsApi: GraphicsApi): FirstPassUniforms(graphicsApi) {
+open class StaticDefaultUniforms(graphicsApi: GraphicsApi): DefaultUniforms(graphicsApi) {
     var vertices by SSBO("VertexPacked", 7, graphicsApi.PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
 }
-open class AnimatedFirstPassUniforms(graphicsApi: GraphicsApi): FirstPassUniforms(graphicsApi) {
+open class AnimatedDefaultUniforms(graphicsApi: GraphicsApi): DefaultUniforms(graphicsApi) {
     var joints by SSBO("mat4", 6, graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(
         Matrix4fStrukt.type))
     var vertices by SSBO("VertexAnimatedPacked", 7, graphicsApi.PersistentShaderStorageBuffer(

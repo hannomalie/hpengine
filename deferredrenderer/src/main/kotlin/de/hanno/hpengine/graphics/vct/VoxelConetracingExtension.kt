@@ -24,8 +24,8 @@ import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.deferred.extensions.BvHPointLightSecondPassExtension
-import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.AnimatedDefaultUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.shader.*
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -211,7 +211,7 @@ class VoxelConeTracingExtension(
 
                 renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.bind()
                 for (entity in batches) {
-                    setTextureUniforms(voxelizerStatic, graphicsApi, entity.material.maps)
+                    voxelizerStatic.setTextureUniforms(graphicsApi, entity.material.maps)
                     renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.draw(
                         entity.drawElementsIndirectCommand,
                         bindIndexBuffer = false,
@@ -431,13 +431,13 @@ class VoxelConeTracingExtension(
         val indexGridTextureFormat = Format.RED_INTEGER//GL30.GL_R32UI;
     }
 }
-class VoxelizerUniformsStatic(graphicsApi: GraphicsApi) : StaticFirstPassUniforms(graphicsApi) {
+class VoxelizerUniformsStatic(graphicsApi: GraphicsApi) : StaticDefaultUniforms(graphicsApi) {
     val voxelGridIndex by IntType()
     val voxelGridCount by IntType()
     val voxelGrids by SSBO("VoxelGrid", 5, graphicsApi.PersistentShaderStorageBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type))
     val writeVoxels by BooleanType(true)
 }
-class VoxelizerUniformsAnimated(graphicsApi: GraphicsApi) : AnimatedFirstPassUniforms(graphicsApi) {
+class VoxelizerUniformsAnimated(graphicsApi: GraphicsApi) : AnimatedDefaultUniforms(graphicsApi) {
     val voxelGridIndex by IntType()
     val voxelGridCount by IntType()
     val voxelGrids by SSBO("VoxelGrid", 5, graphicsApi.PersistentShaderStorageBuffer(VoxelGrid.type.sizeInBytes).typed(VoxelGrid.type))

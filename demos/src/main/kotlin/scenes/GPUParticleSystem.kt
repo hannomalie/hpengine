@@ -21,7 +21,7 @@ import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.*
@@ -111,7 +111,7 @@ class GPUParticleSystem(
     private val velocities = graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
     private val attractors = graphicsApi.PersistentShaderStorageBuffer(1000).typed(AttractorStrukt.type)
 
-    inner class GPUParticlesFirstPassUniforms : StaticFirstPassUniforms(graphicsApi) {
+    inner class GPUParticlesDefaultUniforms : StaticDefaultUniforms(graphicsApi) {
         var positions by SSBO("vec4", 5, this@GPUParticleSystem.positions)
         var velocities by SSBO("vec4", 8, this@GPUParticleSystem.velocities)
     }
@@ -121,7 +121,7 @@ class GPUParticleSystem(
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(),
-        GPUParticlesFirstPassUniforms()
+        GPUParticlesDefaultUniforms()
     )
     inner class GPUParticlesComputeUniforms: Uniforms() {
         var maxThreads by IntType(initialClusterCount * initialCountPerCluster)
@@ -248,7 +248,7 @@ class GPUParticleSystem(
                 depthMask = materialComponent.material.writesDepth
                 cullFace = materialComponent.material.cullBackFaces
                 depthTest = materialComponent.material.depthTest
-                setTextureUniforms(program, graphicsApi, materialComponent.material.maps)
+                program.setTextureUniforms(graphicsApi, materialComponent.material.maps)
 
                 program.uniforms.entityIndex = entityIndex
             }

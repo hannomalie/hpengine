@@ -26,9 +26,9 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.buffer.vertex.drawElementsIndirectCount
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.forward.AnimatedFirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.AnimatedDefaultUniforms
+import de.hanno.hpengine.graphics.renderer.forward.DefaultUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.UploadInfo.SingleMipLevelTexture2DUploadInfo
@@ -158,8 +158,8 @@ open class GPUCulledPipeline(
 
     fun draw(
         renderState: RenderState,
-        programStatic: Program<StaticFirstPassUniforms>,
-        programAnimated: Program<AnimatedFirstPassUniforms>
+        programStatic: Program<StaticDefaultUniforms>,
+        programAnimated: Program<AnimatedDefaultUniforms>
     ): Unit = graphicsApi.run {
         profiled("Actual draw entities") {
             val mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill
@@ -194,8 +194,8 @@ open class GPUCulledPipeline(
     }
 
     private fun cullAndRender(
-        drawDescriptionStatic: IndirectCulledDrawDescription<StaticFirstPassUniforms>,
-        drawDescriptionAnimated: IndirectCulledDrawDescription<AnimatedFirstPassUniforms>
+        drawDescriptionStatic: IndirectCulledDrawDescription<StaticDefaultUniforms>,
+        drawDescriptionAnimated: IndirectCulledDrawDescription<AnimatedDefaultUniforms>
     ): Unit = graphicsApi.run {
         clearTexImage(
             highZBuffer.textures[0],
@@ -374,7 +374,7 @@ open class GPUCulledPipeline(
         }
     }
 
-    private fun IndirectCulledDrawDescription<out FirstPassUniforms>.cullAndRender(phase: CullingPhase) = graphicsApi.run {
+    private fun IndirectCulledDrawDescription<out DefaultUniforms>.cullAndRender(phase: CullingPhase) = graphicsApi.run {
         commandOrganization.drawCountsCompacted.buffer.asIntBuffer().put(0, 0)
         commandOrganization.entitiesCompactedCounter.buffer.asIntBuffer().put(0, 0)
 
@@ -395,8 +395,8 @@ open class GPUCulledPipeline(
                     entities = renderState[entityBuffer.entitiesBuffer]
                     indirect = true
                     when (this) {
-                        is StaticFirstPassUniforms -> vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
-                        is AnimatedFirstPassUniforms -> {
+                        is StaticDefaultUniforms -> vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
+                        is AnimatedDefaultUniforms -> {
                             joints = entitiesState.jointsBuffer
                             vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
                         }
@@ -420,8 +420,8 @@ open class GPUCulledPipeline(
                     entities = renderState[entityBuffer.entitiesBuffer]
                     entityOffsets = commandOrganization.offsetsForCommand
                     when (this) {
-                        is StaticFirstPassUniforms -> Unit
-                        is AnimatedFirstPassUniforms -> joints = entitiesState.jointsBuffer
+                        is StaticDefaultUniforms -> Unit
+                        is AnimatedDefaultUniforms -> joints = entitiesState.jointsBuffer
                     }
                 }
 
@@ -508,7 +508,7 @@ class CommandOrganizationGpuCulled(graphicsApi: GraphicsApi) {
     val instanceCountForCommand = IndexBuffer(graphicsApi)
 }
 
-class IndirectCulledDrawDescription<T : FirstPassUniforms>(
+class IndirectCulledDrawDescription<T : DefaultUniforms>(
     val renderState: RenderState,
     val program: Program<T>,
     val commandOrganization: CommandOrganizationGpuCulled,

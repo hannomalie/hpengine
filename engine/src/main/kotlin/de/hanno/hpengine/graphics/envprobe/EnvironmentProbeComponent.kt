@@ -15,7 +15,7 @@ import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.WrapMode
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
@@ -88,7 +88,7 @@ class EnvironmentProbeSystem(
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(Define("COLOR_OUTPUT_0", true)),
-        StaticFirstPassUniforms(graphicsApi)
+        StaticDefaultUniforms(graphicsApi)
     )
 
     val cubeMapArray = graphicsApi.CubeMapArray(

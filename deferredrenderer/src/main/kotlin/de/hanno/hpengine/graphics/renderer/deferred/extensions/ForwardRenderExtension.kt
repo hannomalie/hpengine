@@ -12,7 +12,7 @@ import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -47,7 +47,7 @@ class ForwardRenderExtension(
     val programStatic = programManager.getProgram(
         firstpassDefaultVertexshaderSource,
         firstpassDefaultFragmentshaderSource,
-        StaticFirstPassUniforms(graphicsApi),
+        StaticDefaultUniforms(graphicsApi),
         Defines()
     )
 
@@ -80,7 +80,7 @@ class ForwardRenderExtension(
 
         entitiesState.vertexIndexBufferStatic.indexBuffer.bind()
         for (batch in renderState[defaultBatchesSystem.renderBatchesStatic].filter { it.material.transparencyType.needsForwardRendering }) {
-            setTextureUniforms(programStatic, graphicsApi, batch.material.maps)
+            programStatic.setTextureUniforms(graphicsApi, batch.material.maps)
             entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
                 primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Fill

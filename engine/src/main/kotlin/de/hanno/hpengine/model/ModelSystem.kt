@@ -14,8 +14,8 @@ import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
-import de.hanno.hpengine.graphics.renderer.forward.FirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.forward.StaticFirstPassUniforms
+import de.hanno.hpengine.graphics.renderer.forward.DefaultUniforms
+import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
@@ -71,7 +71,7 @@ class ModelSystem(
     val allocations: MutableMap<ModelComponentDescription, Allocation> = mutableMapOf()
 
     private val modelCache = mutableMapOf<ModelComponentDescription, Model<*>>()
-    internal val programCache = mutableMapOf<ProgramDescription, ProgramImpl<FirstPassUniforms>>()
+    internal val programCache = mutableMapOf<ProgramDescription, ProgramImpl<DefaultUniforms>>()
     private val staticModelLoader = StaticModelLoader()
     private val animatedModelLoader = AnimatedModelLoader()
 
@@ -126,8 +126,8 @@ class ModelSystem(
                         programCache[programDescription] =
                             programManager.getFirstPassProgram(
                                 programDescription,
-                                StaticFirstPassUniforms(graphicsApi)
-                            ) as ProgramImpl<FirstPassUniforms>
+                                StaticDefaultUniforms(graphicsApi)
+                            ) as ProgramImpl<DefaultUniforms>
                     }
                 }
             }
