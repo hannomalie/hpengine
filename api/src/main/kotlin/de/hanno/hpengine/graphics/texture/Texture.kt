@@ -27,6 +27,7 @@ interface Texture2D: Texture {
 interface Texture3D: Texture {
     override val dimension: TextureDimension3D
 }
+interface Texture2DArray: Texture3D
 interface CubeMap: Texture {
     override val dimension: TextureDimension2D
 }

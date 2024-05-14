@@ -1,23 +1,16 @@
 package de.hanno.hpengine.graphics.state
 
 import AnimatedVertexStruktPackedImpl.Companion.type
-import EntityStruktImpl.Companion.type
-import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
-import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.graphics.renderer.RenderBatches
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBufferAllocator
 import de.hanno.hpengine.graphics.buffer.typed
+import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.math.Matrix4fStrukt
-import de.hanno.hpengine.model.material.MaterialStrukt
-import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.model.BatchKey
+import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.scene.VertexStruktPacked
-import java.util.HashMap
 
 class EntitiesState(graphicsApi: GraphicsApi) {
     val cash: MutableMap<BatchKey, RenderBatch> = HashMap()

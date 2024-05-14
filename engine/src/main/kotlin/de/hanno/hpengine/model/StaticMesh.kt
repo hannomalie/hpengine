@@ -13,7 +13,7 @@ import java.util.*
 class StaticMesh(
     override var name: String = "",
     override val vertices: List<Vertex>,
-    override val faces: List<IndexedFace>,
+    override val triangles: List<IndexedTriangle>,
     override var material: Material
 ) : Serializable, Mesh<Vertex> {
 
@@ -31,9 +31,9 @@ class StaticMesh(
         }
     }
 
-    override val indexBufferValues = faces.extractIndices()
+    override val indexBufferValues = triangles.extractIndices()
 
-    override val triangleCount: Int get() = faces.size
+    override val triangleCount: Int get() = triangles.size
 
     override fun equals(other: Any?): Boolean {
         if (other !is StaticMesh) {

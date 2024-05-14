@@ -32,6 +32,11 @@ class StaticModel(
                             it.position.set(vertex.position)
                             it.texCoord.set(vertex.texCoord)
                             it.normal.set(vertex.normal)
+                            when(counter % 3) {
+                                0 -> it.dummy.x = 1f
+                                1 -> it.dummy.y = 1f
+                                2 -> it.dummy.z = 1f
+                            }
                         }
                         counter++
                     }

@@ -11,9 +11,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.texture.Texture
-import de.hanno.hpengine.graphics.texture.UploadState
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.MaterialComponent
 import de.hanno.hpengine.model.ModelComponent
@@ -132,6 +130,7 @@ class MaterialSystem(
                 environmentMapId = material.maps[MAP.ENVIRONMENT]?.id ?: 0
                 diffuseMapHandle = material.deriveHandle(MAP.DIFFUSE, textureManager.defaultTexture)
                 diffuseMipmapBias = material.deriveDiffuseMipMapBias()
+                diffuseMapIndex = ((material.maps[MAP.DIFFUSE] as? FileBasedTexture2D<*>)?.backingTexture as? OpenGLTexture2DView)?.index ?: 0
                 normalMapHandle = material.deriveHandle(MAP.NORMAL)
                 specularMapHandle = material.deriveHandle(MAP.SPECULAR)
                 heightMapHandle = material.deriveHandle(MAP.HEIGHT)

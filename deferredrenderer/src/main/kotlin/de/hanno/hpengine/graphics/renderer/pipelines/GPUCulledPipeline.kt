@@ -427,7 +427,6 @@ open class GPUCulledPipeline(
 
                 program.bind()
                 vertexIndexBuffer.drawElementsIndirectCount(
-                    graphicsApi,
                     commandOrganization.commands,
                     commandOrganization.drawCountsCompacted,
                     0,

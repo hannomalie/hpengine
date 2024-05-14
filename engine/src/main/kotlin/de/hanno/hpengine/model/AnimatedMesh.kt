@@ -19,16 +19,16 @@ import java.nio.ByteBuffer
 class AnimatedMesh(
     override var name: String,
     override val vertices: List<AnimatedVertex>,
-    override val faces: List<IndexedFace>,
+    override val triangles: List<IndexedTriangle>,
     val aabb: AABBData,
     override var material: Material
 ) : Mesh<AnimatedVertex> {
     var model: AnimatedModel? = null
 
-    override val indexBufferValues = faces.extractIndices()
+    override val indexBufferValues = triangles.extractIndices()
 
     override val triangleCount: Int
-        get() = faces.size
+        get() = triangles.size
 
     override val boundingVolume = AABBData().apply {
         vertices.forEach {
@@ -89,7 +89,7 @@ class AnimatedModel(
     fun calculateBoundingVolume() = AABB(meshes.map { it.boundingVolume }.getSurroundingAABB())
 }
 
-internal fun List<IndexedFace>.extractIndices(): ByteBuffer =
+internal fun List<IndexedTriangle>.extractIndices(): ByteBuffer =
     BufferUtils.createByteBuffer(Integer.BYTES * size * 3).apply {
         asIntBuffer().apply {
             forEachIndexed { index, face ->

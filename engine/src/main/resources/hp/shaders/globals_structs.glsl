@@ -26,7 +26,7 @@ struct Material {
     int useWorldSpaceXZAsTexCoords;
 
     int diffuseMipmapBias;
-    float dummy0;
+    int diffuseMapIndex;
     float dummy1;
     float dummy2;
 };
@@ -157,6 +157,7 @@ struct VertexShaderFlatOutput {
     int materialIndex;
     Material material;
     mat3 TBN;
+    int vertexIndex;
 };
 
 struct VertexShaderOutput {
@@ -170,6 +171,7 @@ struct VertexShaderOutput {
     vec4 position_clip_last;
     vec4 position_clip_uv;
     vec4 position_world;
+    vec3 barycentrics;
 };
 
 struct VertexPacked {

@@ -2,20 +2,21 @@ package de.hanno.hpengine.model
 
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.scene.BaseVertex
 import de.hanno.hpengine.transform.AABB
 import org.lwjgl.BufferUtils
 import struktgen.api.Strukt
 import struktgen.api.TypedBuffer
 import java.io.File
 
-
-sealed class Model<T>(val _meshes: List<Mesh<T>>) {
+// TODO: Why did I make this an array when we already have a list?
+sealed class Model<T: BaseVertex>(val _meshes: List<Mesh<T>>) {
     val meshes: Array<Mesh<T>> = _meshes.toTypedArray()
 
     val meshIndexCounts = meshes.map { it.indexBufferValues.capacity() / Integer.BYTES }
     val meshIndexSum = meshIndexCounts.sum()
 
-    var triangleCount: Int = meshes.sumBy { it.triangleCount }
+    var triangleCount: Int = meshes.sumOf { it.triangleCount }
     val uniqueVertices: List<T> = meshes.flatMap { it.vertices }
 
     var indices = BufferUtils.createByteBuffer(Integer.BYTES * meshIndexSum).apply {
@@ -35,15 +36,13 @@ sealed class Model<T>(val _meshes: List<Mesh<T>>) {
     abstract val file: File
     abstract val path: String
     abstract val verticesPacked: TypedBuffer<out Strukt>
-    val boundingSphereRadius: Float
-        get() = boundingVolume.boundingSphereRadius
+    val boundingSphereRadius: Float get() = boundingVolume.boundingSphereRadius
     abstract val boundingVolume: AABB
 
-    val isStatic: Boolean
-        get() = when(this) {
-            is AnimatedModel -> false
-            is StaticModel -> true
-        }
+    val isStatic: Boolean get() = when(this) {
+        is AnimatedModel -> false
+        is StaticModel -> true
+    }
     var isInvertTexCoordY = true
     abstract val bytesPerVertex: Int
 }

@@ -21,7 +21,7 @@ class RenderManager(
     private val window: Window,
     programManager: ProgramManager,
     private val renderStateContext: RenderStateContext,
-    internal val renderSystemsConfig: RenderSystemsConfig,
+    val renderSystemsConfig: RenderSystemsConfig,
     private val gpuProfiler: GPUProfiler,
     private val updateCycle: UpdateCycle,
 ) : BaseSystem() {

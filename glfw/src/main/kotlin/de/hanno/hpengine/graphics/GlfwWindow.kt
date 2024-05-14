@@ -67,7 +67,7 @@ class GlfwWindow(
     override val profiler: GPUProfiler,
     createBackgroundContext: Boolean = config.performance.useBackgroundContext,
     parentWindow: GlfwWindow? = null,
-    logLevel: GLUtil.Severity = GLUtil.Severity.HIGH,
+    logLevel: GLUtil.Severity = GLUtil.Severity.NOTIFICATION,
 ) : Window {
 
     final override val gpuExecutor: GpuExecutor

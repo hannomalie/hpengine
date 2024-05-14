@@ -1,7 +1,7 @@
 package de.hanno.hpengine.model.loader.assimp
 
 import de.hanno.hpengine.directory.AbstractDirectory
-import de.hanno.hpengine.model.IndexedFace
+import de.hanno.hpengine.model.IndexedTriangle
 import de.hanno.hpengine.model.StaticMesh
 import de.hanno.hpengine.model.StaticModel
 import de.hanno.hpengine.model.material.Material
@@ -34,7 +34,6 @@ import org.lwjgl.assimp.Assimp.aiTextureType_HEIGHT
 import org.lwjgl.assimp.Assimp.aiTextureType_NONE
 import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
 import org.lwjgl.assimp.Assimp.aiTextureType_SPECULAR
-import org.lwjgl.util.meshoptimizer.MeshOptimizer
 import java.io.File
 import java.nio.IntBuffer
 import java.nio.file.Path
@@ -117,7 +116,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         val positions = retrievePositions()
         val normals = retrieveNormals().let { it.ifEmpty { (positions.indices).map { Vector3f(0f,1f,0f) } } }
         val texCoords = retrieveTexCoords()
-        val indices = retrieveFaces()
+        val indexedTriangles = retrieveFaces()
         val materialIdx = mMaterialIndex()
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
             materials[materialIdx]
@@ -127,10 +126,11 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         val vertices = positions.indices.map {
             Vertex(positions[it], texCoords[it], normals[it])
         }
-        return StaticMesh(mName().dataString(),
-                vertices,
-                indices,
-                material
+        return StaticMesh(
+            mName().dataString(),
+            vertices,
+            indexedTriangles,
+            material
         )
     }
 }
@@ -169,17 +169,17 @@ fun AIMesh.retrieveTexCoords(): List<Vector2f> {
     return texCoords
 }
 
-fun AIMesh.retrieveFaces(): List<IndexedFace> {
-    val faces: MutableList<IndexedFace> = ArrayList()
+fun AIMesh.retrieveFaces(): List<IndexedTriangle> {
+    val faces: MutableList<IndexedTriangle> = ArrayList()
     val aiFaces = mFaces()
     while (aiFaces.remaining() > 0) {
         val aiFace = aiFaces.get()
         if(aiFace.mNumIndices() == 3) {
-            faces.add(IndexedFace(aiFace.mIndices()[0], aiFace.mIndices()[1], aiFace.mIndices()[2]))
+            faces.add(IndexedTriangle(aiFace.mIndices()[0], aiFace.mIndices()[1], aiFace.mIndices()[2]))
         } else if(aiFace.mNumIndices() == 2) { // no textureCoords
-            faces.add(IndexedFace(aiFace.mIndices()[0], aiFace.mIndices()[0], aiFace.mIndices()[1]))
+            faces.add(IndexedTriangle(aiFace.mIndices()[0], aiFace.mIndices()[0], aiFace.mIndices()[1]))
         } else if(aiFace.mNumIndices() == 1) { // no textureCoords, no normals
-            faces.add(IndexedFace(aiFace.mIndices()[0], aiFace.mIndices()[0], aiFace.mIndices()[0]))
+            faces.add(IndexedTriangle(aiFace.mIndices()[0], aiFace.mIndices()[0], aiFace.mIndices()[0]))
         } else throw IllegalStateException("Cannot process faces with more than 3 or less than 1 indices. Got indices: ${aiFace.mNumIndices()}")
     }
     return faces

@@ -4,7 +4,7 @@ import de.hanno.hpengine.Transform
 import de.hanno.hpengine.Transform.Companion.IDENTITY
 import de.hanno.hpengine.camera.Frustum
 import de.hanno.hpengine.model.CompiledFace
-import de.hanno.hpengine.model.IndexedFace
+import de.hanno.hpengine.model.IndexedTriangle
 import de.hanno.hpengine.model.Instance
 import org.joml.*
 
@@ -338,7 +338,7 @@ private fun largestDistance(points: List<Vector3fc>, pivot: Vector3f): Float {
 fun calculateAABB(
     modelMatrix: Matrix4f?,
     positions: List<Vector3fc>,
-    faces: Collection<IndexedFace>
+    faces: Collection<IndexedTriangle>
 ): AABBData {
     val min = Vector3f(absoluteMaximum)
     val max = Vector3f(absoluteMinimum)

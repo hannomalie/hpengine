@@ -11,8 +11,14 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
+import de.hanno.hpengine.graphics.RenderManager
+import de.hanno.hpengine.graphics.RenderSystemsConfig
+import de.hanno.hpengine.graphics.editor.PrimaryRendererSelection
 import de.hanno.hpengine.graphics.editor.editorModule
+import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
+import de.hanno.hpengine.graphics.renderer.forward.ColorOnlyRenderer
+import de.hanno.hpengine.graphics.renderer.forward.VisibilityRenderer
 import de.hanno.hpengine.graphics.renderer.forward.simpleForwardRendererModule
 import de.hanno.hpengine.ocean.oceanModule
 import de.hanno.hpengine.opengl.openglModule
@@ -21,6 +27,7 @@ import invoke
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.config.Configurator
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 import org.koin.dsl.module
@@ -32,6 +39,15 @@ fun main() {
     Configurator.setAllLevels(LogManager.getRootLogger().name, demoAndEngineConfig.config.logLevel)
 
     val engine = createEngine(demoAndEngineConfig)
+
+    engine.systems.firstIsInstance<PrimaryRendererSelection>().apply {
+        val renderSystems = engine.systems.firstIsInstance<RenderManager>().renderSystemsConfig.renderSystems
+        primaryRenderer = when(demoAndEngineConfig.demoConfig.renderer) {
+            Renderer.Deferred -> renderSystems.firstIsInstance<ExtensibleDeferredRenderer>()
+            Renderer.Forward -> renderSystems.firstIsInstance<ColorOnlyRenderer>()
+            Renderer.Visibility -> renderSystems.firstIsInstance<VisibilityRenderer>()
+        }
+    }
 
     demoAndEngineConfig.demoConfig.demo.run(engine)
 }
@@ -85,6 +101,7 @@ enum class Demo(val run: (Engine) -> Unit, val additionalModules: List<org.koin.
 enum class Renderer {
     Deferred,
     Forward,
+    Visibility,
 }
 data class DemoConfig(
     val engineDir: File?,

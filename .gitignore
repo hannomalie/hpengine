@@ -30,3 +30,5 @@ nbactions.xml
 */out
 
 *META-INF
+
+*.log

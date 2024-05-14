@@ -274,7 +274,7 @@ interface GraphicsApi {
         alphaDestinationFactor: BlendMode.Factor
     )
 
-    fun drawArraysInstanced(primitiveType: PrimitiveType, firsIndex: Int, count: Int, primitiveCount: Int)
+    fun drawArraysInstanced(primitiveType: PrimitiveType, firstVertexIndex: Int, count: Int, primitiveCount: Int)
 
     fun VertexBuffer.draw(indexBuffer: IndexBuffer?): Int
     fun validateFrameBufferState(renderTargetImpl: BackBufferRenderTarget<*>)
@@ -384,6 +384,14 @@ interface GraphicsApi {
     fun unbindPixelBufferObject()
     fun setPointsSize(size: Float)
     fun <T: Texture> createDepthBuffer(texture: T): DepthBuffer<T>
+    fun createView(texture: Texture2DArray, index: Int): Texture2D
+    val textureArray: Texture2DArray
+    val textureArrayViews: List<Texture2D>
+    fun allocateTextureFromArray(
+        info: UploadInfo,
+        textureTarget: TextureTarget,
+        wrapMode: WrapMode
+    ): Texture2D
 }
 
 fun GraphicsApi.RenderTarget(

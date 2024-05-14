@@ -34,11 +34,16 @@ interface AnimatedVertexStruktPacked : Strukt {
     companion object
 }
 
+interface BaseVertex {
+    val position: Vector3fc
+    val texCoord: Vector2fc
+    val normal: Vector3fc
+}
 data class Vertex(
-    val position: Vector3fc = Vector3f(),
-    val texCoord: Vector2fc = Vector2f(),
-    val normal: Vector3fc = Vector3f()
-) {
+    override val position: Vector3fc = Vector3f(),
+    override val texCoord: Vector2fc = Vector2f(),
+    override val normal: Vector3fc = Vector3f()
+): BaseVertex {
 
     companion object {
         val channels by lazy {

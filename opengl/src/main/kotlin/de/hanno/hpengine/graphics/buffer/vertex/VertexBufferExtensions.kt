@@ -1,20 +1,18 @@
 package de.hanno.hpengine.graphics.buffer.vertex
 
-import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
-import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
+import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.glValue
-import de.hanno.hpengine.scene.IVertexIndexBuffer
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
+import de.hanno.hpengine.scene.IVertexIndexBuffer
 import org.lwjgl.opengl.ARBIndirectParameters.glMultiDrawElementsIndirectCountARB
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL42
-import org.lwjgl.opengl.GL43.*
+import org.lwjgl.opengl.GL43.glMultiDrawElementsIndirect
 
 fun drawLines(lineWidth: Float = 2f, verticesCount: Int): Int {
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
@@ -26,12 +24,12 @@ fun drawLines(lineWidth: Float = 2f, verticesCount: Int): Int {
 }
 
 typealias TriangleCount = Int
-fun GpuBuffer.drawInstancedBaseVertex(
+fun GpuBuffer.drawElementsInstancedBaseVertex(
     command: DrawElementsIndirectCommand,
     bindIndexBuffer: Boolean,
     mode: RenderingMode,
     primitiveType: PrimitiveType
-): TriangleCount = drawInstancedBaseVertex(
+): TriangleCount = drawElementsInstancedBaseVertex(
     command.count,
     command.instanceCount,
     command.firstIndex,
@@ -50,7 +48,7 @@ fun GpuBuffer.drawInstancedBaseVertex(
  * @param baseVertexIndex the integer index, not the byte offset
  * @return
  */
-fun GpuBuffer.drawInstancedBaseVertex(
+fun GpuBuffer.drawElementsInstancedBaseVertex(
     indexCount: Int, instanceCount: Int, indexOffset: Int,
     baseVertexIndex: Int, bindIndexBuffer: Boolean, mode: RenderingMode,
     primitiveType: PrimitiveType
@@ -77,7 +75,6 @@ fun GpuBuffer.drawInstancedBaseVertex(
 }
 
 fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
-    graphicsApi: GraphicsApi,
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
     drawCount: Long = 0,
@@ -86,7 +83,6 @@ fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
 ) = when (mode) {
     RenderingMode.Lines -> drawElementsIndirect(indexBuffer, commandBuffer, maxDrawCount, mode)
     RenderingMode.Fill -> drawElementsIndirectCount(
-        graphicsApi,
         indexBuffer,
         commandBuffer,
         drawCountBuffer,
@@ -97,7 +93,6 @@ fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
 }
 
 fun drawElementsIndirectCount(
-    graphicsApi: GraphicsApi,
     indexBuffer: GpuBuffer,
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,

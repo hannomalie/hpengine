@@ -61,6 +61,7 @@ in vec4 in_Weights;
 in ivec4 in_JointIndices;
 #endif
 
+
 flat out VertexShaderFlatOutput vertexShaderFlatOutput;
 out VertexShaderOutput vertexShaderOutput;
 
@@ -162,7 +163,7 @@ void main(void) {
 
 	vec4 position_clip_last = (projectionMatrix * lastViewMatrix * position_world);
 
-	vec4 position_clip = mvp * positionModel;
+	vec4 position_clip = mvp * vec4(positionModel.xyz, 1);
 	vec4 position_clip_uv;
 	position_clip_uv.xyz = position_clip.xyz;
 	position_clip_uv /= position_clip_uv.w;
@@ -193,7 +194,6 @@ void main(void) {
 	vertexShaderOutput.position_clip_uv = position_clip_uv;
 	vertexShaderOutput.position_world = position_world;
 	vertexShaderOutput.barycentrics = vertex.dummy.xyz;
-
 
     vertexShaderFlatOutput.entity = entity;
     vertexShaderFlatOutput.entityBufferIndex = entityBufferIndex;

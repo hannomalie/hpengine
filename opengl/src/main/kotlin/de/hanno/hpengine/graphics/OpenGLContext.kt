@@ -7,7 +7,7 @@ import de.hanno.hpengine.graphics.buffer.*
 import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.VertexBuffer
 import de.hanno.hpengine.graphics.buffer.vertex.VertexBufferImpl
-import de.hanno.hpengine.graphics.buffer.vertex.drawInstancedBaseVertex
+import de.hanno.hpengine.graphics.buffer.vertex.drawElementsInstancedBaseVertex
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.feature.*
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
@@ -37,11 +37,13 @@ import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
 import org.lwjgl.opengl.GL40.*
 import org.lwjgl.opengl.GL45.glGetTextureSubImage
 import org.lwjgl.system.MemoryStack
+import java.awt.geom.Dimension2D
 import java.awt.image.BufferedImage
 import java.lang.Integer.max
 import java.nio.*
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 import kotlin.math.min
 
@@ -116,6 +118,7 @@ class OpenGLContext private constructor(
             uploadState,
         )
     }
+
     override fun CubeMap(
         dimension: TextureDimension2D,
         internalFormat: InternalTextureFormat,
@@ -132,14 +135,45 @@ class OpenGLContext private constructor(
     override fun FrameBuffer(depthBuffer: DepthBuffer<*>?) = OpenGLFrameBuffer.invoke(this, depthBuffer)
     override val pixelBufferObjectPool = OpenGLPixelBufferObjectPool(this, config)
 
+    override fun createView(texture: Texture2DArray, index: Int): OpenGLTexture2DView {
+        val viewTextureId = onGpuInline { glGenTextures() }
+        return OpenGLTexture2DView(
+            index = index,
+            underlying = OpenGLTexture2D(
+            dimension = TextureDimension2D(texture.dimension.width, texture.dimension.height),
+            id = viewTextureId,
+            target = TextureTarget.TEXTURE_2D,
+            internalFormat = texture.internalFormat,
+            handle =
+                if (!isSupported(BindlessTextures)) -1 else onGpuInline { glGetTextureHandleARB(viewTextureId) },
+            textureFilterConfig = texture.textureFilterConfig,
+            wrapMode = texture.wrapMode,
+            uploadState = UploadState.NotUploaded,
+        )).apply {
+            onGpuInline {
+                GL43.glTextureView(
+                    id,
+                    GL13.GL_TEXTURE_2D,
+                    texture.id,
+                    internalFormat.glValue,
+                    0,
+                    texture.mipmapCount + 1,
+                    index,
+                    1
+                )
+            }
+        }
+    }
+
     override fun createView(texture: CubeMapArray, cubeMapIndex: Int): CubeMap {
         val viewTextureId = onGpuInline { glGenTextures() }
-        return object: CubeMap {
+        return object : CubeMap {
             override val dimension = TextureDimension2D(texture.dimension.width, texture.dimension.height)
             override val id = viewTextureId
             override val target = TextureTarget.TEXTURE_CUBE_MAP
             override val internalFormat = texture.internalFormat
-            override var handle: Long = if(!isSupported(BindlessTextures)) -1 else onGpuInline { glGetTextureHandleARB(viewTextureId) }
+            override var handle: Long =
+                if (!isSupported(BindlessTextures)) -1 else onGpuInline { glGetTextureHandleARB(viewTextureId) }
             override val textureFilterConfig = texture.textureFilterConfig
             override val wrapMode = texture.wrapMode
             override var uploadState: UploadState = UploadState.Uploaded
@@ -163,12 +197,13 @@ class OpenGLContext private constructor(
         require(faceIndex in 0..5) { "Face index must identify one of the six cubemap sides" }
 
         val viewTextureId = onGpuInline { glGenTextures() }
-        return object: Texture2D {
+        return object : Texture2D {
             override val dimension = TextureDimension2D(texture.dimension.width, texture.dimension.height)
             override val id = viewTextureId
             override val target = TextureTarget.TEXTURE_2D
             override val internalFormat = texture.internalFormat
-            override var handle: Long = if(!isSupported(BindlessTextures)) -1 else onGpuInline { glGetTextureHandleARB(viewTextureId) }
+            override var handle: Long =
+                if (!isSupported(BindlessTextures)) -1 else onGpuInline { glGetTextureHandleARB(viewTextureId) }
             override val textureFilterConfig = texture.textureFilterConfig
             override val wrapMode = texture.wrapMode
             override var uploadState: UploadState = UploadState.Uploaded
@@ -196,6 +231,7 @@ class OpenGLContext private constructor(
     override val isError: Boolean get() = onGpuInline { glGetError() != GL_NO_ERROR }
 
     override val features = run {
+        // TODO: Figure out if this is not supported by my intel gpu
         val bindlessTextures = if (capabilities.GL_ARB_bindless_texture) BindlessTextures else null
         val drawParameters = if (capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
         val nvShader5 = if (capabilities.GL_NV_gpu_shader5) NvShader5 else null
@@ -224,6 +260,7 @@ class OpenGLContext private constructor(
             sync.await()
         }
     }
+
     override fun createCommandSync(): OpenGlCommandSync = onGpuInline {
         OpenGlCommandSync().also {
             commandSyncs.add(it)
@@ -249,6 +286,7 @@ class OpenGLContext private constructor(
             commandSyncs.add(it)
         }
     }
+
     override fun CommandSync(onCompletion: () -> Unit): GpuCommandSync = onGpuInline {
         OpenGlCommandSync(onCompletion).also {
             commandSyncs.add(it)
@@ -265,6 +303,7 @@ class OpenGLContext private constructor(
     override fun memoryBarrier() {
         memoryBarrier(Barrier.All)
     }
+
     override fun memoryBarrier(barrier: Barrier) {
         GL42.glMemoryBarrier(barrier.glValue)
     }
@@ -477,6 +516,7 @@ class OpenGLContext private constructor(
             level, offsetX, offsetY, width, height, format.glValue, type.glValue, pixels
         )
     }
+
     override fun register(target: BackBufferRenderTarget<*>) {
         if (registeredRenderTargets.any { it.name == target.name } || registeredRenderTargets.contains(target)) return
         _registeredRenderTargets.add(target)
@@ -541,14 +581,78 @@ class OpenGLContext private constructor(
             width, height, depth
         )
     }
+
     override fun readPixels(x: Int, y: Int, width: Int, height: Int, format: Format, target: FloatBuffer) {
         glReadPixels(x, y, width, height, format.glValue, GL_FLOAT, target)
+    }
+
+    private val currentTextureArrayIndex = AtomicInteger(0)
+    override val textureArray: OpenGLTexture2DArray = onGpuInline {
+        val textureId = glGenTextures()
+        val target = TextureTarget.TEXTURE_2D_ARRAY
+        val glTarget = target.glValue
+
+        glBindTexture(glTarget, textureId)
+        val filterConfig =
+            TextureFilterConfig(minFilter = MinFilter.NEAREST, magFilter = MagFilter.NEAREST)//LINEAR_MIPMAP_LINEAR)
+        val wrapMode = WrapMode.Repeat
+        texParameters(glTarget, wrapMode, filterConfig)
+        val dimension = TextureDimension3D(1024, 1024, 50)
+        val internalFormat = InternalTextureFormat.RGBA16F
+        texStorage(
+            UploadInfo.Texture3DUploadInfo(
+                dimension = dimension,
+                internalFormat = internalFormat,
+                textureFilterConfig = filterConfig,
+            ), glTarget
+        )
+
+        val handle = getTextureHandle(textureId)
+
+        OpenGLTexture2DArray(
+            dimension = dimension,
+            id = textureId,
+            target = target,
+            internalFormat = internalFormat,
+            handle = handle,
+            textureFilterConfig = filterConfig,
+            wrapMode = wrapMode,
+            uploadState = UploadState.Uploaded,
+            srgba = false,
+        )
+    }
+    override val textureArrayViews = run {
+        (0 until 50).map {
+            createView(textureArray, it)
+        }
+    }
+
+    override fun allocateTextureFromArray(
+        info: UploadInfo,
+        textureTarget: TextureTarget,
+        wrapMode: WrapMode,
+    ): Texture2D = onGpuInline {
+        if(currentTextureArrayIndex.get() < 50
+            && info.internalFormat == textureArray.internalFormat
+            && (info.dimension as TextureDimension2D).width <= 1024 && (info.dimension as TextureDimension2D).height <= 1024
+        ) {
+            val index = currentTextureArrayIndex.getAndIncrement()
+            val textureView = createView(textureArray, index)
+//            generateMipMaps(textureView)
+//        TextureAllocationData(textureView.id, textureView.handle, textureView.wrapMode)
+            textureView.apply {
+                underlying.upload(info as UploadInfo.Texture2DUploadInfo) // TODO: Don't cast here
+            }
+        } else {
+            Texture2D(info as UploadInfo.Texture2DUploadInfo, wrapMode) // TODO: Don't cast here
+        }
     }
     override fun allocateTexture(
         info: UploadInfo,
         textureTarget: TextureTarget,
         wrapMode: WrapMode,
     ): TextureAllocationData = onGpuInline {
+
         val textureId = glGenTextures()
         val glTarget = textureTarget.glValue
 
@@ -1013,10 +1117,10 @@ class OpenGLContext private constructor(
         alphaSourceFactor.glValue,
         alphaDestinationFactor.glValue
     )
-    override fun drawArraysInstanced(primitiveType: PrimitiveType, firsIndex: Int, count: Int, primitiveCount: Int) {
+    override fun drawArraysInstanced(primitiveType: PrimitiveType, firstVertexIndex: Int, count: Int, primitiveCount: Int) {
          glDrawArraysInstanced(
              primitiveType.glValue,
-             firsIndex,
+             firstVertexIndex,
              count,
              primitiveCount
          )
@@ -1433,7 +1537,7 @@ class OpenGLContext private constructor(
         bindIndexBuffer: Boolean,
         primitiveType: PrimitiveType,
         mode: RenderingMode
-    ): TriangleCount = drawInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
+    ): TriangleCount = drawElementsInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
 
     companion object {
         private var counter = 0
@@ -1524,7 +1628,7 @@ val Capability.glInt get() = when(this) {
 val Capability.isEnabled: Boolean get() = glIsEnabled(glInt)
 
 
-private fun BufferedImage.toByteBuffer(): ByteBuffer {
+fun BufferedImage.toByteBuffer(): ByteBuffer {
     val width = width
     val height = height
 

@@ -1,16 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.forward
 
-import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
-import AnimatedVertexStruktPackedImpl.Companion.type
-import EntityStruktImpl.Companion.type
-import IntStruktImpl.Companion.type
-import MaterialStruktImpl.Companion.type
-import Matrix4fStruktImpl.Companion.sizeInBytes
-import Matrix4fStruktImpl.Companion.type
-import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.camera.Camera
-import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.DepthFunc
@@ -25,16 +16,12 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
-import de.hanno.hpengine.math.Matrix4fStrukt
-import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
-import de.hanno.hpengine.model.material.MaterialStrukt
+import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
-import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
-import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import org.koin.ksp.generated.module
 import org.lwjgl.BufferUtils
@@ -136,42 +123,6 @@ class ColorOnlyRenderer(
             })
         }
     }
-}
-
-sealed class DefaultUniforms(graphicsApi: GraphicsApi): Uniforms() {
-    var materials by SSBO("Material", 1, graphicsApi.PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
-    var entities by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
-    var entityOffsets by SSBO("int", 4, graphicsApi.PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
-    var useRainEffect by BooleanType(false)
-    var rainEffect by FloatType(0f)
-    var viewMatrix by Mat4(createTransformBuffer())
-    var lastViewMatrix by Mat4(createTransformBuffer())
-    var projectionMatrix by Mat4(createTransformBuffer())
-    var viewProjectionMatrix by Mat4(createTransformBuffer())
-
-    var eyePosition by Vec3(Vector3f())
-    var near by FloatType()
-    var far by FloatType()
-    var time by IntType()
-    var useParallax by BooleanType(false)
-    var useSteepParallax by BooleanType(false)
-
-    var entityIndex by IntType(0)
-    var entityBaseIndex by IntType(0)
-    var indirect by BooleanType(true)
-}
-
-open class StaticDefaultUniforms(graphicsApi: GraphicsApi): DefaultUniforms(graphicsApi) {
-    var vertices by SSBO("VertexPacked", 7, graphicsApi.PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
-}
-open class AnimatedDefaultUniforms(graphicsApi: GraphicsApi): DefaultUniforms(graphicsApi) {
-    var joints by SSBO("mat4", 6, graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(
-        Matrix4fStrukt.type))
-    var vertices by SSBO("VertexAnimatedPacked", 7, graphicsApi.PersistentShaderStorageBuffer(
-        AnimatedVertexStruktPacked.sizeInBytes).typed(
-            AnimatedVertexStruktPacked.type
-        )
-    )
 }
 
 fun createTransformBuffer() = BufferUtils.createFloatBuffer(16).apply { Transform().get(this) }

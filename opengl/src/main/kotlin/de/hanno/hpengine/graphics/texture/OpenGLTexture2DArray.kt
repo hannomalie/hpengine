@@ -5,8 +5,8 @@ import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.WrapMode
 
-data class OpenGLTexture2D(
-    override val dimension: TextureDimension2D,
+data class OpenGLTexture2DArray(
+    override val dimension: TextureDimension3D,
     override val id: Int,
     override val target: TextureTarget,
     override val internalFormat: InternalTextureFormat,
@@ -15,9 +15,4 @@ data class OpenGLTexture2D(
     override val wrapMode: WrapMode,
     override var uploadState: UploadState,
     override val srgba: Boolean = false,
-) : Texture2D
-
-data class OpenGLTexture2DView(
-    val index: Int,
-    val underlying: OpenGLTexture2D,
-) : Texture2D by underlying
+) : Texture2DArray

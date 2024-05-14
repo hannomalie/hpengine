@@ -2,6 +2,7 @@ package de.hanno.hpengine.model
 
 import AnimatedVertexStruktPackedImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
+import VertexStruktPackedImpl.Companion.sizeInBytes
 import VertexStruktPackedImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
@@ -13,6 +14,8 @@ import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
+import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
 import de.hanno.hpengine.graphics.renderer.forward.DefaultUniforms
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
@@ -36,6 +39,7 @@ import de.hanno.hpengine.scene.dsl.ModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Extractor
 import org.apache.logging.log4j.LogManager
+import org.jetbrains.kotlin.resolve.resolveQualifierAsReceiverInExpression
 import org.joml.Matrix4f
 import org.koin.core.annotation.Single
 import struktgen.api.get
@@ -140,11 +144,12 @@ class ModelSystem(
             localMax.set(model.boundingVolume.max)
         }
         return world.edit(entityId).run {
-            when(model) {
-                is AnimatedModel ->{
+            when (model) {
+                is AnimatedModel -> {
                     add(AnimationControllerComponent(model.animationController))
                 }
-                is StaticModel -> { }
+
+                is StaticModel -> {}
             }
             ModelCacheComponent(model, allocateVertexIndexBufferSpace(descr, model)).apply {
                 add(this)
@@ -155,7 +160,7 @@ class ModelSystem(
 
     override fun processSystem() {
         modelCache.values.forEach {
-            when(it) {
+            when (it) {
                 is AnimatedModel -> it.update(world.delta)
                 is StaticModel -> {}
             }
@@ -163,7 +168,8 @@ class ModelSystem(
     }
 
     fun allocateVertexIndexBufferSpace(
-        descr: ModelComponentDescription, model: Model<*>): Allocation {
+        descr: ModelComponentDescription, model: Model<*>
+    ): Allocation {
         val allocation = when (model) {
             is AnimatedModel -> {
                 val vertexIndexBuffer = vertexIndexBufferAnimated
@@ -177,10 +183,11 @@ class ModelSystem(
                 val elements = model.animations.flatMap {
                     it.value.frames.flatMap { frame -> frame.jointMatrices.toList() }
                 }
-                val jointsOffset = joints.size
                 joints.addAll(elements)
+                val jointsOffset = joints.size
                 Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
             }
+
             is StaticModel -> {
                 val vertexIndexBuffer = vertexIndexBufferStatic
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForModel(model)

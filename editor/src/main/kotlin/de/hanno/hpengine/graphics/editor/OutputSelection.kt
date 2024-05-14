@@ -91,7 +91,14 @@ class OutputSelection(
                     textureManager.texturesForDebugOutput.filterValues { it is Texture2D }
                         .map { TextureOutputSelection(it.key, it.value as Texture2D) } +
                     textureManager.textures.filterValues { it is Texture2D }
-                        .map { TextureOutputSelection(it.key, it.value as Texture2D) }
+                        .map { TextureOutputSelection(it.key, it.value as Texture2D) } +
+                    graphicsApi.textureArrayViews.mapIndexed { index , it ->
+                        TextureOutputSelection(
+                            "TextureAtlas[$index]",
+                            it,
+                            false,
+                        )
+            }
         }
 
     override fun processSystem() { }

@@ -75,9 +75,9 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
             aiMesh.processMesh(materials, boneList)
         }
         val aiRootNode = aiScene.mRootNode()
-        val rootTransfromation: Matrix4f = aiRootNode!!.mTransformation().toMatrix()
+        val rootTransformation: Matrix4f = aiRootNode!!.mTransformation().toMatrix()
         val rootNode: Node = aiRootNode.processNodesHierarchy(null)
-        val animations: Map<String, Animation> = aiScene.processAnimations(boneList, rootNode, rootTransfromation)
+        val animations: Map<String, Animation> = aiScene.processAnimations(boneList, rootNode, rootTransformation)
 
         return AnimatedModel(resourcesDir.resolve(file), meshes, animations)
     }
@@ -241,12 +241,12 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         } else {
             Material(mName().dataString() + "_material")
         }
-        val vertices = positions.indices.map {
-            AnimatedVertex(positions[it],
-                texCoords[it],
-                runCatching { normals[it] }.getOrElse { Vector3f(0f, 1f, 0f) },
-                Vector4f(weights[4 * it + 0], weights[4 * it + 1], weights[4 * it + 2], weights[4 * it + 3]),
-                Vector4i(boneIds[4 * it + 0], boneIds[4 * it + 1], boneIds[4 * it + 2], boneIds[4 * it + 3])
+        val vertices = positions.indices.map { index ->
+            AnimatedVertex(positions[index],
+                texCoords[index],
+                runCatching { normals[index] }.getOrElse { Vector3f(0f, 1f, 0f) },
+                Vector4f(weights[4 * index + 0], weights[4 * index + 1], weights[4 * index + 2], weights[4 * index + 3]),
+                Vector4i(boneIds[4 * index + 0], boneIds[4 * index + 1], boneIds[4 * index + 2], boneIds[4 * index + 3])
             )
         }
         return AnimatedMesh(

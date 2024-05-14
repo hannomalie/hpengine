@@ -15,6 +15,7 @@ import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.graphics.texture.DDSConverter.getFullPathAsDDS
+import de.hanno.hpengine.graphics.toByteBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.threads.TimeStepThread
 import jogl.DDSImage
@@ -26,6 +27,7 @@ import java.awt.image.*
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
@@ -88,7 +90,7 @@ class OpenGLTextureManager(
     private val temp = loadDefaultTexture()
     override val defaultTexture = temp.first
 
-    private fun loadDefaultTexture(): Pair<FileBasedTexture2D<OpenGLTexture2D>, BufferedImage> {
+    private fun loadDefaultTexture(): Pair<FileBasedTexture2D<Texture2D>, BufferedImage> {
         val defaultTexturePath = "assets/textures/default/gi_flag.png"
         val defaultTexture = getTexture(defaultTexturePath, true, engineDir)
         val defaultTextureAsBufferedImage = loadImage(defaultTexturePath)
@@ -109,7 +111,7 @@ class OpenGLTextureManager(
         directory: AbstractDirectory
     ) = getTexture(directory.resolve(resourcePath), resourcePath, srgba)
 
-    fun getTexture(file: File, resourcePath: String = file.absolutePath, srgba: Boolean = false): FileBasedTexture2D<OpenGLTexture2D> {
+    fun getTexture(file: File, resourcePath: String = file.absolutePath, srgba: Boolean = false): FileBasedTexture2D<Texture2D> {
         require(file.exists()) { "File ${file.absolutePath} must exist!" }
         require(file.isFile) { "File ${file.absolutePath} is not a file!" }
 
@@ -131,10 +133,11 @@ class OpenGLTextureManager(
                     internalFormat = internalFormat,
                     textureFilterConfig = TextureFilterConfig(),
                 )
-                graphicsApi.Texture2D(
-                    uploadInfo,
-                    WrapMode.Repeat,
-                )
+                graphicsApi.allocateTextureFromArray(uploadInfo, TEXTURE_2D, WrapMode.Repeat)
+//                graphicsApi.Texture2D(
+//                    uploadInfo,
+//                    WrapMode.Repeat,
+//                )
             } else {
                 val bufferedImage = DDSUtil.decompressTexture(
                     ddsImage.getMipMap(0).data,
@@ -149,10 +152,23 @@ class OpenGLTextureManager(
                     wrapMode = WrapMode.Repeat,
                 )
             }
-        } else graphicsApi.Texture2D(
-            graphicsApi.createAllMipLevelsLazyTexture2DUploadInfo(ImageIO.read(file), internalFormat),
-            wrapMode = WrapMode.Repeat,
-        )
+        } else {
+//            val uploadInfo = graphicsApi.createAllMipLevelsLazyTexture2DUploadInfo(ImageIO.read(file), internalFormat)
+            val bufferedImage = ImageIO.read(file)
+            val uploadInfo = UploadInfo.SingleMipLevelTexture2DUploadInfo(
+                dimension = TextureDimension2D(bufferedImage.width, bufferedImage.height),
+                data = bufferedImage.toByteBuffer(),
+                dataCompressed = false,
+                srgba = true,
+                internalFormat = internalFormat,
+                textureFilterConfig = TextureFilterConfig(),
+            )
+            graphicsApi.allocateTextureFromArray(uploadInfo, TEXTURE_2D, WrapMode.Repeat)
+//            graphicsApi.Texture2D(
+//                uploadInfo,
+//                wrapMode = WrapMode.Repeat,
+//            )
+        }
 
         return FileBasedTexture2D(
             resourcePath,
