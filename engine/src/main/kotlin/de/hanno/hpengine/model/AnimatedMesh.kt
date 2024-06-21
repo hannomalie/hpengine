@@ -7,6 +7,7 @@ import de.hanno.hpengine.model.animation.AnimationController
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.AnimatedVertex
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
+import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
@@ -49,6 +50,9 @@ class AnimatedModel(
     val animations: Map<String, Animation>
 ) : Model<AnimatedVertex>(meshes) {
     override val bytesPerVertex = AnimatedVertexStruktPacked.sizeInBytes
+    override val unindexedVerticesPacked: TypedBuffer<VertexStruktPacked>
+        get() = TODO("Not yet implemented")
+
     override val path = file.absolutePath
 
     init {

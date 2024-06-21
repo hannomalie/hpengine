@@ -112,7 +112,7 @@ class ColorOnlyRenderer(
                     renderState[primaryCameraStateHolder.camera],
                     config, materialSystem, entityBuffer
                 )
-                simpleColorProgramSkyBox.setTextureUniforms(graphicsApi, batch.material.maps, null)
+                setTextureUniforms(simpleColorProgramSkyBox, graphicsApi, batch.material.maps, null)
             }, block = {
                 renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.draw(
                     batch.drawElementsIndirectCommand,

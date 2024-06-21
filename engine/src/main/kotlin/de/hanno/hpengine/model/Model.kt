@@ -3,6 +3,7 @@ package de.hanno.hpengine.model
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.BaseVertex
+import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.transform.AABB
 import org.lwjgl.BufferUtils
 import struktgen.api.Strukt
@@ -45,4 +46,5 @@ sealed class Model<T: BaseVertex>(val _meshes: List<Mesh<T>>) {
     }
     var isInvertTexCoordY = true
     abstract val bytesPerVertex: Int
+    abstract val unindexedVerticesPacked: TypedBuffer<VertexStruktPacked>
 }

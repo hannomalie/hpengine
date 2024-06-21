@@ -2,7 +2,6 @@ package de.hanno.hpengine.model
 
 import AnimatedVertexStruktPackedImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
-import VertexStruktPackedImpl.Companion.sizeInBytes
 import VertexStruktPackedImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
@@ -14,8 +13,6 @@ import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
-import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
 import de.hanno.hpengine.graphics.renderer.forward.DefaultUniforms
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
@@ -29,17 +26,13 @@ import de.hanno.hpengine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.model.material.ProgramDescription
-import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
-import de.hanno.hpengine.scene.VertexIndexBuffer
-import de.hanno.hpengine.scene.VertexIndexOffsets
-import de.hanno.hpengine.scene.VertexStruktPacked
+import de.hanno.hpengine.scene.*
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.ModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Extractor
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.kotlin.resolve.resolveQualifierAsReceiverInExpression
 import org.joml.Matrix4f
 import org.koin.core.annotation.Single
 import struktgen.api.get
@@ -70,9 +63,13 @@ class ModelSystem(
     val vertexIndexBufferStatic = VertexIndexBuffer(graphicsApi, VertexStruktPacked.type, 10)
     val vertexIndexBufferAnimated = VertexIndexBuffer(graphicsApi, AnimatedVertexStruktPacked.type, 10)
 
+    val vertexBufferStatic = VertexBuffer(graphicsApi, VertexStruktPacked.type)
+    val vertexBufferAnimated = VertexBuffer(graphicsApi, AnimatedVertexStruktPacked.type)
+
     val joints: MutableList<Matrix4f> = CopyOnWriteArrayList()
 
     val allocations: MutableMap<ModelComponentDescription, Allocation> = mutableMapOf()
+    val unindexedAllocations: MutableMap<ModelComponentDescription, Allocation> = mutableMapOf()
 
     private val modelCache = mutableMapOf<ModelComponentDescription, Model<*>>()
     internal val programCache = mutableMapOf<ProgramDescription, ProgramImpl<DefaultUniforms>>()
@@ -151,7 +148,8 @@ class ModelSystem(
 
                 is StaticModel -> {}
             }
-            ModelCacheComponent(model, allocateVertexIndexBufferSpace(descr, model)).apply {
+            allocateVertexIndexBufferSpace(descr, model)
+            ModelCacheComponent(model, allocations[descr]!!).apply {
                 add(this)
                 logger.info("Added modelcache component for entity $entityId")
             }
@@ -200,11 +198,44 @@ class ModelSystem(
             }
         }
         allocations[descr] = allocation
+
+        val unindexedAllocation = when (model) {
+            is AnimatedModel -> {
+                val vertexOffsets = vertexBufferAnimated.allocateForModel(model)
+                val vertexIndexOffsetsForMeshes = model.putToBuffer(
+                    vertexBufferStatic,
+                    vertexBufferAnimated,
+                    vertexOffsets
+                )
+
+                val elements = model.animations.flatMap {
+                    it.value.frames.flatMap { frame -> frame.jointMatrices.toList() }
+                }
+                joints.addAll(elements)
+                val jointsOffset = joints.size
+                Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
+            }
+
+            is StaticModel -> {
+                val vertexOffsets = vertexBufferStatic.allocateForModel(model)
+                val vertexIndexOffsetsForMeshes = model.putToBuffer(
+                    vertexBufferStatic,
+                    vertexBufferAnimated,
+                    vertexOffsets
+                )
+                Allocation.Static(vertexIndexOffsetsForMeshes)
+            }
+        }
+        unindexedAllocations[descr] = unindexedAllocation
+
         return allocation
     }
 
     private fun VertexIndexBuffer<*>.allocateForModel(model: Model<*>): VertexIndexOffsets {
         return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
+    }
+    private fun VertexBuffer<*>.allocateForModel(model: Model<*>): VertexOffsets {
+        return allocate(model.indices.capacity() / Integer.BYTES)
     }
 
     fun Model<*>.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
@@ -218,6 +249,18 @@ class ModelSystem(
             VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
                 currentIndexOffset += mesh.indexBufferValues.capacity() / Integer.BYTES
                 currentVertexOffset += mesh.vertices.size
+            }
+        }
+    }
+    fun Model<*>.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexOffsets): List<VertexOffsets> {
+        var currentVertexOffset = vertexIndexOffsets.vertexOffset
+
+        val model = this
+
+        return model.meshes.indices.map { i ->
+            val mesh = model.meshes[i] as Mesh<*>
+            VertexOffsets(currentVertexOffset).apply {
+                currentVertexOffset += mesh.indexBufferValues.capacity() / Integer.BYTES
             }
         }
     }
@@ -242,10 +285,32 @@ class ModelSystem(
             vertexIndexOffsetsForMeshes
         }
     }
+    private fun Model<*>.putToBuffer(
+        vertexIndexBuffer: VertexBuffer<*>,
+        vertexIndexBufferAnimated: VertexBuffer<*>,
+        vertexIndexOffsets: VertexOffsets,
+    ): List<VertexIndexOffsets> {
+        val model = this
+        val (targetBuffer, vertexType) = when (model) {
+            is AnimatedModel -> Pair(vertexIndexBufferAnimated, AnimatedVertexStruktPacked.type)
+            is StaticModel -> Pair(vertexIndexBuffer, VertexStruktPacked.type)
+        }
+        return synchronized(targetBuffer) {
+            val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
+            targetBuffer.vertexStructArray.addAll(
+                vertexIndexOffsets.vertexOffset * vertexType.sizeInBytes,
+                model.unindexedVerticesPacked.byteBuffer
+            )
+            vertexIndexOffsetsForMeshes.map { VertexIndexOffsets(it.vertexOffset, 0) }
+        }
+    }
 
     override fun extract(currentWriteState: RenderState) {
         currentWriteState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic = vertexIndexBufferStatic
         currentWriteState[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated = vertexIndexBufferAnimated
+
+        currentWriteState[entitiesStateHolder.entitiesState].vertexBufferStatic = vertexBufferStatic
+        currentWriteState[entitiesStateHolder.entitiesState].vertexBufferAnimated = vertexBufferAnimated
 
         val targetJointsBuffer = currentWriteState[entitiesStateHolder.entitiesState].jointsBuffer
         targetJointsBuffer.ensureCapacityInBytes(joints.size * Matrix4fStrukt.sizeInBytes)

@@ -66,10 +66,18 @@ class VisibilityRenderer(
         WrapMode.ClampToEdge,
         UploadState.Uploaded
     )
+    private val mipMapLevelTexture = graphicsApi.Texture2D(
+        TextureDimension2D(config.width, config.height),
+        TextureTarget.TEXTURE_2D,
+        InternalTextureFormat.R32F, // TODO: We don't need that much precision
+        TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
+        WrapMode.ClampToEdge,
+        UploadState.Uploaded
+    )
     private val visibilityRenderTarget = graphicsApi.RenderTarget(
         graphicsApi.FrameBuffer(sharedDepthBuffer.depthBuffer),
         config.width, config.height,
-        listOf(triangleIdTexture, barycentricsTexture),
+        listOf(triangleIdTexture, barycentricsTexture, mipMapLevelTexture),
         "Visibility",
         Vector4f(0f)
     )
@@ -135,6 +143,7 @@ class VisibilityRenderer(
         graphicsApi.bindTexture(0, triangleIdTexture)
         graphicsApi.bindTexture(1, barycentricsTexture)
         graphicsApi.bindTexture(2, graphicsApi.textureArray)
+        graphicsApi.bindTexture(3, mipMapLevelTexture)
         graphicsApi.bindImageTexture(2, renderTarget.renderedTexture, 0, false, 0, Access.ReadWrite, renderTarget.textures.first().internalFormat)
 
         resolveComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])

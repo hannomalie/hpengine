@@ -80,7 +80,7 @@ class ForwardRenderExtension(
 
         entitiesState.vertexIndexBufferStatic.indexBuffer.bind()
         for (batch in renderState[defaultBatchesSystem.renderBatchesStatic].filter { it.material.transparencyType.needsForwardRendering }) {
-            programStatic.setTextureUniforms(graphicsApi, batch.material.maps)
+            setTextureUniforms(programStatic, graphicsApi, batch.material.maps)
             entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
                 primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Fill

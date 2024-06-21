@@ -9,6 +9,7 @@ import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.BatchKey
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
+import de.hanno.hpengine.scene.VertexBuffer
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.scene.VertexStruktPacked
 
@@ -23,6 +24,9 @@ class EntitiesState(graphicsApi: GraphicsApi) {
 
     var vertexIndexBufferStatic = VertexIndexBuffer(graphicsApi, VertexStruktPacked.type, 10)
     var vertexIndexBufferAnimated = VertexIndexBuffer(graphicsApi, AnimatedVertexStruktPacked.type, 10)
+
+    var vertexBufferStatic = VertexBuffer(graphicsApi, VertexStruktPacked.type)
+    var vertexBufferAnimated = VertexBuffer(graphicsApi, AnimatedVertexStruktPacked.type)
 
     var jointsBuffer = graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.type.sizeInBytes).typed(Matrix4fStrukt.type)
 }

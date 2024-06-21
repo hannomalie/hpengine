@@ -594,7 +594,7 @@ class OpenGLContext private constructor(
 
         glBindTexture(glTarget, textureId)
         val filterConfig =
-            TextureFilterConfig(minFilter = MinFilter.NEAREST, magFilter = MagFilter.NEAREST)//LINEAR_MIPMAP_LINEAR)
+            TextureFilterConfig(minFilter = MinFilter.LINEAR_MIPMAP_LINEAR, MagFilter.LINEAR)
         val wrapMode = WrapMode.Repeat
         texParameters(glTarget, wrapMode, filterConfig)
         val dimension = TextureDimension3D(1024, 1024, 50)

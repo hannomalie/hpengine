@@ -22,7 +22,7 @@ class StaticModel(
     override val bytesPerVertex = VertexStruktPacked.sizeInBytes
 
     override val verticesPacked =
-        TypedBuffer(BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * VertexStruktPacked.sizeInBytes),
+        TypedBuffer(BufferUtils.createByteBuffer(meshes.sumOf { it.vertices.size } * VertexStruktPacked.sizeInBytes),
             VertexStruktPacked.type).apply {
             byteBuffer.run {
                 var counter = 0
@@ -39,6 +39,31 @@ class StaticModel(
                             }
                         }
                         counter++
+                    }
+                }
+            }
+        }
+    override val unindexedVerticesPacked =
+        TypedBuffer(BufferUtils.createByteBuffer(meshes.sumOf { it.triangleCount * 3 } * VertexStruktPacked.sizeInBytes),
+            VertexStruktPacked.type).apply {
+            byteBuffer.run {
+                var counter = 0
+                for (mesh in meshes) {
+                    for(triangle in mesh.triangles) {
+                        listOf(triangle.a, triangle.b, triangle.c).forEach { vertexIndex ->
+                            val vertex = mesh.vertices[vertexIndex]
+                            this@apply.forIndex(counter) {
+                                it.position.set(vertex.position)
+                                it.texCoord.set(vertex.texCoord)
+                                it.normal.set(vertex.normal)
+                                when(counter % 3) {
+                                    0 -> it.dummy.x = 1f
+                                    1 -> it.dummy.y = 1f
+                                    2 -> it.dummy.z = 1f
+                                }
+                            }
+                            counter++
+                        }
                     }
                 }
             }

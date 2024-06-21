@@ -8,7 +8,7 @@ import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.renderer.glValue
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
-import de.hanno.hpengine.scene.IVertexIndexBuffer
+import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.lwjgl.opengl.ARBIndirectParameters.glMultiDrawElementsIndirectCountARB
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL42
@@ -74,7 +74,7 @@ fun GpuBuffer.drawElementsInstancedBaseVertex(
     return instanceCount * (indexCount / 3)
 }
 
-fun IVertexIndexBuffer<*>.drawElementsIndirectCount(
+fun VertexIndexBuffer<*>.drawElementsIndirectCount(
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
     drawCount: Long = 0,
