@@ -199,8 +199,9 @@ class OpenGLContext private constructor(
         val drawParameters = if (capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
         val nvShader5 = if (capabilities.GL_NV_gpu_shader5) NvShader5 else null
         val arbShader5 = if (capabilities.GL_ARB_gpu_shader5) ArbShader5 else null
+        val amdShaderInt64 = if(capabilities.GL_AMD_gpu_shader_int64) AMDShaderInt64 else null
 
-        listOfNotNull(bindlessTextures, drawParameters, arbShader5, nvShader5)
+        listOfNotNull(bindlessTextures, drawParameters, arbShader5, nvShader5, amdShaderInt64)
     }
 
     override fun createNewGPUFenceForReadState(currentReadState: IRenderState) {
@@ -503,6 +504,7 @@ class OpenGLContext private constructor(
             .appendIfSupported(ArbShaderInt64, "#extension GL_ARB_gpu_shader_int64 : enable")
             .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable")
             .appendIfSupported(DrawParameters, "#extension GL_ARB_shader_draw_parameters : enable")
+            .appendIfSupported(AMDShaderInt64, "#extension GL_AMD_gpu_shader_int64 : enable")
     }
 
 
