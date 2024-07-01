@@ -4,9 +4,7 @@ import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.*
-import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
-import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.rendertarget.SharedDepthBuffer
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -16,7 +14,6 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
-import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
 import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.graphics.window.Window
@@ -48,17 +45,7 @@ class VisibilityRenderer(
 
     private val frontBuffer = window.frontBuffer
 
-    private val triangleIdTexture = graphicsApi.Texture2D(
-        TextureDimension2D(config.width, config.height),
-        TextureTarget.TEXTURE_2D,
-        InternalTextureFormat.RGBA32F,
-//        InternalTextureFormat.R32F,
-//        InternalTextureFormat.R16I,
-        TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
-        WrapMode.ClampToEdge,
-        UploadState.Uploaded
-    )
-    private val barycentricsTexture = graphicsApi.Texture2D(
+    private val visibilityTexture = graphicsApi.Texture2D(
         TextureDimension2D(config.width, config.height),
         TextureTarget.TEXTURE_2D,
         InternalTextureFormat.RGBA16F,
@@ -66,18 +53,10 @@ class VisibilityRenderer(
         WrapMode.ClampToEdge,
         UploadState.Uploaded
     )
-    private val mipMapLevelTexture = graphicsApi.Texture2D(
-        TextureDimension2D(config.width, config.height),
-        TextureTarget.TEXTURE_2D,
-        InternalTextureFormat.R32F, // TODO: We don't need that much precision
-        TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
-        WrapMode.ClampToEdge,
-        UploadState.Uploaded
-    )
     private val visibilityRenderTarget = graphicsApi.RenderTarget(
         graphicsApi.FrameBuffer(sharedDepthBuffer.depthBuffer),
         config.width, config.height,
-        listOf(triangleIdTexture, barycentricsTexture, mipMapLevelTexture),
+        listOf(visibilityTexture),
         "Visibility",
         Vector4f(0f)
     )
@@ -86,7 +65,7 @@ class VisibilityRenderer(
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/visibility/visibility_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/visibility/visibility_fragment.glsl").toCodeSource(),
-        config.engineDir.resolve("shaders/visibility/visibility_geometry.glsl").toCodeSource(),
+        null,
         Defines(),
         StaticDefaultUniforms(graphicsApi)
     )
@@ -94,7 +73,7 @@ class VisibilityRenderer(
     val simpleColorProgramAnimated = programManager.getProgram(
         config.engineDir.resolve("shaders/visibility/visibility_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/visibility/visibility_fragment.glsl").toCodeSource(),
-        config.engineDir.resolve("shaders/visibility/visibility_geometry.glsl").toCodeSource(),
+        null,
         Defines(Define("ANIMATED", true)),
         AnimatedDefaultUniforms(graphicsApi)
     )
@@ -140,10 +119,8 @@ class VisibilityRenderer(
         resolveComputeProgram.setUniform("width", renderTarget.width)
         resolveComputeProgram.setUniform("height", renderTarget.height)
 
-        graphicsApi.bindTexture(0, triangleIdTexture)
-        graphicsApi.bindTexture(1, barycentricsTexture)
+        graphicsApi.bindTexture(0, visibilityTexture)v
         graphicsApi.bindTexture(2, graphicsApi.textureArray)
-        graphicsApi.bindTexture(3, mipMapLevelTexture)
         graphicsApi.bindImageTexture(2, renderTarget.renderedTexture, 0, false, 0, Access.ReadWrite, renderTarget.textures.first().internalFormat)
 
         resolveComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])

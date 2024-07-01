@@ -137,36 +137,48 @@ class OpenGLContext private constructor(
 
     override fun createView(texture: Texture2DArray, index: Int): OpenGLTexture2DView {
         val viewTextureId = onGpuInline { glGenTextures() }
+        onGpuInline {
+            GL43.glTextureView(
+                viewTextureId,
+                GL13.GL_TEXTURE_2D,
+                texture.id,
+                texture.internalFormat.glValue,
+                0,
+                texture.mipmapCount + 1,
+                index,
+                1
+            )
+        }
         return OpenGLTexture2DView(
             index = index,
             underlying = OpenGLTexture2D(
-            dimension = TextureDimension2D(texture.dimension.width, texture.dimension.height),
-            id = viewTextureId,
-            target = TextureTarget.TEXTURE_2D,
-            internalFormat = texture.internalFormat,
-            handle =
+                dimension = TextureDimension2D(texture.dimension.width, texture.dimension.height),
+                id = viewTextureId,
+                target = TextureTarget.TEXTURE_2D,
+                internalFormat = texture.internalFormat,
+                handle =
                 if (!isSupported(BindlessTextures)) -1 else onGpuInline { glGetTextureHandleARB(viewTextureId) },
-            textureFilterConfig = texture.textureFilterConfig,
-            wrapMode = texture.wrapMode,
-            uploadState = UploadState.NotUploaded,
-        )).apply {
-            onGpuInline {
-                GL43.glTextureView(
-                    id,
-                    GL13.GL_TEXTURE_2D,
-                    texture.id,
-                    internalFormat.glValue,
-                    0,
-                    texture.mipmapCount + 1,
-                    index,
-                    1
-                )
-            }
-        }
+                textureFilterConfig = texture.textureFilterConfig,
+                wrapMode = texture.wrapMode,
+                uploadState = UploadState.NotUploaded,
+            )
+        )
     }
 
     override fun createView(texture: CubeMapArray, cubeMapIndex: Int): CubeMap {
         val viewTextureId = onGpuInline { glGenTextures() }
+        onGpuInline {
+            GL43.glTextureView(
+                viewTextureId,
+                GL13.GL_TEXTURE_CUBE_MAP,
+                texture.id,
+                texture.internalFormat.glValue,
+                0,
+                texture.mipmapCount + 1,
+                6 * cubeMapIndex,
+                6
+            )
+        }
         return object : CubeMap {
             override val dimension = TextureDimension2D(texture.dimension.width, texture.dimension.height)
             override val id = viewTextureId
@@ -177,19 +189,6 @@ class OpenGLContext private constructor(
             override val textureFilterConfig = texture.textureFilterConfig
             override val wrapMode = texture.wrapMode
             override var uploadState: UploadState = UploadState.Uploaded
-        }.apply {
-            onGpuInline {
-                GL43.glTextureView(
-                    id,
-                    GL13.GL_TEXTURE_CUBE_MAP,
-                    texture.id,
-                    internalFormat.glValue,
-                    0,
-                    texture.mipmapCount + 1,
-                    6 * cubeMapIndex,
-                    6
-                )
-            }
         }
     }
 
@@ -197,6 +196,18 @@ class OpenGLContext private constructor(
         require(faceIndex in 0..5) { "Face index must identify one of the six cubemap sides" }
 
         val viewTextureId = onGpuInline { glGenTextures() }
+        onGpuInline {
+            GL43.glTextureView(
+                viewTextureId,
+                GL_TEXTURE_2D,
+                texture.id,
+                texture.internalFormat.glValue,
+                0,
+                texture.mipmapCount + 1,
+                6 * cubeMapIndex + faceIndex,
+                1
+            )
+        }
         return object : Texture2D {
             override val dimension = TextureDimension2D(texture.dimension.width, texture.dimension.height)
             override val id = viewTextureId
@@ -207,19 +218,6 @@ class OpenGLContext private constructor(
             override val textureFilterConfig = texture.textureFilterConfig
             override val wrapMode = texture.wrapMode
             override var uploadState: UploadState = UploadState.Uploaded
-        }.apply {
-            onGpuInline {
-                GL43.glTextureView(
-                    id,
-                    GL_TEXTURE_2D,
-                    texture.id,
-                    texture.internalFormat.glValue,
-                    0,
-                    texture.mipmapCount + 1,
-                    6 * cubeMapIndex + faceIndex,
-                    1
-                )
-            }
         }
     }
 
@@ -234,11 +232,10 @@ class OpenGLContext private constructor(
         // TODO: Figure out if this is not supported by my intel gpu
         val bindlessTextures = if (capabilities.GL_ARB_bindless_texture) BindlessTextures else null
         val drawParameters = if (capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
-        val nvShader5 = if (capabilities.GL_NV_gpu_shader5) NvShader5 else null
-        val arbShader5 = if (capabilities.GL_ARB_gpu_shader5) ArbShader5 else null
+        val shader5 = if (capabilities.GL_NV_gpu_shader5) NvShader5 else if (capabilities.GL_ARB_gpu_shader5) ArbShader5 else null
         val amdShaderInt64 = if(capabilities.GL_AMD_gpu_shader_int64) AMDShaderInt64 else null
 
-        listOfNotNull(bindlessTextures, drawParameters, arbShader5, nvShader5, amdShaderInt64)
+        listOfNotNull(bindlessTextures, drawParameters, shader5, amdShaderInt64)
     }
 
     override fun createNewGPUFenceForReadState(currentReadState: IRenderState) {
@@ -622,7 +619,8 @@ class OpenGLContext private constructor(
         )
     }
     override val textureArrayViews = run {
-        (0 until 50).map {
+        val maxTexturesInArray = if(isSupported(BindlessTextures)) 0 else 50
+        (0 until maxTexturesInArray).map {
             createView(textureArray, it)
         }
     }
@@ -632,7 +630,7 @@ class OpenGLContext private constructor(
         textureTarget: TextureTarget,
         wrapMode: WrapMode,
     ): Texture2D = onGpuInline {
-        if(currentTextureArrayIndex.get() < 50
+        if (!isSupported(BindlessTextures) && currentTextureArrayIndex.get() < 50
             && info.internalFormat == textureArray.internalFormat
             && (info.dimension as TextureDimension2D).width <= 1024 && (info.dimension as TextureDimension2D).height <= 1024
         ) {
@@ -647,6 +645,7 @@ class OpenGLContext private constructor(
             Texture2D(info as UploadInfo.Texture2DUploadInfo, wrapMode) // TODO: Don't cast here
         }
     }
+
     override fun allocateTexture(
         info: UploadInfo,
         textureTarget: TextureTarget,
@@ -682,7 +681,7 @@ class OpenGLContext private constructor(
 
         val precalculateMipMapsOnCpu = true
 
-        val uploadInfo = if(precalculateMipMapsOnCpu) {
+        val uploadInfo = if (precalculateMipMapsOnCpu) {
             createAllMipLevelsLazyTexture2DUploadInfo(image, internalFormat)
         } else {
             UploadInfo.SingleMipLevelTexture2DUploadInfo(
@@ -742,7 +741,8 @@ class OpenGLContext private constructor(
         image: BufferedImage,
         internalFormat: InternalTextureFormat
     ): UploadInfo.AllMipLevelsLazyTexture2DUploadInfo {
-        val srgba = internalFormat == InternalTextureFormat.SRGB8_ALPHA8 || internalFormat == InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
+        val srgba =
+            internalFormat == InternalTextureFormat.SRGB8_ALPHA8 || internalFormat == InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
         val mipMapSizes = calculateMipMapSizes(image.width, image.height)
 
         val data = mipMapSizes.map {
@@ -768,8 +768,8 @@ class OpenGLContext private constructor(
         pixelBufferObjectPool.scheduleUpload(info, this)
     }
 
-    private fun OpenGLTexture2D.uploadWithoutPixelBuffer( info: UploadInfo.Texture2DUploadInfo) {
-        when(info) {
+    private fun OpenGLTexture2D.uploadWithoutPixelBuffer(info: UploadInfo.Texture2DUploadInfo) {
+        when (info) {
             is UploadInfo.AllMipLevelsTexture2DUploadInfo -> onGpuInline {
                 // TODO: Reverse upload from largest mip to smallest
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
@@ -778,30 +778,70 @@ class OpenGLContext private constructor(
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
                 info.data.forEachIndexed { index, data ->
                     if (info.dataCompressed) {
-                        GL13.glCompressedTexSubImage2D(GL11.GL_TEXTURE_2D, index, 0, 0, currentWidth, currentHeight, info.internalFormat.glValue, data)
+                        GL13.glCompressedTexSubImage2D(
+                            GL11.GL_TEXTURE_2D,
+                            index,
+                            0,
+                            0,
+                            currentWidth,
+                            currentHeight,
+                            info.internalFormat.glValue,
+                            data
+                        )
                     } else {
-                        GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, index, 0, 0, currentWidth, currentHeight, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data)
+                        GL11.glTexSubImage2D(
+                            GL11.GL_TEXTURE_2D,
+                            index,
+                            0,
+                            0,
+                            currentWidth,
+                            currentHeight,
+                            GL11.GL_RGBA,
+                            GL11.GL_UNSIGNED_BYTE,
+                            data
+                        )
                     }
                     currentWidth = (currentWidth * 0.5).toInt()
                     currentHeight = (currentHeight * 0.5).toInt()
                 }
                 uploadState = UploadState.Uploaded
             }
+
             is UploadInfo.SingleMipLevelTexture2DUploadInfo -> onGpuInline {
                 val data = info.data
-                if(data != null) {
+                if (data != null) {
                     GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
                     if (info.dataCompressed) {
-                        GL13.glCompressedTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data)
+                        GL13.glCompressedTexSubImage2D(
+                            GL11.GL_TEXTURE_2D,
+                            0,
+                            0,
+                            0,
+                            info.dimension.width,
+                            info.dimension.height,
+                            info.internalFormat.glValue,
+                            data
+                        )
                     } else {
-                        GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data)
+                        GL11.glTexSubImage2D(
+                            GL11.GL_TEXTURE_2D,
+                            0,
+                            0,
+                            0,
+                            info.dimension.width,
+                            info.dimension.height,
+                            GL11.GL_RGBA,
+                            GL11.GL_UNSIGNED_BYTE,
+                            data
+                        )
                     }
-                    if(info.textureFilterConfig.minFilter.isMipMapped) {
+                    if (info.textureFilterConfig.minFilter.isMipMapped) {
                         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
                     }
                     uploadState = UploadState.Uploaded
                 }
             }
+
             is UploadInfo.AllMipLevelsLazyTexture2DUploadInfo -> GlobalScope.launch(Dispatchers.IO) {
                 info.data.reversed().forEachIndexed { i, textureData ->
                     val mipLevel = info.data.size - i - 1
@@ -809,30 +849,72 @@ class OpenGLContext private constructor(
                     onGpuInline {
                         GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
                         if (info.dataCompressed) {
-                            GL13.glCompressedTexSubImage2D(GL11.GL_TEXTURE_2D, mipLevel, 0, 0, textureData.width, textureData.height, info.internalFormat.glValue, data)
+                            GL13.glCompressedTexSubImage2D(
+                                GL11.GL_TEXTURE_2D,
+                                mipLevel,
+                                0,
+                                0,
+                                textureData.width,
+                                textureData.height,
+                                info.internalFormat.glValue,
+                                data
+                            )
                         } else {
-                            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, mipLevel, 0, 0, textureData.width, textureData.height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data)
+                            GL11.glTexSubImage2D(
+                                GL11.GL_TEXTURE_2D,
+                                mipLevel,
+                                0,
+                                0,
+                                textureData.width,
+                                textureData.height,
+                                GL11.GL_RGBA,
+                                GL11.GL_UNSIGNED_BYTE,
+                                data
+                            )
                         }
-                        when(val uploadState = uploadState) {
-                            UploadState.NotUploaded -> this@uploadWithoutPixelBuffer.uploadState = UploadState.Uploading(mipLevel)
+                        when (val uploadState = uploadState) {
+                            UploadState.NotUploaded -> this@uploadWithoutPixelBuffer.uploadState =
+                                UploadState.Uploading(mipLevel)
+
                             UploadState.Uploaded -> {}
-                            is UploadState.Uploading -> this@uploadWithoutPixelBuffer.uploadState = UploadState.Uploading(min(uploadState.maxMipMapLoaded, mipLevel))
+                            is UploadState.Uploading -> this@uploadWithoutPixelBuffer.uploadState =
+                                UploadState.Uploading(min(uploadState.maxMipMapLoaded, mipLevel))
                         }
                     }
                 }
                 this@uploadWithoutPixelBuffer.uploadState = UploadState.Uploaded
             }
+
             is UploadInfo.SingleMipLevelsLazyTexture2DUploadInfo -> {
                 CompletableFuture.supplyAsync {
                     val data = info.data.dataProvider.invoke()
                     onGpuInline {
                         GL11.glBindTexture(GL11.GL_TEXTURE_2D, id)
                         if (info.dataCompressed) {
-                            GL13.glCompressedTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data)
+                            GL13.glCompressedTexSubImage2D(
+                                GL11.GL_TEXTURE_2D,
+                                0,
+                                0,
+                                0,
+                                info.dimension.width,
+                                info.dimension.height,
+                                info.internalFormat.glValue,
+                                data
+                            )
                         } else {
-                            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data)
+                            GL11.glTexSubImage2D(
+                                GL11.GL_TEXTURE_2D,
+                                0,
+                                0,
+                                0,
+                                info.dimension.width,
+                                info.dimension.height,
+                                GL11.GL_RGBA,
+                                GL11.GL_UNSIGNED_BYTE,
+                                data
+                            )
                         }
-                        if(info.textureFilterConfig.minFilter.isMipMapped) {
+                        if (info.textureFilterConfig.minFilter.isMipMapped) {
                             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
                         }
                         uploadState = UploadState.Uploaded
@@ -846,6 +928,7 @@ class OpenGLContext private constructor(
     override fun delete(texture: Texture) = onGpuInline {
         glDeleteTextures(texture.id)
     }
+
     override fun Program<*>.delete() {
         glUseProgram(0)
         glDeleteProgram(id)
@@ -854,6 +937,7 @@ class OpenGLContext private constructor(
     override fun Program<*>.use() {
         glUseProgram(id)
     }
+
     override fun Program<*>.unuse() {
         glUseProgram(0)
     }
@@ -884,15 +968,21 @@ class OpenGLContext private constructor(
                 when (this) {
                     is Mat4 -> glUniformMatrix4fv(uniformBindings[name]!!.location, false, _value)
                     is Vec3 -> glUniform3f(uniformBindings[name]!!.location, _value.x, _value.y, _value.z)
-                    is SSBO -> glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, uniformBindings[name]!!.location, _value.id)
+                    is SSBO -> glBindBufferBase(
+                        GL43.GL_SHADER_STORAGE_BUFFER,
+                        uniformBindings[name]!!.location,
+                        _value.id
+                    )
+
                     is IntType -> glUniform1i(uniformBindings[name]!!.location, _value)
-                    is BooleanType -> glUniform1i(uniformBindings[name]!!.location, if(_value) 1 else 0)
+                    is BooleanType -> glUniform1i(uniformBindings[name]!!.location, if (_value) 1 else 0)
                     is FloatType -> glUniform1f(uniformBindings[name]!!.location, _value)
                     is Vec2 -> glUniform2f(uniformBindings[name]!!.location, _value.x, _value.y)
                 }
             }
         }
     }
+
     override fun makeTextureHandleResident(texture: Texture) {
         glMakeTextureHandleResidentARB(texture.handle)
     }
@@ -939,6 +1029,7 @@ class OpenGLContext private constructor(
             info.dimension.height,
             info.dimension.depth * 6
         )
+
         is UploadInfo.CubeMapUploadInfo -> GL42.glTexStorage2D(
             GL40.GL_TEXTURE_CUBE_MAP,
             info.mipMapCount,
@@ -946,6 +1037,7 @@ class OpenGLContext private constructor(
             info.dimension.width,
             info.dimension.height
         )
+
         is UploadInfo.Texture2DUploadInfo -> GL42.glTexStorage2D(
             glTarget,
             info.mipMapCount,
@@ -953,6 +1045,7 @@ class OpenGLContext private constructor(
             info.dimension.width,
             info.dimension.height
         )
+
         is UploadInfo.Texture3DUploadInfo -> GL42.glTexStorage3D(
             glTarget,
             info.mipMapCount,
@@ -992,29 +1085,101 @@ class OpenGLContext private constructor(
         glGetTexImage(face.glValue, mipLevel, format.glValue, texelComponentType.glValue, texels)
         texels
     }
+
     override fun clearTexImage(texture: Texture, format: Format, level: Int, type: TexelComponentType) {
         clearTexImage(texture.id, format, level, type)
     }
-    override fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType, buffer: FloatBuffer) = onGpuInline {
+
+    override fun clearTexImage(
+        textureId: Int,
+        format: Format,
+        level: Int,
+        type: TexelComponentType,
+        buffer: FloatBuffer
+    ) = onGpuInline {
         glClearTexImage(textureId, level, format.glValue, type.glValue, buffer)
     }
-    override fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType, buffer: ShortBuffer) = onGpuInline {
+
+    override fun clearTexImage(
+        textureId: Int,
+        format: Format,
+        level: Int,
+        type: TexelComponentType,
+        buffer: ShortBuffer
+    ) = onGpuInline {
         glClearTexImage(textureId, level, format.glValue, type.glValue, buffer)
     }
+
     override fun clearTexImage(textureId: Int, format: Format, level: Int, type: TexelComponentType) = onGpuInline {
-        when(type) {
-            TexelComponentType.Float -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_DOUBLE)
-            TexelComponentType.UnsignedInt -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
-            TexelComponentType.UnsignedByte -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_BYTE)
-            TexelComponentType.HalfFloat -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_HALF_FLOAT)
+        when (type) {
+            TexelComponentType.Float -> glClearTexImage(
+                textureId,
+                level,
+                format.glValue,
+                type.glValue,
+                ZERO_BUFFER_DOUBLE
+            )
+
+            TexelComponentType.UnsignedInt -> glClearTexImage(
+                textureId,
+                level,
+                format.glValue,
+                type.glValue,
+                ZERO_BUFFER_INT
+            )
+
+            TexelComponentType.UnsignedByte -> glClearTexImage(
+                textureId,
+                level,
+                format.glValue,
+                type.glValue,
+                ZERO_BUFFER_BYTE
+            )
+
+            TexelComponentType.HalfFloat -> glClearTexImage(
+                textureId,
+                level,
+                format.glValue,
+                type.glValue,
+                ZERO_BUFFER_HALF_FLOAT
+            )
+
             TexelComponentType.Int -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
             TexelComponentType.Byte -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_BYTE)
-            TexelComponentType.UnsignedShort -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_SHORT)
-            TexelComponentType.UnsignedInt_10_10_10_2 -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
-            TexelComponentType.UnsignedInt_24_8 -> glClearTexImage(textureId, level, format.glValue, type.glValue, ZERO_BUFFER_INT)
+            TexelComponentType.UnsignedShort -> glClearTexImage(
+                textureId,
+                level,
+                format.glValue,
+                type.glValue,
+                ZERO_BUFFER_SHORT
+            )
+
+            TexelComponentType.UnsignedInt_10_10_10_2 -> glClearTexImage(
+                textureId,
+                level,
+                format.glValue,
+                type.glValue,
+                ZERO_BUFFER_INT
+            )
+
+            TexelComponentType.UnsignedInt_24_8 -> glClearTexImage(
+                textureId,
+                level,
+                format.glValue,
+                type.glValue,
+                ZERO_BUFFER_INT
+            )
         }
     }
-    override fun bindImageTexture(unit: Int, texture: Texture, level: Int, layered: Boolean, layer: Int, access: Access) {
+
+    override fun bindImageTexture(
+        unit: Int,
+        texture: Texture,
+        level: Int,
+        layered: Boolean,
+        layer: Int,
+        access: Access
+    ) {
         GL42.glBindImageTexture(unit, texture.id, level, layered, layer, access.glValue, texture.internalFormat.glValue)
     }
 
@@ -1026,29 +1191,43 @@ class OpenGLContext private constructor(
         )
         return floatArray
     }
+
     override fun clearColorBuffer(index: Int, floatArray: FloatArray) {
         GL30.glClearBufferfv(GL_COLOR, index, floatArray)
     }
+
     override fun framebufferDepthTexture(texture: Texture, level: Int) {
         glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, texture.id, level)
     }
+
     override fun framebufferTextureLayer(index: Int, texture: Texture, level: Int, layer: Int) {
         framebufferTexture(index, texture.target, texture.id, layer, level)
     }
+
     override fun framebufferTextureLayer(index: Int, textureId: Int, level: Int, layer: Int) {
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureId, level, layer)
     }
+
     override fun framebufferDepthTextureLayer(texture: Texture, level: Int, layer: Int) {
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture.id, level, layer)
     }
+
     override fun framebufferTexture(index: Int, texture: Texture, level: Int) {
         framebufferTexture(index, texture.id, level)
     }
+
     override fun framebufferTexture(index: Int, textureId: Int, level: Int) {
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureId, level)
     }
-    override fun framebufferTexture(index: Int, textureTarget: TextureTarget, textureId: Int, faceIndex: Int, level: Int) {
-        when(textureTarget) {
+
+    override fun framebufferTexture(
+        index: Int,
+        textureTarget: TextureTarget,
+        textureId: Int,
+        faceIndex: Int,
+        level: Int
+    ) {
+        when (textureTarget) {
             TextureTarget.TEXTURE_2D -> {
                 glFramebufferTexture2D(
                     GL_FRAMEBUFFER,
@@ -1058,6 +1237,7 @@ class OpenGLContext private constructor(
                     level
                 )
             }
+
             TextureTarget.TEXTURE_CUBE_MAP -> {
                 glFramebufferTexture2D(
                     GL_FRAMEBUFFER,
@@ -1067,6 +1247,7 @@ class OpenGLContext private constructor(
                     level
                 )
             }
+
             TextureTarget.TEXTURE_CUBE_MAP_ARRAY -> {
                 glFramebufferTexture(
                     GL_FRAMEBUFFER,
@@ -1075,6 +1256,7 @@ class OpenGLContext private constructor(
                     level,
                 )
             }
+
             TextureTarget.TEXTURE_2D_ARRAY -> {
                 glFramebufferTexture3D(
                     GL_FRAMEBUFFER,
@@ -1085,6 +1267,7 @@ class OpenGLContext private constructor(
                     0 // TODO: Make it possible to pass layer
                 )
             }
+
             TextureTarget.TEXTURE_3D -> {
                 glFramebufferTexture3D(
                     GL_FRAMEBUFFER,
@@ -1097,6 +1280,7 @@ class OpenGLContext private constructor(
             }
         }
     }
+
     override fun drawBuffers(indices: IntArray) {
         GL20.glDrawBuffers(indices.map { GL_COLOR_ATTACHMENT0 + it }.toIntArray())
     }
@@ -1104,6 +1288,7 @@ class OpenGLContext private constructor(
     override fun blendFunction(index: Int, sourceFactor: BlendMode.Factor, destinationFactor: BlendMode.Factor) {
         glBlendFunci(index, sourceFactor.glValue, destinationFactor.glValue)
     }
+
     override fun blendFunctionRGBAlpha(
         index: Int,
         rgbSourceFactor: BlendMode.Factor,
@@ -1117,13 +1302,19 @@ class OpenGLContext private constructor(
         alphaSourceFactor.glValue,
         alphaDestinationFactor.glValue
     )
-    override fun drawArraysInstanced(primitiveType: PrimitiveType, firstVertexIndex: Int, count: Int, primitiveCount: Int) {
-         glDrawArraysInstanced(
-             primitiveType.glValue,
-             firstVertexIndex,
-             count,
-             primitiveCount
-         )
+
+    override fun drawArraysInstanced(
+        primitiveType: PrimitiveType,
+        firstVertexIndex: Int,
+        count: Int,
+        primitiveCount: Int
+    ) {
+        glDrawArraysInstanced(
+            primitiveType.glValue,
+            firstVertexIndex,
+            count,
+            primitiveCount
+        )
     }
 
     override fun VertexBuffer.draw(indexBuffer: IndexBuffer?): Int {
@@ -1160,7 +1351,7 @@ class OpenGLContext private constructor(
         source: CodeSource,
         defines: Defines,
         shaderType: ShaderType,
-    ): Shader = when(shaderType) {
+    ): Shader = when (shaderType) {
         ShaderType.VertexShader -> VertexShader(this, source, defines)
         ShaderType.TesselationControlShader -> TesselationControlShader(this, source, defines)
         ShaderType.TesselationEvaluationShader -> TesselationEvaluationShader(this, source, defines)
@@ -1172,7 +1363,7 @@ class OpenGLContext private constructor(
     }
 
     override fun Shader.load() {
-        val oldSource = if(source is FileBasedCodeSource) { // TODO: find a better way to do this
+        val oldSource = if (source is FileBasedCodeSource) { // TODO: find a better way to do this
             source.source
         } else null
 
@@ -1186,11 +1377,11 @@ class OpenGLContext private constructor(
             GL20.glCompileShader(id)
 
             val compileStatus = GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS)
-             if (compileStatus == GL_FALSE) {
+            if (compileStatus == GL_FALSE) {
                 System.err.println("Could not compile " + shaderType + ": " + source.name)
                 val shaderInfoLog = GL20.glGetShaderInfoLog(id, 10000)
-                 System.err.println(shaderInfoLog)
-                 // TODO: This is incorrect on intel gpus, shaderlog is structured differently
+                System.err.println(shaderInfoLog)
+                // TODO: This is incorrect on intel gpus, shaderlog is structured differently
 //                val lines = resultingShaderSource.lines()
 //                val lineNumber = Regex("""\d\((.*)\)""").find(shaderInfoLog)!!.groups[1]!!.value.toInt() - 1
 //                System.err.println("Problematic line ($lineNumber):")
@@ -1218,7 +1409,8 @@ class OpenGLContext private constructor(
 
     override fun Shader.reload() = try {
         load()
-    } catch (_: ShaderLoadException) { }
+    } catch (_: ShaderLoadException) {
+    }
 
     override fun Shader.unload() = onGpuInline {
         source.unload()
@@ -1267,9 +1459,11 @@ class OpenGLContext private constructor(
             GL20.glGetAttachedShaders(this.id, it.callocInt(1).apply { put(0, 10) }, shaderIds)
             var contained = false
             repeat(10) {
-                if(shaderIds[it] == shader.id) { contained = true }
+                if (shaderIds[it] == shader.id) {
+                    contained = true
+                }
             }
-            if(!contained) {
+            if (!contained) {
                 glAttachShader(id, shader.id)
             }
         }
@@ -1281,9 +1475,11 @@ class OpenGLContext private constructor(
             GL20.glGetAttachedShaders(this.id, it.callocInt(1).apply { put(0, 10) }, shaderIds)
             var contained = false
             repeat(10) {
-                if(shaderIds[it] == shader.id) { contained = true }
+                if (shaderIds[it] == shader.id) {
+                    contained = true
+                }
             }
-            if(contained) {
+            if (contained) {
                 glDetachShader(id, shader.id)
             }
         }
@@ -1317,7 +1513,7 @@ class OpenGLContext private constructor(
     fun Program<*>.registerUniforms() {
         uniformBindings.clear()
         uniforms.registeredUniforms.forEach {
-            uniformBindings[it.name] = when(it) {
+            uniformBindings[it.name] = when (it) {
                 is SSBO -> UniformBinding(it.name, it.bindingIndex)
                 is BooleanType -> UniformBinding(it.name, getUniformLocation(it.name))
                 is FloatType -> UniformBinding(it.name, getUniformLocation(it.name))
@@ -1404,7 +1600,7 @@ class OpenGLContext private constructor(
 
     override fun copyCubeMap(sourceTexture: CubeMap): OpenGLCubeMap {
 
-        val targetTexture  = CubeMap(
+        val targetTexture = CubeMap(
             sourceTexture.dimension,
             sourceTexture.internalFormat,
             sourceTexture.textureFilterConfig,
@@ -1426,7 +1622,7 @@ class OpenGLContext private constructor(
     override fun RenderTarget(
         frameBuffer: FrameBuffer,
         width: Int,
-        height: Int ,
+        height: Int,
         textures: List<Texture2D>,
         name: String,
         clear: Vector4f,
@@ -1480,7 +1676,11 @@ class OpenGLContext private constructor(
         wrapMode: WrapMode
     ): CubeMapArray {
         val (textureId, handle) = allocateTexture(
-            UploadInfo.CubeMapArrayUploadInfo(dimension, internalFormat = internalFormat, textureFilterConfig = filterConfig),
+            UploadInfo.CubeMapArrayUploadInfo(
+                dimension,
+                internalFormat = internalFormat,
+                textureFilterConfig = filterConfig
+            ),
             TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
             wrapMode
         )
@@ -1495,6 +1695,7 @@ class OpenGLContext private constructor(
             UploadState.Uploaded
         )
     }
+
     override fun DepthBuffer(width: Int, height: Int): DepthBuffer<Texture2D> {
         val dimension = TextureDimension(width, height)
         val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
@@ -1521,7 +1722,8 @@ class OpenGLContext private constructor(
             )
         )
     }
-    override fun <T: Texture> createDepthBuffer(texture: T): DepthBuffer<T> {
+
+    override fun <T : Texture> createDepthBuffer(texture: T): DepthBuffer<T> {
         require(texture.internalFormat == InternalTextureFormat.DEPTH_COMPONENT24) {
             "Required format for depth buffer is InternalTextureFormat.DEPTH_COMPONENT24"
         }
@@ -1537,7 +1739,8 @@ class OpenGLContext private constructor(
         bindIndexBuffer: Boolean,
         primitiveType: PrimitiveType,
         mode: RenderingMode
-    ): TriangleCount = drawElementsInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
+    ): TriangleCount =
+        drawElementsInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
 
     companion object {
         private var counter = 0
@@ -1618,12 +1821,13 @@ class OpenGLContext private constructor(
     }
 }
 
-val Capability.glInt get() = when(this) {
-    Capability.TEXTURE_CUBE_MAP_SEAMLESS -> GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
-    Capability.DEPTH_TEST -> GL_DEPTH_TEST
-    Capability.CULL_FACE -> GL_CULL_FACE
-    Capability.BLEND -> GL_BLEND
-}
+val Capability.glInt
+    get() = when (this) {
+        Capability.TEXTURE_CUBE_MAP_SEAMLESS -> GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
+        Capability.DEPTH_TEST -> GL_DEPTH_TEST
+        Capability.CULL_FACE -> GL_CULL_FACE
+        Capability.BLEND -> GL_BLEND
+    }
 
 val Capability.isEnabled: Boolean get() = glIsEnabled(glInt)
 

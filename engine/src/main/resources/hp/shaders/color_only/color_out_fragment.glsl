@@ -90,6 +90,8 @@ void main(void) {
 	if(hasDiffuseMap) {
 		color = texture(diffuseMap, UV, material.diffuseMipmapBias);
 	}
-
-	out_color.rgba = vec4(color.rgb, 1);
+	if(color.a < 0.9) {
+		discard;
+	}
+	out_color.rgba = vec4(color.rgb * color.a, 1);
 }

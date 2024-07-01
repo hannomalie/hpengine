@@ -1,16 +1,11 @@
 //include(globals_structs.glsl)
 
-flat in VertexShaderFlatOutput geometryShaderFlatOutput;
-in VertexShaderOutput geometryShaderOutput;
-in vec3 geometryShaderBarycentrics;
-flat in ivec3 geometryShaderVertexIds;
+flat in VertexShaderFlatOutput vertexShaderFlatOutput;
+in VertexShaderOutput vertexShaderOutput;
 
 layout(binding=2) uniform sampler2DArray diffuseTextures;
 
-layout(location=0)out vec4 out_triangleIndex;
-//layout(location=0)out ivec4 out_triangleIndex;
-layout(location=1)out vec4 out_barycentrics;
-layout(location=2)out vec2 out_mipMapLevel;
+layout(location=1)out vec4 out_visibility;
 
 //include(globals.glsl)
 //include(normals.glsl)
@@ -34,28 +29,27 @@ float mip_map_level(in vec2 texture_coordinate)
 }
 void main(void) {
 
-    int entityIndex = geometryShaderFlatOutput.entityBufferIndex;
+    int entityIndex = vertexShaderFlatOutput.entityBufferIndex;
 
     Entity entity = entities[entityIndex];
     Material material = materials[entity.materialIndex];
-    vec2 uv = geometryShaderOutput.texCoord;
+    vec2 uv = material.uvScale * vertexShaderOutput.texCoord;
     float alpha = 1.0f;
 
 #ifdef BINDLESSTEXTURES
+    sampler2D diffuseMap;
     bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
     if(hasDiffuseMap) {
+		diffuseMap = sampler2D(material.handleDiffuse);
         alpha = textureLod(diffuseMap, uv, 0).a;
     }
 #else
     alpha = textureLod(diffuseTextures, vec3(uv, material.diffuseMapIndex), 0).a;
 #endif
 
-    if(alpha < 0.2f) {
+    if(alpha < 0.98f) {
         discard;
     } else {
-        out_mipMapLevel.r = textureQueryLod(diffuseTextures, uv).x;//mip_map_level(uv);
-        out_triangleIndex.r = gl_PrimitiveID;
-        out_triangleIndex.gba = geometryShaderVertexIds;
-        out_barycentrics = vec4(geometryShaderBarycentrics.xyz, entityIndex);
+        out_visibility = vec4(uv, textureQueryLod(diffuseTextures, uv).r, entityIndex);
     }
 }

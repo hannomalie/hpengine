@@ -66,7 +66,7 @@ void main(void) {
 
     vec4 color = voxelFetch(voxelGrid, albedoGrid, positionWorld, 0.0f);
     vec4 normalStatic = voxelFetch(voxelGrid, normalGrid, positionWorld, 0.0f);
-    int entityIndex = voxelFetchI(voxelGrid, indexGrid, positionWorld, 0.0f).r;
+    int entityIndex = 0;//TODO: Read propert entity id voxelFetchI(voxelGrid, indexGrid, positionWorld, 0.0f).r;
 
     Entity entity = entities[entityIndex];
     Material material = materials[entity.materialIndex];
