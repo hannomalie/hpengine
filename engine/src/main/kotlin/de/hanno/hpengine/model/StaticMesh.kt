@@ -2,6 +2,7 @@ package de.hanno.hpengine.model
 
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.Vertex
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.transform.AABBData
 import de.hanno.hpengine.transform.x
 import de.hanno.hpengine.transform.y
@@ -33,16 +34,14 @@ class StaticMesh(
 
     override val indexBufferValues = triangles.extractIndices()
 
-    override val triangleCount: Int get() = triangles.size
+    override val triangleCount get() = triangles.size.toCount()
 
     override fun equals(other: Any?): Boolean {
         if (other !is StaticMesh) {
             return false
         }
 
-        val b = other as StaticMesh?
-
-        return b!!.uuid == uuid
+        return other.uuid == uuid
     }
 
     override fun toString(): String {

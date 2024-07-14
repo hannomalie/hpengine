@@ -4,6 +4,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
+import de.hanno.hpengine.ElementCount
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.camera.Camera
@@ -16,10 +17,13 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.instancing.InstancesComponent
+import de.hanno.hpengine.scene.VertexIndexOffsets
+import de.hanno.hpengine.scene.VertexOffsets
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.system.PrioritySystem
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.visibility.InvisibleComponent
 import org.apache.logging.log4j.LogManager
@@ -64,7 +68,7 @@ class DefaultBatchesSystem(
             logger.trace("Processing $parentEntityId")
             val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
             val entityIds = listOf(parentEntityId) + instances
-            val instanceCount = entityIds.size
+            val instanceCount = entityIds.size.toCount()
 
             val modelComponent = modelComponentMapper.getOrNull(parentEntityId)
             val modelCacheComponent = modelCacheComponentMapper.getOrNull(parentEntityId)
@@ -95,7 +99,7 @@ class DefaultBatchesSystem(
                         recalculate(transform)
                     }
 
-                    val visibleForCamera = camera.contains(aabb) || instanceCount > 1 // TODO: Better culling for instances
+                    val visibleForCamera = camera.contains(aabb) || instanceCount > 1.toCount() // TODO: Better culling for instances
                     val meshBufferIndex = entityIndexOf + meshIndex //* entity.instanceCount
 
                     val allocation = modelSystem.allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex]
@@ -122,7 +126,10 @@ class DefaultBatchesSystem(
                     batch.boundingSphereRadius = aabb.boundingSphereRadius
                     batch.drawElementsIndirectCommand.instanceCount = instanceCount
                     batch.drawElementsIndirectCommand.count = model.meshIndexCounts[meshIndex]
-                    batch.drawElementsIndirectCommand.firstIndex = allocation.indexOffset
+                    batch.drawElementsIndirectCommand.firstIndex = when(allocation) {
+                        is VertexIndexOffsets -> allocation.indexOffset
+                        is VertexOffsets -> ElementCount(0)
+                    }
                     batch.drawElementsIndirectCommand.baseVertex = allocation.vertexOffset
                     batch.animated = !model.isStatic
                     batch.material = meshMaterial

@@ -8,11 +8,11 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.lifecycle.UpdateCycle
-import de.hanno.hpengine.spatial.WorldAABB
 import de.hanno.hpengine.system.Extractor
 import org.apache.logging.log4j.LogManager
 import org.koin.core.annotation.Single
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.system.exitProcess
 
 @Single(binds = [BaseSystem::class, RenderManager::class])
 class RenderManager(
@@ -47,6 +47,11 @@ class RenderManager(
 
     init {
         window.gpuExecutor.perFrameAction = ::frame
+        window.gpuExecutor.loopCondition = { !window.closeRequested.get() }
+        window.gpuExecutor.afterLoop = {
+            window.close()
+            exitProcess(0)
+        }
     }
 
     private fun frame() {
@@ -63,14 +68,16 @@ class RenderManager(
 
                                 is RenderMode.SingleFrame -> {
                                     renderSystemsConfig.run {
-                                        val (singleStepSystems, continuousSystems) = allRenderSystems.filter { it.enabled }.partition {
-                                            it.supportsSingleStep
-                                        }
-                                        val systemsToExecute = continuousSystems + if (renderMode.frameRequested.get()) {
-                                            singleStepSystems
-                                        } else {
-                                            emptyList() // TODO: Check whether this still works
-                                        }
+                                        val (singleStepSystems, continuousSystems) = allRenderSystems.filter { it.enabled }
+                                            .partition {
+                                                it.supportsSingleStep
+                                            }
+                                        val systemsToExecute =
+                                            continuousSystems + if (renderMode.frameRequested.get()) {
+                                                singleStepSystems
+                                            } else {
+                                                emptyList() // TODO: Check whether this still works
+                                            }
 
                                         renderMode.frameRequested.getAndSet(false)
                                         systemsToExecute
@@ -116,13 +123,9 @@ class RenderManager(
                                 it.afterFrameFinished()
                             }
                         }
-                        profiled("finish") {
-                            finish()
-                        }
                         logger.trace("swapBuffers")
                         profiled("swapBuffers") {
                             window.swapBuffers()
-                            window.closeIfReqeusted()
                         }
                     }
                 } catch (e: Exception) {
@@ -135,7 +138,7 @@ class RenderManager(
     }
 
     override fun processSystem() {
-        while(config.debug.forceSingleThreadedRendering && rendering.get()) {
+        while (config.debug.forceSingleThreadedRendering && rendering.get()) {
             Thread.onSpinWait()
         }
         renderSystemsConfig.allRenderSystems.forEach {

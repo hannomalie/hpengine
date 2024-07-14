@@ -5,6 +5,7 @@ import EntityStruktImpl.Companion.sizeInBytes
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.sizeInBytes
 import InternalTextureFormat.*
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 
@@ -15,6 +16,7 @@ import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
+import de.hanno.hpengine.graphics.buffer.vertex.drawArraysIndirectCount
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.constants.*
@@ -38,12 +40,17 @@ import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
+import de.hanno.hpengine.scene.GeometryBuffer
+import de.hanno.hpengine.scene.VertexBuffer
 import de.hanno.hpengine.scene.VertexIndexBuffer
+import de.hanno.hpengine.toCount
 import org.jetbrains.kotlin.util.profile
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 import org.joml.Vector4f
 import struktgen.api.forIndex
 import struktgen.api.get
+import kotlin.math.max
 
 val textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_NEAREST, MagFilter.NEAREST)
 
@@ -148,7 +155,7 @@ open class GPUCulledPipeline(
                     it.canBeRenderedInIndirectBatch && !culled
                 }
 
-            commandCount = filteredRenderBatches.size
+            commandCount = filteredRenderBatches.size.toCount()
             addCommands(filteredRenderBatches, commands, offsetsForCommand)
         }
 
@@ -170,7 +177,7 @@ open class GPUCulledPipeline(
                 renderState,
                 programStatic,
                 commandOrganizationStatic,
-                renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic,
+                renderState[entitiesStateHolder.entitiesState].geometryBufferStatic,
                 mode,
                 camera,
                 camera
@@ -179,7 +186,7 @@ open class GPUCulledPipeline(
                 renderState,
                 programAnimated,
                 commandOrganizationAnimated,
-                renderState[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated,
+                renderState[entitiesStateHolder.entitiesState].geometryBufferAnimated,
                 mode,
                 camera,
                 camera
@@ -246,9 +253,9 @@ open class GPUCulledPipeline(
                     HIGHZ_FORMAT
                 )
                 bindTexture(2, TextureTarget.TEXTURE_2D, baseDepthTexture.id)
-                val num_groups_x = Math.max(1, (currentWidth + 7) / 8)
-                val num_groups_y = Math.max(1, (currentHeight + 7) / 8)
-                highZProgram.dispatchCompute(num_groups_x, num_groups_y, 1)
+                val num_groups_x = max(1, (currentWidth + 7) / 8).toCount()
+                val num_groups_y = max(1, (currentHeight + 7) / 8).toCount()
+                highZProgram.dispatchCompute(num_groups_x, num_groups_y, 1.toCount())
                 lastWidth = currentWidth
                 lastHeight = currentHeight
                 currentWidth /= 2
@@ -269,7 +276,7 @@ open class GPUCulledPipeline(
             val occlusionCullingPhase =
                 if (phase.coarsePhase == CoarseCullingPhase.ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
             with(occlusionCullingPhase) {
-                val invocationsPerCommand = 4096
+                val invocationsPerCommand = 4096.toCount()
                 use()
                 with(commandOrganization) {
                     bindShaderStorageBuffer(1, instanceCountForCommand)
@@ -282,7 +289,7 @@ open class GPUCulledPipeline(
                     bindShaderStorageBuffer(12, commandOffsets)
                     bindShaderStorageBuffer(13, currentCompactedPointers)
                 }
-                setUniform("maxDrawCommands", commandOrganization.commandCount)
+                setUniform("maxDrawCommands", commandOrganization.commandCount.value.toInt())
                 val camera = cullCam
                 setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixBuffer)
                 setUniformAsMatrix4("viewMatrix", camera.viewMatrixBuffer)
@@ -303,8 +310,8 @@ open class GPUCulledPipeline(
                 )
                 drawArraysInstanced(
                     PrimitiveType.Triangles,
-                    0,
-                    ((commandOrganization.commandCount + 2) / 3) * 3,
+                    0.toCount(),
+                    ((commandOrganization.commandCount.value.toInt() + 2) / 3).toCount() * 3,
                     invocationsPerCommand
                 )
     //            memoryBarrier(Barrier.ShaderImageAccess)
@@ -328,12 +335,12 @@ open class GPUCulledPipeline(
 
             with(commandOrganization) {
                 val instanceCount = commandOrganization.filteredRenderBatches.sumByLong {
-                        it.drawElementsIndirectCommand.instanceCount.toLong()
-                    }.toInt()
-                visibilities.ensureCapacityInBytes(instanceCount * IntStrukt.sizeInBytes)
-                commandOrganization.entitiesCompacted.ensureCapacityInBytes(instanceCount * EntityStrukt.sizeInBytes)
+                        it.drawElementsIndirectCommand.instanceCount.value
+                    }.toCount()
+                visibilities.ensureCapacityInBytes(instanceCount * SizeInBytes(IntStrukt.sizeInBytes))
+                commandOrganization.entitiesCompacted.ensureCapacityInBytes(instanceCount * SizeInBytes(EntityStrukt.sizeInBytes))
                 val entitiesCountersToUse = instanceCountForCommand
-                entitiesCountersToUse.ensureCapacityInBytes(commandCount * IntStrukt.sizeInBytes)
+                entitiesCountersToUse.ensureCapacityInBytes(commandCount * SizeInBytes(IntStrukt.sizeInBytes))
                 with(appendProgram) {
                     use()
                     bindShaderStorageBuffer(1, instanceCountForCommand)
@@ -346,7 +353,7 @@ open class GPUCulledPipeline(
                     bindShaderStorageBuffer(9, visibilities)
                     bindShaderStorageBuffer(12, commandOffsets)
                     bindShaderStorageBuffer(13, currentCompactedPointers)
-                    setUniform("maxDrawCommands", commandCount)
+                    setUniform("maxDrawCommands", commandCount.value.toInt())
                     bindImageTexture(
                         1,
                         debugMinMaxTexture.id,
@@ -357,13 +364,13 @@ open class GPUCulledPipeline(
                         debugMinMaxTexture.internalFormat
                     )
                     if (config.debug.isUseComputeShaderDrawCommandAppend) {
-                        appendDrawCommandsComputeProgram.dispatchCompute(commandCount, 1, 1)
+                        appendDrawCommandsComputeProgram.dispatchCompute(commandCount, 1.toCount(), 1.toCount())
                     } else {
                         val invocationsPerCommand = 4096
                         drawArraysInstanced(
                             PrimitiveType.Triangles,
-                            0,
-                            ((invocationsPerCommand + 2) / 3) * 3,
+                            0.toCount(),
+                            ((invocationsPerCommand + 2) / 3).toCount() * 3,
                             commandCount
                         )
                     }
@@ -378,7 +385,7 @@ open class GPUCulledPipeline(
         commandOrganization.drawCountsCompacted.buffer.asIntBuffer().put(0, 0)
         commandOrganization.entitiesCompactedCounter.buffer.asIntBuffer().put(0, 0)
 
-        if (commandOrganization.commandCount != 0) {
+        if (commandOrganization.commandCount != 0.toCount()) {
             profiled("Culling Phase") {
                 determineVisibilities(renderState, commandOrganization, phase, cullCam)
                 appendDrawCalls(commandOrganization, renderState)
@@ -395,10 +402,10 @@ open class GPUCulledPipeline(
                     entities = renderState[entityBuffer.entitiesBuffer]
                     indirect = true
                     when (this) {
-                        is StaticDefaultUniforms -> vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
+                        is StaticDefaultUniforms -> vertices = entitiesState.geometryBufferStatic.vertexStructArray
                         is AnimatedDefaultUniforms -> {
                             joints = entitiesState.jointsBuffer
-                            vertices = entitiesState.vertexIndexBufferAnimated.vertexStructArray
+                            vertices = entitiesState.geometryBufferAnimated.vertexStructArray
                         }
                     }
                     useRainEffect = config.effects.rainEffect != 0.0f
@@ -426,13 +433,21 @@ open class GPUCulledPipeline(
                 }
 
                 program.bind()
-                vertexIndexBuffer.drawElementsIndirectCount(
-                    commandOrganization.commands,
-                    commandOrganization.drawCountsCompacted,
-                    0,
-                    commandOrganization.commandCount,
-                    mode
-                )
+                when(vertexIndexBuffer) {
+                    is VertexBuffer -> drawArraysIndirectCount(
+                        commandOrganization.commands,
+                        commandOrganization.drawCountsCompacted,
+                        0.toCount(),
+                        commandOrganization.commandCount,
+                        mode)
+                    is VertexIndexBuffer -> vertexIndexBuffer.drawElementsIndirectCount(
+                        commandOrganization.commands,
+                        commandOrganization.drawCountsCompacted,
+                        0.toCount(),
+                        commandOrganization.commandCount,
+                        mode
+                    )
+                }
             }
         }
     }
@@ -447,21 +462,21 @@ fun addCommands(
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     entityOffsetBuffer: TypedGpuBuffer<IntStrukt>
 ) {
-    val resultingCommandCount = renderBatches.size
-    entityOffsetBuffer.ensureCapacityInBytes(resultingCommandCount * IntStrukt.sizeInBytes)
+    val resultingCommandCount = renderBatches.size.toCount()
+    entityOffsetBuffer.ensureCapacityInBytes(resultingCommandCount * SizeInBytes(IntStrukt.sizeInBytes))
     entityOffsetBuffer.buffer.rewind()
-    commandBuffer.ensureCapacityInBytes(resultingCommandCount * DrawElementsIndirectCommandStrukt.sizeInBytes)
+    commandBuffer.ensureCapacityInBytes(resultingCommandCount * SizeInBytes(DrawElementsIndirectCommandStrukt.sizeInBytes))
     commandBuffer.byteBuffer.rewind()
 
     commandBuffer.typedBuffer.byteBuffer.run {
         for ((index, batch) in renderBatches.withIndex()) {
             val command = batch.drawElementsIndirectCommand
             commandBuffer.typedBuffer[index].run {
-                count = command.count
-                instanceCount = command.instanceCount
-                firstIndex = command.firstIndex
-                baseVertex = command.baseVertex
-                baseInstance = command.baseInstance
+                count = command.count.value.toInt()
+                instanceCount = command.instanceCount.value.toInt()
+                firstIndex = command.firstIndex.value.toInt()
+                baseVertex = command.baseVertex.value.toInt()
+                baseInstance = command.baseInstance.value.toInt()
             }
             entityOffsetBuffer.typedBuffer.forIndex(index) { it.value = batch.entityBufferIndex }
         }
@@ -490,11 +505,11 @@ val CoarseCullingPhase.animatedPhase: CullingPhase
     get() = if (this == CoarseCullingPhase.ONE) CullingPhase.ANIMATED_ONE else CullingPhase.ANIMATED_TWO
 
 class CommandOrganizationGpuCulled(graphicsApi: GraphicsApi) {
-    var commandCount = 0
+    var commandCount = 0.toCount()
     var primitiveCount = 0
     var filteredRenderBatches: List<RenderBatch> = emptyList()
-    val commands = CommandBuffer(graphicsApi, 10000)
-    val commandsCompacted = CommandBuffer(graphicsApi, 10000)
+    val commands = CommandBuffer(graphicsApi, 10000.toCount())
+    val commandsCompacted = CommandBuffer(graphicsApi, 10000.toCount())
     val offsetsForCommand = IndexBuffer(graphicsApi)
 
     val drawCountsCompacted = graphicsApi.AtomicCounterBuffer()
@@ -502,7 +517,7 @@ class CommandOrganizationGpuCulled(graphicsApi: GraphicsApi) {
     val commandOffsets = IndexBuffer(graphicsApi)
     val currentCompactedPointers = IndexBuffer(graphicsApi)
     val offsetsCompacted = IndexBuffer(graphicsApi)
-    val entitiesCompacted = graphicsApi.PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
+    val entitiesCompacted = graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(EntityStrukt.type.sizeInBytes)).typed(EntityStrukt.type)
     val entitiesCompactedCounter = graphicsApi.AtomicCounterBuffer()
     val instanceCountForCommand = IndexBuffer(graphicsApi)
 }
@@ -511,7 +526,7 @@ class IndirectCulledDrawDescription<T : DefaultUniforms>(
     val renderState: RenderState,
     val program: Program<T>,
     val commandOrganization: CommandOrganizationGpuCulled,
-    val vertexIndexBuffer: VertexIndexBuffer<*>,
+    val vertexIndexBuffer: GeometryBuffer<*>,
     val mode: RenderingMode,
     val camera: Camera,
     val cullCam: Camera = camera,

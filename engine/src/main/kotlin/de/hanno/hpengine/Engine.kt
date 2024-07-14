@@ -64,13 +64,14 @@ class Engine(
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
 
-    fun simulate() = launchEndlessLoop { deltaSeconds ->
+    fun simulate() = launchEndlessLoop({
+        !window.closeRequested.get()
+    }) { deltaSeconds ->
         // Input and window updates need to be done on the main thread, they can't be moved to
         // the base system regular update below. Same for Executing the commands
         input.update()
         window.pollEvents()
 
-        window.closeIfReqeusted()
         addResourceContext.executeCommands()
 
         withContext(updateScopeDispatcher) {

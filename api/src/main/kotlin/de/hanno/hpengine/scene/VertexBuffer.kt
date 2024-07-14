@@ -1,31 +1,33 @@
 package de.hanno.hpengine.scene
 
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.buffer.typed
 import struktgen.api.Strukt
 import struktgen.api.StruktType
 
-data class VertexOffsets(val vertexOffset: Int)
+data class VertexOffsets(override val vertexOffset: ElementCount): GeometryOffset
 
 class VertexBuffer<T: Strukt>(
     graphicsApi: GraphicsApi,
     val type: StruktType<T>
-) {
+): GeometryBuffer<T> {
 
-    // TODO: It's invalid to use a single index for two vertex arrays, move animated vertex array out of here
-    private var currentBaseVertex = 0
+    var currentVertex = ElementCount(0)
+        private set
 
     // TODO: Remove synchronized with lock
-    fun allocate(elementsCount: Int) = synchronized(this) {
-        VertexOffsets(currentBaseVertex).apply {
-            currentBaseVertex += elementsCount
+    fun allocate(elementsCount: ElementCount) = synchronized(this) {
+        VertexOffsets(currentVertex).apply {
+            currentVertex += elementsCount
         }
     }
 
     fun resetAllocations() {
-        currentBaseVertex = 0
+        currentVertex = ElementCount(0)
     }
 
-    var vertexStructArray: TypedGpuBuffer<T> = graphicsApi.PersistentShaderStorageBuffer(type.sizeInBytes).typed(type)
+    override var vertexStructArray: TypedGpuBuffer<T> = graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(type.sizeInBytes)).typed(type)
 }

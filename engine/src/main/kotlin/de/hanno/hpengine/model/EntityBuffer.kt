@@ -8,6 +8,8 @@ import com.artemis.ComponentMapper
 import com.artemis.annotations.One
 import com.artemis.link.LinkListener
 import com.artemis.utils.IntBag
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.buffers.enlarge
@@ -19,6 +21,8 @@ import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.instancing.InstancesComponent
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.toCount
+import org.jetbrains.kotlin.org.jline.terminal.Size
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.TypedBuffer
@@ -38,10 +42,10 @@ class EntityBuffer(
     lateinit var instancesComponentMapper: ComponentMapper<InstancesComponent>
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
 
-    var entityCount = 0
+    var entityCount = ElementCount(0)
 
     var entitiesBuffer = renderStateContext.renderState.registerState {
-        graphicsApi.PersistentShaderStorageBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type)
+        graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(EntityStrukt.type.sizeInBytes)).typed(EntityStrukt.type)
     }
     val entityIndices: MutableMap<Int, Int> = mutableMapOf()
 
@@ -65,7 +69,7 @@ class EntityBuffer(
                 instanceIndex += meshCount * instanceCount
             }
         }
-        entityCount = instanceIndex
+        entityCount = instanceIndex.toCount()
     }
 
     fun getEntityIdForEntityBufferIndex(entityBufferIndex: Int): Int {
@@ -74,7 +78,6 @@ class EntityBuffer(
             return buffer[entityBufferIndex].entityIndex
         }
     }
-
     fun getEntityIndex(entityId: Int): Int? = entityIndices[entityId]
 
     override fun removed(entities: IntBag?) {
@@ -110,6 +113,6 @@ class EntityBuffer(
 
     override fun extract(currentWriteState: RenderState) {
         cacheEntityIndices() // TODO: Don't do this here, on insert/remove should be sufficient
-        currentWriteState[entitiesBuffer].ensureCapacityInBytes(entityCount * EntityStrukt.sizeInBytes)
+        currentWriteState[entitiesBuffer].ensureCapacityInBytes(entityCount * SizeInBytes(EntityStrukt.sizeInBytes))
     }
 }

@@ -6,19 +6,20 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.typed
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.*
-import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.MaterialComponent
 import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.model.material.Material.MAP
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.system.Clearable
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.toCount
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
@@ -35,7 +36,6 @@ class MaterialSystem(
     private val config: Config,
     private val textureManager: OpenGLTextureManager,
     private val singleThreadContext: AddResourceContext,
-    private val entitiesStateHolder: EntitiesStateHolder,
     private val renderStateContext: RenderStateContext,
     private val graphicsApi: GraphicsApi,
 ) : BaseEntitySystem(), Clearable, Extractor {
@@ -45,7 +45,7 @@ class MaterialSystem(
     var cycle = 0
 
     val materialBuffer = renderStateContext.renderState.registerState {
-        graphicsApi.PersistentShaderStorageBuffer(MaterialStrukt.type.sizeInBytes).typed(MaterialStrukt.type)
+        graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(MaterialStrukt.type.sizeInBytes)).typed(MaterialStrukt.type)
     }
 
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
@@ -108,7 +108,7 @@ class MaterialSystem(
 
     override fun extract(currentWriteState: RenderState) {
 //        TODO: Remove most of this
-        currentWriteState[materialBuffer].ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
+        currentWriteState[materialBuffer].ensureCapacityInBytes(materials.size.toCount() * SizeInBytes(MaterialStrukt.sizeInBytes))
         currentWriteState[materialBuffer].buffer.rewind()
 
         currentWriteState[materialBuffer].forEachIndexed(untilIndex = materials.size) { index, targetMaterial ->

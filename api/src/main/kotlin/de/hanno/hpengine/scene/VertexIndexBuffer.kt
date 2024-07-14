@@ -1,5 +1,7 @@
 package de.hanno.hpengine.scene
 
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.IndexBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
@@ -8,33 +10,35 @@ import org.lwjgl.BufferUtils
 import struktgen.api.Strukt
 import struktgen.api.StruktType
 
-data class VertexIndexOffsets(val vertexOffset: Int, val indexOffset: Int)
+data class VertexIndexOffsets(override val vertexOffset: ElementCount, val indexOffset: ElementCount): GeometryOffset
 
 class VertexIndexBuffer<T: Strukt>(
     graphicsApi: GraphicsApi,
-    val type: StruktType<T>, indexBufferSizeInIntsCount: Int
-) {
+    val type: StruktType<T>,
+    indexBufferSizeInIntsCount: Int
+): GeometryBuffer<T> {
 
     var indexBuffer: IndexBuffer = graphicsApi.IndexBuffer(
         graphicsApi,
         BufferUtils.createIntBuffer(indexBufferSizeInIntsCount)
     )
-    // TODO: It's invalid to use a single index for two vertex arrays, move animated vertex array out of here
-    private var currentBaseVertex = 0
-    private var currentIndexOffset = 0
+    var currentVertex = ElementCount(0)
+        private set
+    var currentIndex = ElementCount(0)
+        private set
 
     // TODO: Remove synchronized with lock
-    fun allocate(elementsCount: Int, indicesCount: Int): VertexIndexOffsets = synchronized(this) {
-        VertexIndexOffsets(currentBaseVertex, currentIndexOffset).apply {
-            currentBaseVertex += elementsCount
-            currentIndexOffset += indicesCount
+    fun allocate(elementsCount: ElementCount, indicesCount: ElementCount): VertexIndexOffsets = synchronized(this) {
+        VertexIndexOffsets(currentVertex, currentIndex).apply {
+            currentVertex += elementsCount
+            currentIndex += indicesCount
         }
     }
 
     fun resetAllocations() {
-        currentBaseVertex = 0
-        currentIndexOffset = 0
+        currentVertex = ElementCount(0)
+        currentIndex = ElementCount(0)
     }
 
-    var vertexStructArray: TypedGpuBuffer<T> = graphicsApi.PersistentShaderStorageBuffer(type.sizeInBytes).typed(type)
+    override var vertexStructArray: TypedGpuBuffer<T> = graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(type.sizeInBytes)).typed(type)
 }

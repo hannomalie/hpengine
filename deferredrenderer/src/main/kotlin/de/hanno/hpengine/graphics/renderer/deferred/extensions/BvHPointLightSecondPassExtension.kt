@@ -3,6 +3,7 @@ package de.hanno.hpengine.graphics.renderer.deferred.extensions
 import BvhNodeGpuImpl.Companion.type
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
+import de.hanno.hpengine.SizeInBytes
 
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -32,6 +33,7 @@ import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.StringBasedCodeSource
+import de.hanno.hpengine.toCount
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
@@ -145,7 +147,7 @@ class BvHPointLightSecondPassExtension(
     private val pointLightSystem: PointLightSystem,
     private val materialSystem: MaterialSystem,
 ) : DeferredRenderExtension {
-    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
 
     private val secondPassPointBvhComputeProgram =
         programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
@@ -193,7 +195,7 @@ class BvHPointLightSecondPassExtension(
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    val bvh = graphicsApi.PersistentShaderStorageBuffer(BvhNodeGpu.type.sizeInBytes).typed(BvhNodeGpu.type)
+    val bvh = graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(BvhNodeGpu.type.sizeInBytes)).typed(BvhNodeGpu.type)
 
     fun Vector4f.set(other: Vector3f) {
         x = other.x
@@ -292,7 +294,7 @@ class BvHPointLightSecondPassExtension(
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2, pointLightState.pointLightBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(3, bvh)
-            secondPassPointBvhComputeProgram.dispatchCompute(config.width / 16, config.height / 16, 1)
+            secondPassPointBvhComputeProgram.dispatchCompute(config.width .toCount() / 16, config.height.toCount() / 16, 1.toCount())
         }
     }
 

@@ -6,6 +6,7 @@ import com.artemis.*
 import com.artemis.annotations.All
 import com.artemis.utils.Bag
 import de.hanno.hpengine.Engine
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.artemis.forFirstEntityIfPresent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
@@ -34,6 +35,7 @@ import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import imgui.ImGui
@@ -84,7 +86,7 @@ class CPUParticleSystem(
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
     lateinit var particlesComponentMapper: ComponentMapper<CPUParticles>
     private val positions = renderStateContext.renderState.registerState {
-        graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
+        graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     }
     private val state = renderStateContext.renderState.registerState { CPUParticles() }
 
@@ -92,7 +94,7 @@ class CPUParticleSystem(
 
     inner class GPUParticlesDefaultUniforms : StaticDefaultUniforms(graphicsApi) {
         var positions by SSBO(
-            "vec4", 5, graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
+            "vec4", 5, graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
         )
     }
 
@@ -115,7 +117,7 @@ class CPUParticleSystem(
 
             val particlePositions = particlesComponentMapper.get(entityId).particlePositions
             val positionsToWrite = currentWriteState[positions]
-            positionsToWrite.ensureCapacityInBytes(particlePositions.size * Vector4fStrukt.sizeInBytes)
+            positionsToWrite.ensureCapacityInBytes(particlePositions.size.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes))
 
             particlePositions.forEachIndexed { index, it ->
                 positionsToWrite.buffer.run {
@@ -166,7 +168,7 @@ class CPUParticleSystem(
                 entities = renderState[entityBuffer.entitiesBuffer]
                 positions = renderState[this@CPUParticleSystem.positions]
                 program.uniforms.indirect = false
-                program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
+                program.uniforms.vertices = entitiesState.geometryBufferStatic.vertexStructArray
                 viewMatrix = camera.viewMatrixBuffer
                 lastViewMatrix = camera.viewMatrixBuffer
                 projectionMatrix = camera.projectionMatrixBuffer
@@ -192,14 +194,14 @@ class CPUParticleSystem(
             if(particlesComponent.primitiveType == PrimitiveType.Points) {
                 graphicsApi.setPointsSize(particlesComponent.pointSize)
             }
-            val vertexIndexBuffer = renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
-            vertexIndexBuffer.indexBuffer.draw(
+            val geometryBufferStatic = renderState[entitiesStateHolder.entitiesState].geometryBufferStatic
+            geometryBufferStatic.draw(
                 DrawElementsIndirectCommand(
                     count = indexCount,
-                    instanceCount = particlesComponent.particlePositions.size,
+                    instanceCount = particlesComponent.particlePositions.size.toCount(),
                     firstIndex = allocation.indexOffset,
                     baseVertex = allocation.vertexOffset,
-                    baseInstance = 0,
+                    baseInstance = 0.toCount(),
                 ),
                 primitiveType = particlesComponent.primitiveType,
                 mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill,

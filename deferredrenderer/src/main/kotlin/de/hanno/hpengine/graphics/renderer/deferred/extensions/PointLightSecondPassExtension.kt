@@ -14,6 +14,7 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.material.MaterialSystem
+import de.hanno.hpengine.toCount
 import org.koin.core.annotation.Single
 
 @Single(binds = [DeferredRenderExtension::class])
@@ -80,9 +81,9 @@ class PointLightSecondPassExtension(
                 renderState[pointLightStateHolder.lightState].pointLightBuffer
             )
             secondPassPointComputeProgram.dispatchCompute(
-                config.width / 16,
-                config.height / 16,
-                1
+                config.width.toCount() / 16,
+                config.height.toCount() / 16,
+                1.toCount()
             )
         }
     }

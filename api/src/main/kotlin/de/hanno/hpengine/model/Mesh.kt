@@ -1,5 +1,6 @@
 package de.hanno.hpengine.model
 
+import de.hanno.hpengine.ElementCount
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.transform.AABBData
 import org.joml.Vector2f
@@ -10,7 +11,7 @@ interface Mesh<T> {
     val indexBufferValues: ByteBuffer
     val boundingVolume: AABBData
 
-    val triangleCount: Int
+    val triangleCount: ElementCount
     var material: Material
     var name: String
     val vertices: List<T>

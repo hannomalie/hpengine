@@ -7,6 +7,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.World
 import com.artemis.annotations.All
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.component.TransformComponent
@@ -44,6 +45,7 @@ import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.StringBasedCodeSource
+import de.hanno.hpengine.toCount
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
@@ -85,7 +87,7 @@ class ReflectionProbeRenderState(graphicsApi: GraphicsApi) {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
     val probeMinMaxStructBuffer = graphicsApi.onGpu {
-        PersistentShaderStorageBuffer(Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+        PersistentShaderStorageBuffer(SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     }
     val probePositions = mutableListOf<Vector3f>()
 }
@@ -187,13 +189,13 @@ class ReflectionProbeRenderExtension(
     override fun extract(renderState: RenderState, world: World) {
         // TODO: Implement extraction here, not sure whether this is currently doing the right thing
         val components = renderState[reflectionProbesStateHolder.probesState].transforms
-        val componentCount = components.size
+        val componentCount = components.size.toCount()
         val targetState = renderState[reflectionProbeRenderState]
 
         targetState.reRenderProbesInCycle = if (config.debug.reRenderProbes) renderState.cycle else 0L
-        targetState.probeCount = componentCount
+        targetState.probeCount = componentCount.value.toInt()
         val probeMinMaxStructBuffer = targetState.probeMinMaxStructBuffer
-        probeMinMaxStructBuffer.ensureCapacityInBytes(Vector4fStrukt.sizeInBytes * componentCount * 2)
+        probeMinMaxStructBuffer.ensureCapacityInBytes(componentCount * 2 * SizeInBytes(Vector4fStrukt.sizeInBytes) )
         val probePositions = targetState.probePositions
         probePositions.clear()
         components.forEachIndexed { index, probe ->
@@ -216,7 +218,7 @@ class ReflectionProbeRenderExtension(
 
     }
 
-    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     override fun renderEditor(renderState: RenderState): Unit = graphicsApi.run {
         val linePoints = (0 until renderState[reflectionProbeRenderState].probeCount).flatMap {
             val minWorld =
@@ -379,7 +381,7 @@ class ReflectionProbeRenderExtension(
                 profiled("ReflectionProbe entity rendering") {
                     for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
                         setTextureUniforms(pointCubeShadowPassProgram, graphicsApi, batch.material.maps)
-                        entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
+                        entitiesState.geometryBufferStatic.draw(
                             batch
                                 .drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill
                         )

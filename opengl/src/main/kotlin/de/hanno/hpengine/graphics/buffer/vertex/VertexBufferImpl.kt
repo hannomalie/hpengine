@@ -1,11 +1,14 @@
 package de.hanno.hpengine.graphics.buffer.vertex
 
 
+import de.hanno.hpengine.SizeInBytes
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.graphics.DataChannels
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.constants.BufferTarget
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
+import de.hanno.hpengine.sizeInBytes
 import org.joml.Vector2f
 import org.lwjgl.opengl.GL15
 import java.nio.ByteBuffer
@@ -23,13 +26,13 @@ class VertexBufferImpl(
     private val gpuBuffer = PersistentMappedBuffer(
         graphicsApi,
         BufferTarget.Array,
-        values.size * java.lang.Float.BYTES
+        values.size.toCount() * Float.sizeInBytes
     )
     override val buffer: ByteBuffer get() = gpuBuffer.buffer
     override val target: BufferTarget = BufferTarget.Array
     override val id: Int get() = gpuBuffer.id
 
-    override fun ensureCapacityInBytes(requestedCapacity: Int) {
+    override fun ensureCapacityInBytes(requestedCapacity: SizeInBytes) {
         gpuBuffer.ensureCapacityInBytes(requestedCapacity)
     }
 
@@ -42,7 +45,7 @@ class VertexBufferImpl(
     }
 
     init {
-        ensureCapacityInBytes(values.size * java.lang.Float.BYTES)
+        ensureCapacityInBytes(values.size.toCount() * Float.sizeInBytes)
         buffer.asFloatBuffer().put(values)
     }
 

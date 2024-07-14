@@ -1,17 +1,19 @@
 package de.hanno.hpengine.model
 
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.scene.GeometryOffset
 import de.hanno.hpengine.scene.VertexIndexOffsets
 
-sealed class Allocation(val forMeshes: List<VertexIndexOffsets>) {
+sealed class Allocation(val forMeshes: List<GeometryOffset>) {
     init {
         require(forMeshes.isNotEmpty())
     }
 
-    val indexOffset = forMeshes.first().indexOffset
+    val indexOffset = (forMeshes.first() as? VertexIndexOffsets)?.indexOffset ?: ElementCount(-1)
     val vertexOffset = forMeshes.first().vertexOffset
 
-    class Static(forMeshes: List<VertexIndexOffsets>) : Allocation(forMeshes)
-    class Animated(forMeshes: List<VertexIndexOffsets>, val jointsOffset: Int): Allocation(forMeshes)
+    class Static(forMeshes: List<GeometryOffset>) : Allocation(forMeshes)
+    class Animated(forMeshes: List<GeometryOffset>, val jointsOffset: Int): Allocation(forMeshes)
 }
 
 val Allocation.baseJointIndex: Int

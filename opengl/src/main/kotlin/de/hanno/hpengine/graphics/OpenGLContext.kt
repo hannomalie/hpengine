@@ -2,6 +2,8 @@ package de.hanno.hpengine.graphics
 
 import CubeMapFace
 import InternalTextureFormat
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.buffer.*
 import de.hanno.hpengine.graphics.buffer.vertex.OpenGLIndexBuffer
@@ -21,6 +23,8 @@ import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.*
+import de.hanno.hpengine.scene.GeometryBuffer
+import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import de.hanno.hpengine.toHalfFloat
 import glValue
@@ -987,15 +991,15 @@ class OpenGLContext private constructor(
         glMakeTextureHandleResidentARB(texture.handle)
     }
 
-    override fun PersistentShaderStorageBuffer(capacityInBytes: Int) = PersistentMappedBuffer(
+    override fun PersistentShaderStorageBuffer(capacityInBytes: SizeInBytes) = PersistentMappedBuffer(
         BufferTarget.ShaderStorage,
         capacityInBytes
     )
 
     override fun PersistentMappedBuffer(
         bufferTarget: BufferTarget,
-        capacityInBytes: Int
-    ): PersistentMappedBuffer = de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer(
+        capacityInBytes: SizeInBytes
+    ): PersistentMappedBuffer = PersistentMappedBuffer(
         this,
         bufferTarget,
         capacityInBytes,
@@ -1003,7 +1007,7 @@ class OpenGLContext private constructor(
 
     override fun GpuBuffer(
         bufferTarget: BufferTarget,
-        capacityInBytes: Int
+        capacityInBytes: SizeInBytes
     ) = OpenGLGpuBuffer(
         this,
         bufferTarget,
@@ -1305,15 +1309,15 @@ class OpenGLContext private constructor(
 
     override fun drawArraysInstanced(
         primitiveType: PrimitiveType,
-        firstVertexIndex: Int,
-        count: Int,
-        primitiveCount: Int
+        firstVertexIndex: ElementCount,
+        count: ElementCount,
+        primitiveCount: ElementCount
     ) {
         glDrawArraysInstanced(
             primitiveType.glValue,
-            firstVertexIndex,
-            count,
-            primitiveCount
+            firstVertexIndex.value.toInt(),
+            count.value.toInt(),
+            primitiveCount.value.toInt()
         )
     }
 
@@ -1734,6 +1738,28 @@ class OpenGLContext private constructor(
         return DepthBuffer(texture)
     }
 
+    override fun GeometryBuffer<*>.draw(
+        drawElementsIndirectCommand: DrawElementsIndirectCommand,
+        bindIndexBuffer: Boolean,
+        primitiveType: PrimitiveType,
+        mode: RenderingMode
+    ): TriangleCount = when(this) {
+        is de.hanno.hpengine.scene.VertexBuffer -> {
+            drawArraysInstanced(
+                primitiveType,
+                drawElementsIndirectCommand.firstIndex,
+                drawElementsIndirectCommand.count,
+                drawElementsIndirectCommand.instanceCount,
+            )
+            drawElementsIndirectCommand.count * 3
+        }
+        is VertexIndexBuffer -> indexBuffer.draw(
+            drawElementsIndirectCommand,
+            bindIndexBuffer,
+            primitiveType,
+            mode,
+        )
+    }
     override fun IndexBuffer.draw(
         drawElementsIndirectCommand: DrawElementsIndirectCommand,
         bindIndexBuffer: Boolean,
@@ -1741,6 +1767,25 @@ class OpenGLContext private constructor(
         mode: RenderingMode
     ): TriangleCount =
         drawElementsInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer, mode, primitiveType)
+
+
+    // TODO: This only makes sense for programmable vertex pulling, adjust api so that it can understand
+    // traditional vertex buffers as well
+    override fun GeometryBuffer<*>.bind() {
+        when(this) {
+            is de.hanno.hpengine.scene.VertexBuffer -> onGpuInline { glBindBuffer(BufferTarget.ElementArray.glValue, 0) }
+            is VertexIndexBuffer -> indexBuffer.bind()
+        }
+    }
+
+    // TODO: This only makes sense for programmable vertex pulling, adjust api so that it can understand
+    // traditional vertex buffers as well
+    override fun GeometryBuffer<*>.unbind() {
+        when(this) {
+            is de.hanno.hpengine.scene.VertexBuffer -> {}
+            is VertexIndexBuffer -> indexBuffer.unbind()
+        }
+    }
 
     companion object {
         private var counter = 0

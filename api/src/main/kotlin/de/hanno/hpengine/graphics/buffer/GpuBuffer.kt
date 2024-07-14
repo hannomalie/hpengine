@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.buffer
 
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.buffers.Buffer
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.constants.BufferTarget
@@ -13,8 +14,8 @@ interface GpuBuffer : Buffer {
     val target: BufferTarget
     val id: Int
     override val buffer: ByteBuffer
-    var sizeInBytes: Int
-        get() = buffer.capacity()
+    var sizeInBytes: SizeInBytes
+        get() = SizeInBytes(buffer.capacity())
         set(value) {
             ensureCapacityInBytes(value)
         }
@@ -25,15 +26,15 @@ interface GpuBuffer : Buffer {
         unmap()
         buffer.rewind()
     }
-    fun ensureCapacityInBytes(requestedCapacity: Int)
+    fun ensureCapacityInBytes(requestedCapacity: SizeInBytes)
     fun bind()
     fun unbind()
     fun map() {}
     fun unmap() {}
 
     // TODO: I made a change here, check whether buffer.position usage is safe here and makes sense
-    fun addAll(offset: Int = buffer.position(), elements: ByteBuffer) {
-        ensureCapacityInBytes(offset + elements.capacity())
+    fun addAll(offset: SizeInBytes = SizeInBytes(buffer.position()), elements: ByteBuffer) {
+        ensureCapacityInBytes(offset + SizeInBytes(elements.capacity()))
         elements.copyTo(buffer, targetOffsetInBytes = offset)
     }
 
@@ -53,7 +54,7 @@ interface TypedGpuBuffer<T: Strukt> : GpuBuffer, ITypedBuffer<T> {
     val gpuBuffer: GpuBuffer
     val typedBuffer: TypedBuffer<T>
     // TODO: I made a change here, check whether buffer.position usage is safe here and makes sense
-    fun addAll(offset: Int = buffer.position(), elements: TypedBuffer<T>) = addAll(offset, elements.byteBuffer)
+    fun addAll(offset: SizeInBytes = SizeInBytes(buffer.position()), elements: TypedBuffer<T>) = addAll(offset, elements.byteBuffer)
 }
 
 class TypedGpuBufferImpl<T: Strukt>(
@@ -70,7 +71,7 @@ class TypedGpuBufferImpl<T: Strukt>(
     override val id: Int get() = gpuBuffer.id
     override val buffer: ByteBuffer get() = typedBuffer.byteBuffer
 
-    override fun ensureCapacityInBytes(requestedCapacity: Int) {
+    override fun ensureCapacityInBytes(requestedCapacity: SizeInBytes) {
         gpuBuffer.ensureCapacityInBytes(requestedCapacity)
     }
     override fun bind() {

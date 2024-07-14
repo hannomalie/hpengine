@@ -8,6 +8,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
+import de.hanno.hpengine.SizeInBytes
 
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.artemis.forEachEntity
@@ -161,7 +162,7 @@ class AreaLightSystem(
                 }
 
                 for (e in renderState[defaultBatchesSystem.renderBatchesStatic]) {
-                    entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
+                    entitiesState.geometryBufferStatic.draw(
                         e.drawElementsIndirectCommand,
                         true,
                         PrimitiveType.Triangles,
@@ -224,7 +225,7 @@ class AreaLightSystem(
 }
 
 class AreaShadowPassUniforms(graphicsApi: GraphicsApi) : Uniforms() {
-    var entitiesBuffer by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
+    var entitiesBuffer by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(EntityStrukt.type.sizeInBytes)).typed(EntityStrukt.type))
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 }

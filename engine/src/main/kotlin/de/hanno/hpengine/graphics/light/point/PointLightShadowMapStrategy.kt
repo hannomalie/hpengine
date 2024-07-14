@@ -32,11 +32,15 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.scene.GeometryBuffer
+import de.hanno.hpengine.scene.VertexBuffer
+import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.transform.EntityMovementSystem
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
+import struktgen.api.Strukt
 import struktgen.api.get
 import java.nio.FloatBuffer
 import kotlin.math.min
@@ -181,7 +185,7 @@ class CubeShadowMapStrategy(
                         pointCubeShadowPassProgram.use()
                         pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
                         pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
-                        pointCubeShadowPassProgram.bindShaderStorageBuffer(7, entitiesState.vertexIndexBufferStatic.vertexStructArray)
+                        pointCubeShadowPassProgram.bindShaderStorageBuffer(7, entitiesState.geometryBufferStatic.vertexStructArray)
                         pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.position.toJoml())
                         pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
                         pointCubeShadowPassProgram.setUniform("lightIndex", lightIndex)
@@ -202,10 +206,10 @@ class CubeShadowMapStrategy(
                         }
                         pointCubeShadowPassProgram.bind()
                         profiled("PointLight shadowmap entity rendering") {
-                            entitiesState.vertexIndexBufferStatic.indexBuffer.bind()
+                            entitiesState.geometryBufferStatic.bind()
                             val renderBatchesStatic = renderState[defaultBatchesSystem.renderBatchesStatic]
                             for (batch in renderBatchesStatic.filter { it.isShadowCasting }) { // TODO: Better filtering which entity is in light radius
-                                entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
+                                entitiesState.geometryBufferStatic.draw(
                                     batch.drawElementsIndirectCommand,
                                     bindIndexBuffer = false,
                                     primitiveType = PrimitiveType.Triangles,
@@ -263,4 +267,9 @@ class CubeShadowMapStrategy(
             }
         }
     }
+}
+
+private fun <T: Strukt> GeometryBuffer<T>.bind() = when(this) {
+    is VertexBuffer -> { }
+    is VertexIndexBuffer -> indexBuffer.bind()
 }

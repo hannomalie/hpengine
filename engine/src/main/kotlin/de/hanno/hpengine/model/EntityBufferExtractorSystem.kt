@@ -5,6 +5,7 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
@@ -15,6 +16,7 @@ import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.instancing.InstancesComponent
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.transform.AABB
 import org.koin.core.annotation.Single
 import struktgen.api.get
@@ -42,7 +44,7 @@ class EntityBufferExtractorSystem(
 
     override fun extract(currentWriteState: RenderState) {
         val entitiesBufferToWrite = currentWriteState[entityBuffer.entitiesBuffer]
-        entitiesBufferToWrite.ensureCapacityInBytes(entityBuffer.entityCount * EntityStrukt.sizeInBytes)
+        entitiesBufferToWrite.ensureCapacityInBytes(entityBuffer.entityCount * SizeInBytes(EntityStrukt.sizeInBytes))
 
         var entityBufferIndex = 0
 
@@ -68,7 +70,7 @@ class EntityBufferExtractorSystem(
 
                         entitiesBufferToWrite.byteBuffer.run {
                             model.meshes.forEachIndexed { index, mesh ->
-                                entitiesBufferToWrite.ensureCapacityInBytes((1+entityBufferIndex) * EntityStrukt.sizeInBytes)
+                                entitiesBufferToWrite.ensureCapacityInBytes((1+entityBufferIndex).toCount() * SizeInBytes(EntityStrukt.sizeInBytes))
                                 val currentEntity = entitiesBufferToWrite[entityBufferIndex]
 
                                 val material = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
@@ -78,7 +80,7 @@ class EntityBufferExtractorSystem(
                                     meshBufferIndex = entityBufferIndex
                                     entityIndex = entityId
                                     meshIndex = index
-                                    baseVertex = allocation.forMeshes[index].vertexOffset
+                                    baseVertex = allocation.forMeshes[index].vertexOffset.value.toInt()
                                     baseJointIndex = allocation.baseJointIndex
                                     animationFrame0 = model.getAnimationFrame(0)
                                     animationFrame1 = model.getAnimationFrame(1)
@@ -86,7 +88,7 @@ class EntityBufferExtractorSystem(
                                     animationFrame3 = model.getAnimationFrame(3)
                                     isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                                     probeIndex = 1//environmentProbesStateHolder.getProbeForBatch(currentWriteState, entityBufferIndex) ?: -1
-                                    dummy4 = allocation.indexOffset
+                                    dummy4 = allocation.indexOffset.value.toInt()
 
                                     setTrafoAndBoundingVolume(transform.transformation, tempAABB.apply {
                                         min.set(mesh.boundingVolume.min)

@@ -3,6 +3,8 @@ package de.hanno.hpengine.graphics
 import CubeMapFace
 import de.hanno.hpengine.graphics.constants.Facing
 import InternalTextureFormat
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.constants.RenderingMode
@@ -20,6 +22,7 @@ import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.CodeSource
+import de.hanno.hpengine.scene.GeometryBuffer
 import org.joml.Vector4f
 import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
@@ -216,8 +219,8 @@ interface GraphicsApi {
 
     fun makeTextureHandleResident(texture: Texture)
 
-    fun PersistentShaderStorageBuffer(capacityInBytes: Int): GpuBuffer
-    fun PersistentMappedBuffer(bufferTarget: BufferTarget, capacityInBytes: Int): GpuBuffer
+    fun PersistentShaderStorageBuffer(capacityInBytes: SizeInBytes): GpuBuffer
+    fun PersistentMappedBuffer(bufferTarget: BufferTarget, capacityInBytes: SizeInBytes): GpuBuffer
 
     fun finish()
     fun copyImageSubData(
@@ -274,7 +277,7 @@ interface GraphicsApi {
         alphaDestinationFactor: BlendMode.Factor
     )
 
-    fun drawArraysInstanced(primitiveType: PrimitiveType, firstVertexIndex: Int, count: Int, primitiveCount: Int)
+    fun drawArraysInstanced(primitiveType: PrimitiveType, firstVertexIndex: ElementCount, count: ElementCount, primitiveCount: ElementCount)
 
     fun VertexBuffer.draw(indexBuffer: IndexBuffer?): Int
     fun validateFrameBufferState(renderTargetImpl: BackBufferRenderTarget<*>)
@@ -371,8 +374,15 @@ interface GraphicsApi {
 
     val pixelBufferObjectPool: PixelBufferObjectPool
 
-    fun GpuBuffer(bufferTarget: BufferTarget, capacityInBytes: Int): GpuBuffer
+    fun GpuBuffer(bufferTarget: BufferTarget, capacityInBytes: SizeInBytes): GpuBuffer
     fun IndexBuffer(graphicsApi: GraphicsApi, intBuffer: IntBuffer): IndexBuffer
+
+    fun GeometryBuffer<*>.draw(
+        drawElementsIndirectCommand: DrawElementsIndirectCommand,
+        bindIndexBuffer: Boolean,
+        primitiveType: PrimitiveType,
+        mode: RenderingMode
+    ): TriangleCount
 
     fun IndexBuffer.draw(
         drawElementsIndirectCommand: DrawElementsIndirectCommand,
@@ -380,6 +390,9 @@ interface GraphicsApi {
         primitiveType: PrimitiveType,
         mode: RenderingMode
     ): TriangleCount
+
+    fun GeometryBuffer<*>.bind()
+    fun GeometryBuffer<*>.unbind()
 
     fun unbindPixelBufferObject()
     fun setPointsSize(size: Float)
@@ -402,7 +415,7 @@ fun GraphicsApi.RenderTarget(
 ) = this.RenderTarget(frameBuffer, textures.first().dimension.width, textures.first().dimension.height, textures, name, clear)
 
 
-typealias TriangleCount = Int
+typealias TriangleCount = ElementCount
 
 enum class Access {
     ReadOnly,

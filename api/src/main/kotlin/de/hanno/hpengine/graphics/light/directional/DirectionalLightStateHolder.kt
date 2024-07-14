@@ -1,6 +1,7 @@
 package  de.hanno.hpengine.graphics.light.directional
 
 import DirectionalLightStateImpl.Companion.type
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -17,7 +18,7 @@ class DirectionalLightStateHolder(
 ) {
     val camera = renderStateContext.renderState.registerState { Camera(Transform()) }
     val lightState = renderStateContext.renderState.registerState {
-        graphicsApi.PersistentShaderStorageBuffer(DirectionalLightState.type.sizeInBytes).typed(DirectionalLightState.type).apply {
+        graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(DirectionalLightState.type.sizeInBytes)).typed(DirectionalLightState.type).apply {
             forIndex(0) {
                 it.shadowMapId = -1
                 it.shadowMapHandle = -1L

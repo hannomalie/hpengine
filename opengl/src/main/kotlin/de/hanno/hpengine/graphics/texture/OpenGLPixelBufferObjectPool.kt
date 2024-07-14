@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.texture
 
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.OpenGLGpuBuffer
@@ -20,7 +21,7 @@ class OpenGLPixelBufferObjectPool(
                 OpenGLPixelBufferObject(
                     graphicsApi,
                     config,
-                    PersistentMappedBuffer(graphicsApi, BufferTarget.PixelUnpack, 5_000_000)
+                    PersistentMappedBuffer(graphicsApi, BufferTarget.PixelUnpack, SizeInBytes(5_000_000))
                 )
             )
         }

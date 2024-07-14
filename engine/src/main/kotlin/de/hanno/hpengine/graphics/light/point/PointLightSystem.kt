@@ -5,11 +5,13 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.mapEntity
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.buffer.typed
@@ -30,7 +32,7 @@ class PointLightSystem(
     private val entityMovementSystem: EntityMovementSystem,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
     private var gpuPointLights =
-        graphicsApi.PersistentShaderStorageBuffer(20 * PointLightStruct.type.sizeInBytes).typed(PointLightStruct.type)
+        graphicsApi.PersistentShaderStorageBuffer(20.toCount() * SizeInBytes(PointLightStruct.type.sizeInBytes)).typed(PointLightStruct.type)
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 

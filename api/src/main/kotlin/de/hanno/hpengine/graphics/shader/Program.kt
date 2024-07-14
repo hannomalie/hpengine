@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.shader
 
+import de.hanno.hpengine.ElementCount
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -30,5 +31,5 @@ interface Program<T: Uniforms> {
 }
 
 interface ComputeProgram<T: Uniforms>: Program<T> {
-    fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int)
+    fun dispatchCompute(numGroupsX: ElementCount, numGroupsY: ElementCount, numGroupsZ: ElementCount)
 }

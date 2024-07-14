@@ -5,7 +5,7 @@ in VertexShaderOutput vertexShaderOutput;
 
 layout(binding=2) uniform sampler2DArray diffuseTextures;
 
-layout(location=1)out vec4 out_visibility;
+layout(location=0)out vec4 out_visibility;
 
 //include(globals.glsl)
 //include(normals.glsl)
@@ -35,21 +35,24 @@ void main(void) {
     Material material = materials[entity.materialIndex];
     vec2 uv = material.uvScale * vertexShaderOutput.texCoord;
     float alpha = 1.0f;
+    float mipLevel = 0;
 
 #ifdef BINDLESSTEXTURES
     sampler2D diffuseMap;
     bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
     if(hasDiffuseMap) {
 		diffuseMap = sampler2D(material.handleDiffuse);
+        mipLevel = textureQueryLod(diffuseMap, uv).r;
         alpha = textureLod(diffuseMap, uv, 0).a;
     }
 #else
+    mipLevel = textureQueryLod(diffuseTextures, vec3(uv, material.diffuseMapIndex)).r;
     alpha = textureLod(diffuseTextures, vec3(uv, material.diffuseMapIndex), 0).a;
 #endif
 
     if(alpha < 0.98f) {
         discard;
     } else {
-        out_visibility = vec4(uv, textureQueryLod(diffuseTextures, uv).r, entityIndex);
+        out_visibility = vec4(uv, mipLevel, entityIndex);
     }
 }

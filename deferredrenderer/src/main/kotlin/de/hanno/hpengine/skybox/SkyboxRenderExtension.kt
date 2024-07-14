@@ -15,6 +15,7 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
+import de.hanno.hpengine.toCount
 import org.koin.core.annotation.Single
 
 @Single(binds = [SkyboxRenderExtension::class, DeferredRenderExtension::class])
@@ -103,9 +104,9 @@ class SkyboxRenderExtension(
         )
         secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
         secondPassReflectionProgram.dispatchCompute(
-            config.width / 16,
-            config.height / 16,
-            1
+            config.width.toCount() / 16,
+            config.height.toCount() / 16,
+            1.toCount(),
         )
     }
 }

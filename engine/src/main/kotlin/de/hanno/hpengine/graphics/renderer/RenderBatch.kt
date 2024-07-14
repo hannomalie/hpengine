@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.renderer
 
+import de.hanno.hpengine.ElementCount
 import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.model.material.Material
@@ -33,9 +34,9 @@ class RenderBatch(
     val isShadowCasting: Boolean get() = material.isShadowCasting
     val neverCull: Boolean get() = material.neverCull
 
-    val instanceCount: Int get() = drawElementsIndirectCommand.instanceCount
+    val instanceCount: ElementCount get() = drawElementsIndirectCommand.instanceCount
 
-    val vertexCount: Int get() = drawElementsIndirectCommand.count / 3
+    val vertexCount: ElementCount get() = ElementCount(drawElementsIndirectCommand.count.value / 3)
 
     val isStatic: Boolean get() = !animated
 

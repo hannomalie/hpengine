@@ -21,6 +21,7 @@ import com.bulletphysics.linearmath.DebugDrawModes
 import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -34,6 +35,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.ressources.StringBasedCodeSource
+import de.hanno.hpengine.toCount
 import org.joml.Vector3fc
 import org.koin.core.annotation.Single
 import java.util.function.Supplier
@@ -51,7 +53,7 @@ class PhysicsManager(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
 ) : BaseEntitySystem(), RenderSystem {
     val gravity: Vector3f = Vector3f(0f, -20f, 0f)
-    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices = graphicsApi.PersistentShaderStorageBuffer(100.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms(graphicsApi)
         getProgram(

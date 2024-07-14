@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
 
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
@@ -20,7 +21,7 @@ class OpenGLPixelBufferObject(
     private val config: Config,
     _buffer: GpuBuffer? = null
 ): PixelBufferObject {
-    private val buffer = _buffer ?: graphicsApi.PersistentMappedBuffer(BufferTarget.PixelUnpack, 5_000_000)
+    private val buffer = _buffer ?: graphicsApi.PersistentMappedBuffer(BufferTarget.PixelUnpack, SizeInBytes(5_000_000))
     var uploading = AtomicBoolean(false)
 
     init {

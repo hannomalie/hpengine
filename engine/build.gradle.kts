@@ -1,6 +1,7 @@
 import de.hanno.hpengine.build.Dependencies
 import de.hanno.hpengine.build.Dependencies.LWJGL
 import de.hanno.hpengine.build.Dependencies.StruktGen
+import de.hanno.hpengine.build.Dependencies.configureCommonTestDependencies
 
 buildscript {
     repositories {
@@ -97,7 +98,7 @@ dependencies {
 
     testImplementation(Dependencies.Koin.test)
 
-    testImplementation("junit:junit:4.12")
+    configureCommonTestDependencies()
 }
 
 kotlin {

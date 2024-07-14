@@ -253,7 +253,7 @@ class ImGuiEditor(
                 ImGui.popStyleVar()
 
                 ImGui.image(
-                    outputSelection.textureOrNull ?: primaryRendererSelection.primaryRenderer.finalOutput.texture2D.id,
+                    outputSelection.textureOrNull ?: primaryRendererSelection.primaryRenderer.finalOutput?.texture2D?.id ?: 0,
                     screenWidth,
                     screenHeight,
                     0f,

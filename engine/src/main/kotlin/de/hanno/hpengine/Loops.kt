@@ -3,12 +3,12 @@ package de.hanno.hpengine
 import kotlinx.coroutines.*
 import kotlin.math.min
 
-fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit) {
+fun launchEndlessLoop(loopCondition: () -> Boolean, actualUpdateStep: suspend (Float) -> Unit) {
         runBlocking {
             var currentTimeNs = System.nanoTime()
             val dtS = 0.001
 
-            while (true) {
+            while (loopCondition()) {
                 val newTimeNs = System.nanoTime()
                 val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
                 var frameTimeS = frameTimeNs / 1000000000.0

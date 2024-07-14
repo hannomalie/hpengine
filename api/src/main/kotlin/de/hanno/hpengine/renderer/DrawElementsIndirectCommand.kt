@@ -1,14 +1,15 @@
 package de.hanno.hpengine.renderer
 
+import de.hanno.hpengine.ElementCount
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
 
 data class DrawElementsIndirectCommand(
-    var count: Int = 0,
-    var instanceCount: Int = 0,
-    var firstIndex: Int = 0,
-    var baseVertex: Int = 0,
-    var baseInstance: Int = 0,
+    var count: ElementCount = ElementCount(0),
+    var instanceCount: ElementCount = ElementCount(0),
+    var firstIndex: ElementCount = ElementCount(0),
+    var baseVertex: ElementCount = ElementCount(0),
+    var baseInstance: ElementCount = ElementCount(0),
 )
 
 interface DrawElementsIndirectCommandStrukt : Strukt {

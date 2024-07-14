@@ -75,12 +75,12 @@ class ColorOnlyRenderer(
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
+        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated].filter {
                 !it.hasOwnProgram
             }
 
-            override fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated
+            override fun RenderState.selectGeometryBuffer() = this[entitiesStateHolder.entitiesState].geometryBufferAnimated
         }
     }
 
@@ -114,7 +114,7 @@ class ColorOnlyRenderer(
                 )
                 setTextureUniforms(simpleColorProgramSkyBox, graphicsApi, batch.material.maps, null)
             }, block = {
-                renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.indexBuffer.draw(
+                renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.draw(
                     batch.drawElementsIndirectCommand,
                     primitiveType = PrimitiveType.Triangles,
                     mode = RenderingMode.Fill,

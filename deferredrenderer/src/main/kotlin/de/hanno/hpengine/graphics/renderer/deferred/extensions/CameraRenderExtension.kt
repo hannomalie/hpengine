@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.deferred.extensions
 
 import Vector4fStruktImpl.Companion.type
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.camera.CameraComponentsStateHolder
 
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
@@ -17,6 +18,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.ressources.StringBasedCodeSource
+import de.hanno.hpengine.toCount
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 
@@ -30,7 +32,7 @@ class CameraRenderExtension(
     private val cameraComponentsStateHolder: CameraComponentsStateHolder,
 ) : DeferredRenderExtension {
 
-    private val lineVertices: TypedGpuBuffer<Vector4fStrukt> = graphicsApi.PersistentShaderStorageBuffer(24 * Vector4fStrukt.type.sizeInBytes).typed(Vector4fStrukt.type)
+    private val lineVertices: TypedGpuBuffer<Vector4fStrukt> = graphicsApi.PersistentShaderStorageBuffer(24.toCount() * SizeInBytes(Vector4fStrukt.type.sizeInBytes)).typed(Vector4fStrukt.type)
     val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms(graphicsApi)
         getProgram(

@@ -4,6 +4,7 @@ import InternalTextureFormat
 import InternalTextureFormat.RGBA16F
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.config.Config
@@ -32,6 +33,7 @@ import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.spatial.WorldAABBStateHolder
+import de.hanno.hpengine.toCount
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.joml.Vector4f
@@ -67,17 +69,17 @@ class ProbeRenderer(
         get() = Vector3f(sceneMax).sub(sceneMin).div(probesPerDimensionFloat)
     val probeDimensionsHalf: Vector3f
         get() = probeDimensions.mul(0.5f)
-    val probeCount = probesPerDimension.x * probesPerDimension.y * probesPerDimension.z
+    val probeCount = probesPerDimension.x.toCount() * probesPerDimension.y * probesPerDimension.z
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
     val probePositionsStructBuffer = graphicsApi.onGpu {
-        PersistentShaderStorageBuffer(probeCount * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+        PersistentShaderStorageBuffer(probeCount * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     }
     val probeAmbientCubeValues = graphicsApi.onGpu {
-        PersistentShaderStorageBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+        PersistentShaderStorageBuffer(probeCount * 6 * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     }
     val probeAmbientCubeValuesOld = graphicsApi.onGpu {
-        PersistentShaderStorageBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes).typed(Vector4fStrukt.type)
+        PersistentShaderStorageBuffer(probeCount * 6 * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     }
 
     init {
@@ -213,7 +215,7 @@ class ProbeRenderer(
                 profiled("Probe entity rendering") {
                     for (batch in renderState[defaultBatchesSystem.renderBatchesStatic]) {
                         setTextureUniforms(pointCubeShadowPassProgram, graphicsApi, batch.material.maps)
-                        entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
+                        entitiesState.geometryBufferStatic.draw(
                             batch.drawElementsIndirectCommand, true, PrimitiveType.Triangles, RenderingMode.Fill
                         )
                     }

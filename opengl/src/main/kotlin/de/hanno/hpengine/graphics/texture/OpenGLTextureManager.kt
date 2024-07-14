@@ -18,6 +18,7 @@ import de.hanno.hpengine.graphics.texture.DDSConverter.getFullPathAsDDS
 import de.hanno.hpengine.graphics.toByteBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.threads.TimeStepThread
+import de.hanno.hpengine.toCount
 import jogl.DDSImage
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
@@ -32,6 +33,7 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 import javax.imageio.ImageIO
+import kotlin.math.max
 
 
 @Single(binds = [BaseSystem::class, TextureManager::class, TextureManagerBaseSystem::class, OpenGLTextureManager::class])
@@ -399,7 +401,7 @@ class OpenGLTextureManager(
             blur2dProgramSeparableHorizontal.setUniform("height", finalHeight)
             blur2dProgramSeparableHorizontal.setUniform("mipmapSource", mipmapSource)
             blur2dProgramSeparableHorizontal.setUniform("mipmapTarget", mipmapTarget)
-            blur2dProgramSeparableHorizontal.dispatchCompute(finalWidth / 8, finalHeight / 8, 1)
+            blur2dProgramSeparableHorizontal.dispatchCompute(finalWidth.toCount() / 8, finalHeight.toCount() / 8, 1.toCount())
 
             blur2dProgramSeparableVertical.use()
             //            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
@@ -408,7 +410,7 @@ class OpenGLTextureManager(
             blur2dProgramSeparableVertical.setUniform("height", finalHeight)
             blur2dProgramSeparableVertical.setUniform("mipmapSource", mipmapSource)
             blur2dProgramSeparableVertical.setUniform("mipmapTarget", mipmapTarget)
-            blur2dProgramSeparableVertical.dispatchCompute(finalWidth / 8, finalHeight / 8, 1)
+            blur2dProgramSeparableVertical.dispatchCompute(finalWidth.toCount() / 8, finalHeight.toCount() / 8, 1.toCount())
         }
     }
 
@@ -443,9 +445,9 @@ class OpenGLTextureManager(
             blur2dProgramSeparableHorizontal.setUniform("height", finalHeight)
             blur2dProgramSeparableHorizontal.setUniform("mipmapSource", mipmapSource)
             blur2dProgramSeparableHorizontal.setUniform("mipmapTarget", mipmapTarget)
-            val num_groups_x = Math.max(1, finalWidth / 8)
-            val num_groups_y = Math.max(1, finalHeight / 8)
-            blur2dProgramSeparableHorizontal.dispatchCompute(num_groups_x, num_groups_y, 1)
+            val num_groups_x = max(1, finalWidth / 8).toCount()
+            val num_groups_y = max(1, finalHeight / 8).toCount()
+            blur2dProgramSeparableHorizontal.dispatchCompute(num_groups_x, num_groups_y, 1.toCount())
         }
     }
 

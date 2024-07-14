@@ -7,18 +7,17 @@ import de.hanno.hpengine.graphics.ProgramChangeListenerManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.ressources.*
-import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
 class OpenGlProgramManager(
     private val graphicsApi: GraphicsApi,
-    private val fileMonitor: FileMonitor,
+    fileMonitor: FileMonitor?,
     override val config: Config,
 ) : BaseSystem(), ProgramManager {
 
     private var programsCache: MutableList<Program<*>> = CopyOnWriteArrayList()
 
-    private val programChangeListener = ProgramChangeListenerManager(fileMonitor)
+    private val programChangeListener = fileMonitor?.let { fileMonitor -> ProgramChangeListenerManager(fileMonitor) }
 
     override fun List<UniformDelegate<*>>.toUniformDeclaration() = joinToString("\n") {
         when (it) {
@@ -43,9 +42,13 @@ class OpenGlProgramManager(
         codeSource: FileBasedCodeSource,
         defines: Defines,
         uniforms: T
-    ): ComputeProgramImpl<T> = ComputeProgramImpl(ComputeShader(graphicsApi, codeSource, defines), graphicsApi, fileMonitor, uniforms).apply {
+    ): ComputeProgramImpl<T> = ComputeProgramImpl(
+        ComputeShader(graphicsApi, codeSource, defines),
+        graphicsApi,
+        uniforms
+    ).apply {
         programsCache.add(this).apply {
-            programChangeListener.run {
+            programChangeListener?.run {
                 reregisterListener { graphicsApi.run { reload() } }
             }
         }
@@ -82,14 +85,14 @@ class OpenGlProgramManager(
         ).apply {
             load()
             programsCache.add(this)
-            programChangeListener.run {
-            reregisterListener { reload() }
+            programChangeListener?.run {
+                reregisterListener { reload() }
             }
         }
     }
 
     override fun getComputeProgram(codeSource: CodeSource): ComputeProgramImpl<Uniforms> = ComputeProgramImpl(
-        ComputeShader(graphicsApi, codeSource, Defines()), graphicsApi, fileMonitor,  Uniforms.Empty,
+        ComputeShader(graphicsApi, codeSource, Defines()), graphicsApi, Uniforms.Empty,
     )
 
     override fun update(deltaSeconds: Float) { }

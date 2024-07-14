@@ -151,7 +151,7 @@ class EnvironmentSampler(
 //                if (!isInFrustum(camera.frustum, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
 //				continue;
 //                }
-                entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
+                entitiesState.geometryBufferStatic.draw(
                     e.drawElementsIndirectCommand,
                     true,
                     PrimitiveType.Triangles,

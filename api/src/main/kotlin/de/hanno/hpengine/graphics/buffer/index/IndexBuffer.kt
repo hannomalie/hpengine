@@ -1,13 +1,16 @@
 package de.hanno.hpengine.graphics.buffer.vertex
 
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.buffer.IndexBuffer
+import de.hanno.hpengine.position
 import java.nio.ByteBuffer
 
-fun IndexBuffer.put(offset: Int = 0, values: IntArray) {
-    ensureCapacityInBytes((values.size + offset) * Integer.BYTES)
+fun IndexBuffer.put(offset: ElementCount = ElementCount(0), values: IntArray) {
+    ensureCapacityInBytes(SizeInBytes(ElementCount(values.size) + offset, SizeInBytes(Integer.BYTES)))
     val intBuffer = buffer.asIntBuffer()
-    intBuffer.position(offset)
+    intBuffer.position(SizeInBytes(offset, SizeInBytes(Integer.BYTES)))
     intBuffer.put(values)
     buffer.rewind()
 }
@@ -17,8 +20,10 @@ fun IndexBuffer.put(index: Int = 0, value: Int) {
     buffer.asIntBuffer().put(index, value)
 }
 
-fun IndexBuffer.appendIndices(indexOffset: Int = 0, indices: ByteBuffer) {
+fun IndexBuffer.appendIndices(indexOffset: ElementCount = ElementCount(0), indices: ByteBuffer) {
     buffer.rewind()
-    ensureCapacityInBytes((indexOffset + (indices.capacity() / Integer.BYTES)) * Integer.BYTES)
-    indices.copyTo(buffer, indexOffset * Integer.BYTES)
+    val indicesToAdd = ElementCount(indices.capacity() / Integer.BYTES)
+    val requiredSize = SizeInBytes(indexOffset + indicesToAdd, SizeInBytes(Integer.BYTES))
+    ensureCapacityInBytes(requiredSize)
+    indices.copyTo(buffer, SizeInBytes(indexOffset, SizeInBytes(Integer.BYTES)))
 }

@@ -2,7 +2,9 @@ package de.hanno.hpengine.graphics.renderer
 
 
 import Vector4fStruktImpl
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.buffers.safePut
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.shader.*
@@ -43,7 +45,7 @@ fun GraphicsApi.drawLines(
 }
 
 fun TypedGpuBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector3fc>) {
-    ensureCapacityInBytes(linePoints.size * Vector4fStruktImpl.sizeInBytes)
+    ensureCapacityInBytes(linePoints.size.toCount() * SizeInBytes(Vector4fStruktImpl.sizeInBytes))
 
     for (i in linePoints.indices) {
         forIndex(i) { it.set(linePoints[i]) }

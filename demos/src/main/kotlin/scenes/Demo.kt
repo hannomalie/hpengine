@@ -18,6 +18,7 @@ import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
 import de.hanno.hpengine.graphics.renderer.forward.ColorOnlyRenderer
+import de.hanno.hpengine.graphics.renderer.forward.NoOpRenderer
 import de.hanno.hpengine.graphics.renderer.forward.VisibilityRenderer
 import de.hanno.hpengine.graphics.renderer.forward.simpleForwardRendererModule
 import de.hanno.hpengine.ocean.oceanModule
@@ -46,6 +47,7 @@ fun main() {
             Renderer.Deferred -> renderSystems.firstIsInstance<ExtensibleDeferredRenderer>()
             Renderer.Forward -> renderSystems.firstIsInstance<ColorOnlyRenderer>()
             Renderer.Visibility -> renderSystems.firstIsInstance<VisibilityRenderer>()
+            Renderer.NoOp -> renderSystems.firstIsInstance<NoOpRenderer>()
         }
     }
 
@@ -102,6 +104,7 @@ enum class Renderer {
     Deferred,
     Forward,
     Visibility,
+    NoOp
 }
 data class DemoConfig(
     val engineDir: File?,

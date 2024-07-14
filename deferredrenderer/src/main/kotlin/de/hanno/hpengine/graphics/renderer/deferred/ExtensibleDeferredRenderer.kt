@@ -109,7 +109,7 @@ class ExtensibleDeferredRenderer(
                 }
             }
 
-            override fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated
+            override fun RenderState.selectGeometryBuffer() = this[entitiesStateHolder.entitiesState].geometryBufferAnimated
         }
     }
 

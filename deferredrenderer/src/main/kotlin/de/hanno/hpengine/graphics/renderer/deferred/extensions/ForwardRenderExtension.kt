@@ -23,8 +23,12 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
+import de.hanno.hpengine.scene.GeometryBuffer
+import de.hanno.hpengine.scene.VertexBuffer
+import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
+import struktgen.api.Strukt
 
 @Single(binds = [ForwardRenderExtension::class, DeferredRenderExtension::class])
 class ForwardRenderExtension(
@@ -69,7 +73,7 @@ class ForwardRenderExtension(
 
         val camera = renderState[primaryCameraStateHolder.camera]
         using(programStatic) { uniforms ->
-            uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
+            uniforms.vertices = entitiesState.geometryBufferStatic.vertexStructArray
             uniforms.materials = renderState[materialSystem.materialBuffer]
             uniforms.entities = renderState[entityBuffer.entitiesBuffer]
             programStatic.bindShaderStorageBuffer(2, renderState[directionalLightStateHolder.lightState])
@@ -78,10 +82,10 @@ class ForwardRenderExtension(
             uniforms.viewProjectionMatrix.safePut(camera.viewProjectionMatrixBuffer)
         }
 
-        entitiesState.vertexIndexBufferStatic.indexBuffer.bind()
+        entitiesState.geometryBufferStatic.bind()
         for (batch in renderState[defaultBatchesSystem.renderBatchesStatic].filter { it.material.transparencyType.needsForwardRendering }) {
             setTextureUniforms(programStatic, graphicsApi, batch.material.maps)
-            entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
+            entitiesState.geometryBufferStatic.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
                 primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Fill
             )
@@ -107,4 +111,9 @@ class ForwardRenderExtension(
             ONE_BUFFER.rewind()
         }
     }
+}
+
+private fun <T: Strukt> GeometryBuffer<T>.bind() = when(this) {
+    is VertexBuffer -> {}
+    is VertexIndexBuffer -> indexBuffer.bind()
 }

@@ -1,5 +1,6 @@
 package scenes
 
+import AttractorStruktImpl.Companion.sizeInBytes
 import AttractorStruktImpl.Companion.type
 import Vector4fStruktImpl.Companion.sizeInBytes
 import Vector4fStruktImpl.Companion.type
@@ -8,6 +9,7 @@ import com.artemis.annotations.All
 import com.artemis.annotations.One
 import com.artemis.utils.Bag
 import de.hanno.hpengine.Engine
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
@@ -37,6 +39,7 @@ import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import imgui.ImGui
@@ -107,9 +110,9 @@ class GPUParticleSystem(
     lateinit var particlesComponentMapper: ComponentMapper<GPUParticles>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
-    private val positions = graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
-    private val velocities = graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
-    private val attractors = graphicsApi.PersistentShaderStorageBuffer(1000).typed(AttractorStrukt.type)
+    private val positions = graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
+    private val velocities = graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
+    private val attractors = graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(AttractorStrukt.sizeInBytes)).typed(AttractorStrukt.type)
 
     inner class GPUParticlesDefaultUniforms : StaticDefaultUniforms(graphicsApi) {
         var positions by SSBO("vec4", 5, this@GPUParticleSystem.positions)
@@ -161,8 +164,8 @@ class GPUParticleSystem(
 
     override fun inserted(entityId: Int) {
         particlesComponentMapper.getOrNull(entityId)?.apply {
-            positions.ensureCapacityInBytes(particlePositions.size * Vector4fStrukt.sizeInBytes)
-            velocities.ensureCapacityInBytes(particlePositions.size * Vector4fStrukt.sizeInBytes)
+            positions.ensureCapacityInBytes(particlePositions.size.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes))
+            velocities.ensureCapacityInBytes(particlePositions.size.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes))
 
             particlePositions.forEachIndexed { index, it ->
                 positions.buffer.run {
@@ -215,7 +218,7 @@ class GPUParticleSystem(
                 targetCount = renderState[this@GPUParticleSystem.targetCount].value ?: 0
             },
         ) {
-            computeProgram.dispatchCompute(max(1, particlesComponent.particlePositions.size/8), 1, 1)
+            computeProgram.dispatchCompute(max(1, particlesComponent.particlePositions.size/8).toCount(), 1.toCount(), 1.toCount())
         }
 
         val materialComponent = defaultBatchesSystem.materialComponentMapper.get(entityId)
@@ -230,7 +233,7 @@ class GPUParticleSystem(
                 materials = renderState[materialSystem.materialBuffer]
                 entities = renderState[entityBuffer.entitiesBuffer]
                 program.uniforms.indirect = false
-                program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
+                program.uniforms.vertices = entitiesState.geometryBufferStatic.vertexStructArray
                 viewMatrix = camera.viewMatrixBuffer
                 lastViewMatrix = camera.viewMatrixBuffer
                 projectionMatrix = camera.projectionMatrixBuffer
@@ -256,14 +259,14 @@ class GPUParticleSystem(
             if(particlesComponent.primitiveType == PrimitiveType.Points) {
                 graphicsApi.setPointsSize(particlesComponent.pointSize)
             }
-            val vertexIndexBuffer = renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
-            vertexIndexBuffer.indexBuffer.draw(
+            val vertexIndexBuffer = renderState[entitiesStateHolder.entitiesState].geometryBufferStatic
+            vertexIndexBuffer.draw(
                 DrawElementsIndirectCommand(
                     count = indexCount,
-                    instanceCount = particlesComponent.particlePositions.size,
+                    instanceCount = particlesComponent.particlePositions.size.toCount(),
                     firstIndex = allocation.indexOffset,
                     baseVertex = allocation.vertexOffset,
-                    baseInstance = 0,
+                    baseInstance = 0.toCount(),
                 ),
                 primitiveType = particlesComponent.primitiveType,
                 mode = if (config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill,

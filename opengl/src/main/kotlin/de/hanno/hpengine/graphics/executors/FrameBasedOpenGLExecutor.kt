@@ -27,11 +27,13 @@ class FrameBasedOpenGLExecutor(
     }
     private val queue: BlockingQueue<() -> Unit> = LinkedBlockingQueue()
     override var perFrameAction: (() -> Unit)? = null
+    override var loopCondition: (() -> Boolean)? = { true }
+    override var afterLoop: (() -> Unit)? = {  }
 
     init {
         var frameCounter = 0
         GlobalScope.launch(dispatcher) {
-            while (true) {
+            while (loopCondition?.invoke() != false) {
                 gpuProfiler.run {
                     val frameTask = profiledFoo("Frame") {
                         val maxPerFrame = 1
@@ -57,6 +59,7 @@ class FrameBasedOpenGLExecutor(
                     frameCounter++
                 }
             }
+            afterLoop?.invoke()
         }
     }
 

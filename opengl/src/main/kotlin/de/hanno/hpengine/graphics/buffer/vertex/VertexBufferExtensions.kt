@@ -1,5 +1,7 @@
 package de.hanno.hpengine.graphics.buffer.vertex
 
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.graphics.TriangleCount
 import de.hanno.hpengine.graphics.buffer.AtomicCounterBuffer
 import de.hanno.hpengine.graphics.buffer.GpuBuffer
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
@@ -9,6 +11,8 @@ import de.hanno.hpengine.graphics.renderer.glValue
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import de.hanno.hpengine.scene.VertexIndexBuffer
+import de.hanno.hpengine.toCount
+import org.lwjgl.opengl.ARBIndirectParameters.glMultiDrawArraysIndirectCountARB
 import org.lwjgl.opengl.ARBIndirectParameters.glMultiDrawElementsIndirectCountARB
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL42
@@ -23,17 +27,16 @@ fun drawLines(lineWidth: Float = 2f, verticesCount: Int): Int {
     return verticesCount
 }
 
-typealias TriangleCount = Int
 fun GpuBuffer.drawElementsInstancedBaseVertex(
     command: DrawElementsIndirectCommand,
     bindIndexBuffer: Boolean,
     mode: RenderingMode,
     primitiveType: PrimitiveType
 ): TriangleCount = drawElementsInstancedBaseVertex(
-    command.count,
-    command.instanceCount,
-    command.firstIndex,
-    command.baseVertex,
+    command.count.value.toInt(),
+    command.instanceCount.value.toInt(),
+    command.firstIndex.value.toInt(),
+    command.baseVertex.value.toInt(),
     bindIndexBuffer,
     mode,
     primitiveType
@@ -52,7 +55,7 @@ fun GpuBuffer.drawElementsInstancedBaseVertex(
     indexCount: Int, instanceCount: Int, indexOffset: Int,
     baseVertexIndex: Int, bindIndexBuffer: Boolean, mode: RenderingMode,
     primitiveType: PrimitiveType
-): Int {
+): TriangleCount {
     if (bindIndexBuffer) {
         bind()
     }
@@ -71,17 +74,17 @@ fun GpuBuffer.drawElementsInstancedBaseVertex(
         baseVertexIndex,
         0
     )
-    return instanceCount * (indexCount / 3)
+    return ElementCount(instanceCount * (indexCount / 3))
 }
 
 fun VertexIndexBuffer<*>.drawElementsIndirectCount(
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
-    drawCount: Long = 0,
-    maxDrawCount: Int,
+    drawCount: ElementCount = 0.toCount(),
+    maxDrawCount: ElementCount,
     mode: RenderingMode
 ) = when (mode) {
-    RenderingMode.Lines -> drawElementsIndirect(indexBuffer, commandBuffer, maxDrawCount, mode)
+    RenderingMode.Lines -> drawElementsIndirect(indexBuffer, commandBuffer, maxDrawCount.value.toInt(), mode)
     RenderingMode.Fill -> drawElementsIndirectCount(
         indexBuffer,
         commandBuffer,
@@ -96,8 +99,8 @@ fun drawElementsIndirectCount(
     indexBuffer: GpuBuffer,
     commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
     drawCountBuffer: AtomicCounterBuffer,
-    drawCount: Long = 0,
-    maxDrawCount: Int,
+    drawCount: ElementCount = 0.toCount(),
+    maxDrawCount: ElementCount,
     mode: RenderingMode
 ) {
     drawCountBuffer.bindAsParameterBuffer()
@@ -109,9 +112,27 @@ fun drawElementsIndirectCount(
         RenderingMode.Lines -> GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
         RenderingMode.Fill -> GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
     }
-    glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, maxDrawCount, 0)
+    glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount.value, maxDrawCount.value.toInt(), 0)
     drawCountBuffer.unbind()
     indexBuffer.unbind()
+}
+fun drawArraysIndirectCount(
+    commandBuffer: TypedGpuBuffer<DrawElementsIndirectCommandStrukt>,
+    drawCountBuffer: AtomicCounterBuffer,
+    drawCount: ElementCount = 0.toCount(),
+    maxDrawCount: ElementCount,
+    mode: RenderingMode
+) {
+    drawCountBuffer.bindAsParameterBuffer()
+    commandBuffer.bind()
+
+    // TODO: Use gpuContext here
+    when(mode) {
+        RenderingMode.Lines -> GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
+        RenderingMode.Fill -> GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
+    }
+    glMultiDrawArraysIndirectCountARB(GL11.GL_TRIANGLES, 0L, drawCount.value, maxDrawCount.value.toInt(), 0)
+    drawCountBuffer.unbind()
 }
 
 fun drawElementsIndirect(

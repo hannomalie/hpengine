@@ -1,9 +1,12 @@
 package de.hanno.hpengine.model
 
+import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.BaseVertex
 import de.hanno.hpengine.scene.VertexStruktPacked
+import de.hanno.hpengine.sum
 import de.hanno.hpengine.transform.AABB
 import org.lwjgl.BufferUtils
 import struktgen.api.Strukt
@@ -14,19 +17,20 @@ import java.io.File
 sealed class Model<T: BaseVertex>(val _meshes: List<Mesh<T>>) {
     val meshes: Array<Mesh<T>> = _meshes.toTypedArray()
 
-    val meshIndexCounts = meshes.map { it.indexBufferValues.capacity() / Integer.BYTES }
+    val meshIndexCounts = meshes.map { ElementCount(it.indexBufferValues.capacity() / Integer.BYTES) }
     val meshIndexSum = meshIndexCounts.sum()
 
-    var triangleCount: Int = meshes.sumOf { it.triangleCount }
+    var triangleCount = ElementCount(meshes.sumOf { it.triangleCount.value })
     val uniqueVertices: List<T> = meshes.flatMap { it.vertices }
 
-    var indices = BufferUtils.createByteBuffer(Integer.BYTES * meshIndexSum).apply {
-        var offsetPerMesh = 0
+    var indices = BufferUtils.createByteBuffer(Integer.BYTES * meshIndexSum.toInt()).apply {
+        var offsetPerMesh = SizeInBytes(0)
         meshes.forEach { mesh ->
             mesh.indexBufferValues.copyTo(this, targetOffsetInBytes = offsetPerMesh)
-            offsetPerMesh += mesh.indexBufferValues.capacity()
+            offsetPerMesh += SizeInBytes(mesh.indexBufferValues.capacity())
         }
     }
+    val indicesCount: ElementCount get() = ElementCount(indices.capacity() / Integer.BYTES)
 
     fun setMaterial(value: Material) {
         meshes.forEach { it.material = value }

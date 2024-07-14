@@ -4,7 +4,7 @@ layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE) in;
 layout(binding=0) uniform sampler2D visibilityTexture;
 layout(binding=2) uniform sampler2DArray diffuseTextures;
 
-layout(binding=2, rgba8) uniform image2D out_color;
+layout(binding=3, rgba8) uniform image2D out_color;
 
 //include(globals_structs.glsl)
 
@@ -31,18 +31,17 @@ void main(void) {
 	ivec2 size = ivec2(width, height);
 	vec2 st = vec2(storePos) / vec2(size);
 
-	ivec4 triangleIdTextureSample = ivec4(textureLod(triangleIdTexture, st, 0));
 	vec4 visibilitySample = textureLod(visibilityTexture, st, 0);
+	vec2 uv = visibilitySample.rg;
 	float mipMapLevel = visibilitySample.b;
 	int entityId = int(visibilitySample.a);
+
 	Entity entity = entities[entityId];
 	Material material = materials[entity.materialIndex];
 
-	vec3 barycentrics = visibilitySample.rgb;
 
 	vec3 color = material.diffuse;
 
-	vec2 uv = barycentrics.xy;
 
 #ifdef BINDLESSTEXTURES
 	bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
@@ -53,6 +52,5 @@ void main(void) {
 #else
 	color.rgb = textureLod(diffuseTextures, vec3(uv, material.diffuseMapIndex), mipMapLevel).rgb;
 #endif
-
 	imageStore(out_color, storePos, vec4(color, 1));
 }

@@ -23,6 +23,7 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
+import de.hanno.hpengine.toCount
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
 
@@ -63,7 +64,7 @@ class VisibilityRenderer(
     override val finalOutput = ForwardFinalOutput(renderTarget.textures.first(), 0, this)
 
     val simpleColorProgramStatic = programManager.getProgram(
-        config.engineDir.resolve("shaders/visibility/visibility_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/visibility/visibility_fragment.glsl").toCodeSource(),
         null,
         Defines(),
@@ -71,7 +72,7 @@ class VisibilityRenderer(
     )
 
     val simpleColorProgramAnimated = programManager.getProgram(
-        config.engineDir.resolve("shaders/visibility/visibility_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/visibility/visibility_fragment.glsl").toCodeSource(),
         null,
         Defines(Define("ANIMATED", true)),
@@ -91,7 +92,7 @@ class VisibilityRenderer(
         object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated]
 
-            override fun RenderState.selectVertexIndexBuffer() = this[entitiesStateHolder.entitiesState].vertexIndexBufferAnimated
+            override fun RenderState.selectGeometryBuffer() = this[entitiesStateHolder.entitiesState].geometryBufferAnimated
         }
     }
 
@@ -115,17 +116,20 @@ class VisibilityRenderer(
             renderState[animatedDirectPipeline].draw(renderState)
         }
 
-        resolveComputeProgram.use()
-        resolveComputeProgram.setUniform("width", renderTarget.width)
-        resolveComputeProgram.setUniform("height", renderTarget.height)
+//        profiled("Resolve") {
+            resolveComputeProgram.use()
+            resolveComputeProgram.setUniform("width", renderTarget.width)
+            resolveComputeProgram.setUniform("height", renderTarget.height)
 
-        graphicsApi.bindTexture(0, visibilityTexture)v
-        graphicsApi.bindTexture(2, graphicsApi.textureArray)
-        graphicsApi.bindImageTexture(2, renderTarget.renderedTexture, 0, false, 0, Access.ReadWrite, renderTarget.textures.first().internalFormat)
+            graphicsApi.bindTexture(0, visibilityTexture)
+            graphicsApi.bindTexture(2, graphicsApi.textureArray)
+            graphicsApi.bindImageTexture(3, renderTarget.renderedTexture, 0, false, 0, Access.ReadWrite, renderTarget.textures.first().internalFormat)
 
-        resolveComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
-        resolveComputeProgram.bindShaderStorageBuffer(2, renderState[entityBuffer.entitiesBuffer])
-        resolveComputeProgram.bindShaderStorageBuffer(3, renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic.vertexStructArray)
-        resolveComputeProgram.dispatchCompute(renderTarget.width / 4, renderTarget.height / 4, 1)
+            resolveComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
+            resolveComputeProgram.bindShaderStorageBuffer(2, renderState[entityBuffer.entitiesBuffer])
+            resolveComputeProgram.bindShaderStorageBuffer(3, renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.vertexStructArray)
+            resolveComputeProgram.dispatchCompute(renderTarget.width.toCount() / 4, renderTarget.height.toCount() / 4, 1.toCount())
+
+//        }
     }
 }

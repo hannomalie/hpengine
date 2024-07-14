@@ -18,12 +18,13 @@ import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import imgui.ImGui
 import imgui.gl3.ImGuiImplGl3
 import imgui.type.ImBoolean
+import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import kotlin.system.exitProcess
 
-private val exitOnCloseCallback = GLFWWindowCloseCallbackI { _: Long ->
-    exitProcess(0)
-}
+//private val exitOnCloseCallback = GLFWWindowCloseCallbackI { handle: Long ->
+//    GLFW.glfwSetWindowShouldClose(handle, true)
+//}
 
 fun main() {
     val config = Config()
@@ -34,7 +35,7 @@ fun main() {
         title = "Vaanilla ImGui",
         vSync = true,
         visible = true,
-        closeCallback = exitOnCloseCallback,
+//        closeCallback = exitOnCloseCallback,
         profiler = OpenGLGPUProfiler(config.profiling::profiling),
         createBackgroundContext = false,
         parentWindow = null,
@@ -95,6 +96,10 @@ fun main() {
         renderer.render(RenderState(graphicsApi))
 
         window.swapBuffers()
-        window.closeIfReqeusted()
+    }
+    graphicsApi.loopCondition = { !window.closeRequested.get() }
+    graphicsApi.afterLoop = {
+        window.close()
+        exitProcess(0)
     }
 }

@@ -2,7 +2,9 @@ package de.hanno.hpengine.graphics.light.probe
 
 import AmbientCubeImpl.Companion.sizeInBytes
 import InternalTextureFormat.*
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
@@ -91,7 +93,7 @@ class ProbeRenderStrategy(
 
 
     val probeGrid = graphicsApi.PersistentShaderStorageBuffer(
-        capacityInBytes = resolution * resolution * resolution * AmbientCube.sizeInBytes
+        capacityInBytes = SizeInBytes(resolution.toCount() * resolution * resolution, SizeInBytes(AmbientCube.sizeInBytes))
     )
     var x = 0
     var y = 0
@@ -148,7 +150,7 @@ class ProbeRenderStrategy(
 
                 profiled("Probe entity rendering") {
                     for (e in renderState[defaultBatchesSystem.renderBatchesStatic]) {
-                        entitiesState.vertexIndexBufferStatic.indexBuffer.draw(
+                        entitiesState.geometryBufferStatic.draw(
                             e.drawElementsIndirectCommand,
                             true,
                             PrimitiveType.Triangles,

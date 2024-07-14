@@ -4,6 +4,7 @@ import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
 import InternalTextureFormat.RGBA32F
 import com.artemis.BaseSystem
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
@@ -21,6 +22,7 @@ import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.toCount
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
@@ -111,7 +113,7 @@ class OceanWaterRenderSystem(
     private val h0MinuskMap = listOf(ColorAttachmentDefinition("h0MinuskMap", RGBA32F)).toTextures(graphicsApi, N, N).first()
     private val log2N = (ln(N.toFloat()) / ln(2.0f)).toInt()
     private val twiddleIndicesMap = listOf(ColorAttachmentDefinition("h0kMap", RGBA32F)).toTextures(graphicsApi, log2N, N).first()
-    private val bitReversedIndices = graphicsApi.PersistentShaderStorageBuffer(N * IntStrukt.sizeInBytes).typed(IntStrukt.type).apply {
+    private val bitReversedIndices = graphicsApi.PersistentShaderStorageBuffer(N.toCount() * SizeInBytes(IntStrukt.sizeInBytes)).typed(IntStrukt.type).apply {
         initBitReversedIndices(N).forEachIndexed { index, value ->
             typedBuffer.forIndex(index) { it.value = value }
         }
@@ -137,7 +139,7 @@ class OceanWaterRenderSystem(
                 Access.ReadOnly,
             )
             twiddleIndicesShader.bindShaderStorageBuffer(1, bitReversedIndices)
-            twiddleIndicesShader.dispatchCompute(log2N,N/16,1)
+            twiddleIndicesShader.dispatchCompute(log2N.toCount(),N.toCount()/16,1.toCount())
         }
         textureManager.apply {
             registerTextureForDebugOutput("[Ocean Water] Albedo", albedoMap)
@@ -188,7 +190,7 @@ class OceanWaterRenderSystem(
         h0kShader.setUniform("amplitude", oceanWaterComponent.amplitude)
         h0kShader.setUniform("windspeed", oceanWaterComponent.windspeed)
         h0kShader.setUniform("direction", oceanWaterComponent.direction)
-        h0kShader.dispatchCompute(N/16,N/16,1)
+        h0kShader.dispatchCompute(N.toCount()/16,N.toCount()/16,1.toCount())
 
         hktShader.use()
         hktShader.setUniform("t", oceanWaterState.seconds)
@@ -199,7 +201,7 @@ class OceanWaterRenderSystem(
         bindImageTexture(2, tildeHktDzMap, 0, false, 0, Access.WriteOnly)
         bindImageTexture(3, h0kMap, 0, false, 0, Access.ReadOnly)
         bindImageTexture(4, h0MinuskMap, 0, false, 0, Access.ReadOnly)
-        hktShader.dispatchCompute(N/16,N/16,1)
+        hktShader.dispatchCompute(N.toCount()/16,N.toCount()/16,1.toCount())
 
         for(helper in if(oceanWaterComponent.choppy) tildeMapHelpersChoppy else tildeMapHelpers) {
             var pingpong = 0
@@ -215,8 +217,8 @@ class OceanWaterRenderSystem(
                 butterflyShader.setUniform("pingpong", pingpong)
                 butterflyShader.setUniform("direction", 0)
                 butterflyShader.setUniform("stage", stage)
-                butterflyShader.dispatchCompute(N/16,N/16,1)
-                finish()
+                butterflyShader.dispatchCompute(N.toCount()/16,N.toCount()/16,1.toCount())
+//                finish()
                 pingpong++
                 pingpong %= 2
             }
@@ -225,8 +227,8 @@ class OceanWaterRenderSystem(
                 butterflyShader.setUniform("pingpong", pingpong)
                 butterflyShader.setUniform("direction", 1)
                 butterflyShader.setUniform("stage", stage)
-                butterflyShader.dispatchCompute(N/16,N/16,1)
-                finish()
+                butterflyShader.dispatchCompute(N.toCount()/16,N.toCount()/16,1.toCount())
+//                finish()
                 pingpong++
                 pingpong %= 2
             }
@@ -237,8 +239,8 @@ class OceanWaterRenderSystem(
             bindImageTexture(2, pingPongMap.id, 0, false, 0, Access.ReadWrite, pingPongMap.internalFormat)
             inversionShader.setUniform("pingpong", pingpong)
             inversionShader.setUniform("N", N)
-            inversionShader.dispatchCompute(N/16,N/16,1)
-            finish()
+            inversionShader.dispatchCompute(N.toCount()/16,N.toCount()/16,1.toCount())
+//            finish()
         }
 
         val camera = renderState[primaryCameraStateHolder.camera]
@@ -258,7 +260,7 @@ class OceanWaterRenderSystem(
         bindImageTexture(5, albedoMap.id, 0, false, 0, Access.WriteOnly, albedoMap.internalFormat)
         bindImageTexture(6, roughnessMap.id, 0, false, 0, Access.WriteOnly, roughnessMap.internalFormat)
         bindTexture(7, random3)
-        mergeDisplacementMapsShader.dispatchCompute(N/16,N/16,1)
+        mergeDisplacementMapsShader.dispatchCompute(N.toCount()/16,N.toCount()/16,1.toCount())
     }
 
     private fun initBitReversedIndices(N: Int): IntArray {

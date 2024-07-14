@@ -1,6 +1,8 @@
 package de.hanno.hpengine.graphics.light.directional
 
+import de.hanno.hpengine.ElementCount
 import de.hanno.hpengine.camera.Frustum
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
@@ -13,6 +15,8 @@ import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.model.material.MaterialSystem
+import de.hanno.hpengine.scene.VertexBuffer
+import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.joml.Vector3f
 
 class DirectionalShadowMapPipeline(
@@ -24,18 +28,21 @@ class DirectionalShadowMapPipeline(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val directionalShadowPassProgram: Program<DirectionalShadowUniforms>,
 ) {
-    private var verticesCount = 0
-    private var entitiesCount = 0
+    private var verticesCount = ElementCount(0)
+    private var entitiesCount = ElementCount(0)
 
     fun draw(renderState: RenderState, update: Update) = graphicsApi.run {
         profiled("Actual draw entities") {
-            verticesCount = 0
-            entitiesCount = 0
+            verticesCount = 0.toCount()
+            entitiesCount = 0.toCount()
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
             val program = directionalShadowPassProgram
-            val vertexIndexBuffer = entitiesState.selectVertexIndexBuffer(program.uniforms)
+            val geometryBuffer = entitiesState.selectVertexIndexBuffer(program.uniforms)
 
-            vertexIndexBuffer.indexBuffer.bind()
+            when(geometryBuffer) {
+                is VertexBuffer -> { }
+                is VertexIndexBuffer -> geometryBuffer.indexBuffer.bind()
+            }
 
             program.use()
             program.uniforms.apply {
@@ -43,9 +50,9 @@ class DirectionalShadowMapPipeline(
                 directionalLightState = renderState[directionalLightStateHolder.lightState]
                 entities = renderState[entityBuffer.entitiesBuffer]
                 when (this) {
-                    is StaticDirectionalShadowUniforms -> vertices = vertexIndexBuffer.vertexStructArray
+                    is StaticDirectionalShadowUniforms -> vertices = geometryBuffer.vertexStructArray
                     is AnimatedDirectionalShadowUniforms -> {
-                        vertices = vertexIndexBuffer.vertexStructArray
+                        vertices = geometryBuffer.vertexStructArray
                         joints = entitiesState.jointsBuffer
                     }
                 }
@@ -60,14 +67,14 @@ class DirectionalShadowMapPipeline(
             for (batch in shadowCasters) {
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
-                vertexIndexBuffer.indexBuffer.draw(
+                geometryBuffer.draw(
                     batch.drawElementsIndirectCommand,
                     false,
                     PrimitiveType.Triangles,
                     RenderingMode.Fill
                 )
                 verticesCount += batch.vertexCount
-                entitiesCount += 1
+                entitiesCount += 1.toCount()
             }
         }
     }
@@ -78,8 +85,8 @@ class DirectionalShadowMapPipeline(
     }.filter { it.isVisible && it.isShadowCasting }
 
     private fun EntitiesState.selectVertexIndexBuffer(uniforms: DirectionalShadowUniforms) = when (uniforms) {
-        is AnimatedDirectionalShadowUniforms -> vertexIndexBufferAnimated
-        is StaticDirectionalShadowUniforms -> vertexIndexBufferStatic
+        is AnimatedDirectionalShadowUniforms -> geometryBufferAnimated
+        is StaticDirectionalShadowUniforms -> geometryBufferStatic
     }
 }
 

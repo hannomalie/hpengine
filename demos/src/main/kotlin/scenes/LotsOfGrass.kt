@@ -7,6 +7,7 @@ import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.annotations.All
 import de.hanno.hpengine.Engine
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.forFirstEntityIfPresent
 import de.hanno.hpengine.config.Config
@@ -32,6 +33,7 @@ import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.system.Extractor
+import de.hanno.hpengine.toCount
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
@@ -66,14 +68,14 @@ class GrassSystem(
     private val materialSystem: MaterialSystem,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
     private val positions = renderStateContext.renderState.registerState {
-        graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
+        graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     }
 
     private val uniforms1 = GrassDefaultUniforms()
 
     inner class GrassDefaultUniforms : StaticDefaultUniforms(graphicsApi) {
         var positions by SSBO(
-            "vec4", 5, graphicsApi.PersistentShaderStorageBuffer(1000).typed(Vector4fStrukt.type)
+            "vec4", 5, graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
         )
     }
 
@@ -113,7 +115,7 @@ class GrassSystem(
         }
         if(anyGrassPresent) {
             val positionsToWrite = currentWriteState[positions]
-            positionsToWrite.ensureCapacityInBytes(templatePositions.size * Vector4fStrukt.sizeInBytes)
+            positionsToWrite.ensureCapacityInBytes(templatePositions.size.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes))
 
             var index = 0
             templatePositions.forEach {
@@ -149,7 +151,7 @@ class GrassSystem(
                 entities = renderState[entityBuffer.entitiesBuffer]
                 positions = renderState[this@GrassSystem.positions]
                 program.uniforms.indirect = false
-                program.uniforms.vertices = entitiesState.vertexIndexBufferStatic.vertexStructArray
+                program.uniforms.vertices = entitiesState.geometryBufferStatic.vertexStructArray
                 viewMatrix = camera.viewMatrixBuffer
                 lastViewMatrix = camera.viewMatrixBuffer
                 projectionMatrix = camera.projectionMatrixBuffer
@@ -163,7 +165,7 @@ class GrassSystem(
                 program.uniforms.entityBaseIndex = 0
                 program.uniforms.indirect = false
 
-                val vertexIndexBuffer = renderState[entitiesStateHolder.entitiesState].vertexIndexBufferStatic
+                val vertexIndexBuffer = renderState[entitiesStateHolder.entitiesState].geometryBufferStatic
 
                 depthMask = materialComponent.material.writesDepth
                 cullFace = materialComponent.material.cullBackFaces
@@ -173,14 +175,14 @@ class GrassSystem(
                 program.uniforms.entityIndex = entityIndex
 
                 program.bind() // TODO: useAndBind seems not to work as this call is required, investigate
-                vertexIndexBuffer.indexBuffer.bind()
-                vertexIndexBuffer.indexBuffer.draw(
+                vertexIndexBuffer.bind()
+                vertexIndexBuffer.draw(
                     DrawElementsIndirectCommand(
                         count = indexCount,
-                        instanceCount = templatePositions.size,
+                        instanceCount = templatePositions.size.toCount(),
                         firstIndex = allocation.indexOffset,
                         baseVertex = allocation.vertexOffset,
-                        baseInstance = 0,
+                        baseInstance = 0.toCount(),
                     ),
                     primitiveType = PrimitiveType.Triangles,
                     mode = if(config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill,

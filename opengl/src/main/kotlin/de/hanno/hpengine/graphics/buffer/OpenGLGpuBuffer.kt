@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.buffer
 
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.BufferTarget
 import de.hanno.hpengine.graphics.constants.glValue
@@ -14,7 +15,7 @@ import java.nio.ByteBuffer
 class OpenGLGpuBuffer(
     private val graphicsApi: GraphicsApi,
     override var target: BufferTarget,
-    capacityInBytes: Int = 1024
+    capacityInBytes: SizeInBytes = SizeInBytes(1024)
 ) : GpuBuffer {
 
     private var bufferDefinition: BufferDefinition = createBuffer(capacityInBytes)
@@ -33,13 +34,13 @@ class OpenGLGpuBuffer(
     }
 
     @Synchronized // TODO: remove this
-    override fun ensureCapacityInBytes(requestedCapacity: Int) {
+    override fun ensureCapacityInBytes(requestedCapacity: SizeInBytes) {
         var capacityInBytes = requestedCapacity
-        if (capacityInBytes <= 0) {
-            capacityInBytes = 10
+        if (capacityInBytes <= SizeInBytes(0)) {
+            capacityInBytes = SizeInBytes(10)
         }
 
-        val needsResize = buffer.capacity() < capacityInBytes
+        val needsResize = SizeInBytes(buffer.capacity()) < capacityInBytes
         if (needsResize) {
             bufferDefinition = createBuffer(capacityInBytes)
         }
@@ -49,15 +50,15 @@ class OpenGLGpuBuffer(
         glCopyNamedBufferSubData(this.id, newBuffer.id, 0, 0, this.buffer.capacity().toLong())
     }
 
-    private fun createBuffer(capacityInBytes: Int): BufferDefinition = graphicsApi.onGpu {
+    private fun createBuffer(capacityInBytes: SizeInBytes): BufferDefinition = graphicsApi.onGpu {
         val id = glGenBuffers()
         glBindBuffer(target.glValue, id)
-        GL44.glBufferStorage(target.glValue, capacityInBytes.toLong(), flags)
-        val xxxx = BufferUtils.createByteBuffer(capacityInBytes)
+        GL44.glBufferStorage(target.glValue, capacityInBytes.value, flags)
+        val xxxx = BufferUtils.createByteBuffer(capacityInBytes.value.toInt())
 
         val byteBuffer = GL30.glMapBufferRange(
             target.glValue,
-            0, capacityInBytes.toLong(), flags,
+            0, capacityInBytes.value, flags,
             xxxx
         )!!
 

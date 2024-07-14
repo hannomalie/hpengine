@@ -24,6 +24,8 @@ class OpenGlExecutorImpl(
     override val backgroundContext: GpuExecutor? = null
 
     override var perFrameAction: (() -> Unit)? = null
+    override var loopCondition: (() -> Boolean)? = { true }
+    override var afterLoop: (() -> Unit)? = {  }
     override val coroutineContext = dispatcher + Job()
 
     inline val isOpenGLThread: Boolean get() = Thread.currentThread().isOpenGLThread

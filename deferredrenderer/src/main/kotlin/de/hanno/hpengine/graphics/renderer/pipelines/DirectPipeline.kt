@@ -11,6 +11,7 @@ import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.TesselationControlShader
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.toCount
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.FrustumIntersection
 
@@ -80,7 +81,7 @@ fun RenderBatch.isCulled(cullCam: Camera): Boolean {
     val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
 
     val visibleForCamera =
-        meshIsInFrustum || drawElementsIndirectCommand.instanceCount > 1 // TODO: Better culling for instances
+        meshIsInFrustum || drawElementsIndirectCommand.instanceCount > 1.toCount() // TODO: Better culling for instances
 
     return !visibleForCamera
 }

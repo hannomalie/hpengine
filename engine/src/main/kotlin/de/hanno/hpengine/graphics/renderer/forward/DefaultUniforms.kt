@@ -8,6 +8,7 @@ import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
@@ -20,9 +21,9 @@ import de.hanno.hpengine.scene.VertexStruktPacked
 import org.joml.Vector3f
 
 sealed class DefaultUniforms(graphicsApi: GraphicsApi): Uniforms() {
-    var materials by SSBO("Material", 1, graphicsApi.PersistentShaderStorageBuffer(1).typed(MaterialStrukt.type))
-    var entities by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(1).typed(EntityStrukt.type))
-    var entityOffsets by SSBO("int", 4, graphicsApi.PersistentShaderStorageBuffer(1).typed(IntStrukt.type))
+    var materials by SSBO("Material", 1, graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(MaterialStrukt.type.sizeInBytes)).typed(MaterialStrukt.type))
+    var entities by SSBO("Entity", 3, graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(EntityStrukt.type.sizeInBytes)).typed(EntityStrukt.type))
+    var entityOffsets by SSBO("int", 4, graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(IntStrukt.type.sizeInBytes)).typed(IntStrukt.type))
     var useRainEffect by BooleanType(false)
     var rainEffect by FloatType(0f)
     var viewMatrix by Mat4(createTransformBuffer())
@@ -43,15 +44,15 @@ sealed class DefaultUniforms(graphicsApi: GraphicsApi): Uniforms() {
 }
 
 open class AnimatedDefaultUniforms(graphicsApi: GraphicsApi): DefaultUniforms(graphicsApi) {
-    var joints by SSBO("mat4", 6, graphicsApi.PersistentShaderStorageBuffer(Matrix4fStrukt.sizeInBytes).typed(
+    var joints by SSBO("mat4", 6, graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(Matrix4fStrukt.sizeInBytes)).typed(
         Matrix4fStrukt.type))
     var vertices by SSBO("VertexAnimatedPacked", 7, graphicsApi.PersistentShaderStorageBuffer(
-        AnimatedVertexStruktPacked.sizeInBytes).typed(
+        SizeInBytes(AnimatedVertexStruktPacked.sizeInBytes)).typed(
             AnimatedVertexStruktPacked.type
         )
     )
 }
 
 open class StaticDefaultUniforms(graphicsApi: GraphicsApi): DefaultUniforms(graphicsApi) {
-    var vertices by SSBO("VertexPacked", 7, graphicsApi.PersistentShaderStorageBuffer(1).typed(VertexStruktPacked.type))
+    var vertices by SSBO("VertexPacked", 7, graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(VertexStruktPacked.type.sizeInBytes)).typed(VertexStruktPacked.type))
 }

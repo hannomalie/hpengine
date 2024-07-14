@@ -1,40 +1,34 @@
 package de.hanno.hpengine.graphics
 
 
+import GLUtil
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.executors.FrameBasedResultOpenGLExecutor
 import de.hanno.hpengine.graphics.executors.OpenGlException
 import de.hanno.hpengine.graphics.executors.OpenGlExecutorImpl
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.GLU
-import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
+import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import org.joml.Vector4f
+import org.lwjgl.glfw.*
 import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.glfw.GLFWErrorCallback
-import org.lwjgl.glfw.GLFWErrorCallbackI
-import org.lwjgl.glfw.GLFWFramebufferSizeCallback
-import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
 import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL32
 import org.lwjgl.system.APIUtil
+import org.lwjgl.system.Callback
 import java.lang.reflect.Field
-import kotlin.system.exitProcess
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 // Don't make this a local field, we need a strong reference
 private val printErrorCallback = GLFWErrorCallbackI { _: Int, _: Long ->
     GLFWErrorCallback.createPrint(System.err)
-}
-
-// Don't make this a local field, we need a strong reference
-private val exitOnCloseCallback = GLFWWindowCloseCallbackI { _: Long ->
-    exitProcess(0)
 }
 
 private val exceptionOnErrorCallback = object : GLFWErrorCallback() {
@@ -63,15 +57,17 @@ class GlfwWindow(
     title: String,
     vSync: Boolean = true,
     visible: Boolean,
-    closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
+//    closeCallback: GLFWWindowCloseCallbackI,
     override val profiler: GPUProfiler,
     createBackgroundContext: Boolean = config.performance.useBackgroundContext,
     parentWindow: GlfwWindow? = null,
     logLevel: GLUtil.Severity = GLUtil.Severity.NOTIFICATION,
 ) : Window {
-
     final override val gpuExecutor: GpuExecutor
 
+    override var closeRequested = AtomicBoolean(false)
+        private set
+    private var debugProc: Callback? = null
     constructor(
         config: Config,
         profiler: GPUProfiler,
@@ -116,7 +112,7 @@ class GlfwWindow(
         check(glfwInit()) { "Unable to initialize GLFW" }
         glfwSetErrorCallback(exceptionOnErrorCallback)
         glfwDefaultWindowHints()
-        glfwWindowHint(GLFW_RESIZABLE, GL11.GL_TRUE)
+        glfwWindowHint(GLFW_RESIZABLE, GL_TRUE)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
@@ -125,14 +121,14 @@ class GlfwWindow(
             check(this != 0L) { "Failed to create windowHandle" }
         }
         glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback)
-        glfwSetWindowCloseCallback(handle, closeCallback)
+//        glfwSetWindowCloseCallback(handle, closeCallback)
 
         // This has to happen on the main thread, or it will break, look at glfwShowWindow documentation
         makeContextCurrent()
         glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
         glfwSwapInterval(if (this.vSync) 1 else 0)
         GL.createCapabilities()
-        GLUtil.setupDebugMessageCallback(logLevel = logLevel)
+        debugProc = GLUtil.setupDebugMessageCallback(logLevel = logLevel)
         GL32.glViewport(0, 0, Integer.max(width, 0), Integer.max(height, 0))
 
         // Don't remove that, or some operating systems won't make context current on another thread
@@ -144,7 +140,7 @@ class GlfwWindow(
             GlfwWindow(
                 1, 1, config, "Background", false,
                 visible = false,
-                closeCallback, OpenGLGPUProfiler(config.debug::backgroundContextProfiling),
+                OpenGLGPUProfiler(config.debug::backgroundContextProfiling),
                 createBackgroundContext = false,
                 parentWindow = this,
             )
@@ -155,7 +151,7 @@ class GlfwWindow(
         gpuExecutor = if (isMainContext) {
             // TODO: IS BROKEN
 //            OpenGlExecutorImpl(gpuProfiler = profiler) {
-            FrameBasedResultOpenGLExecutor(profiler, backgroundWindow?.gpuExecutor) {
+            FrameBasedResultOpenGLExecutor(this, profiler, backgroundWindow?.gpuExecutor) {
                 makeContextCurrent()
                 GL.createCapabilities()
             }
@@ -178,18 +174,28 @@ class GlfwWindow(
             hideWindow()
         }
     }
-    override fun pollEvents() = glfwPollEvents()
+    override fun pollEvents() {
+        glfwPollEvents()
+
+        if(glfwWindowShouldClose(handle)) {
+            closeRequested.set(true)
+        }
+    }
     override fun pollEventsInLoop() {
-        while (!shouldClose()) {
+        while (!closeRequested.get()) {
             pollEvents()
         }
     }
-    override fun shouldClose(): Boolean {
-        return glfwWindowShouldClose(handle)
+
+    override fun close() {
+        debugProc?.free()
+        Callbacks.glfwFreeCallbacks(handle)
+        glfwDestroyWindow(handle)
+        glfwTerminate()
     }
-    override fun closeIfReqeusted() {
-        if(shouldClose()) {
-            exitOnCloseCallback(handle)
+    override fun closeIfRequested() {
+        if (closeRequested.get()) {
+            close()
         }
     }
 

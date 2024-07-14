@@ -3,9 +3,11 @@ package de.hanno.hpengine.graphics.window
 import de.hanno.hpengine.graphics.GpuExecutor
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
+import java.util.concurrent.atomic.AtomicBoolean
 
 
-interface Window {
+interface Window: AutoCloseable {
+    val closeRequested: AtomicBoolean
     val gpuExecutor: GpuExecutor
     val profiler: GPUProfiler
     val handle: Long
@@ -29,7 +31,6 @@ interface Window {
     fun awaitEvents()
 
     val frontBuffer: FrontBufferTarget
-    fun shouldClose(): Boolean
-    fun closeIfReqeusted()
+    fun closeIfRequested()
     fun setVisible(visible: Boolean)
 }

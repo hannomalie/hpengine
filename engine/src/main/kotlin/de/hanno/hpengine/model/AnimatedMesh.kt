@@ -2,6 +2,7 @@ package de.hanno.hpengine.model
 
 import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
 import AnimatedVertexStruktPackedImpl.Companion.type
+import de.hanno.hpengine.ElementCount
 import de.hanno.hpengine.model.animation.Animation
 import de.hanno.hpengine.model.animation.AnimationController
 import de.hanno.hpengine.model.material.Material
@@ -28,8 +29,8 @@ class AnimatedMesh(
 
     override val indexBufferValues = triangles.extractIndices()
 
-    override val triangleCount: Int
-        get() = triangles.size
+    override val triangleCount: ElementCount
+        get() = ElementCount(triangles.size)
 
     override val boundingVolume = AABBData().apply {
         vertices.forEach {
