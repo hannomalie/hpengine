@@ -13,6 +13,7 @@ import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
 import de.hanno.hpengine.graphics.texture.UploadInfo
+import de.hanno.hpengine.lifecycle.Termination
 import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import imgui.ImGui
@@ -28,10 +29,12 @@ import kotlin.system.exitProcess
 
 fun main() {
     val config = Config()
+    val termination = Termination()
     val window = GlfwWindow(
         width = 800,
         height = 600,
         config = config,
+        termination = termination,
         title = "Vaanilla ImGui",
         vSync = true,
         visible = true,
@@ -97,7 +100,7 @@ fun main() {
 
         window.swapBuffers()
     }
-    graphicsApi.loopCondition = { !window.closeRequested.get() }
+    graphicsApi.loopCondition = { !termination.terminationRequested.get() }
     graphicsApi.afterLoop = {
         window.close()
         exitProcess(0)

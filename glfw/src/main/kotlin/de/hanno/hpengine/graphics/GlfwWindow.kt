@@ -11,6 +11,7 @@ import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.lifecycle.Termination
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import org.joml.Vector4f
 import org.lwjgl.glfw.*
@@ -54,6 +55,7 @@ class GlfwWindow(
     override var width: Int,
     override var height: Int,
     private val config: Config,
+    private val termination: Termination,
     title: String,
     vSync: Boolean = true,
     visible: Boolean,
@@ -65,15 +67,15 @@ class GlfwWindow(
 ) : Window {
     final override val gpuExecutor: GpuExecutor
 
-    override var closeRequested = AtomicBoolean(false)
-        private set
     private var debugProc: Callback? = null
+
     constructor(
         config: Config,
         profiler: GPUProfiler,
+        termination: Termination,
         visible: Boolean = true,
     ) : this(
-        config.width, config.height, config,
+        config.width, config.height, config, termination,
         "HPEngine", config.performance.isVsync,
         visible = visible,
         profiler = profiler
@@ -138,7 +140,7 @@ class GlfwWindow(
         // https://javadoc.lwjgl.org/org/lwjgl/glfw/GLFW.html#glfwCreateWindow(int,int,java.lang.CharSequence,long,long)
         val backgroundWindow = if(createBackgroundContext) {
             GlfwWindow(
-                1, 1, config, "Background", false,
+                1, 1, config, termination, "Background", false,
                 visible = false,
                 OpenGLGPUProfiler(config.debug::backgroundContextProfiling),
                 createBackgroundContext = false,
@@ -151,7 +153,7 @@ class GlfwWindow(
         gpuExecutor = if (isMainContext) {
             // TODO: IS BROKEN
 //            OpenGlExecutorImpl(gpuProfiler = profiler) {
-            FrameBasedResultOpenGLExecutor(this, profiler, backgroundWindow?.gpuExecutor) {
+            FrameBasedResultOpenGLExecutor(this, profiler, backgroundWindow?.gpuExecutor, termination) {
                 makeContextCurrent()
                 GL.createCapabilities()
             }
@@ -178,11 +180,11 @@ class GlfwWindow(
         glfwPollEvents()
 
         if(glfwWindowShouldClose(handle)) {
-            closeRequested.set(true)
+            termination.terminationRequested.set(true)
         }
     }
     override fun pollEventsInLoop() {
-        while (!closeRequested.get()) {
+        while (!termination.terminationRequested.get()) {
             pollEvents()
         }
     }
@@ -194,7 +196,7 @@ class GlfwWindow(
         glfwTerminate()
     }
     override fun closeIfRequested() {
-        if (closeRequested.get()) {
+        if (termination.terminationRequested.get()) {
             close()
         }
     }

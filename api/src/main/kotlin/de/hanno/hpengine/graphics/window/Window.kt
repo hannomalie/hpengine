@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 
 interface Window: AutoCloseable {
-    val closeRequested: AtomicBoolean
     val gpuExecutor: GpuExecutor
     val profiler: GPUProfiler
     val handle: Long

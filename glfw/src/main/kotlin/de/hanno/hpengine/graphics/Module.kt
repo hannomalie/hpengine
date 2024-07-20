@@ -5,6 +5,6 @@ import org.koin.dsl.module
 
 val glfwModule = module {
     single {
-        GlfwWindow(get(), get())
+        GlfwWindow(get(), get(), get())
     } binds arrayOf(Window::class)
 }

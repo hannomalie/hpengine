@@ -2,10 +2,12 @@ package de.hanno.hpengine.graphics.executors
 
 import de.hanno.hpengine.graphics.GpuExecutor
 import de.hanno.hpengine.graphics.OpenGLContext
+import de.hanno.hpengine.graphics.logger
 import de.hanno.hpengine.graphics.profiledFoo
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.lifecycle.Termination
 import kotlinx.coroutines.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.opengl.GL11
@@ -20,6 +22,7 @@ class FrameBasedResultOpenGLExecutor(
     private val window: Window,
     override val gpuProfiler: GPUProfiler,
     override val backgroundContext: GpuExecutor?,
+    private val termination: Termination,
     dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
     initBlock: () -> Unit,
 ): GpuExecutor {
@@ -31,7 +34,7 @@ class FrameBasedResultOpenGLExecutor(
     }
     private val queue: BlockingQueue<() -> Unit> = LinkedBlockingQueue()
     override var perFrameAction: (() -> Unit)? = null
-    override var loopCondition: (() -> Boolean)? = { !window.closeRequested.get() }
+    override var loopCondition: (() -> Boolean)? = { !termination.terminationRequested.get() }
     override var afterLoop: (() -> Unit)? = {  }
 
     init {
@@ -65,6 +68,10 @@ class FrameBasedResultOpenGLExecutor(
                     }
                     frameCounter++
                 }
+            }
+            while(!termination.terminationAllowed.get()) {
+                Thread.sleep(100)
+                logger.info("Waiting for termination to be allowed")
             }
             afterLoop?.invoke()
         }

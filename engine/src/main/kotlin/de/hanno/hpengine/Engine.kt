@@ -9,6 +9,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
+import de.hanno.hpengine.lifecycle.Termination
 import de.hanno.hpengine.lifecycle.UpdateCycle
 import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.system.Extractor
@@ -38,6 +39,7 @@ class Engine(
     val extractors = systems.filterIsInstance<Extractor>().distinct() // TODO: bind as Extractor, inject properly, this is flawed
     val renderManager = systems.firstIsInstance<RenderManager>() // TODO: See above
     val updateCycle = systems.firstIsInstance<UpdateCycle>() // TODO: See above
+    val termination = systems.firstIsInstance<Termination>() // TODO: See above
 
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
         *(systems.distinct().toTypedArray())
@@ -64,22 +66,26 @@ class Engine(
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
 
-    fun simulate() = launchEndlessLoop({
-        !window.closeRequested.get()
-    }) { deltaSeconds ->
-        // Input and window updates need to be done on the main thread, they can't be moved to
-        // the base system regular update below. Same for Executing the commands
-        input.update()
-        window.pollEvents()
+    fun simulate() {
+        launchEndlessLoop({
+            !termination.terminationRequested.get()
+        }) { deltaSeconds ->
+            // Input and window updates need to be done on the main thread, they can't be moved to
+            // the base system regular update below. Same for Executing the commands
+            input.update()
+            window.pollEvents()
 
-        addResourceContext.executeCommands()
+            addResourceContext.executeCommands()
 
-        withContext(updateScopeDispatcher) {
-            world.delta = deltaSeconds
-            world.process()
+            withContext(updateScopeDispatcher) {
+                world.delta = deltaSeconds
+                world.process()
+            }
+            renderManager.extract(extractors, world.delta)
+            updateCycle.cycle.getAndIncrement()
         }
-        renderManager.extract(extractors, world.delta)
-        updateCycle.cycle.getAndIncrement()
+        logger.info("Termination allowed")
+        termination.terminationAllowed.set(true)
     }
     companion object
 }

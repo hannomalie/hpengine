@@ -7,6 +7,7 @@ import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.lifecycle.Termination
 import de.hanno.hpengine.lifecycle.UpdateCycle
 import de.hanno.hpengine.system.Extractor
 import org.apache.logging.log4j.LogManager
@@ -24,6 +25,7 @@ class RenderManager(
     val renderSystemsConfig: RenderSystemsConfig,
     private val gpuProfiler: GPUProfiler,
     private val updateCycle: UpdateCycle,
+    private val termination: Termination,
 ) : BaseSystem() {
 
     val logger = LogManager.getLogger(RenderManager::class.java)
@@ -47,7 +49,7 @@ class RenderManager(
 
     init {
         window.gpuExecutor.perFrameAction = ::frame
-        window.gpuExecutor.loopCondition = { !window.closeRequested.get() }
+        window.gpuExecutor.loopCondition = { !termination.terminationRequested.get() }
         window.gpuExecutor.afterLoop = {
             window.close()
             exitProcess(0)
@@ -58,72 +60,57 @@ class RenderManager(
         logger.trace("frame")
         gpuProfiler.run {
             graphicsApi.run {
+
                 rendering.getAndSet(true)
                 try {
                     renderStateContext.renderState.readLocked { currentReadState ->
+                        renderSystemsConfig.run {
 
-                        val renderSystems = profiled("determineRenderSystems") {
-                            when (val renderMode = renderMode) {
-                                RenderMode.Normal -> renderSystemsConfig.run { nonPrimaryRenderers.filter { it.enabled } }
-
-                                is RenderMode.SingleFrame -> {
-                                    renderSystemsConfig.run {
-                                        val (singleStepSystems, continuousSystems) = allRenderSystems.filter { it.enabled }
-                                            .partition {
-                                                it.supportsSingleStep
-                                            }
-                                        val systemsToExecute =
-                                            continuousSystems + if (renderMode.frameRequested.get()) {
-                                                singleStepSystems
-                                            } else {
-                                                emptyList() // TODO: Check whether this still works
-                                            }
-
-                                        renderMode.frameRequested.getAndSet(false)
-                                        systemsToExecute
-                                    }
-                                }
-                            }
-                        }
-                        logger.trace("renderSystems.render")
-                        profiled("renderSystems") {
-                            renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
+                            // TODO: Reenable single step rendering
+                            logger.trace("renderSystems.render")
+                            profiled("renderSystems") {
+                                renderSystemsConfig.renderSystemsGroupedByTarget.forEach { (renderTarget, renderSystems) ->
                                     val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
                                     profiled("use rendertarget") {
                                         renderTarget?.use(clear)
                                     }
                                     renderSystems.forEach { renderSystem ->
-                                        profiled(renderSystem.javaClass.simpleName) {
-                                            renderSystem.render(currentReadState)
+                                        if(renderSystem.enabled) {
+                                            profiled(renderSystem.javaClass.simpleName) {
+                                                renderSystem.render(currentReadState)
+                                            }
                                         }
                                     }
-                                    renderSystemsConfig.primaryRenderer.render(currentReadState)
                                 }
-                        }
-
-                        logger.trace("present")
-                        profiled("present") {
-                            window.frontBuffer.use(graphicsApi, true)
-                            val finalOutput = renderSystemsConfig.primaryRenderer.finalOutput
-                            textureRenderer.drawToQuad(
-                                finalOutput.texture2D,
-                                mipMapLevel = finalOutput.mipmapLevel
-                            )
-                        }
-
-                        profiled("checkCommandSyncs") {
-                            checkCommandSyncs()
-                        }
-
-                        profiled("finishFrame") {
-                            finishFrame(currentReadState)
-                            renderSystems.forEach {
-                                it.afterFrameFinished()
+                                renderSystemsConfig.primaryRenderer.render(currentReadState)
                             }
-                        }
-                        logger.trace("swapBuffers")
-                        profiled("swapBuffers") {
-                            window.swapBuffers()
+
+                            logger.trace("present")
+                            profiled("present") {
+                                window.frontBuffer.use(graphicsApi, true)
+                                val finalOutput = renderSystemsConfig.primaryRenderer.finalOutput
+                                textureRenderer.drawToQuad(
+                                    finalOutput.texture2D,
+                                    mipMapLevel = finalOutput.mipmapLevel
+                                )
+                            }
+
+                            profiled("checkCommandSyncs") {
+                                checkCommandSyncs()
+                            }
+
+                            profiled("finishFrame") {
+                                finishFrame(currentReadState)
+                                renderSystemsConfig.renderSystems.forEach {
+                                    if(it.enabled) {
+                                        it.afterFrameFinished()
+                                    }
+                                }
+                            }
+                            logger.trace("swapBuffers")
+                            profiled("swapBuffers") {
+                                window.swapBuffers()
+                            }
                         }
                     }
                 } catch (e: Exception) {

@@ -43,11 +43,13 @@ class RenderSystemsConfig(allRenderSystems: List<RenderSystem>) {
     var renderSystems = allRenderSystems
         private set(value) {
             field = value
-            renderSystemsGroupedByTarget = renderSystems.groupBy { it.sharedRenderTarget }
+            renderSystemsGroupedByTarget = calculateNonPrimaryRenderersGroupedByTarget()
         }
 
-    var renderSystemsGroupedByTarget = renderSystems.groupBy { it.sharedRenderTarget }
+    var renderSystemsGroupedByTarget = calculateNonPrimaryRenderersGroupedByTarget()
         private set
+
+    private fun calculateNonPrimaryRenderersGroupedByTarget() = renderSystems.filterNot { it is PrimaryRenderer }.groupBy { it.sharedRenderTarget }
     var RenderSystem.enabled: Boolean
         get() = renderSystemsEnabled[this]!!
         set(value) {

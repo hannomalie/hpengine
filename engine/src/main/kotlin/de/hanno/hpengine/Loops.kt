@@ -13,7 +13,7 @@ fun launchEndlessLoop(loopCondition: () -> Boolean, actualUpdateStep: suspend (F
                 val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
                 var frameTimeS = frameTimeNs / 1000000000.0
                 currentTimeNs = newTimeNs
-                while (frameTimeS > 0.0) {
+                while (frameTimeS > 0.0 && loopCondition()) {
                     val deltaTime = min(frameTimeS, dtS)
                     val deltaSeconds = deltaTime.toFloat()
 
