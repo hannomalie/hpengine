@@ -17,6 +17,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.buffer.vertex.QuadVertexBuffer
 import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
+import de.hanno.hpengine.graphics.light.point.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -83,7 +84,7 @@ class AOScatteringExtension(
             //			aoScatteringProgram.bindShaderStorageBuffer(5, renderState.getState(directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGridBufferRef()).getVoxelGridBuffer());
             //		}
 
-            aoScatteringProgram.setUniform("maxPointLightShadowmaps", PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
+            aoScatteringProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS)
             aoScatteringProgram.setUniform("pointLightCount", renderState[pointLightStateHolder.lightState].pointLightCount)
             aoScatteringProgram.bindShaderStorageBuffer(2,
                 renderState[pointLightStateHolder.lightState].pointLightBuffer)

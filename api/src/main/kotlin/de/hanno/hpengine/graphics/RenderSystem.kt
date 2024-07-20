@@ -41,6 +41,12 @@ class RenderSystemsConfig(allRenderSystems: List<RenderSystem>) {
         }
     }
     var renderSystems = allRenderSystems
+        private set(value) {
+            field = value
+            renderSystemsGroupedByTarget = renderSystems.groupBy { it.sharedRenderTarget }
+        }
+
+    var renderSystemsGroupedByTarget = renderSystems.groupBy { it.sharedRenderTarget }
         private set
     var RenderSystem.enabled: Boolean
         get() = renderSystemsEnabled[this]!!

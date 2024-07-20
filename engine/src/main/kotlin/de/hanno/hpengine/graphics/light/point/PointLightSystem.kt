@@ -65,21 +65,7 @@ class PointLightSystem(
         }
     }
 
-    override fun extract(currentWriteState: RenderState) {
-        currentWriteState[lightState].pointLightMovedInCycle.clear()
-        currentWriteState[lightState].pointLightMovedInCycle.putAll(pointLightMovedInCycle)
-
-        currentWriteState[lightState].pointLightBuffer.ensureCapacityInBytes(gpuPointLights.sizeInBytes)
-        gpuPointLights.buffer.copyTo(currentWriteState[lightState].pointLightBuffer.buffer)
-        currentWriteState[lightState].pointLightCount = mapEntity { 1 }.count()
-    }
-
-    companion object {
-        @JvmField
-        val MAX_POINTLIGHT_SHADOWMAPS = 5
-    }
-
-    override fun processSystem() {
+    override fun extract(renderState: RenderState) {
         var pointLightCount = 0
         forEachEntity { entityId ->
             pointLightCount++
@@ -101,5 +87,16 @@ class PointLightSystem(
             index++
         }
 
+        renderState[lightState].pointLightMovedInCycle.clear()
+        renderState[lightState].pointLightMovedInCycle.putAll(pointLightMovedInCycle)
+
+        renderState[lightState].pointLightBuffer.ensureCapacityInBytes(gpuPointLights.sizeInBytes)
+        gpuPointLights.buffer.copyTo(renderState[lightState].pointLightBuffer.buffer)
+        renderState[lightState].pointLightCount = mapEntity { 1 }.count()
+    }
+
+    override fun processSystem() {
     }
 }
+
+val MAX_POINTLIGHT_SHADOWMAPS = 5

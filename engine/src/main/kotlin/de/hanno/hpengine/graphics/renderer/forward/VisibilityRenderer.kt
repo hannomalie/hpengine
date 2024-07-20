@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.renderer.forward
 
+import InternalTextureFormat
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
@@ -116,7 +117,7 @@ class VisibilityRenderer(
             renderState[animatedDirectPipeline].draw(renderState)
         }
 
-//        profiled("Resolve") {
+        profiled("Resolve") {
             resolveComputeProgram.use()
             resolveComputeProgram.setUniform("width", renderTarget.width)
             resolveComputeProgram.setUniform("height", renderTarget.height)
@@ -130,6 +131,6 @@ class VisibilityRenderer(
             resolveComputeProgram.bindShaderStorageBuffer(3, renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.vertexStructArray)
             resolveComputeProgram.dispatchCompute(renderTarget.width.toCount() / 4, renderTarget.height.toCount() / 4, 1.toCount())
 
-//        }
+        }
     }
 }

@@ -11,7 +11,6 @@ import de.hanno.hpengine.graphics.constants.TextureTarget.TEXTURE_CUBE_MAP_ARRAY
 import de.hanno.hpengine.graphics.constants.WrapMode.ClampToEdge
 import de.hanno.hpengine.graphics.constants.WrapMode.Repeat
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
-import de.hanno.hpengine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
@@ -267,9 +266,4 @@ class CubeShadowMapStrategy(
             }
         }
     }
-}
-
-private fun <T: Strukt> GeometryBuffer<T>.bind() = when(this) {
-    is VertexBuffer -> { }
-    is VertexIndexBuffer -> indexBuffer.bind()
 }

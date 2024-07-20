@@ -40,7 +40,6 @@ import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommandStrukt
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.scene.GeometryBuffer
 import de.hanno.hpengine.scene.VertexBuffer
 import de.hanno.hpengine.scene.VertexIndexBuffer
@@ -433,14 +432,14 @@ open class GPUCulledPipeline(
                 }
 
                 program.bind()
-                when(vertexIndexBuffer) {
+                when(geometryBuffer) {
                     is VertexBuffer -> drawArraysIndirectCount(
                         commandOrganization.commands,
                         commandOrganization.drawCountsCompacted,
                         0.toCount(),
                         commandOrganization.commandCount,
                         mode)
-                    is VertexIndexBuffer -> vertexIndexBuffer.drawElementsIndirectCount(
+                    is VertexIndexBuffer -> geometryBuffer.drawElementsIndirectCount(
                         commandOrganization.commands,
                         commandOrganization.drawCountsCompacted,
                         0.toCount(),
@@ -526,7 +525,7 @@ class IndirectCulledDrawDescription<T : DefaultUniforms>(
     val renderState: RenderState,
     val program: Program<T>,
     val commandOrganization: CommandOrganizationGpuCulled,
-    val vertexIndexBuffer: GeometryBuffer<*>,
+    val geometryBuffer: GeometryBuffer<*>,
     val mode: RenderingMode,
     val camera: Camera,
     val cullCam: Camera = camera,

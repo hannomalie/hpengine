@@ -4,6 +4,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.TextureTarget
+import de.hanno.hpengine.graphics.light.point.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.graphics.profiled
@@ -73,7 +74,7 @@ class PointLightSecondPassExtension(
             secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             secondPassPointComputeProgram.setUniform(
                 "maxPointLightShadowmaps",
-                PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
+                MAX_POINTLIGHT_SHADOWMAPS
             )
             secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
             secondPassPointComputeProgram.bindShaderStorageBuffer(

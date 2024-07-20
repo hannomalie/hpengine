@@ -19,10 +19,8 @@ fun Model<*>.captureVertexAndIndexOffsets(vertexIndexOffsets: VertexIndexOffsets
     var currentIndexOffset = vertexIndexOffsets.indexOffset
     var currentVertexOffset = vertexIndexOffsets.vertexOffset
 
-    val model = this
-
-    return model.meshes.indices.map { i ->
-        val mesh = model.meshes[i] as Mesh<*>
+    return meshes.indices.map { i ->
+        val mesh = meshes[i] as Mesh<*>
         VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
             currentIndexOffset += ElementCount((mesh.indexBufferValues.capacity() / Integer.BYTES))
             currentVertexOffset += ElementCount(mesh.vertices.size)
@@ -32,10 +30,8 @@ fun Model<*>.captureVertexAndIndexOffsets(vertexIndexOffsets: VertexIndexOffsets
 fun Model<*>.captureVertexOffsets(vertexIndexOffsets: VertexOffsets): List<VertexOffsets> {
     var currentVertexOffset = vertexIndexOffsets.vertexOffset
 
-    val model = this
-
-    return model.meshes.indices.map { i ->
-        val mesh = model.meshes[i] as Mesh<*>
+    return meshes.indices.map { i ->
+        val mesh = meshes[i] as Mesh<*>
         VertexOffsets(currentVertexOffset).apply {
             currentVertexOffset += mesh.triangleCount * 3
         }
@@ -45,34 +41,32 @@ fun Model<*>.captureVertexOffsets(vertexIndexOffsets: VertexOffsets): List<Verte
 fun StaticModel.putToBuffer(
     geometryBufferStatic: GeometryBuffer<VertexStruktPacked>,
     geometryOffset: GeometryOffset = geometryBufferStatic.allocate(this),
-): List<GeometryOffset> {
-    return synchronized(geometryBufferStatic) {
-        val vertexIndexOffsetsForMeshes = captureGeometryOffsets(geometryOffset)
-        val vertices = when(geometryBufferStatic) {
-            is VertexBuffer ->  unindexedVerticesPacked
-            is VertexIndexBuffer -> verticesPacked
-        }
-        geometryBufferStatic.vertexStructArray.addAll(
-            geometryOffset.vertexOffset * SizeInBytes(VertexStruktPacked.type.sizeInBytes),
-            vertices.byteBuffer
-        )
-        when (geometryOffset) {
-            is VertexIndexOffsets -> (geometryBufferStatic as VertexIndexBuffer<*>).indexBuffer.appendIndices(
-                geometryOffset.indexOffset,
-                this.indices
-            )
-
-            is VertexOffsets -> {}
-        }
-        vertexIndexOffsetsForMeshes
+): List<GeometryOffset> = synchronized(geometryBufferStatic) {
+    val geometryOffsetsForMeshes = captureGeometryOffsets(geometryOffset)
+    val vertices = when(geometryBufferStatic) {
+        is VertexBuffer ->  unindexedVerticesPacked
+        is VertexIndexBuffer -> verticesPacked
     }
+    geometryBufferStatic.vertexStructArray.addAll(
+        geometryOffset.vertexOffset * SizeInBytes(VertexStruktPacked.type.sizeInBytes),
+        vertices.byteBuffer
+    )
+    when (geometryOffset) {
+        is VertexIndexOffsets -> (geometryBufferStatic as VertexIndexBuffer<*>).indexBuffer.appendIndices(
+            geometryOffset.indexOffset,
+            this.indices
+        )
+
+        is VertexOffsets -> {}
+    }
+    geometryOffsetsForMeshes
 }
 
 fun AnimatedModel.putToBuffer(
     buffer: GeometryBuffer<AnimatedVertexStruktPacked>,
     geometryOffset: GeometryOffset = buffer.allocate(this),
 ): List<GeometryOffset> = synchronized(buffer) {
-    val vertexIndexOffsetsForMeshes = captureGeometryOffsets(geometryOffset)
+    val geometryOffsetsForMeshes = captureGeometryOffsets(geometryOffset)
 
     val vertices = when(buffer) {
         is VertexBuffer ->  unindexedVerticesPacked
@@ -90,7 +84,7 @@ fun AnimatedModel.putToBuffer(
 
         is VertexOffsets -> {}
     }
-    vertexIndexOffsetsForMeshes
+    geometryOffsetsForMeshes
 }
 
 fun GeometryBuffer<*>.allocate(model: Model<*>): GeometryOffset = when (this) {

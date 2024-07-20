@@ -1,6 +1,5 @@
 package de.hanno.hpengine.graphics.renderer.deferred.extensions
 
-import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.safePut
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -19,16 +18,13 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.shader.using
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import de.hanno.hpengine.model.EntitiesStateHolder
+import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
-import de.hanno.hpengine.scene.GeometryBuffer
-import de.hanno.hpengine.scene.VertexBuffer
-import de.hanno.hpengine.scene.VertexIndexBuffer
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
-import struktgen.api.Strukt
 
 @Single(binds = [ForwardRenderExtension::class, DeferredRenderExtension::class])
 class ForwardRenderExtension(
@@ -84,7 +80,7 @@ class ForwardRenderExtension(
 
         entitiesState.geometryBufferStatic.bind()
         for (batch in renderState[defaultBatchesSystem.renderBatchesStatic].filter { it.material.transparencyType.needsForwardRendering }) {
-            setTextureUniforms(programStatic, graphicsApi, batch.material.maps)
+            programStatic.setTextureUniforms(graphicsApi, batch.material.maps)
             entitiesState.geometryBufferStatic.draw(
                 batch.drawElementsIndirectCommand, bindIndexBuffer = false,
                 primitiveType = PrimitiveType.Triangles, mode = RenderingMode.Fill
@@ -111,9 +107,4 @@ class ForwardRenderExtension(
             ONE_BUFFER.rewind()
         }
     }
-}
-
-private fun <T: Strukt> GeometryBuffer<T>.bind() = when(this) {
-    is VertexBuffer -> {}
-    is VertexIndexBuffer -> indexBuffer.bind()
 }

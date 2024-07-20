@@ -9,6 +9,7 @@ value class SizeInBytes(val value: Long) {
     constructor(count: ElementCount, elementSize: SizeInBytes): this(count.value * elementSize.value)
 
     operator fun plus(other: SizeInBytes) = SizeInBytes(value + other.value)
+    operator fun times(other: Int) = SizeInBytes(value * other)
     operator fun minus(other: SizeInBytes) = SizeInBytes(value - other.value)
     operator fun compareTo(other: SizeInBytes) = value.compareTo(other.value)
 }

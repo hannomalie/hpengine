@@ -26,14 +26,16 @@ fun Engine.runMultipleObjects() {
     world.loadScene {
         addStaticModelEntity("Sponza", "assets/models/sponza.obj")
         addStaticModelEntity("Ferrari", "assets/models/ferrari.obj", translation = Vector3f(100f, 10f, 0f))
-        addAnimatedModelEntity("Hellknight",
+        addAnimatedModelEntity(
+            "Hellknight",
             "assets/models/doom3monster/monster.md5mesh",
             AABBData(
                 Vector3f(-60f, -10f, -35f),
                 Vector3f(60f, 130f, 50f)
             )
         )
-        addAnimatedModelEntity("Bob",
+        addAnimatedModelEntity(
+            "Bob",
             "assets/models/bob_lamp_update/bob_lamp_update_export.md5mesh",
             AABBData( // This is not accurate, but big enough to not cause culling problems
                 Vector3f(-60f, -10f, -35f),
@@ -48,21 +50,24 @@ fun Engine.runMultipleObjects() {
                 CameraComponent(Camera(transform.transform))
             )
         }
-        edit(create()).apply {
-            create(TransformComponent::class.java)
-            create(EnvironmentProbeComponent::class.java).apply {
-                size.set(100f)
+        val addEnvironmentProbes = false
+        if (addEnvironmentProbes) {
+            edit(create()).apply {
+                create(TransformComponent::class.java)
+                create(EnvironmentProbeComponent::class.java).apply {
+                    size.set(100f)
+                }
+                add(NameComponent().apply { name = "EnvProbe0" })
             }
-            add(NameComponent().apply { name = "EnvProbe0" })
-        }
-        edit(create()).apply {
-            create(TransformComponent::class.java).apply {
-                transform.translation(Vector3f(30f, 50f, 20f))
+            edit(create()).apply {
+                create(TransformComponent::class.java).apply {
+                    transform.translation(Vector3f(30f, 50f, 20f))
+                }
+                create(EnvironmentProbeComponent::class.java).apply {
+                    size.set(100f)
+                }
+                add(NameComponent().apply { name = "EnvProbe1" })
             }
-            create(EnvironmentProbeComponent::class.java).apply {
-                size.set(100f)
-            }
-            add(NameComponent().apply { name = "EnvProbe1" })
         }
     }
     simulate()

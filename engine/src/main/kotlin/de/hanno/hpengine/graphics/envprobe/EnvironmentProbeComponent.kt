@@ -145,6 +145,9 @@ class EnvironmentProbeSystem(
     private val probeRenderedInCycle = mutableMapOf<Int, Long>()
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
+        val probeState = renderState[environmentProbesStateHolder.probes]
+        if(probeState.isEmpty()) return
+
         depthMask = true
         depthTest = true
         cullFace = true
@@ -153,7 +156,7 @@ class EnvironmentProbeSystem(
 
         graphicsApi.viewPort(0, 0, envProbeResolution, envProbeResolution)
 
-        renderState[environmentProbesStateHolder.probes].apply {
+        probeState.apply {
             val entitiesState = renderState[entitiesStateHolder.entitiesState]
             var index = 0
             forEach { probe ->

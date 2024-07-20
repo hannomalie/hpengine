@@ -27,6 +27,7 @@ import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.Access
+import de.hanno.hpengine.graphics.light.point.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
@@ -289,7 +290,7 @@ class BvHPointLightSecondPassExtension(
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             secondPassPointBvhComputeProgram.setUniform(
                 "maxPointLightShadowmaps",
-                PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
+                MAX_POINTLIGHT_SHADOWMAPS
             )
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2, pointLightState.pointLightBuffer)

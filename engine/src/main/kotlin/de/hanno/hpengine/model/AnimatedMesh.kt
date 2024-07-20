@@ -3,6 +3,7 @@ package de.hanno.hpengine.model
 import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
 import AnimatedVertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.ElementCount
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.model.animation.Animation
 import de.hanno.hpengine.model.animation.AnimationController
 import de.hanno.hpengine.model.material.Material
@@ -51,9 +52,6 @@ class AnimatedModel(
     val animations: Map<String, Animation>
 ) : Model<AnimatedVertex>(meshes) {
     override val bytesPerVertex = AnimatedVertexStruktPacked.sizeInBytes
-    override val unindexedVerticesPacked: TypedBuffer<VertexStruktPacked>
-        get() = TODO("Not yet implemented")
-
     override val path = file.absolutePath
 
     init {
@@ -69,22 +67,35 @@ class AnimatedModel(
         AnimatedVertexStruktPacked.type).apply {
 
         byteBuffer.run {
-            var counter = 0
-            for (mesh in meshes) {
-                for (vertex in mesh.vertices) {
-                    this@apply.forIndex(counter) {
+            indexedVertices.forEachIndexed { index, vertex ->
+                this@apply.forIndex(index) {
+                    it.position.set(vertex.position)
+                    it.texCoord.set(vertex.texCoord)
+                    it.normal.set(vertex.normal)
+                    it.weights.set(vertex.weights)
+                    it.jointIndices.set(vertex.jointIndices)
+                }
+            }
+        }
+    }
+    override val unindexedVerticesPacked by lazy {
+        TypedBuffer(
+            BufferUtils.createByteBuffer((triangleCount * 3 * SizeInBytes(AnimatedVertexStruktPacked.sizeInBytes)).value.toInt()),
+            AnimatedVertexStruktPacked.type
+        ).apply {
+            byteBuffer.run {
+                unindexedVertices.forEachIndexed { index, vertex ->
+                    this@apply.forIndex(index) {
                         it.position.set(vertex.position)
                         it.texCoord.set(vertex.texCoord)
                         it.normal.set(vertex.normal)
                         it.weights.set(vertex.weights)
                         it.jointIndices.set(vertex.jointIndices)
                     }
-                    counter++
                 }
             }
         }
     }
-
     fun update(deltaSeconds: Float) {
         animationController.update(deltaSeconds)
     }

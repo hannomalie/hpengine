@@ -85,11 +85,9 @@ class RenderManager(
                                 }
                             }
                         }
-
                         logger.trace("renderSystems.render")
                         profiled("renderSystems") {
-                            renderSystems.groupBy { it.sharedRenderTarget }
-                                .forEach { (renderTarget, renderSystems) ->
+                            renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
                                     val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
                                     profiled("use rendertarget") {
                                         renderTarget?.use(clear)

@@ -5,7 +5,6 @@ import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.BaseVertex
-import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.sum
 import de.hanno.hpengine.transform.AABB
 import org.lwjgl.BufferUtils
@@ -19,6 +18,20 @@ sealed class Model<T: BaseVertex>(val _meshes: List<Mesh<T>>) {
 
     val meshIndexCounts = meshes.map { ElementCount(it.indexBufferValues.capacity() / Integer.BYTES) }
     val meshIndexSum = meshIndexCounts.sum()
+    val indexedVertices by lazy {
+        meshes.flatMap { it.vertices }
+    }
+    val unindexedVertices by lazy {
+        buildList {
+            for (mesh in meshes) {
+                for (triangle in mesh.triangles) {
+                    add(mesh.vertices[triangle.a])
+                    add(mesh.vertices[triangle.b])
+                    add(mesh.vertices[triangle.c])
+                }
+            }
+        }
+    }
 
     var triangleCount = ElementCount(meshes.sumOf { it.triangleCount.value })
     val uniqueVertices: List<T> = meshes.flatMap { it.vertices }
@@ -41,6 +54,7 @@ sealed class Model<T: BaseVertex>(val _meshes: List<Mesh<T>>) {
     abstract val file: File
     abstract val path: String
     abstract val verticesPacked: TypedBuffer<out Strukt>
+    abstract val unindexedVerticesPacked: TypedBuffer<out Strukt>
     val boundingSphereRadius: Float get() = boundingVolume.boundingSphereRadius
     abstract val boundingVolume: AABB
 
@@ -50,5 +64,4 @@ sealed class Model<T: BaseVertex>(val _meshes: List<Mesh<T>>) {
     }
     var isInvertTexCoordY = true
     abstract val bytesPerVertex: Int
-    abstract val unindexedVerticesPacked: TypedBuffer<VertexStruktPacked>
 }

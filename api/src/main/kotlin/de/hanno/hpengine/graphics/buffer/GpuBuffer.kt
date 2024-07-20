@@ -4,10 +4,7 @@ import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.buffers.Buffer
 import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.constants.BufferTarget
-import struktgen.api.ITypedBuffer
-import struktgen.api.Strukt
-import struktgen.api.StruktType
-import struktgen.api.TypedBuffer
+import struktgen.api.*
 import java.nio.ByteBuffer
 
 interface GpuBuffer : Buffer {
@@ -32,8 +29,7 @@ interface GpuBuffer : Buffer {
     fun map() {}
     fun unmap() {}
 
-    // TODO: I made a change here, check whether buffer.position usage is safe here and makes sense
-    fun addAll(offset: SizeInBytes = SizeInBytes(buffer.position()), elements: ByteBuffer) {
+    fun addAll(offset: SizeInBytes, elements: ByteBuffer) {
         ensureCapacityInBytes(offset + SizeInBytes(elements.capacity()))
         elements.copyTo(buffer, targetOffsetInBytes = offset)
     }
@@ -53,8 +49,6 @@ inline fun <T> GpuBuffer.bound(action: () -> T) {
 interface TypedGpuBuffer<T: Strukt> : GpuBuffer, ITypedBuffer<T> {
     val gpuBuffer: GpuBuffer
     val typedBuffer: TypedBuffer<T>
-    // TODO: I made a change here, check whether buffer.position usage is safe here and makes sense
-    fun addAll(offset: SizeInBytes = SizeInBytes(buffer.position()), elements: TypedBuffer<T>) = addAll(offset, elements.byteBuffer)
 }
 
 class TypedGpuBufferImpl<T: Strukt>(
@@ -94,3 +88,12 @@ interface IndexBuffer: GpuBuffer
 interface AtomicCounterBuffer: GpuBuffer {
     fun bindAsParameterBuffer()
 }
+
+fun <T:Strukt> TypedBuffer<T>.print() = StringBuilder().apply {
+    this@print.forEachIndexed { index, it ->
+        byteBuffer.run {
+            append("[$index] ")
+            appendLine(it.print())
+        }
+    }
+}.toString()

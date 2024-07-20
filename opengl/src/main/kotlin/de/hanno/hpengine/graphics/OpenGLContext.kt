@@ -1747,7 +1747,7 @@ class OpenGLContext private constructor(
         is de.hanno.hpengine.scene.VertexBuffer -> {
             drawArraysInstanced(
                 primitiveType,
-                drawElementsIndirectCommand.firstIndex,
+                drawElementsIndirectCommand.baseVertex,
                 drawElementsIndirectCommand.count,
                 drawElementsIndirectCommand.instanceCount,
             )
@@ -1773,7 +1773,9 @@ class OpenGLContext private constructor(
     // traditional vertex buffers as well
     override fun GeometryBuffer<*>.bind() {
         when(this) {
-            is de.hanno.hpengine.scene.VertexBuffer -> onGpuInline { glBindBuffer(BufferTarget.ElementArray.glValue, 0) }
+            is de.hanno.hpengine.scene.VertexBuffer -> {
+//                onGpuInline { glBindBuffer(BufferTarget.ElementArray.glValue, 0) }
+            }
             is VertexIndexBuffer -> indexBuffer.bind()
         }
     }

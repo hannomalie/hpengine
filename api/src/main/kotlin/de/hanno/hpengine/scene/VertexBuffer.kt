@@ -25,7 +25,7 @@ class VertexBuffer<T: Strukt>(
         }
     }
 
-    fun resetAllocations() {
+    fun resetAllocations() = synchronized(this) {
         currentVertex = ElementCount(0)
     }
 

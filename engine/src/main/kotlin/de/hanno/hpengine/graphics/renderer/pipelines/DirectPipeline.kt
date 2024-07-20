@@ -20,7 +20,6 @@ import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.Texture
-import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
@@ -106,7 +105,7 @@ open class DirectPipeline(
                 depthMask = batch.material.writesDepth
                 cullFace = batch.material.cullBackFaces
                 depthTest = batch.material.depthTest
-                setTextureUniforms(program, graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
                 geometryBuffer.draw(
@@ -150,7 +149,7 @@ open class DirectPipeline(
                         entityBuffer
                     )
                 }
-                setTextureUniforms(program, graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
 
                 program.bind()
                 geometryBuffer.draw(
@@ -207,62 +206,6 @@ fun DefaultUniforms.setCommonUniformValues(
     useSteepParallax = config.quality.isUseSteepParallax
     entityBaseIndex = 0
     indirect = false
-}
-
-fun setTextureUniforms(
-    program: Program<*>,
-    graphicsApi: GraphicsApi,
-    maps: Map<Material.MAP, Texture>,
-    diffuseFallbackTexture: Texture? = null
-) = graphicsApi.run {
-    for (mapEnumEntry in Material.MAP.entries) {
-        if (maps.contains(mapEnumEntry)) {
-            val map = maps[mapEnumEntry]!!
-            if (map.id > 0) {
-                val isDiffuse = mapEnumEntry == Material.MAP.DIFFUSE
-
-                when (map.uploadState) {
-                    UploadState.Uploaded -> {
-                        bindTexture(mapEnumEntry.textureSlot, map)
-                        program.setUniform(mapEnumEntry.uniformKey, true)
-                        if (isDiffuse) {
-                            program.setUniform("diffuseMipBias", 0)
-                        }
-                    }
-
-                    UploadState.NotUploaded -> {
-                        if (isDiffuse) {
-                            if (diffuseFallbackTexture != null) {
-                                bindTexture(mapEnumEntry.textureSlot, diffuseFallbackTexture)
-                                program.setUniform(mapEnumEntry.uniformKey, true)
-                                program.setUniform("diffuseMipBias", 0)
-                            } else {
-                                program.setUniform(mapEnumEntry.uniformKey, false)
-                                program.setUniform("diffuseMipBias", 0)
-                            }
-                        } else {
-                            program.setUniform(mapEnumEntry.uniformKey, false)
-                        }
-                    }
-
-                    is UploadState.Uploading -> {
-                        if (isDiffuse) {
-                            bindTexture(mapEnumEntry.textureSlot, map)
-                            program.setUniform(mapEnumEntry.uniformKey, true)
-                            program.setUniform(
-                                "diffuseMipBias",
-                                (map.uploadState as UploadState.Uploading).maxMipMapLoaded
-                            )
-                        } else {
-                            program.setUniform(mapEnumEntry.uniformKey, false)
-                        }
-                    }
-                }
-            }
-        } else {
-            program.setUniform(mapEnumEntry.uniformKey, false)
-        }
-    }
 }
 
 fun RenderBatch.isCulled(cullCam: Camera): Boolean {

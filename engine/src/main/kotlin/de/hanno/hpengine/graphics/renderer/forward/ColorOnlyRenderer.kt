@@ -112,12 +112,12 @@ class ColorOnlyRenderer(
                     renderState[primaryCameraStateHolder.camera],
                     config, materialSystem, entityBuffer
                 )
-                setTextureUniforms(simpleColorProgramSkyBox, graphicsApi, batch.material.maps, null)
+                simpleColorProgramSkyBox.setTextureUniforms(graphicsApi, batch.material.maps, null)
             }, block = {
                 renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.draw(
                     batch.drawElementsIndirectCommand,
                     primitiveType = PrimitiveType.Triangles,
-                    mode = RenderingMode.Fill,
+                    mode = if(config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill,
                     bindIndexBuffer = true,
                 )
             })
