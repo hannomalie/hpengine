@@ -64,7 +64,7 @@ class VisibilityRenderer(
     )
     override val finalOutput = ForwardFinalOutput(renderTarget.textures.first(), 0, this)
 
-    val simpleColorProgramStatic = programManager.getProgram(
+    val visibilityProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/visibility/visibility_fragment.glsl").toCodeSource(),
         null,
@@ -72,7 +72,7 @@ class VisibilityRenderer(
         StaticDefaultUniforms(graphicsApi)
     )
 
-    val simpleColorProgramAnimated = programManager.getProgram(
+    val visibilityProgramAnimated = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/visibility/visibility_fragment.glsl").toCodeSource(),
         null,
@@ -85,12 +85,12 @@ class VisibilityRenderer(
     )
 
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
+        object: DirectPipeline(graphicsApi, config, visibilityProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic]
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
+        object: DirectPipeline(graphicsApi, config, visibilityProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated]
 
             override fun RenderState.selectGeometryBuffer() = this[entitiesStateHolder.entitiesState].geometryBufferAnimated

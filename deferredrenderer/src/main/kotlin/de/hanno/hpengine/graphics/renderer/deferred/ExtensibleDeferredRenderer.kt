@@ -66,7 +66,7 @@ class ExtensibleDeferredRenderer(
     val postProcessingExtension = PostProcessingExtension(config, programManager, textureManager, graphicsApi, deferredRenderingBuffer, primaryCameraStateHolder)
     val postProcessingExtensionProxy = extensions.firstIsInstance<PostProcessingExtensionProxy>()
 
-    val simpleColorProgramStatic = programManager.getProgram(
+    val firstpassProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
@@ -74,7 +74,7 @@ class ExtensibleDeferredRenderer(
         StaticDefaultUniforms(graphicsApi)
     )
 
-    val simpleColorProgramAnimated = programManager.getProgram(
+    val firstPassProgramAnimated = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
@@ -89,7 +89,7 @@ class ExtensibleDeferredRenderer(
         GPUCulledPipeline(graphicsApi, config, programManager, textureManager, deferredRenderingBuffer, true, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem)
     }
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture) {
+        object: DirectPipeline(graphicsApi, config, firstpassProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture) {
             override fun RenderState.extractRenderBatches(camera: Camera) = if(useIndirectRendering) {
                 this[defaultBatchesSystem.renderBatchesStatic].filterNot { it.canBeRenderedInIndirectBatch }
             } else {
@@ -100,7 +100,7 @@ class ExtensibleDeferredRenderer(
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture) {
+        object: DirectPipeline(graphicsApi, config, firstPassProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture) {
             override fun RenderState.extractRenderBatches(camera: Camera) = if(useIndirectRendering) {
                 this[defaultBatchesSystem.renderBatchesAnimated].filterNot { it.canBeRenderedInIndirectBatch }
             } else {
@@ -169,8 +169,8 @@ class ExtensibleDeferredRenderer(
             if (useIndirectRendering) {
                 renderState[indirectPipeline].draw(
                     renderState,
-                    simpleColorProgramStatic,
-                    simpleColorProgramAnimated
+                    firstpassProgramStatic,
+                    firstPassProgramAnimated
                 )
             }
             for (extension in extensions) {

@@ -51,14 +51,6 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
             ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
-//        val materials = (0 until numMaterials).map { i ->
-//            val aiMaterial = AIMaterial.create(aiMaterials!![i])
-//            aiMaterial.processMaterial(
-//                Path.of(file).parent.toString(),
-//                resourcesDir,
-//                textureManager
-//            )
-//        }
         val deferredMaterials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
             GlobalScope.async { aiMaterial.processMaterial(Path.of(file).parent.toString(), resourcesDir, textureManager) }

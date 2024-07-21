@@ -128,7 +128,7 @@ class DefaultBatchesSystem(
                     batch.drawElementsIndirectCommand.count = model.meshIndexCounts[meshIndex]
                     batch.drawElementsIndirectCommand.firstIndex = when(allocation) {
                         is VertexIndexOffsets -> allocation.indexOffset
-                        is VertexOffsets -> allocation.vertexOffset
+                        is VertexOffsets -> 0.toCount()
                     }
                     batch.drawElementsIndirectCommand.baseVertex = allocation.vertexOffset
                     batch.animated = !model.isStatic

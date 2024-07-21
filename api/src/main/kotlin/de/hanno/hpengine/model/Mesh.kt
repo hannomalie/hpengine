@@ -5,6 +5,7 @@ import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.transform.AABBData
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 
 interface Mesh<T> {
@@ -29,3 +30,14 @@ class CompiledFace(val positions: Array<Vector3f>, val texCoords: Array<Vector2f
 }
 
 data class IndexedTriangle(val a: Int, val b: Int, val c: Int)
+
+fun List<IndexedTriangle>.extractIndices(): ByteBuffer =
+    BufferUtils.createByteBuffer(Integer.BYTES * size * 3).apply {
+        asIntBuffer().apply {
+            forEachIndexed { index, face ->
+                put(3 * index, face.a)
+                put(3 * index + 1, face.b)
+                put(3 * index + 2, face.c)
+            }
+        }
+    }

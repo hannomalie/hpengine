@@ -93,10 +93,6 @@ open class DirectPipeline(
     ) = graphicsApi.run {
         using(program) { uniforms: DefaultUniforms ->
             uniforms.setCommonUniformValues(renderState, entitiesState, camera, config, materialSystem, entityBuffer)
-            when(uniforms) {
-                is AnimatedDefaultUniforms -> uniforms.vertices = geometryBuffer.vertexStructArray
-                is StaticDefaultUniforms -> uniforms.vertices = geometryBuffer.vertexStructArray
-            }
 
             val batchesWithPipelineProgram =
                 renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }
@@ -187,8 +183,8 @@ fun DefaultUniforms.setCommonUniformValues(
     when (this) {
         is StaticDefaultUniforms -> vertices = entitiesState.geometryBufferStatic.vertexStructArray
         is AnimatedDefaultUniforms -> {
-            joints = entitiesState.jointsBuffer
             vertices = entitiesState.geometryBufferAnimated.vertexStructArray
+            joints = entitiesState.jointsBuffer
         }
     }
     useRainEffect = config.effects.rainEffect != 0.0f

@@ -174,8 +174,8 @@ class ModelSystem(
             val elements = model.animations.flatMap {
                 it.value.frames.flatMap { frame -> frame.jointMatrices.toList() }
             }
-            joints.addAll(elements)
             val jointsOffset = joints.size
+            joints.addAll(elements)
             Allocation.Animated(geometryOffsetsForMeshes, jointsOffset)
         }
 
