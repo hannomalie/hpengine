@@ -6,10 +6,16 @@ layout(binding=1) uniform sampler2D depthexture;
 layout(binding=2) uniform sampler2DArray diffuseTextures;
 layout(binding=3) uniform sampler2D normalTexture;
 layout(binding=8) uniform samplerCubeArray pointLightShadowMapsCube;
-
+#ifdef BINDLESSTEXTURES
+#else
+layout(binding=9) uniform sampler2D directionalLightShadowMap;
+layout(binding=10) uniform sampler2D directionalLightStaticShadowMap;
+#endif
 layout(binding=3, rgba8) uniform image2D out_color;
 
 //include(globals_structs.glsl)
+//include(globals.glsl)
+//include(global_lighting.glsl)
 
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
@@ -19,6 +25,9 @@ layout(std430, binding=2) buffer _entities {
 };
 layout(std430, binding=3) buffer _pointLights {
 	PointLight pointLights[1000];
+};
+layout(std430, binding=4) buffer _directionalLight {
+	DirectionalLightState directionalLight;
 };
 
 uniform int width = 1920;
@@ -65,7 +74,6 @@ float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight 
 
 	return shadow;
 }
-//include(globals.glsl)
 
 void main(void) {
 	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
@@ -108,13 +116,17 @@ void main(void) {
 	color.rgb = textureLod(diffuseTextures, vec3(uv, material.diffuseMapIndex), mipMapLevel).rgb;
 #endif
 
-float roughness = 1;
-float metallic = 0;
-vec3 diffuseColor = color.rgb;
-vec3 specularColor = diffuseColor;
-vec3 finalColor;
+	float roughness = 1;
+	float metallic = 0;
+	vec3 diffuseColor = color.rgb;
+	vec3 specularColor = diffuseColor;
+	vec3 finalColor;
+	int materialType = int(material.materialtype);
+	int DEFAULT = 0;
+	int FOLIAGE = 1;
+	int UNLIT = 2;
 
-for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
+	for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 	{
 		PointLight pointLight = pointLights[lightIndex];
 		vec3 pointLightPosition = pointLight.position;
@@ -129,11 +141,13 @@ for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 			float attenuation = calculateAttenuation(length(lightPositionView - positionView), float(pointLight.radius));
 
 			vec3 temp;
-			if(int(material.materialtype) == 1) {
+			if(materialType == FOLIAGE) {
 				temp = cookTorrance(lightDirectionView, lightDiffuse,
 									attenuation, V, positionView, normalView,
 									roughness, 0, diffuseColor, specularColor);
 				temp = attenuation * lightDiffuse * diffuseColor * clamp(dot(-normalView, lightDirectionView), 0, 1);
+			} else if(materialType == UNLIT) {
+				finalColor = color;
 			} else {
 				temp = cookTorrance(lightDirectionView, lightDiffuse,
 									attenuation, V, positionView, normalView,
@@ -150,7 +164,27 @@ for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 			finalColor.rgb += temp * visibility;
 		}
 	}
+#ifdef BINDLESSTEXTURES
+	float visibility = getVisibility(positionWorld, directionalLight);
+#else
+	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap, directionalLightStaticShadowMap);
+#endif
 
+	vec3 finalColorDirectional;
+	vec3 lightDirectionView = (viewMatrix * vec4(-directionalLight.direction, 0)).xyz;
+	if(materialType == FOLIAGE) {
+		finalColorDirectional = cookTorrance(lightDirectionView, directionalLight.color,
+								  1, V, positionView, normalView,
+								  roughness, 0, diffuseColor, specularColor);
+		finalColorDirectional *= visibility;
+	} else if(materialType == UNLIT) {
+		finalColorDirectional = color;
+	} else {
+		finalColorDirectional = clamp(cookTorrance(lightDirectionView, directionalLight.color, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor), 0, 1);
+		finalColorDirectional *= visibility;
+	}
+
+	finalColor += finalColorDirectional;
 	finalColor += 0.1 * diffuseColor.rgb;
 
 	imageStore(out_color, storePos, vec4(finalColor, 1));

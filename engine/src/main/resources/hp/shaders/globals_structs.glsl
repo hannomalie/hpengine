@@ -39,6 +39,27 @@ struct PointLight {
     int shadow;
 };
 
+struct DirectionalLightState {
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    mat4 viewProjectionMatrix;
+
+    vec3 color;
+    float dummy;
+
+    vec3 direction;
+    float scatterFactor;
+
+
+    uvec2 shadowMapHandle;
+    int shadowMapId;
+    int staticShadowMapId;
+
+    uvec2 staticShadowMapHandle;
+    float dummy0;
+    float dummy1;
+};
+
 struct AreaLight {
     mat4 modelMatrix;
 
@@ -127,27 +148,6 @@ struct VoxelGridArray {
     int dummy1;
     int dummy2;
 	VoxelGrid voxelGrids[MAX_VOXELGRIDS];
-};
-
-struct DirectionalLightState {
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
-    mat4 viewProjectionMatrix;
-
-    vec3 color;
-    float dummy;
-
-    vec3 direction;
-    float scatterFactor;
-
-
-    uvec2 shadowMapHandle;
-    int shadowMapId;
-    int staticShadowMapId;
-
-    uvec2 staticShadowMapHandle;
-    float dummy0;
-    float dummy1;
 };
 
 struct VertexShaderFlatOutput {

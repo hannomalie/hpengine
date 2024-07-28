@@ -5,6 +5,8 @@ import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.feature.BindlessTextures
+import de.hanno.hpengine.graphics.light.directional.DirectionalLightStateHolder
 import de.hanno.hpengine.graphics.light.point.CubeShadowMapStrategy
 import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
@@ -28,6 +30,7 @@ import de.hanno.hpengine.skybox.SkyBoxStateHolder
 import de.hanno.hpengine.toCount
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
+import struktgen.api.forIndex
 
 @Single(binds = [RenderSystem::class, PrimaryRenderer::class])
 class VisibilityRenderer(
@@ -43,6 +46,7 @@ class VisibilityRenderer(
     private val materialSystem: MaterialSystem,
     private val skyBoxStateHolder: SkyBoxStateHolder,
     private val pointLightStateHolder: PointLightStateHolder,
+    private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val sharedDepthBuffer: SharedDepthBuffer,
     private val cubeShadowMapStrategy: CubeShadowMapStrategy,
 ): PrimaryRenderer {
@@ -114,6 +118,7 @@ class VisibilityRenderer(
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
         val pointLightState = renderState[pointLightStateHolder.lightState]
+        val directionalLightState = renderState[directionalLightStateHolder.lightState]
 
         cullFace = true
         depthMask = true
@@ -140,11 +145,24 @@ class VisibilityRenderer(
             graphicsApi.bindTexture(3, normalTexture)
             graphicsApi.bindImageTexture(3, renderTarget.renderedTexture, 0, false, 0, Access.ReadWrite, renderTarget.textures.first().internalFormat)
             cubeShadowMapStrategy.bindTextures()
+            if (!graphicsApi.isSupported(BindlessTextures)) {
+                graphicsApi.bindTexture(
+                    9,
+                    TextureTarget.TEXTURE_2D,
+                    directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
+                )
+                graphicsApi.bindTexture(
+                    10,
+                    TextureTarget.TEXTURE_2D,
+                    directionalLightState.typedBuffer.forIndex(0) { it.staticShadowMapId }
+                )
+            }
 
             resolveComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
             resolveComputeProgram.bindShaderStorageBuffer(2, renderState[entityBuffer.entitiesBuffer])
             resolveComputeProgram.setUniform("pointLightCount", pointLightState.pointLightCount)
             resolveComputeProgram.bindShaderStorageBuffer(3, pointLightState.pointLightBuffer)
+            resolveComputeProgram.bindShaderStorageBuffer(4, directionalLightState.gpuBuffer)
             resolveComputeProgram.dispatchCompute(renderTarget.width.toCount() / 4, renderTarget.height.toCount() / 4, 1.toCount())
         }
     }
