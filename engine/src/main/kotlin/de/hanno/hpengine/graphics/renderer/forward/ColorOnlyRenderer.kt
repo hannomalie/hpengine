@@ -41,7 +41,7 @@ class ColorOnlyRenderer(
     private val skyBoxStateHolder: SkyBoxStateHolder,
 ): PrimaryRenderer {
 
-    override val finalOutput = ForwardFinalOutput(renderTarget.textures.first(), 0, this)
+    override val finalOutput = SimpleFinalOutput(renderTarget.textures.first(), 0, this)
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),

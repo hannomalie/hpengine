@@ -5,6 +5,8 @@ import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.*
+import de.hanno.hpengine.graphics.light.point.CubeShadowMapStrategy
+import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.rendertarget.SharedDepthBuffer
@@ -17,7 +19,6 @@ import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
 import de.hanno.hpengine.graphics.texture.UploadState
-import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
@@ -41,13 +42,20 @@ class VisibilityRenderer(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
     private val skyBoxStateHolder: SkyBoxStateHolder,
+    private val pointLightStateHolder: PointLightStateHolder,
     private val sharedDepthBuffer: SharedDepthBuffer,
-    private val window: Window,
+    private val cubeShadowMapStrategy: CubeShadowMapStrategy,
 ): PrimaryRenderer {
 
-    private val frontBuffer = window.frontBuffer
-
     private val visibilityTexture = graphicsApi.Texture2D(
+        TextureDimension2D(config.width, config.height),
+        TextureTarget.TEXTURE_2D,
+        InternalTextureFormat.RGBA16F,
+        TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
+        WrapMode.ClampToEdge,
+        UploadState.Uploaded
+    )
+    private val normalTexture = graphicsApi.Texture2D(
         TextureDimension2D(config.width, config.height),
         TextureTarget.TEXTURE_2D,
         InternalTextureFormat.RGBA16F,
@@ -58,11 +66,11 @@ class VisibilityRenderer(
     private val visibilityRenderTarget = graphicsApi.RenderTarget(
         graphicsApi.FrameBuffer(sharedDepthBuffer.depthBuffer),
         config.width, config.height,
-        listOf(visibilityTexture),
+        listOf(visibilityTexture, normalTexture),
         "Visibility",
         Vector4f(0f)
     )
-    override val finalOutput = ForwardFinalOutput(renderTarget.textures.first(), 0, this)
+    override val finalOutput = SimpleFinalOutput(renderTarget.textures.first(), 0, this)
 
     val visibilityProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
@@ -105,6 +113,8 @@ class VisibilityRenderer(
     }
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
+        val pointLightState = renderState[pointLightStateHolder.lightState]
+
         cullFace = true
         depthMask = true
         depthTest = true
@@ -121,16 +131,21 @@ class VisibilityRenderer(
             resolveComputeProgram.use()
             resolveComputeProgram.setUniform("width", renderTarget.width)
             resolveComputeProgram.setUniform("height", renderTarget.height)
+            resolveComputeProgram.setUniformAsMatrix4("viewMatrix", renderState[primaryCameraStateHolder.camera].viewMatrixBuffer)
+            resolveComputeProgram.setUniformAsMatrix4("projectionMatrix", renderState[primaryCameraStateHolder.camera].projectionMatrixBuffer)
 
             graphicsApi.bindTexture(0, visibilityTexture)
+            graphicsApi.bindTexture(1, sharedDepthBuffer.depthBuffer.texture)
             graphicsApi.bindTexture(2, graphicsApi.textureArray)
+            graphicsApi.bindTexture(3, normalTexture)
             graphicsApi.bindImageTexture(3, renderTarget.renderedTexture, 0, false, 0, Access.ReadWrite, renderTarget.textures.first().internalFormat)
+            cubeShadowMapStrategy.bindTextures()
 
             resolveComputeProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
             resolveComputeProgram.bindShaderStorageBuffer(2, renderState[entityBuffer.entitiesBuffer])
-            resolveComputeProgram.bindShaderStorageBuffer(3, renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.vertexStructArray)
+            resolveComputeProgram.setUniform("pointLightCount", pointLightState.pointLightCount)
+            resolveComputeProgram.bindShaderStorageBuffer(3, pointLightState.pointLightBuffer)
             resolveComputeProgram.dispatchCompute(renderTarget.width.toCount() / 4, renderTarget.height.toCount() / 4, 1.toCount())
-
         }
     }
 }

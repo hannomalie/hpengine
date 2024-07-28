@@ -76,7 +76,9 @@ class GizmoSystem(val input: EditorInput) {
         transform: Transform,
         aabb: AABB,
     ): Boolean {
+        viewMatrixBuffer.rewind()
         viewMatrixBuffer.get(viewMatrix)
+        projectionMatrixBuffer.rewind()
         projectionMatrixBuffer.get(projectionMatrix)
         aabb.worldAABB.apply {
             min.apply {

@@ -15,7 +15,7 @@ import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 
 
-data class ForwardFinalOutput(override var texture2D: Texture2D, override var mipmapLevel: Int = 0, override val producedBy: RenderSystem? = null): FinalOutput
+data class SimpleFinalOutput(override var texture2D: Texture2D, override var mipmapLevel: Int = 0, override val producedBy: RenderSystem? = null): FinalOutput
 
 @Module
 @ComponentScan

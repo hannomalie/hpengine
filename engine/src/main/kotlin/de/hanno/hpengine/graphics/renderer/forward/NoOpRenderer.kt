@@ -12,7 +12,7 @@ class NoOpRenderer(
     private val graphicsApi: GraphicsApi,
     private val renderTarget: RenderTarget2D,
 ): PrimaryRenderer {
-    override val finalOutput = ForwardFinalOutput(renderTarget.textures.first(), 0, this)
+    override val finalOutput = SimpleFinalOutput(renderTarget.textures.first(), 0, this)
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
         renderTarget.use(true)

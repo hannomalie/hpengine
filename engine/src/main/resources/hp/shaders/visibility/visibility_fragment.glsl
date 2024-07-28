@@ -1,4 +1,6 @@
 //include(globals_structs.glsl)
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
 
 flat in VertexShaderFlatOutput vertexShaderFlatOutput;
 in VertexShaderOutput vertexShaderOutput;
@@ -6,6 +8,7 @@ in VertexShaderOutput vertexShaderOutput;
 layout(binding=2) uniform sampler2DArray diffuseTextures;
 
 layout(location=0)out vec4 out_visibility;
+layout(location=1)out vec4 out_normal;
 
 //include(globals.glsl)
 //include(normals.glsl)
@@ -33,6 +36,7 @@ void main(void) {
 
     Entity entity = entities[entityIndex];
     Material material = materials[entity.materialIndex];
+    vec3 normal_world = vertexShaderOutput.normal_world;
     vec2 uv = material.uvScale * vertexShaderOutput.texCoord;
     float alpha = 1.0f;
     float mipLevel = 0;
@@ -45,6 +49,19 @@ void main(void) {
         mipLevel = textureQueryLod(diffuseMap, uv).r;
         alpha = textureLod(diffuseMap, uv, 0).a;
     }
+    sampler2D normalMap;
+    bool hasNormalMap = uint64_t(material.handleNormal) > 0;
+    if(hasNormalMap) { normalMap = sampler2D(material.handleNormal); }
+    if(hasNormalMap) {
+        vec3 positionWorld = vertexShaderOutput.position_world.xyz;
+        vec3 positionView = (viewMatrix * vec4(positionWorld, 1)).xyz;
+        vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
+        position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
+        vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
+        dir.w = 0.0;
+        vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
+        normal_world = normalize(perturb_normal(normal_world, V, uv, normalMap));
+    }
 #else
     mipLevel = textureQueryLod(diffuseTextures, vec3(uv, material.diffuseMapIndex)).r;
     alpha = textureLod(diffuseTextures, vec3(uv, material.diffuseMapIndex), 0).a;
@@ -54,5 +71,6 @@ void main(void) {
         discard;
     } else {
         out_visibility = vec4(uv, mipLevel, entityIndex);
+        out_normal = vec4(normal_world, 0);
     }
 }
