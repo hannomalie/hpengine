@@ -93,7 +93,6 @@ vec2 getShadowMapCoords(vec3 positionWorld, DirectionalLightState light) {
 }
 
 float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D shadowMap) {
-
     mat4 shadowMatrix = light.viewProjectionMatrix;
 
     vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
@@ -106,13 +105,12 @@ float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D s
     if(simpleShadows) {
         vec2 shadowMapValue = textureLod(shadowMap, shadowMapCoords, 0).rg;
         //        vec2 shadowMapValueStatix = textureLod(shadowMap, shadowMapCoords, 0).rg;
-        return shadowMapValue.r > (depthInLightSpace - 0.001f) ? 1.0f : 0.0f;
+        return shadowMapValue.r > (depthInLightSpace - 0.002f) ? 1.0f : 0.0f;
     }
     return clamp(chebyshevUpperBound(depthInLightSpace, shadowMapCoords, light, shadowMap), 0, 1).r;
 }
 
 float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D shadowMap, sampler2D shadowMapStatic) {
-
     mat4 shadowMatrix = light.viewProjectionMatrix;
 
     vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
@@ -126,7 +124,7 @@ float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D s
         vec2 shadowMapValueDynamic = textureLod(shadowMap, shadowMapCoords, 0).rg;
         vec2 shadowMapValueStatic = textureLod(shadowMapStatic, shadowMapCoords, 0).rg;
         vec2 shadowMapValue = min(shadowMapValueDynamic, shadowMapValueStatic);
-        return shadowMapValue.r > (depthInLightSpace - 0.001f) ? 1.0f : 0.0f;
+        return shadowMapValue.r > (depthInLightSpace - 0.002f) ? 1.0f : 0.0f;
     }
     return clamp(chebyshevUpperBound(depthInLightSpace, shadowMapCoords, light, shadowMap), 0, 1).r;
 }

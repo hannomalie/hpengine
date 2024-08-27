@@ -28,6 +28,7 @@ import de.hanno.hpengine.graphics.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.rendertarget.DepthBuffer
 import de.hanno.hpengine.graphics.rendertarget.toCubeMapArrays
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
+import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -172,8 +173,15 @@ class ReflectionProbeRenderExtension(
     ).first()
 
     private var renderedInCycle: Long = -1
+    val pointCubeShadowPassProgram: Program<Uniforms> = programManager.getProgram(
+        config.EngineAsset("shaders/pointlight_shadow_cubemap_vertex.glsl").toCodeSource(),
+        config.EngineAsset("shaders/reflectionprobe_cube_fragment.glsl").toCodeSource(),
+        config.EngineAsset("shaders/pointlight_shadow_cubemap_geometry.glsl").toCodeSource(),
+        Defines(),
+        Uniforms.Empty
+    )
     val probeRenderers = (0 until cubeMapArray.dimension.depth).map {
-        ReflectionProbeRenderer(graphicsApi, config, programManager, graphicsApi.createView(cubeMapArray, it), it)
+        ReflectionProbeRenderer(graphicsApi, config, programManager, graphicsApi.createView(cubeMapArray, it), pointCubeShadowPassProgram, it)
     }
 
     val evaluateProbeProgram = programManager.getProgram(
@@ -398,17 +406,11 @@ class ReflectionProbeRenderer(
     val config: Config,
     val programManager: ProgramManager,
     val cubeMap: CubeMap,
+    val pointCubeShadowPassProgram: Program<Uniforms>,
     val indexInCubeMapArray: Int
 ) {
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
-    var pointCubeShadowPassProgram = programManager.getProgram(
-        config.EngineAsset("shaders/pointlight_shadow_cubemap_vertex.glsl").toCodeSource(),
-        config.EngineAsset("shaders/reflectionprobe_cube_fragment.glsl").toCodeSource(),
-        config.EngineAsset("shaders/pointlight_shadow_cubemap_geometry.glsl").toCodeSource(),
-        Defines(),
-        Uniforms.Empty
-    )
 
     val cubeMapRenderTarget = graphicsApi.RenderTarget(
         frameBuffer = graphicsApi.FrameBuffer(

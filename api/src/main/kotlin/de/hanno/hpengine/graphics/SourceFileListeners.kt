@@ -28,7 +28,6 @@ class ProgramChangeListenerManager(
 
         val listener = fileMonitor.registerFileChangeListener(
             shaderFiles,
-//            { file -> file.name.startsWith("global") }
         ) { file ->
             println("""Reloading ${shaders.joinToString { it.name }}""")
             onReload(file)

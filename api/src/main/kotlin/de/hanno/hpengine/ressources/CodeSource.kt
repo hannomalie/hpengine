@@ -79,4 +79,4 @@ internal val includeRegex = Regex("//include\\(?(.+)\\)")
 
 fun String.extractIncludeFiles(): List<File> = lines().mapNotNull { line ->
     includeRegex.find(line)?.groupValues?.get(1)?.let { File(it) }
-}
+}.distinct()

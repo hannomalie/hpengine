@@ -292,7 +292,8 @@ class VoxelConeTracingExtension(
                 }
 
                 if (config.debug.isDebugVoxels) {
-                    memoryBarrier()
+//                    memoryBarrier()
+                    memoryBarrier(Barrier.ShaderImageAccess)
                     mipmapGrid(
                         currentVoxelGrid.currentVoxelSource,
                         texture3DMipMapAlphaBlendComputeProgram,
@@ -371,7 +372,8 @@ class VoxelConeTracingExtension(
 //                    }
                 }
 
-                memoryBarrier()
+                memoryBarrier(Barrier.BufferUpdate)
+//                memoryBarrier()
                 lightInjectedFramesAgo++
             }
         }
@@ -382,9 +384,11 @@ class VoxelConeTracingExtension(
 
     private fun mipmapGrid(textureId: Int, renderState: RenderState) = graphicsApi.run {
         profiled("grid mipmap") {
-            graphicsApi.memoryBarrier()
+//            graphicsApi.memoryBarrier()
+            memoryBarrier(Barrier.ShaderImageAccess)
             mipmapGrid(textureId, texture3DMipMapAlphaBlendComputeProgram, renderState)
-            graphicsApi.memoryBarrier()
+//            graphicsApi.memoryBarrier()
+            memoryBarrier(Barrier.ShaderImageAccess)
         }
     }
 

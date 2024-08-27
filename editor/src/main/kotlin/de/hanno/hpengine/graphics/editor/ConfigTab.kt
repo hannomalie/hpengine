@@ -38,9 +38,6 @@ fun TabBar.configTab(config: Config, window: Window) {
         if (ImGui.checkbox("GPU Profiling", config.debug.profiling)) {
             config.debug.profiling = !config.debug.profiling
         }
-        if (ImGui.checkbox("GPU Background Profiling", config.debug.backgroundContextProfiling)) {
-            config.debug.backgroundContextProfiling = !config.debug.backgroundContextProfiling
-        }
         if (ImGui.checkbox("VSync", window.vSync)) {
             window.vSync = !window.vSync
         }

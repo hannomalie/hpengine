@@ -28,7 +28,6 @@ import java.awt.image.*
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
-import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
@@ -111,74 +110,70 @@ class OpenGLTextureManager(
         resourcePath: String,
         srgba: Boolean,
         directory: AbstractDirectory
-    ) = getTexture(directory.resolve(resourcePath), resourcePath, srgba)
-
-    fun getTexture(file: File, resourcePath: String = file.absolutePath, srgba: Boolean = false): FileBasedTexture2D<Texture2D> {
+    ): FileBasedTexture2D<Texture2D> {
+        val file = directory.resolve(resourcePath)
         require(file.exists()) { "File ${file.absolutePath} must exist!" }
         require(file.isFile) { "File ${file.absolutePath} is not a file!" }
-
         val compressInternal = config.performance.textureCompressionByDefault
         val internalFormat = if (compressInternal) {
-            if (srgba) InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5 else InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
-        } else {
-            if (srgba) InternalTextureFormat.SRGB8_ALPHA8 else InternalTextureFormat.RGBA16F
-        }
-
+                if (srgba) InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5 else InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
+            } else {
+                if (srgba) InternalTextureFormat.SRGB8_ALPHA8 else InternalTextureFormat.RGBA16F
+            }
         val openGLTexture = if (file.extension == "dds") {
-            val ddsImage = DDSImage.read(file)
-            if (compressInternal) {
-                val uploadInfo = UploadInfo.AllMipLevelsTexture2DUploadInfo(
-                    TextureDimension(ddsImage.width, ddsImage.height),
-                    ddsImage.allMipMaps.map { it.data },
-                    dataCompressed = true,
-                    srgba = srgba,
+                val ddsImage = DDSImage.read(file)
+                if (compressInternal) {
+                    val uploadInfo = UploadInfo.AllMipLevelsTexture2DUploadInfo(
+                        TextureDimension(ddsImage.width, ddsImage.height),
+                        ddsImage.allMipMaps.map { it.data },
+                        dataCompressed = true,
+                        srgba = srgba,
+                        internalFormat = internalFormat,
+                        textureFilterConfig = TextureFilterConfig(),
+                    )
+                    graphicsApi.allocateTextureFromArray(uploadInfo, TEXTURE_2D, WrapMode.Repeat)
+    //                graphicsApi.Texture2D(
+    //                    uploadInfo,
+    //                    WrapMode.Repeat,
+    //                )
+                } else {
+                    val bufferedImage = DDSUtil.decompressTexture(
+                        ddsImage.getMipMap(0).data,
+                        ddsImage.width,
+                        ddsImage.height,
+                        ddsImage.compressionFormat
+                    ).apply {
+                        DDSConverter.run<DDSConverter, Unit> { rescaleToNextPowerOfTwo() }
+                    }
+                    graphicsApi.Texture2D(
+                        graphicsApi.createAllMipLevelsLazyTexture2DUploadInfo(bufferedImage, internalFormat),
+                        wrapMode = WrapMode.Repeat,
+                    )
+                }
+            } else {
+    //            val uploadInfo = graphicsApi.createAllMipLevelsLazyTexture2DUploadInfo(ImageIO.read(file), internalFormat)
+                val bufferedImage = ImageIO.read(file)
+                val uploadInfo = UploadInfo.SingleMipLevelTexture2DUploadInfo(
+                    dimension = TextureDimension2D(bufferedImage.width, bufferedImage.height),
+                    data = bufferedImage.toByteBuffer(),
+                    dataCompressed = false,
+                    srgba = true,
                     internalFormat = internalFormat,
                     textureFilterConfig = TextureFilterConfig(),
                 )
                 graphicsApi.allocateTextureFromArray(uploadInfo, TEXTURE_2D, WrapMode.Repeat)
 //                graphicsApi.Texture2D(
 //                    uploadInfo,
-//                    WrapMode.Repeat,
+//                    wrapMode = WrapMode.Repeat,
 //                )
-            } else {
-                val bufferedImage = DDSUtil.decompressTexture(
-                    ddsImage.getMipMap(0).data,
-                    ddsImage.width,
-                    ddsImage.height,
-                    ddsImage.compressionFormat
-                ).apply {
-                    DDSConverter.run { rescaleToNextPowerOfTwo() }
-                }
-                graphicsApi.Texture2D(
-                    graphicsApi.createAllMipLevelsLazyTexture2DUploadInfo(bufferedImage, internalFormat),
-                    wrapMode = WrapMode.Repeat,
-                )
             }
-        } else {
-//            val uploadInfo = graphicsApi.createAllMipLevelsLazyTexture2DUploadInfo(ImageIO.read(file), internalFormat)
-            val bufferedImage = ImageIO.read(file)
-            val uploadInfo = UploadInfo.SingleMipLevelTexture2DUploadInfo(
-                dimension = TextureDimension2D(bufferedImage.width, bufferedImage.height),
-                data = bufferedImage.toByteBuffer(),
-                dataCompressed = false,
-                srgba = true,
-                internalFormat = internalFormat,
-                textureFilterConfig = TextureFilterConfig(),
-            )
-            graphicsApi.allocateTextureFromArray(uploadInfo, TEXTURE_2D, WrapMode.Repeat)
-//            graphicsApi.Texture2D(
-//                uploadInfo,
-//                wrapMode = WrapMode.Repeat,
-//            )
-        }
-
         return FileBasedTexture2D(
             resourcePath,
             file,
-            openGLTexture
-        ).apply {
-            textures.ifAbsentPutInSingleThreadContext(resourcePath) { this }
-        }
+                openGLTexture
+            ).apply {
+                textures.ifAbsentPutInSingleThreadContext(resourcePath) { this }
+            }
     }
 
     private inline fun <T> MutableMap<String, T>.ifAbsentPutInSingleThreadContext(

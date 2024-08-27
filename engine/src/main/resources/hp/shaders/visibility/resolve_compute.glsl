@@ -101,9 +101,16 @@ void main(void) {
 
 	Entity entity = entities[entityId];
 	Material material = materials[entity.materialIndex];
-
+	int materialType = int(material.materialtype);
+	int DEFAULT = 0;
+	int FOLIAGE = 1;
+	int UNLIT = 2;
 
 	vec3 color = material.diffuse;
+	float roughness = 1;
+	float metallic = 0;
+	vec3 diffuseColor = color.rgb;
+	vec3 specularColor = diffuseColor;
 
 
 #ifdef BINDLESSTEXTURES
@@ -116,16 +123,10 @@ void main(void) {
 	color.rgb = textureLod(diffuseTextures, vec3(uv, material.diffuseMapIndex), mipMapLevel).rgb;
 #endif
 
-	float roughness = 1;
-	float metallic = 0;
-	vec3 diffuseColor = color.rgb;
-	vec3 specularColor = diffuseColor;
 	vec3 finalColor;
-	int materialType = int(material.materialtype);
-	int DEFAULT = 0;
-	int FOLIAGE = 1;
-	int UNLIT = 2;
 
+//	TODO: This causes unaccaptable crashes on linux...
+/*
 	for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 	{
 		PointLight pointLight = pointLights[lightIndex];
@@ -157,6 +158,7 @@ void main(void) {
 
 			float visibility = 1.0f;
 
+
 			if(pointLight.shadow != 0) {
 				visibility = getVisibilityCubemap(positionWorld, lightIndex, pointLight);
 			}
@@ -164,11 +166,15 @@ void main(void) {
 			finalColor.rgb += temp * visibility;
 		}
 	}
+*/
+
+// TODO: Shadow not working properly for some reason
 #ifdef BINDLESSTEXTURES
 	float visibility = getVisibility(positionWorld, directionalLight);
 #else
 	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap, directionalLightStaticShadowMap);
 #endif
+visibility = 1;
 
 	vec3 finalColorDirectional;
 	vec3 lightDirectionView = (viewMatrix * vec4(-directionalLight.direction, 0)).xyz;

@@ -50,7 +50,6 @@ struct DirectionalLightState {
     vec3 direction;
     float scatterFactor;
 
-
     uvec2 shadowMapHandle;
     int shadowMapId;
     int staticShadowMapId;

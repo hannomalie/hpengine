@@ -81,7 +81,6 @@ data class DebugConfig(
     var freezeCulling: Boolean = false,
     var forceSingleThreadedRendering: Boolean = false,
     var profiling: Boolean = false,
-    var backgroundContextProfiling: Boolean = false,
     var simulateSlowTextureStreaming: Boolean = false,
 )
 
@@ -100,7 +99,6 @@ data class PerformanceConfig (
     var updateGiOnSceneChange: Boolean = true,
     var isIndirectRendering: Boolean = false,
     var isVsync: Boolean = true,
-    var useBackgroundContext: Boolean = false,
     var usePixelBufferForTextureUpload: Boolean = true,
     var textureCompressionByDefault: Boolean = false, // This messes up textures, figure out why
 )

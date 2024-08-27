@@ -313,8 +313,8 @@ open class GPUCulledPipeline(
                     ((commandOrganization.commandCount.value.toInt() + 2) / 3).toCount() * 3,
                     invocationsPerCommand
                 )
-    //            memoryBarrier(Barrier.ShaderImageAccess)
-                memoryBarrier()
+                memoryBarrier(Barrier.ShaderImageAccess)
+//                memoryBarrier()
             }
         }
     }
@@ -373,8 +373,8 @@ open class GPUCulledPipeline(
                             commandCount
                         )
                     }
-//                    memoryBarrier(Barrier.ShaderImageAccess)
-                    memoryBarrier()
+                    memoryBarrier(Barrier.ShaderImageAccess)
+//                    memoryBarrier()
                 }
             }
         }

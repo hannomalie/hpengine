@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.util.concurrent.Executors
+import kotlin.system.exitProcess
 
 class Engine(
     baseSystems: List<BaseSystem>,
@@ -61,6 +62,12 @@ class Engine(
 
     init {
         logger.info("Registered: ${systems.size} systems, ${extractors.size} extractors")
+
+        window.gpuExecutor.perFrameAction = renderManager::frame
+        window.gpuExecutor.afterLoop = {
+            window.close()
+            exitProcess(0)
+        }
     }
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }

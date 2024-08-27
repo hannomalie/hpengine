@@ -55,7 +55,6 @@ class OpenGLContext private constructor(
     private val gpuExecutor: GpuExecutor,
     private val config: Config,
     override val profiler: GPUProfiler,
-    override val backgroundContext: OpenGLContext? = null,
 ) : GraphicsApi, GpuExecutor by gpuExecutor {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
@@ -1599,7 +1598,7 @@ class OpenGLContext private constructor(
 
     override fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int) = onGpuInline {
         GL43.glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ)
-        GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS) // TODO: Make this optional
+//        GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS) // TODO: Make this optional
     }
 
     override fun copyCubeMap(sourceTexture: CubeMap): OpenGLCubeMap {
@@ -1855,9 +1854,6 @@ class OpenGLContext private constructor(
                 window.gpuExecutor,
                 config,
                 window.profiler,
-                window.gpuExecutor.backgroundContext?.let {
-                    OpenGLContext(it, config, OpenGLGPUProfiler(config.debug::backgroundContextProfiling))
-                }
             ).apply {
                 openGLContextSingleton = this
                 require(this.parentContext == null) {

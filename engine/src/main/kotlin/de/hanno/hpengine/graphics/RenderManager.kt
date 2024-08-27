@@ -7,7 +7,6 @@ import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.window.Window
-import de.hanno.hpengine.lifecycle.Termination
 import de.hanno.hpengine.lifecycle.UpdateCycle
 import de.hanno.hpengine.system.Extractor
 import org.apache.logging.log4j.LogManager
@@ -25,7 +24,6 @@ class RenderManager(
     val renderSystemsConfig: RenderSystemsConfig,
     private val gpuProfiler: GPUProfiler,
     private val updateCycle: UpdateCycle,
-    private val termination: Termination,
 ) : BaseSystem() {
 
     val logger = LogManager.getLogger(RenderManager::class.java)
@@ -47,16 +45,7 @@ class RenderManager(
 
     internal val rendering = AtomicBoolean(false)
 
-    init {
-        window.gpuExecutor.perFrameAction = ::frame
-        window.gpuExecutor.loopCondition = { !termination.terminationRequested.get() }
-        window.gpuExecutor.afterLoop = {
-            window.close()
-            exitProcess(0)
-        }
-    }
-
-    private fun frame() {
+    fun frame() {
         logger.trace("frame")
         gpuProfiler.run {
             graphicsApi.run {

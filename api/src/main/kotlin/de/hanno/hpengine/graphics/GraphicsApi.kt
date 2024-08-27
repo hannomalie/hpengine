@@ -32,8 +32,6 @@ import java.nio.LongBuffer
 import java.nio.ShortBuffer
 
 interface GraphicsApi {
-    val backgroundContext: GraphicsApi?
-
     val profiler: GPUProfiler
 
     val isError: Boolean

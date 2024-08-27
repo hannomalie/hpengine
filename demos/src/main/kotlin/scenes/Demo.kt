@@ -1,6 +1,3 @@
-
-
-
 package scenes
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
@@ -12,7 +9,6 @@ import de.hanno.hpengine.directory.Directories
 import de.hanno.hpengine.directory.EngineDirectory
 import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.graphics.RenderManager
-import de.hanno.hpengine.graphics.RenderSystemsConfig
 import de.hanno.hpengine.graphics.editor.PrimaryRendererSelection
 import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer

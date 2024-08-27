@@ -19,13 +19,7 @@ import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import imgui.ImGui
 import imgui.gl3.ImGuiImplGl3
 import imgui.type.ImBoolean
-import org.lwjgl.glfw.GLFW
-import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import kotlin.system.exitProcess
-
-//private val exitOnCloseCallback = GLFWWindowCloseCallbackI { handle: Long ->
-//    GLFW.glfwSetWindowShouldClose(handle, true)
-//}
 
 fun main() {
     val config = Config()
@@ -40,7 +34,6 @@ fun main() {
         visible = true,
 //        closeCallback = exitOnCloseCallback,
         profiler = OpenGLGPUProfiler(config.profiling::profiling),
-        createBackgroundContext = false,
         parentWindow = null,
     )
     val graphicsApi = OpenGLContext(window, config)
@@ -85,6 +78,11 @@ fun main() {
         window.frontBuffer
     )
 
+    termination.terminationAllowed.set(true)
+    graphicsApi.afterLoop = {
+        window.close()
+        exitProcess(0)
+    }
     graphicsApi.perFrameAction = {
         window.pollEvents()
 
@@ -99,10 +97,5 @@ fun main() {
         renderer.render(RenderState(graphicsApi))
 
         window.swapBuffers()
-    }
-    graphicsApi.loopCondition = { !termination.terminationRequested.get() }
-    graphicsApi.afterLoop = {
-        window.close()
-        exitProcess(0)
     }
 }

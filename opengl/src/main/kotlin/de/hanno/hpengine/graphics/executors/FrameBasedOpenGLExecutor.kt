@@ -2,12 +2,15 @@ package de.hanno.hpengine.graphics.executors
 
 import de.hanno.hpengine.graphics.GpuExecutor
 import de.hanno.hpengine.graphics.OpenGLContext
+import de.hanno.hpengine.graphics.logger
 import de.hanno.hpengine.graphics.profiledFoo
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.lifecycle.Termination
 import kotlinx.coroutines.*
 import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.opengl.GL11
 import org.lwjgl.system.APIUtil
 import java.lang.reflect.Field
 import java.util.concurrent.BlockingQueue
@@ -17,23 +20,27 @@ import java.util.concurrent.LinkedBlockingQueue
 
 class FrameBasedOpenGLExecutor(
     override val gpuProfiler: GPUProfiler,
-    override val backgroundContext: GpuExecutor?,
-    dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val termination: Termination,
+    dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
+    initBlock: () -> Unit,
 ): GpuExecutor {
     override var parentContext: Window? = null
+
     var gpuThreadId: Long = runBlocking(dispatcher) {
         Thread.currentThread().name = OpenGLContext.createOpenGLThreadName()
         Thread.currentThread().id
     }
     private val queue: BlockingQueue<() -> Unit> = LinkedBlockingQueue()
     override var perFrameAction: (() -> Unit)? = null
-    override var loopCondition: (() -> Boolean)? = { true }
     override var afterLoop: (() -> Unit)? = {  }
 
     init {
         var frameCounter = 0
+
+        runBlocking(dispatcher) { initBlock() }
+
         GlobalScope.launch(dispatcher) {
-            while (loopCondition?.invoke() != false) {
+            while (!termination.terminationRequested.get()) {
                 gpuProfiler.run {
                     val frameTask = profiledFoo("Frame") {
                         val maxPerFrame = 1
@@ -59,6 +66,10 @@ class FrameBasedOpenGLExecutor(
                     frameCounter++
                 }
             }
+            while(!termination.terminationAllowed.get()) {
+                Thread.sleep(100)
+                logger.info("Waiting for termination to be allowed")
+            }
             afterLoop?.invoke()
         }
     }
@@ -67,28 +78,56 @@ class FrameBasedOpenGLExecutor(
 
     inline val Thread.isOpenGLThread: Boolean get() = id == gpuThreadId
 
-    override suspend fun <T> execute(block: () -> T) = run {
-        val result = CompletableFuture<T>()
-        queue.put { result.complete(block()) }
-        result.get()
+    override suspend fun <T> execute(block: () -> T): T {
+        val result = CompletableFuture<Result<T>>()
+        val catchingBlock = runCatching {
+            block().apply {
+                if(GL11.glGetError() != GL11.GL_NO_ERROR) { throw RuntimeException() }
+            }
+        }
+        queue.put { result.complete(catchingBlock) }
+
+        return result.get().getOrElse {
+            throw RuntimeException(it)
+        }
     }
 
     override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE) = if (isOpenGLThread) {
-        block()
+        block().apply {
+            if(GL11.glGetError() != GL11.GL_NO_ERROR) { throw RuntimeException() }
+        }
     } else {
-        val result = CompletableFuture<RETURN_TYPE>()
-        queue.put { result.complete(block()) }
-        result.get()
+        val result = CompletableFuture<Result<RETURN_TYPE>>()
+        queue.put {
+            val catchingBlock = runCatching {
+                block().apply {
+                    if(GL11.glGetError() != GL11.GL_NO_ERROR) { throw RuntimeException() }
+                }
+            }
+            result.complete(catchingBlock)
+        }
+        result.get().getOrElse {
+            throw RuntimeException(it)
+        }
     }
 
     override fun launch(block: () -> Unit) = if (isOpenGLThread) {
-        block()
+        block().apply {
+            if(GL11.glGetError() != GL11.GL_NO_ERROR) { throw RuntimeException() }
+        }
     } else {
-        queue.put { block() }
+        queue.put {
+            val runCatching = runCatching {
+                block().apply {
+                    if(GL11.glGetError() != GL11.GL_NO_ERROR) { throw RuntimeException() }
+                }
+            }
+            runCatching.onFailure {
+                it.printStackTrace()
+            }
+        }
     }
 }
-
-class OpenGlException(msg: String): RuntimeException(msg)
 
 private val exceptionOnErrorCallback = object : GLFWErrorCallback() {
     private val ERROR_CODES = APIUtil.apiClassTokens(

@@ -3,28 +3,24 @@ package de.hanno.hpengine.graphics
 
 import GLUtil
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.executors.FrameBasedResultOpenGLExecutor
+import de.hanno.hpengine.graphics.executors.FrameBasedOpenGLExecutor
 import de.hanno.hpengine.graphics.executors.OpenGlException
-import de.hanno.hpengine.graphics.executors.OpenGlExecutorImpl
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.GLU
 import de.hanno.hpengine.graphics.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.lifecycle.Termination
-import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import org.joml.Vector4f
 import org.lwjgl.glfw.*
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
 import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL32
 import org.lwjgl.system.APIUtil
 import org.lwjgl.system.Callback
 import java.lang.reflect.Field
-import java.util.concurrent.atomic.AtomicBoolean
 
 
 // Don't make this a local field, we need a strong reference
@@ -49,8 +45,6 @@ private val exceptionOnErrorCallback = object : GLFWErrorCallback() {
         }
     }
 }
-class OpenGlException(msg: String): RuntimeException(msg)
-
 class GlfwWindow(
     override var width: Int,
     override var height: Int,
@@ -59,9 +53,7 @@ class GlfwWindow(
     title: String,
     vSync: Boolean = true,
     visible: Boolean,
-//    closeCallback: GLFWWindowCloseCallbackI,
     override val profiler: GPUProfiler,
-    createBackgroundContext: Boolean = config.performance.useBackgroundContext,
     parentWindow: GlfwWindow? = null,
     logLevel: GLUtil.Severity = GLUtil.Severity.NOTIFICATION,
 ) : Window {
@@ -136,44 +128,19 @@ class GlfwWindow(
         // Don't remove that, or some operating systems won't make context current on another thread
         glfwMakeContextCurrent(0)
 
-        // this MUST be executed here, otherwise it will fail on windows, see
-        // https://javadoc.lwjgl.org/org/lwjgl/glfw/GLFW.html#glfwCreateWindow(int,int,java.lang.CharSequence,long,long)
-        val backgroundWindow = if(createBackgroundContext) {
-            GlfwWindow(
-                1, 1, config, termination, "Background", false,
-                visible = false,
-                OpenGLGPUProfiler(config.debug::backgroundContextProfiling),
-                createBackgroundContext = false,
-                parentWindow = this,
-            )
-        } else null
-
-        // TODO: IS BROKEN
-        val isMainContext = parentWindow == null
-        gpuExecutor = if (isMainContext) {
-            // TODO: IS BROKEN
-//            OpenGlExecutorImpl(gpuProfiler = profiler) {
-            FrameBasedResultOpenGLExecutor(this, profiler, backgroundWindow?.gpuExecutor, termination) {
+        gpuExecutor = FrameBasedOpenGLExecutor(profiler, termination) {
                 makeContextCurrent()
                 GL.createCapabilities()
             }
-        } else {
-            OpenGlExecutorImpl(gpuProfiler = profiler) {
-                makeContextCurrent()
-                GL.createCapabilities()
-            }.apply {
-                parentContext = parentWindow!!
-            }
-        }
 
         frontBuffer = createFrontBufferRenderTarget()
     }
 
     override fun setVisible(visible: Boolean) {
         if(visible) {
-            showWindow()
+            show()
         } else {
-            hideWindow()
+            hide()
         }
     }
     override fun pollEvents() {
@@ -181,11 +148,6 @@ class GlfwWindow(
 
         if(glfwWindowShouldClose(handle)) {
             termination.terminationRequested.set(true)
-        }
-    }
-    override fun pollEventsInLoop() {
-        while (!termination.terminationRequested.get()) {
-            pollEvents()
         }
     }
 
@@ -201,8 +163,8 @@ class GlfwWindow(
         }
     }
 
-    override fun showWindow() = glfwShowWindow(handle)
-    override fun hideWindow() = glfwHideWindow(handle)
+    override fun show() = glfwShowWindow(handle)
+    override fun hide() = glfwHideWindow(handle)
 
     override fun getCursorPosition(mouseX: DoubleArray, mouseY: DoubleArray) = glfwGetCursorPos(handle, mouseX, mouseY)
     override fun getFrameBufferSize(width: IntArray, height: IntArray) = glfwGetFramebufferSize(handle, width, height)

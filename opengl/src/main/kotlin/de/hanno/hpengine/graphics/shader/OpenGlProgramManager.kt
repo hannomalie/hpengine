@@ -42,17 +42,17 @@ class OpenGlProgramManager(
         codeSource: FileBasedCodeSource,
         defines: Defines,
         uniforms: T
-    ): ComputeProgramImpl<T> = ComputeProgramImpl(
-        ComputeShader(graphicsApi, codeSource, defines),
-        graphicsApi,
-        uniforms
-    ).apply {
-        programsCache.add(this).apply {
+    ): ComputeProgramImpl<T> = graphicsApi.run { ComputeProgramImpl(
+            ComputeShader(graphicsApi, codeSource, defines),
+            graphicsApi,
+            uniforms
+        ).apply {
+            load()
+            programsCache.add(this)
             programChangeListener?.run {
-                reregisterListener { graphicsApi.run { reload() } }
+                reregisterListener { reload() }
             }
         }
-        graphicsApi.run { load() }
     }
 
     override fun <T : Uniforms> getProgram(

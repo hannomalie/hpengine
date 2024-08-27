@@ -182,7 +182,6 @@ class OpenGLPixelBufferObject(
         }
 
         graphicsApi.onGpu {
-//        (backgroundContext ?: this).onGpu { // TODO: In here happen errors, investigate why
             profiled("textureSubImage") {
                 buffer.bound {
                     if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {

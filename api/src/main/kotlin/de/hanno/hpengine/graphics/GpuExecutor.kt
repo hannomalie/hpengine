@@ -10,8 +10,6 @@ interface GpuExecutor {
     fun launch(block: () -> Unit)
 
     var perFrameAction: (() -> Unit)?
-    var loopCondition: (() -> Boolean)?
     var afterLoop: (() -> Unit)?
-    val backgroundContext: GpuExecutor?
     var parentContext: Window?
 }
