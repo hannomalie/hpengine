@@ -141,19 +141,25 @@ class MaterialSystem(
             }
         }
     }
-    private fun Material.deriveDiffuseMipMapBias(): Int = if(maps.containsKey(MAP.DIFFUSE)) {
-        when(val uploadState = maps[MAP.DIFFUSE]!!.uploadState) {
-            is UploadState.Uploading -> uploadState.maxMipMapLoaded
-            else -> 0
-        }
-    } else 0
+    private fun Material.deriveDiffuseMipMapBias() = if(maps.containsKey(MAP.DIFFUSE)) {
+        maps[MAP.DIFFUSE]!!.currentMipMapBias
+    } else 0f
 
     private fun Material.deriveHandle(key: MAP, fallbackTexture: Texture? = null): Long = maps[key]?.let {
         val fallbackHandle = (fallbackTexture?.handle ?: 0)
-        when(it.uploadState) {
-            UploadState.NotUploaded -> fallbackHandle
+        when(val uploadState = it.uploadState) {
+            is UploadState.Unloaded -> if(uploadState.mipMapLevel == it.mipmapCount) {
+                fallbackHandle
+            } else {
+                it.handle
+            }
             UploadState.Uploaded -> it.handle
             is UploadState.Uploading -> it.handle
+            is UploadState.MarkedForUpload -> if(uploadState.mipMapLevel == it.mipmapCount - 1) {
+                fallbackHandle
+            } else {
+                it.handle
+            }
         }
     } ?: 0
 
@@ -167,7 +173,8 @@ class MaterialSystem(
                 else -> when(texture.uploadState) {
                     UploadState.Uploaded -> materialsFinishedLoadingInCycle[material]  = cycle
                     is UploadState.Uploading -> { }
-                    UploadState.NotUploaded -> { }
+                    is UploadState.Unloaded -> { }
+                    is UploadState.MarkedForUpload -> { }
                 }
             }
         }

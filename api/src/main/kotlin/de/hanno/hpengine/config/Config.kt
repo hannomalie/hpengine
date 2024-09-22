@@ -101,6 +101,7 @@ data class PerformanceConfig (
     var isVsync: Boolean = true,
     var usePixelBufferForTextureUpload: Boolean = true,
     var textureCompressionByDefault: Boolean = false, // This messes up textures, figure out why
+    var maxMipMapToKeepLoaded: Int = 8,
 )
 
 class ProfilingConfig {

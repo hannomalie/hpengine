@@ -209,9 +209,17 @@ interface GraphicsApi {
         wrapMode: WrapMode
     ): Texture2D
 
+    fun createUploadInfo(
+        image: BufferedImage,
+        internalFormat: InternalTextureFormat,
+        srgba: Boolean
+    ): UploadInfo.Texture2DUploadInfo
+
     fun getTextureHandle(textureId: Int): Long
 
     fun FileBasedTexture2D<Texture2D>.uploadAsync()
+
+    fun <T: Texture2D> T.upload(info: UploadInfo.Texture2DUploadInfo)
 
     fun delete(texture: Texture)
 
@@ -396,13 +404,6 @@ interface GraphicsApi {
     fun setPointsSize(size: Float)
     fun <T: Texture> createDepthBuffer(texture: T): DepthBuffer<T>
     fun createView(texture: Texture2DArray, index: Int): Texture2D
-    val textureArray: Texture2DArray
-    val textureArrayViews: List<Texture2D>
-    fun allocateTextureFromArray(
-        info: UploadInfo,
-        textureTarget: TextureTarget,
-        wrapMode: WrapMode
-    ): Texture2D
 }
 
 fun GraphicsApi.RenderTarget(

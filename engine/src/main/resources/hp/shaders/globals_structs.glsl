@@ -25,7 +25,7 @@ struct Material {
     float lodFactor;
     int useWorldSpaceXZAsTexCoords;
 
-    int diffuseMipmapBias;
+    float diffuseMipmapBias;
     int diffuseMapIndex;
     float dummy1;
     float dummy2;

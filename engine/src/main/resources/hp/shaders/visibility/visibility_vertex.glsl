@@ -9,24 +9,6 @@ uniform int entityIndex = 0;
 uniform vec3 eyePosition;
 uniform int time = 0;
 
-#ifdef BINDLESSTEXTURES
-#else
-layout(binding=0) uniform sampler2D diffuseMap;
-uniform bool hasDiffuseMap = false;
-layout(binding=1) uniform sampler2D normalMap;
-uniform bool hasNormalMap = false;
-layout(binding=2) uniform sampler2D specularMap;
-uniform bool hasSpecularMap = false;
-layout(binding=3) uniform sampler2D displacementMap;
-uniform bool hasDisplacementMap = false;
-layout(binding=4) uniform sampler2D heightMap;
-uniform bool hasHeightMap = false;
-////
-layout(binding=7) uniform sampler2D roughnessMap;
-uniform bool hasRoughnessMap = false;
-
-#endif
-
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
@@ -83,7 +65,6 @@ void main(void) {
 
     mat4 modelMatrix = entity.modelMatrix;
 
-#ifdef BINDLESSTEXTURES
 	sampler2D diffuseMap;
 	bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
 	if(hasDiffuseMap) { diffuseMap = sampler2D(material.handleDiffuse); }
@@ -107,7 +88,6 @@ void main(void) {
 	sampler2D roughnessMap;
 	bool hasRoughnessMap = uint64_t(material.handleRoughness) != 0;
 	if(hasRoughnessMap) { roughnessMap = sampler2D(material.handleRoughness); }
-#endif
 
 #ifdef ANIMATED
 	VertexAnimatedPacked vertex;

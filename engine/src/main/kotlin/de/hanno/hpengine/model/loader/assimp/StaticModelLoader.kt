@@ -75,7 +75,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
                 val textPath = path.dataString()
                 return if (textPath.isNotEmpty()) {
-                    textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir)
+                    textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir, unloadable = true)
                 } else null
             }
         }

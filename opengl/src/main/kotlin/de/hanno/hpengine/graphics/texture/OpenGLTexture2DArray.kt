@@ -15,4 +15,11 @@ data class OpenGLTexture2DArray(
     override val wrapMode: WrapMode,
     override var uploadState: UploadState,
     override val srgba: Boolean = false,
+    override var currentMipMapBias: Float = when(uploadState) {
+        is UploadState.Unloaded -> dimension.getMipMapCount().toFloat()
+        UploadState.Uploaded -> 0f
+        is UploadState.Uploading -> uploadState.mipMapLevel.toFloat()
+        is UploadState.MarkedForUpload -> uploadState.mipMapLevel.toFloat()
+    },
+    override var unloadable: Boolean = true
 ) : Texture2DArray

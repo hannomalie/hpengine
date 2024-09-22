@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.editor.select
 
 import com.artemis.Component
 import com.artemis.utils.Bag
+import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.imgui.dsl.Window
@@ -13,14 +14,15 @@ data class TextureSelection(val path: String, val texture: Texture): Selection
 
 
 @Single(binds = [EditorExtension::class])
-class OceanWaterEditorExtension(
+class TextureEditorExtension(
+    private val config: Config,
     private val graphicsApi: GraphicsApi,
     private val textureManagerBaseSystem: TextureManagerBaseSystem,
 ): EditorExtension {
     override fun getSelectionForComponentOrNull(component: Component, entity: Int, components: Bag<Component>) = component as? TextureSelection
 
     override fun Window.renderRightPanel(selection: Selection?) = if(selection is TextureSelection) {
-        textureGrid(graphicsApi, selection.path, selection.texture)
+        textureGrid(config, graphicsApi, selection.path, selection.texture)
         true
     } else {
         false
@@ -28,21 +30,23 @@ class OceanWaterEditorExtension(
 }
 
 private fun textureGrid(
+    config: Config,
     graphicsApi: GraphicsApi,
     key: String,
     texture: Texture
 ) {
     ImGui.text(key)
+    ImGui.text("Current MipMap bias" + texture.currentMipMapBias)
     if (ImGui.beginCombo("UploadState", texture.uploadState.toString())) {
         val states = listOf(
             UploadState.Uploaded,
-            UploadState.NotUploaded
-        ) + (0..texture.mipmapCount).map { UploadState.Uploading(it) }
+            UploadState.Unloaded(texture.mipmapCount)
+        ) + (0..< texture.mipmapCount).map { UploadState.Uploading(it) }
 
-        states.forEach { type ->
-            val selected = texture.uploadState == type
-            if (ImGui.selectable(type.toString(), selected)) {
-                texture.uploadState = type
+        states.forEach { state ->
+            val selected = texture.uploadState == state
+            if (ImGui.selectable(state.toString(), selected)) {
+                texture.uploadState = state
             }
             if (selected) {
                 ImGui.setItemDefaultFocus()
@@ -52,7 +56,18 @@ private fun textureGrid(
     }
     if (ImGui.button("Load")) {
         (texture as? FileBasedTexture2D<Texture2D>)?.let {
-            graphicsApi.run { texture.uploadAsync() }
+            graphicsApi.run {
+                texture.uploadState = UploadState.Unloaded(texture.mipmapCount)
+                texture.uploadAsync()
+            }
+        }
+    }
+    if (ImGui.button("Load (from mip ${config.performance.maxMipMapToKeepLoaded})")) {
+        (texture as? FileBasedTexture2D<Texture2D>)?.let {
+            graphicsApi.run {
+                texture.uploadState = UploadState.Unloaded(config.performance.maxMipMapToKeepLoaded)
+                texture.uploadAsync()
+            }
         }
     }
 

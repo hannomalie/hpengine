@@ -3,6 +3,7 @@ package de.hanno.hpengine.graphics.renderer.forward
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.graphics.*
 import de.hanno.hpengine.graphics.constants.DepthFunc
 import de.hanno.hpengine.graphics.constants.PrimitiveType
@@ -16,6 +17,7 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
+import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
@@ -39,6 +41,8 @@ class ColorOnlyRenderer(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
     private val skyBoxStateHolder: SkyBoxStateHolder,
+    private val cycleSystem: CycleSystem,
+    private val textureManager: TextureManager,
 ): PrimaryRenderer {
 
     override val finalOutput = SimpleFinalOutput(renderTarget.textures.first(), 0, this)
@@ -70,14 +74,14 @@ class ColorOnlyRenderer(
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
         object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic].filter {
-                !it.hasOwnProgram
+                !it.hasOwnProgram && it.isVisibleForCamera
             }
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
         object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated].filter {
-                !it.hasOwnProgram
+                !it.hasOwnProgram && it.isVisibleForCamera
             }
 
             override fun RenderState.selectGeometryBuffer() = this[entitiesStateHolder.entitiesState].geometryBufferAnimated
@@ -89,6 +93,13 @@ class ColorOnlyRenderer(
 
         currentWriteState[staticDirectPipeline].prepare(currentWriteState)
         currentWriteState[animatedDirectPipeline].prepare(currentWriteState)
+
+        currentWriteState[staticDirectPipeline].preparedBatches.forEach {
+            textureManager.setTexturesUsedInCycle(it.material.maps.values, cycleSystem.cycle)
+        }
+        currentWriteState[animatedDirectPipeline].preparedBatches.forEach {
+            textureManager.setTexturesUsedInCycle(it.material.maps.values, cycleSystem.cycle)
+        }
     }
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {

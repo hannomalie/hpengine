@@ -33,7 +33,7 @@ interface MaterialStrukt : Strukt {
     context(ByteBuffer) var lodFactor: Float
     context(ByteBuffer) var useWorldSpaceXZAsTexCoords: Int
 
-    context(ByteBuffer) var diffuseMipmapBias: Int
+    context(ByteBuffer) var diffuseMipmapBias: Float
     context(ByteBuffer) var diffuseMapIndex: Int
     context(ByteBuffer) var dummy1: Float
     context(ByteBuffer) var dummy2: Float

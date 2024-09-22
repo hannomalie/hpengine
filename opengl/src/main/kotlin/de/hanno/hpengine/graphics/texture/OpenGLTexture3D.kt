@@ -14,7 +14,14 @@ data class OpenGLTexture3D(
     override var handle: Long,
     override val textureFilterConfig: TextureFilterConfig,
     override val wrapMode: WrapMode,
-    override var uploadState: UploadState
+    override var uploadState: UploadState,
+    override var currentMipMapBias: Float = when(uploadState) {
+        is UploadState.Unloaded -> dimension.getMipMapCount().toFloat()
+        UploadState.Uploaded -> 0f
+        is UploadState.Uploading -> uploadState.mipMapLevel.toFloat()
+        is UploadState.MarkedForUpload -> uploadState.mipMapLevel.toFloat()
+    },
+    override var unloadable: Boolean = true,
 ) : Texture3D {
     companion object {
         operator fun invoke(

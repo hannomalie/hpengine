@@ -57,6 +57,7 @@ fun main() {
         textures = listOf(
             graphicsApi.Texture2D(
                 UploadInfo.SingleMipLevelTexture2DUploadInfo(
+                    data = null,
                     dimension = TextureDimension2D(1024, 1024),
                     internalFormat = InternalTextureFormat.RGBA16F,
                     textureFilterConfig = TextureFilterConfig(

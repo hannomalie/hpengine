@@ -3,13 +3,10 @@ package de.hanno.hpengine.graphics.texture
 import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.buffer.OpenGLGpuBuffer
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.constants.BufferTarget
-import org.lwjgl.opengl.GL11
 import java.util.concurrent.Executors
 import java.util.concurrent.PriorityBlockingQueue
-import java.util.concurrent.atomic.AtomicInteger
 
 class OpenGLPixelBufferObjectPool(
     graphicsApi: GraphicsApi,
@@ -35,7 +32,7 @@ class OpenGLPixelBufferObjectPool(
                 var current = queue.take()
                 while(current != null) {
 
-                    while(pbo.uploading.get()) { }
+                    while(pbo.uploading) { }
                     try {
                         current.run(pbo)
                     } catch (e: Exception) {
@@ -69,16 +66,26 @@ class OpenGLPixelBufferObjectPool(
 //        })
 
         when(info) {
-            is UploadInfo.AllMipLevelsLazyTexture2DUploadInfo -> {
-                info.data.reversed().forEachIndexed { index, textureData ->
-                    val level = info.data.size - 1 - index
-                    queue.put(Task(level) { pbo ->
-                        pbo.upload(texture, level, info, textureData)
-                    })
-                }
+            is UploadInfo.AllMipLevelsTexture2DUploadInfo -> {
+                queue.put(Task(0) { pbo ->
+                    info.data.reversed().forEachIndexed { index, textureData ->
+                        val level = info.data.size - 1 - index
+                        val currentlyLoadedLevel = when(val uploadState = texture.uploadState) {
+                            is UploadState.Unloaded -> uploadState.mipMapLevel
+                            UploadState.Uploaded -> 0
+                            is UploadState.Uploading -> info.data.size
+                            is UploadState.MarkedForUpload -> info.data.size
+                        }
+                        if(level < currentlyLoadedLevel) {
+                            pbo.upload(texture, level, info, textureData)
+                        }
+                    }
+                })
             }
             else -> {
-                queue.put(Task(0) { pbo -> pbo.upload(info, texture) })
+                queue.put(Task(0) { pbo ->
+                    pbo.upload(info, texture)
+                })
             }
         }
     }

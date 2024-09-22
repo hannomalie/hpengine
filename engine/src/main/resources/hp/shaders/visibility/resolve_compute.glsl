@@ -6,11 +6,6 @@ layout(binding=1) uniform sampler2D depthexture;
 layout(binding=2) uniform sampler2DArray diffuseTextures;
 layout(binding=3) uniform sampler2D normalTexture;
 layout(binding=8) uniform samplerCubeArray pointLightShadowMapsCube;
-#ifdef BINDLESSTEXTURES
-#else
-layout(binding=9) uniform sampler2D directionalLightShadowMap;
-layout(binding=10) uniform sampler2D directionalLightStaticShadowMap;
-#endif
 layout(binding=3, rgba8) uniform image2D out_color;
 
 //include(globals_structs.glsl)
@@ -113,15 +108,11 @@ void main(void) {
 	vec3 specularColor = diffuseColor;
 
 
-#ifdef BINDLESSTEXTURES
 	bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
 	if(hasDiffuseMap) {
 	    sampler2D diffuseMap  = sampler2D(material.handleDiffuse);
 		color.rgb = textureLod(diffuseMap, uv, mipMapLevel).rgb;
 	}
-#else
-	color.rgb = textureLod(diffuseTextures, vec3(uv, material.diffuseMapIndex), mipMapLevel).rgb;
-#endif
 
 	vec3 finalColor;
 
@@ -169,12 +160,8 @@ void main(void) {
 */
 
 // TODO: Shadow not working properly for some reason
-#ifdef BINDLESSTEXTURES
 	float visibility = getVisibility(positionWorld, directionalLight);
-#else
-	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap, directionalLightStaticShadowMap);
-#endif
-visibility = 1;
+	visibility = 1;
 
 	vec3 finalColorDirectional;
 	vec3 lightDirectionView = (viewMatrix * vec4(-directionalLight.direction, 0)).xyz;

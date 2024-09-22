@@ -50,6 +50,11 @@ class VisibilityRenderer(
     private val sharedDepthBuffer: SharedDepthBuffer,
     private val cubeShadowMapStrategy: CubeShadowMapStrategy,
 ): PrimaryRenderer {
+    init {
+        require(graphicsApi.isSupported(BindlessTextures)) {
+            "BindlessTextures not supported, visibility rendering impossible!"
+        }
+    }
 
     private val visibilityTexture = graphicsApi.Texture2D(
         TextureDimension2D(config.width, config.height),
@@ -141,7 +146,6 @@ class VisibilityRenderer(
 
             graphicsApi.bindTexture(0, visibilityTexture)
             graphicsApi.bindTexture(1, sharedDepthBuffer.depthBuffer.texture)
-            graphicsApi.bindTexture(2, graphicsApi.textureArray)
             graphicsApi.bindTexture(3, normalTexture)
             graphicsApi.bindImageTexture(3, renderTarget.renderedTexture, 0, false, 0, Access.ReadWrite, renderTarget.textures.first().internalFormat)
             cubeShadowMapStrategy.bindTextures()

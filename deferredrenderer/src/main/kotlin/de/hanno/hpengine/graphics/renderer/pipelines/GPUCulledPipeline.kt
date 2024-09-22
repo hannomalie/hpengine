@@ -88,7 +88,8 @@ open class GPUCulledPipeline(
 
     private val baseDepthTexture = graphicsApi.Texture2D(
         SingleMipLevelTexture2DUploadInfo(
-            TextureDimension(config.width, config.height),
+            data = null,
+            dimension = TextureDimension(config.width, config.height),
             internalFormat = RGBA16F,
             textureFilterConfig = textureFilterConfig,
         ),
@@ -99,7 +100,8 @@ open class GPUCulledPipeline(
 
     private val debugMinMaxTexture = graphicsApi.Texture2D(
         info = SingleMipLevelTexture2DUploadInfo(
-            TextureDimension(config.width / 2, config.height / 2),
+            data = null,
+            dimension = TextureDimension(config.width / 2, config.height / 2),
             internalFormat = RGBA16F,
             textureFilterConfig = textureFilterConfig,
         ),
@@ -115,7 +117,8 @@ open class GPUCulledPipeline(
         textures = listOf(
             graphicsApi.Texture2D(
                 info = SingleMipLevelTexture2DUploadInfo(
-                    TextureDimension(config.width / 2, config.height / 2),
+                    data = null,
+                    dimension = TextureDimension(config.width / 2, config.height / 2),
                     internalFormat = RGBA16F,
                     textureFilterConfig = textureFilterConfig,
                 ),

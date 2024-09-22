@@ -177,7 +177,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
                 return if (textPath.isNotEmpty()) {
                     val file = resourcesDir.resolve(texturesDir).resolve(textPath)
                     if(file.exists()) {
-                        textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir)
+                        textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir, unloadable = true)
                     } else {
                         println("${file.absolutePath} does not exist, using default texture")
                         textureManager.defaultTexture

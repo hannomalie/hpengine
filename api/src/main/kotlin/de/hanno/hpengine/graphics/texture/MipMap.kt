@@ -1,5 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
+import java.io.File
+import javax.imageio.ImageIO
 import kotlin.math.floor
 import kotlin.math.log2
 import kotlin.math.max
@@ -41,4 +43,28 @@ fun calculateMipMapSizes(width: Int, height: Int): List<TextureDimension2D> {
         TextureDimension2D(width, heights[index])
     }
     return mipMapDimensions
+}
+
+fun precalculateMipMapFilesIfNecessary(file: File, dimension: TextureDimension2D): List<File> {
+    val mipLevelZeroFile = ImageIO.read(file)
+    val bufferedImage = mipLevelZeroFile.apply { DDSConverter.run { rescaleToNextPowerOfTwo() } }
+    val mipMapSizes = calculateMipMapSizes(dimension.width, dimension.height)
+
+    val files = getFileAndMipMapFiles(file, mipMapSizes.size).subList(1, mipMapSizes.size)
+    val allMipsPrecalculated = files.all { it.exists() }
+    return if(allMipsPrecalculated) {
+        println("All mipmaps precalculated for ${file.absolutePath}")
+        files
+    } else {
+        mipMapSizes.mapIndexed { index, it ->
+            val currentImage = bufferedImage.resize(it.width)
+            val buffer = currentImage.toByteBuffer()
+            val array = ByteArray(buffer.remaining())
+            buffer.get(array)
+
+            ImageIO.write(currentImage, file.extension, files[index])
+            println("Saving ${files[index]}")
+            files[index]
+        }
+    }
 }

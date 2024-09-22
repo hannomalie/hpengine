@@ -13,9 +13,30 @@ data class OpenGLTexture2D(
     override var handle: Long,
     override val textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
     override val wrapMode: WrapMode,
-    override var uploadState: UploadState,
+    var initialUploadState: UploadState,
+    override var currentMipMapBias: Float, // TODO: Adjust the bias correctly when setting state
     override val srgba: Boolean = false,
-) : Texture2D
+    override var unloadable: Boolean = true,
+) : Texture2D {
+    override var uploadState: UploadState = initialUploadState
+        set(value) {
+            when(value) {
+                is UploadState.MarkedForUpload -> {
+                    currentMipMapBias = value.mipMapLevel.toFloat()
+                }
+                UploadState.Uploaded -> {}
+                is UploadState.Uploading -> {
+                    if(currentMipMapBias < value.mipMapLevel + 1) {
+                        currentMipMapBias = value.mipMapLevel + 1f
+                    }
+                }
+                is UploadState.Unloaded -> {
+                    currentMipMapBias = value.mipMapLevel.toFloat()
+                }
+            }
+            field = value
+        }
+}
 
 data class OpenGLTexture2DView(
     val index: Int,

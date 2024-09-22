@@ -14,7 +14,14 @@ data class OpenGLCubeMap(
     override var handle: Long,
     override val textureFilterConfig: TextureFilterConfig,
     override val wrapMode: WrapMode,
-    override var uploadState: UploadState
+    override var uploadState: UploadState,
+    override var currentMipMapBias: Float = when(uploadState) {
+        is UploadState.Unloaded -> dimension.getMipMapCount().toFloat()
+        UploadState.Uploaded -> 0f
+        is UploadState.Uploading -> uploadState.mipMapLevel.toFloat()
+        is UploadState.MarkedForUpload -> uploadState.mipMapLevel.toFloat()
+    },
+    override var unloadable: Boolean = true
 ) : CubeMap {
     companion object {
 
@@ -28,6 +35,7 @@ data class OpenGLCubeMap(
             val (textureId, handle) = graphicsApi.allocateTexture(
                 UploadInfo.SingleMipLevelTexture2DUploadInfo(
                     dimension,
+                    data = null,
                     internalFormat = internalFormat,
                     textureFilterConfig = filterConfig
                 ),

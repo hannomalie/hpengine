@@ -13,7 +13,7 @@ import de.hanno.hpengine.graphics.profiled
 import org.lwjgl.opengl.GL21.*
 import org.lwjgl.opengl.GL45.glCompressedTextureSubImage2D
 import org.lwjgl.opengl.GL45.glTextureSubImage2D
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.Semaphore
 import kotlin.math.floor
 
 class OpenGLPixelBufferObject(
@@ -22,13 +22,14 @@ class OpenGLPixelBufferObject(
     _buffer: GpuBuffer? = null
 ): PixelBufferObject {
     private val buffer = _buffer ?: graphicsApi.PersistentMappedBuffer(BufferTarget.PixelUnpack, SizeInBytes(5_000_000))
-    var uploading = AtomicBoolean(false)
+    private val semaphore = Semaphore(1)
+    val uploading
+        get() = semaphore.availablePermits() == 0
 
     init {
         graphicsApi.unbindPixelBufferObject()
     }
     override fun upload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D) {
-        if(uploading.getAndSet(true)) throw IllegalStateException("PBO already uploading!")
 
         when(info) {
             is UploadInfo.AllMipLevelsTexture2DUploadInfo -> {
@@ -36,7 +37,10 @@ class OpenGLPixelBufferObject(
                 var currentWidth = info.dimension.width
                 var currentHeight = info.dimension.height
 
-                info.data.forEachIndexed { index, data ->
+                semaphore.acquire()
+                info.data.forEachIndexed { index, textureData ->
+
+                    val data = textureData.dataProvider()
                     data.rewind()
                     buffer.put(data)
 
@@ -55,14 +59,14 @@ class OpenGLPixelBufferObject(
                     currentHeight = floor(currentHeight * 0.5).toInt()
                 }
                 texture.uploadState = UploadState.Uploaded
-                uploading.getAndSet(false)
+                semaphore.release()
             }
             is UploadInfo.SingleMipLevelTexture2DUploadInfo -> {
-                when(val data = info.data) {
-                    null -> {
-                        uploading.getAndSet(false)
-                    }
+                when(val textureData = info.data) {
+                    null -> { }
                     else -> {
+                        val data = textureData.dataProvider()
+                        semaphore.acquire()
                         buffer.buffer.put(data)
                         buffer.buffer.rewind()
 
@@ -77,17 +81,17 @@ class OpenGLPixelBufferObject(
                                 generateMipMaps(texture)
                             }
                             CommandSync {
-                                uploading.getAndSet(false)
                                 texture.uploadState = UploadState.Uploaded
+                                semaphore.release()
                             }
                         }
                     }
                 }
             }
-            is UploadInfo.AllMipLevelsLazyTexture2DUploadInfo -> {
+            is UploadInfo.AllMipLevelsTexture2DUploadInfo -> {
                 info.data.asReversed().forEachIndexed { level, foo ->
                     val level1 = info.data.size - 1 - level
-                    uploading.getAndSet(true)
+                    semaphore.acquire()
                     graphicsApi.run {
 
                         val dataProvider = foo.dataProvider
@@ -117,21 +121,35 @@ class OpenGLPixelBufferObject(
                                     }
                                 }
                             }
-                            texture.uploadState = UploadState.Uploading(level1)
+                            when(val uploadState = texture.uploadState) {
+                                is UploadState.Unloaded -> {
+                                    texture.uploadState = UploadState.Uploading(level)
+                                }
+                                UploadState.Uploaded -> {}
+                                is UploadState.Uploading -> {
+                                    if(uploadState.mipMapLevel < level) {
+                                        texture.uploadState = UploadState.Uploading(level)
+                                    }
+                                }
+                                is UploadState.MarkedForUpload -> {
+                                    texture.uploadState = UploadState.Uploading(level)
+                                }
+                            }
                             CommandSync {
-                                uploading.getAndSet(false)
                                 if (level1 == 0) {
                                     texture.uploadState = UploadState.Uploaded
                                 }
+                                semaphore.release()
                             }
                         }
                     }
-                    while(uploading.get()) {}
+                    semaphore.acquire()
+                    semaphore.release()
                 }
             }
-            is UploadInfo.SingleMipLevelsLazyTexture2DUploadInfo -> {
-                info.data.let { textureData ->
-
+            is UploadInfo.SingleMipLevelTexture2DUploadInfo -> {
+                semaphore.acquire()
+                info.data?.let { textureData ->
                     val data = textureData.dataProvider()
                     buffer.buffer.put(data)
                     buffer.buffer.rewind()
@@ -147,12 +165,15 @@ class OpenGLPixelBufferObject(
                             generateMipMaps(texture)
                         }
                         CommandSync {
-                            uploading.getAndSet(false)
                             texture.uploadState = UploadState.Uploaded
+                            semaphore.release()
                         }
                     }
                 }
             }
+        }
+        if (config.debug.simulateSlowTextureStreaming) {
+            Thread.sleep(100L)
         }
     }
 
@@ -162,7 +183,7 @@ class OpenGLPixelBufferObject(
         info: UploadInfo.Texture2DUploadInfo,
         lazyTextureData: LazyTextureData
     ): Unit = graphicsApi.run {
-        uploading.getAndSet(true)
+        semaphore.acquire()
 
         val dataProvider = lazyTextureData.dataProvider
         val width = lazyTextureData.width
@@ -192,13 +213,15 @@ class OpenGLPixelBufferObject(
                 }
             }
             CommandSync {
-                uploading.getAndSet(false)
                 if(level == 0) {
                     texture.uploadState = UploadState.Uploaded
                 }
+                semaphore.release()
             }
         }
         texture.uploadState = UploadState.Uploading(level)
+        semaphore.acquire()
+        semaphore.release()
     }
     fun delete() {
         buffer.delete()

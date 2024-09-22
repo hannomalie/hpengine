@@ -41,7 +41,6 @@ void main(void) {
     float alpha = 1.0f;
     float mipLevel = 0;
 
-#ifdef BINDLESSTEXTURES
     sampler2D diffuseMap;
     bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
     if(hasDiffuseMap) {
@@ -62,10 +61,6 @@ void main(void) {
         vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
         normal_world = normalize(perturb_normal(normal_world, V, uv, normalMap));
     }
-#else
-    mipLevel = textureQueryLod(diffuseTextures, vec3(uv, material.diffuseMapIndex)).r;
-    alpha = textureLod(diffuseTextures, vec3(uv, material.diffuseMapIndex), 0).a;
-#endif
 
     if(alpha < 0.98f) {
         discard;

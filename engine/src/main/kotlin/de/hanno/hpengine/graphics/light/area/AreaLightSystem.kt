@@ -111,6 +111,7 @@ class AreaLightSystem(
 
                 val allocation = allocateTexture(
                     UploadInfo.SingleMipLevelTexture2DUploadInfo(
+                        data = null,
                         dimension = dimension,
                         internalFormat = internalFormat,
                         textureFilterConfig = filterConfig,

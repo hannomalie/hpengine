@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.editor.select
 
 import com.artemis.Component
 import com.artemis.utils.Bag
+import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.editor.ImGuiEditor
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
@@ -14,6 +15,7 @@ data class TextureManagerSelection(val textureManagerBaseSystem: TextureManagerB
 
 @Single(binds = [EditorExtension::class])
 class TextureManagerEditorExtension(
+    private val config: Config,
     private val graphicsApi: GraphicsApi,
     private val textureManagerBaseSystem: TextureManagerBaseSystem,
 ): EditorExtension {
@@ -36,7 +38,7 @@ class TextureManagerEditorExtension(
     } else null
 
     override fun Window.renderRightPanel(selection: Selection?) = if(selection is TextureManagerSelection) {
-        textureManagerGrid(graphicsApi, selection.textureManagerBaseSystem)
+        textureManagerGrid(config, graphicsApi, selection.textureManagerBaseSystem)
         true
     } else {
         false
