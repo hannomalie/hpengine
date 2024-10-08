@@ -45,7 +45,7 @@ val textureRendererModule = module {
         val textureManager: OpenGLTextureManager = get()
         val renderTarget: RenderTarget2D = get()
 
-        object : SimpleTextureRenderer(get<GraphicsApi>(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
+        object : SimpleTextureRenderer(get<GraphicsApi>(), get(), textureManager.defaultTexture.texture, get(), get()) {
             override val sharedRenderTarget = renderTarget
             override val requiresClearSharedRenderTarget = true
 

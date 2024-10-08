@@ -7,6 +7,7 @@ import de.hanno.hpengine.config.*
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.fps.FPSCounterSystem
+import de.hanno.hpengine.graphics.output.DebugOutput
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
@@ -38,5 +39,8 @@ class ApiModule {
     fun tagManager() = TagManager()
     @Single(binds = [EntityLinkManager::class, BaseSystem::class])
     fun entityLinkManager() = EntityLinkManager()
+
+    @Single
+    fun debugOutput() = DebugOutput(null, 0)
 }
 val apiModule = ApiModule().module

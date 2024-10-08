@@ -57,38 +57,38 @@ class MaterialSystem(
     fun initDefaultMaterials() {
 
         registerMaterial(Material("stone").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineDir))
-            put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
-            put(MAP.HEIGHT, textureManager.getTexture("assets/textures/stone_height.png", directory = engineDir))
+            put(MAP.DIFFUSE, textureManager.getStaticTextureHandle("assets/textures/stone_diffuse.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getStaticTextureHandle("assets/textures/stone_normal.png", directory = engineDir))
+            put(MAP.HEIGHT, textureManager.getStaticTextureHandle("assets/textures/stone_height.png", directory = engineDir))
         })
 
         registerMaterial(Material("stone2").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/brick.png", true, engineDir))
-            put(MAP.NORMAL, textureManager.getTexture("assets/textures/brick_normal.png", directory = engineDir))
+            put(MAP.DIFFUSE, textureManager.getStaticTextureHandle("assets/textures/brick.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getStaticTextureHandle("assets/textures/brick_normal.png", directory = engineDir))
         })
 
         registerMaterial(Material("brick").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/brick.png", true, engineDir))
-            put(MAP.NORMAL, textureManager.getTexture("assets/textures/brick_normal.png", directory = engineDir))
-            put(MAP.HEIGHT, textureManager.getTexture("assets/textures/brick_height.png", directory = engineDir))
+            put(MAP.DIFFUSE, textureManager.getStaticTextureHandle("assets/textures/brick.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getStaticTextureHandle("assets/textures/brick_normal.png", directory = engineDir))
+            put(MAP.HEIGHT, textureManager.getStaticTextureHandle("assets/textures/brick_height.png", directory = engineDir))
         })
 
         registerMaterial(Material("wood").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/wood_diffuse.png", true, engineDir))
-            put(MAP.NORMAL, textureManager.getTexture("assets/textures/wood_normal.png", directory = engineDir))
+            put(MAP.DIFFUSE, textureManager.getStaticTextureHandle("assets/textures/wood_diffuse.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getStaticTextureHandle("assets/textures/wood_normal.png", directory = engineDir))
         })
 
         registerMaterial(Material("stoneWet").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineDir))
-            put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
-            put(MAP.REFLECTION, textureManager.getTexture("assets/textures/stone_reflection.png", directory = engineDir))
+            put(MAP.DIFFUSE, textureManager.getStaticTextureHandle("assets/textures/stone_diffuse.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getStaticTextureHandle("assets/textures/stone_normal.png", directory = engineDir))
+            put(MAP.REFLECTION, textureManager.getStaticTextureHandle("assets/textures/stone_reflection.png", directory = engineDir))
         })
         registerMaterial(Material("mirror", diffuse = Vector3f(1f, 1f, 1f), metallic = 1f))
 
         registerMaterial(Material("stoneWet").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/bricks_parallax.dds", true, engineDir))
-            put(MAP.HEIGHT, textureManager.getTexture("assets/textures/bricks_parallax_height.dds", directory = engineDir))
-            put(MAP.NORMAL, textureManager.getTexture("assets/textures/bricks_parallax_normal.dds", directory = engineDir))
+            put(MAP.DIFFUSE, textureManager.getStaticTextureHandle("assets/textures/bricks_parallax.dds", true, engineDir))
+            put(MAP.HEIGHT, textureManager.getStaticTextureHandle("assets/textures/bricks_parallax_height.dds", directory = engineDir))
+            put(MAP.NORMAL, textureManager.getStaticTextureHandle("assets/textures/bricks_parallax_normal.dds", directory = engineDir))
         })
     }
 
@@ -127,10 +127,10 @@ class MaterialSystem(
                 materialType = material.materialType
                 lodFactor = material.lodFactor
                 useWorldSpaceXZAsTexCoords = if (material.useWorldSpaceXZAsTexCoords) 1 else 0
-                environmentMapId = material.maps[MAP.ENVIRONMENT]?.id ?: 0
-                diffuseMapHandle = material.deriveHandle(MAP.DIFFUSE, textureManager.defaultTexture)
+                environmentMapId = material.maps[MAP.ENVIRONMENT]?.texture?.id ?: 0
+                diffuseMapHandle = material.deriveHandle(MAP.DIFFUSE, textureManager.defaultTexture.texture)
                 diffuseMipmapBias = material.deriveDiffuseMipMapBias()
-                diffuseMapIndex = ((material.maps[MAP.DIFFUSE] as? FileBasedTexture2D<*>)?.backingTexture as? OpenGLTexture2DView)?.index ?: 0
+                diffuseMapIndex = (material.maps[MAP.DIFFUSE] as? OpenGLTexture2DView)?.index ?: 0 // TODO: Remove
                 normalMapHandle = material.deriveHandle(MAP.NORMAL)
                 specularMapHandle = material.deriveHandle(MAP.SPECULAR)
                 heightMapHandle = material.deriveHandle(MAP.HEIGHT)
@@ -141,36 +141,51 @@ class MaterialSystem(
             }
         }
     }
-    private fun Material.deriveDiffuseMipMapBias() = if(maps.containsKey(MAP.DIFFUSE)) {
-        maps[MAP.DIFFUSE]!!.currentMipMapBias
-    } else 0f
-
-    private fun Material.deriveHandle(key: MAP, fallbackTexture: Texture? = null): Long = maps[key]?.let {
-        val fallbackHandle = (fallbackTexture?.handle ?: 0)
-        when(val uploadState = it.uploadState) {
-            is UploadState.Unloaded -> if(uploadState.mipMapLevel == it.mipmapCount) {
-                fallbackHandle
-            } else {
-                it.handle
-            }
-            UploadState.Uploaded -> it.handle
-            is UploadState.Uploading -> it.handle
-            is UploadState.MarkedForUpload -> if(uploadState.mipMapLevel == it.mipmapCount - 1) {
-                fallbackHandle
-            } else {
-                it.handle
+    private fun Material.deriveDiffuseMipMapBias(): Float = when(val handle = maps[MAP.DIFFUSE]) {
+        is DynamicHandle -> if(handle.texture == null) {
+            0f
+        } else {
+            when(handle.uploadState) {
+                is UploadState.MarkedForUpload -> 0f
+                is UploadState.Unloaded -> 0f
+                UploadState.Uploaded -> handle.currentMipMapBias
+                is UploadState.Uploading -> handle.currentMipMapBias
             }
         }
-    } ?: 0
+        is StaticHandle -> handle.currentMipMapBias
+        null -> 0f
+    }
+
+    private fun Material.deriveHandle(key: MAP, fallbackTexture: Texture? = null): Long {
+        val fallbackHandle = (fallbackTexture?.handle ?: 0)
+
+        return when(val handle = maps[key]) {
+            is DynamicHandle -> when(val texture = handle.texture) {
+                null -> fallbackHandle
+                else -> when(val uploadState = handle.uploadState) {
+                    is UploadState.MarkedForUpload -> fallbackHandle
+                    is UploadState.Unloaded -> if (uploadState.mipMapLevelToKeep == texture.mipmapCount - 1) {
+                        fallbackHandle
+                    } else {
+                        texture.handle
+                    }
+                    UploadState.Uploaded -> texture.handle
+                    is UploadState.Uploading -> texture.handle
+                }
+            }
+            is StaticHandle -> handle.texture.handle
+            null -> fallbackHandle
+        }
+    }
 
     val Material.finishedLoadingInCycle: Int
         get() = materialsFinishedLoadingInCycle[this] ?: -1
 
     override fun processSystem() {
         materials.filter { !materialsFinishedLoadingInCycle.containsKey(it) }.forEach { material ->
-            when(val texture = material.maps[MAP.DIFFUSE]) {
+            when(val handle = material.maps[MAP.DIFFUSE]) {
                 null -> { materialsFinishedLoadingInCycle[material] = 0 }
-                else -> when(texture.uploadState) {
+                else -> when(handle.uploadState) {
                     UploadState.Uploaded -> materialsFinishedLoadingInCycle[material]  = cycle
                     is UploadState.Uploading -> { }
                     is UploadState.Unloaded -> { }
@@ -188,7 +203,7 @@ class MaterialSystem(
 
     companion object {
         fun createDefaultMaterial(config: Config, textureManager: OpenGLTextureManager) = Material("default", diffuse = Vector3f(1f, 0f, 0f)).apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, config.engineDir))
+            put(MAP.DIFFUSE, textureManager.getStaticTextureHandle("assets/textures/default/default.dds", true, config.engineDir))
         }
     }
 }

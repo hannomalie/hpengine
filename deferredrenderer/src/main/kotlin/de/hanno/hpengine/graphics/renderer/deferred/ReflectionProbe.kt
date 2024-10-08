@@ -35,10 +35,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.texture.CubeMap
-import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
-import de.hanno.hpengine.graphics.texture.TextureDimension
-import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.math.OmniCamera
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.EntityBuffer
@@ -363,7 +360,7 @@ class ReflectionProbeRenderExtension(
                         directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
-                bindTexture(8, skyBox)
+                bindTexture(8, skyBox.texture)
                 omniCamera.updatePosition(currentReflectionProbeRenderState.probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
@@ -412,15 +409,18 @@ class ReflectionProbeRenderer(
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
 
+    val filterConfig = TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR)
     val cubeMapRenderTarget = graphicsApi.RenderTarget(
         frameBuffer = graphicsApi.FrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
                     graphicsApi,
-                    TextureDimension(cubeMap.dimension.width, cubeMap.dimension.height),
-                    TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
-                    InternalTextureFormat.DEPTH_COMPONENT24,
-                    WrapMode.Repeat
+                    TextureDescription.CubeMapDescription(
+                        TextureDimension(cubeMap.dimension.width, cubeMap.dimension.height),
+                        internalFormat = InternalTextureFormat.DEPTH_COMPONENT24,
+                        textureFilterConfig = filterConfig,
+                        wrapMode = WrapMode.Repeat,
+                    )
                 )
             )
         ),

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.model.material
 
 import de.hanno.hpengine.directory.Directories
-import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.TextureHandle
 import org.joml.Vector2f
 import org.joml.Vector3f
 
@@ -23,7 +23,7 @@ data class Material(
     var renderPriority: Int? = null,
     var writesDepth: Boolean = true,
     var depthTest: Boolean = true,
-    val maps: MutableMap<MAP, Texture> = mutableMapOf(),
+    val maps: MutableMap<MAP, TextureHandle<*>> = mutableMapOf(),
     var environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
     var isShadowCasting: Boolean = true,
     var neverCull: Boolean = false,
@@ -72,7 +72,8 @@ data class Material(
     }
 
     override fun hashCode(): Int = name.hashCode()
-    fun put(map: MAP, texture: Texture) {
+
+    fun put(map: MAP, texture: TextureHandle<*>) {
         maps[map] = texture
     }
 

@@ -4,15 +4,21 @@ import de.hanno.hpengine.Transform
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.cycle.CycleSystem
-import de.hanno.hpengine.graphics.*
+import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.PrimaryRenderer
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.DepthFunc
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
-import de.hanno.hpengine.graphics.renderer.pipelines.*
+import de.hanno.hpengine.graphics.profiled
+import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
+import de.hanno.hpengine.graphics.renderer.pipelines.setCommonUniformValues
+import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
-import de.hanno.hpengine.graphics.shader.*
+import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
@@ -72,14 +78,34 @@ class ColorOnlyRenderer(
     )
 
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
+        object: DirectPipeline(
+            graphicsApi = graphicsApi,
+            config = config,
+            program = simpleColorProgramStatic,
+            entitiesStateHolder = entitiesStateHolder,
+            entityBuffer = entityBuffer,
+            primaryCameraStateHolder = primaryCameraStateHolder,
+            defaultBatchesSystem = defaultBatchesSystem,
+            materialSystem = materialSystem,
+            fallbackTexture = textureManager.defaultTexture.texture,
+        ) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic].filter {
                 !it.hasOwnProgram && it.isVisibleForCamera
             }
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramAnimated, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
+        object: DirectPipeline(
+            graphicsApi = graphicsApi,
+            config = config,
+            program = simpleColorProgramAnimated,
+            entitiesStateHolder = entitiesStateHolder,
+            entityBuffer = entityBuffer,
+            primaryCameraStateHolder = primaryCameraStateHolder,
+            defaultBatchesSystem = defaultBatchesSystem,
+            materialSystem = materialSystem,
+            fallbackTexture = textureManager.defaultTexture.texture,
+        ) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated].filter {
                 !it.hasOwnProgram && it.isVisibleForCamera
             }

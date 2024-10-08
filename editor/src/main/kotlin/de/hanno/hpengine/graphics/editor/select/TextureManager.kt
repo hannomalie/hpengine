@@ -25,8 +25,13 @@ class TextureManagerEditorExtension(
                 selection = TextureManagerSelection(textureManagerBaseSystem)
             }
             treeNode("Textures") {
+                textureManagerBaseSystem.fileBasedTextures.entries.sortedBy { it.key }.forEach { (key, texture) ->
+                    text(key.split("/").last()) {
+                        selection = FileBasedTexture2DSelection(key, texture)
+                    }
+                }
                 textureManagerBaseSystem.textures.entries.sortedBy { it.key }.forEach { (key, texture) ->
-                    text(key.takeLast(15)) {
+                    text(key.split("/").last()) {
                         selection = TextureSelection(key, texture)
                     }
                 }

@@ -202,7 +202,7 @@ fun Engine.runLotsOfGrass() {
                     "grass",
                     materialType = Material.MaterialType.FOLIAGE,
                     maps = mutableMapOf(
-                        Material.MAP.DIFFUSE to textureManager.getTexture("assets/textures/grass.png", true, config.gameDir)
+                        Material.MAP.DIFFUSE to textureManager.getStaticTextureHandle("assets/textures/grass.png", true, config.gameDir)
                     )
                 )
             }

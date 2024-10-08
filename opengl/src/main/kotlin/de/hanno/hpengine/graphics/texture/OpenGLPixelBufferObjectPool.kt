@@ -13,7 +13,7 @@ class OpenGLPixelBufferObjectPool(
     config: Config,
 ): PixelBufferObjectPool {
     private val buffers = buildList {
-        repeat(3) {
+        repeat(6) {
             add(
                 OpenGLPixelBufferObject(
                     graphicsApi,
@@ -44,7 +44,7 @@ class OpenGLPixelBufferObjectPool(
         }
     }
 
-    override fun scheduleUpload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D) {
+    override fun scheduleUpload(handle: TextureHandle<Texture2D>, data: List<ImageData>) {
 
 //        This works as well, use for debugging when you want to guarantee no overlapping use of pbo
 //        queue.put(Task(0) { pbo ->
@@ -65,27 +65,35 @@ class OpenGLPixelBufferObjectPool(
 //            }
 //        })
 
-        when(info) {
-            is UploadInfo.AllMipLevelsTexture2DUploadInfo -> {
-                queue.put(Task(0) { pbo ->
-                    info.data.reversed().forEachIndexed { index, textureData ->
-                        val level = info.data.size - 1 - index
-                        val currentlyLoadedLevel = when(val uploadState = texture.uploadState) {
-                            is UploadState.Unloaded -> uploadState.mipMapLevel
-                            UploadState.Uploaded -> 0
-                            is UploadState.Uploading -> info.data.size
-                            is UploadState.MarkedForUpload -> info.data.size
+        when(val texture = handle.texture) {
+            null -> { }
+            else -> when {
+                data.isEmpty() -> throw IllegalStateException("Cannot upload empty data!")
+                data.size > 1 -> {
+                    queue.put(Task(0) { pbo ->
+                        data.reversed().forEachIndexed { index, textureData ->
+                            val level = data.size - 1 - index
+                            val currentlyLoadedLevel = when(val uploadState = handle.uploadState) {
+                                is UploadState.Unloaded -> uploadState.mipMapLevelToKeep ?: data.size
+                                UploadState.Uploaded -> 0
+                                is UploadState.Uploading -> uploadState.mipMapLevel
+                                is UploadState.MarkedForUpload -> data.size
+                            }
+                            if(level < currentlyLoadedLevel) {
+                                try {
+                                    pbo.upload(handle, level, textureData)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
                         }
-                        if(level < currentlyLoadedLevel) {
-                            pbo.upload(texture, level, info, textureData)
-                        }
-                    }
-                })
-            }
-            else -> {
-                queue.put(Task(0) { pbo ->
-                    pbo.upload(info, texture)
-                })
+                    })
+                }
+                else -> {
+                    queue.put(Task(0) { pbo ->
+                        pbo.upload(handle, data)
+                    })
+                }
             }
         }
     }

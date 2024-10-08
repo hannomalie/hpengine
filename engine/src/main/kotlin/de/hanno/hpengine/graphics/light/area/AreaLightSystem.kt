@@ -35,6 +35,7 @@ import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
+import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import org.joml.Matrix4f
@@ -110,22 +111,21 @@ class AreaLightSystem(
                 val dimension = TextureDimension2D(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
 
                 val allocation = allocateTexture(
-                    UploadInfo.SingleMipLevelTexture2DUploadInfo(
-                        data = null,
+                    TextureDescription.Texture2DDescription(
                         dimension = dimension,
                         internalFormat = internalFormat,
                         textureFilterConfig = filterConfig,
+                        wrapMode = wrapMode
                     ),
                     TextureTarget.TEXTURE_2D,
-                    wrapMode,
                 )
                 graphicsApi.Texture2D(
-                    dimension,
-                    TextureTarget.TEXTURE_2D,
-                    internalFormat,
-                    filterConfig,
-                    wrapMode,
-                    UploadState.Uploaded
+                    Texture2DDescription(
+                        dimension,
+                        internalFormat,
+                        filterConfig,
+                        wrapMode
+                    )
                 )
                 add(allocation.textureId)
             }

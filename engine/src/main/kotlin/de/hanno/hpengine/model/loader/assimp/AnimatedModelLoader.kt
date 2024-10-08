@@ -1,6 +1,7 @@
 package de.hanno.hpengine.model.loader.assimp
 
 import de.hanno.hpengine.directory.AbstractDirectory
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.model.animation.AnimatedFrame
 import de.hanno.hpengine.model.AnimatedMesh
 import de.hanno.hpengine.model.AnimatedModel
@@ -8,8 +9,6 @@ import de.hanno.hpengine.model.animation.Animation
 import de.hanno.hpengine.model.Mesh
 import de.hanno.hpengine.model.animation.Node
 import de.hanno.hpengine.model.material.Material
-import de.hanno.hpengine.graphics.texture.Texture
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.scene.AnimatedVertex
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -170,7 +169,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         resourcesDir: AbstractDirectory,
         textureManager: OpenGLTextureManager
     ): Material {
-        fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
+        fun AIMaterial.retrieveTexture(textureIdentifier: Int): FileBasedTexture2D? {
             AIString.calloc().use { path ->
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
                 val textPath = path.dataString()
@@ -215,8 +214,10 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         return material
     }
 
-    private fun Material.putIfNotNull(map: Material.MAP, texture: Texture?) {
-        if (texture != null) put(map, texture)
+    private fun Material.putIfNotNull(map: Material.MAP, texture: FileBasedTexture2D?) = when(texture) {
+        is DynamicFileBasedTexture2D -> put(map, texture)
+        is StaticFileBasedTexture2D -> put(map, texture)
+        null -> { }
     }
 
     private fun AIMesh.processMesh(materials: List<Material>, bones: MutableList<Bone>): AnimatedMesh {

@@ -10,11 +10,11 @@ import de.hanno.hpengine.graphics.constants.BufferTarget
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.constants.glValue
 import de.hanno.hpengine.graphics.profiled
+import isCompressed
 import org.lwjgl.opengl.GL21.*
 import org.lwjgl.opengl.GL45.glCompressedTextureSubImage2D
 import org.lwjgl.opengl.GL45.glTextureSubImage2D
 import java.util.concurrent.Semaphore
-import kotlin.math.floor
 
 class OpenGLPixelBufferObject(
     private val graphicsApi: GraphicsApi,
@@ -29,43 +29,14 @@ class OpenGLPixelBufferObject(
     init {
         graphicsApi.unbindPixelBufferObject()
     }
-    override fun upload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D) {
-
-        when(info) {
-            is UploadInfo.AllMipLevelsTexture2DUploadInfo -> {
-
-                var currentWidth = info.dimension.width
-                var currentHeight = info.dimension.height
-
-                semaphore.acquire()
-                info.data.forEachIndexed { index, textureData ->
-
-                    val data = textureData.dataProvider()
-                    data.rewind()
-                    buffer.put(data)
-
-                    val level = index
-                    graphicsApi.onGpu {
-                        buffer.bound {
-                            if (info.dataCompressed) {
-                                glCompressedTextureSubImage2D(texture.id, level, 0, 0, currentWidth, currentHeight, info.internalFormat.glValue, data.capacity(), 0)
-                            } else {
-                                glTextureSubImage2D(texture.id, level, 0, 0, currentWidth, currentHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0)
-                            }
-                        }
-                    }
-
-                    currentWidth = floor(currentWidth * 0.5).toInt()
-                    currentHeight = floor(currentHeight * 0.5).toInt()
-                }
-                texture.uploadState = UploadState.Uploaded
-                semaphore.release()
-            }
-            is UploadInfo.SingleMipLevelTexture2DUploadInfo -> {
-                when(val textureData = info.data) {
-                    null -> { }
-                    else -> {
-                        val data = textureData.dataProvider()
+    override fun upload(handle: TextureHandle<Texture2D>, data: List<ImageData>) {
+        when(val texture = handle.texture) {
+            null -> {}
+            else -> {
+                when(data.size) {
+                    0 -> throw IllegalStateException("Cannot upload empty data!")
+                    1 -> {
+                        val data = data[0].dataProvider()
                         semaphore.acquire()
                         buffer.buffer.put(data)
                         buffer.buffer.rewind()
@@ -73,153 +44,133 @@ class OpenGLPixelBufferObject(
                         graphicsApi.onGpu {
                             bindTexture(TextureTarget.TEXTURE_2D, texture.id)
                             buffer.bound {
-                                if (info.dataCompressed) {
-                                    glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data.capacity(), 0)
+                                if (texture.internalFormat.isCompressed) {
+                                    glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture.dimension.width, texture.dimension.height, texture.internalFormat.glValue, data.capacity(), 0)
                                 } else {
-                                    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                                    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture.dimension.width, texture.dimension.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
                                 }
                                 generateMipMaps(texture)
                             }
                             CommandSync {
-                                texture.uploadState = UploadState.Uploaded
+                                handle.uploadState = UploadState.Uploaded
                                 semaphore.release()
                             }
                         }
                     }
-                }
-            }
-            is UploadInfo.AllMipLevelsTexture2DUploadInfo -> {
-                info.data.asReversed().forEachIndexed { level, foo ->
-                    val level1 = info.data.size - 1 - level
-                    semaphore.acquire()
-                    graphicsApi.run {
+                    else -> {
+                        data.asReversed().forEachIndexed { level, foo ->
+                            val level1 = data.size - 1 - level
+                            semaphore.acquire()
+                            graphicsApi.run {
 
-                        val dataProvider = foo.dataProvider
-                        val width = foo.width
-                        val height = foo.height
+                                val dataProvider = foo.dataProvider
+                                val width = foo.width
+                                val height = foo.height
 
-                        val data = dataProvider()
+                                val data = dataProvider()
 
-                        data.rewind()
-                        buffer.put(data)
+                                data.rewind()
+                                buffer.put(data)
 
-                        val capacity = data.capacity()
-                        val textureId = texture.id
+                                val capacity = data.capacity()
+                                val textureId = texture.id
 
-                        if (config.debug.simulateSlowTextureStreaming) {
-                            println("Uploaded level $level1")
-                            Thread.sleep((level1 * 100).toLong())
-                        }
+                                if (config.debug.simulateSlowTextureStreaming) {
+                                    println("Uploaded level $level1")
+                                    Thread.sleep((level1 * 100).toLong())
+                                }
 
-                        graphicsApi.onGpu {
-                            profiled("textureSubImage") {
-                                buffer.bound {
-                                    if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {
-                                        glCompressedTextureSubImage2D(textureId, level1, 0, 0, width, height, info.internalFormat.glValue, capacity, 0)
-                                    } else profiled("glTextureSubImage2D") {
-                                        glTextureSubImage2D(textureId, level1, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                                graphicsApi.onGpu {
+                                    profiled("textureSubImage") {
+                                        buffer.bound {
+                                            if (texture.internalFormat.isCompressed) profiled("glCompressedTextureSubImage2D") {
+                                                glCompressedTextureSubImage2D(textureId, level1, 0, 0, width, height, texture.internalFormat.glValue, capacity, 0)
+                                            } else profiled("glTextureSubImage2D") {
+                                                glTextureSubImage2D(textureId, level1, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                                            }
+                                        }
+                                    }
+                                    when(val uploadState = handle.uploadState) {
+                                        is UploadState.Unloaded -> {
+                                            handle.uploadState = UploadState.Uploading(level)
+                                        }
+                                        UploadState.Uploaded -> {}
+                                        is UploadState.Uploading -> {
+                                            if(uploadState.mipMapLevel < level) {
+                                                handle.uploadState = UploadState.Uploading(level)
+                                            }
+                                        }
+                                        is UploadState.MarkedForUpload -> {
+                                            handle.uploadState = UploadState.Uploading(level)
+                                        }
+                                    }
+                                    CommandSync {
+                                        if (level1 == 0) {
+                                            handle.uploadState = UploadState.Uploaded
+                                        }
+                                        semaphore.release()
                                     }
                                 }
                             }
-                            when(val uploadState = texture.uploadState) {
-                                is UploadState.Unloaded -> {
-                                    texture.uploadState = UploadState.Uploading(level)
-                                }
-                                UploadState.Uploaded -> {}
-                                is UploadState.Uploading -> {
-                                    if(uploadState.mipMapLevel < level) {
-                                        texture.uploadState = UploadState.Uploading(level)
-                                    }
-                                }
-                                is UploadState.MarkedForUpload -> {
-                                    texture.uploadState = UploadState.Uploading(level)
-                                }
-                            }
-                            CommandSync {
-                                if (level1 == 0) {
-                                    texture.uploadState = UploadState.Uploaded
-                                }
-                                semaphore.release()
-                            }
-                        }
-                    }
-                    semaphore.acquire()
-                    semaphore.release()
-                }
-            }
-            is UploadInfo.SingleMipLevelTexture2DUploadInfo -> {
-                semaphore.acquire()
-                info.data?.let { textureData ->
-                    val data = textureData.dataProvider()
-                    buffer.buffer.put(data)
-                    buffer.buffer.rewind()
-
-                    graphicsApi.onGpu {
-                        bindTexture(TextureTarget.TEXTURE_2D, texture.id)
-                        buffer.bound {
-                            if (info.dataCompressed) {
-                                glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, info.internalFormat.glValue, data.capacity(), 0)
-                            } else {
-                                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
-                            }
-                            generateMipMaps(texture)
-                        }
-                        CommandSync {
-                            texture.uploadState = UploadState.Uploaded
+                            semaphore.acquire()
                             semaphore.release()
                         }
                     }
                 }
+                if (config.debug.simulateSlowTextureStreaming) {
+                    Thread.sleep(100L)
+                }
             }
-        }
-        if (config.debug.simulateSlowTextureStreaming) {
-            Thread.sleep(100L)
         }
     }
 
     override fun upload(
-        texture: Texture2D,
+        handle: TextureHandle<Texture2D>,
         level: Int,
-        info: UploadInfo.Texture2DUploadInfo,
-        lazyTextureData: LazyTextureData
+        imageData: ImageData
     ): Unit = graphicsApi.run {
         semaphore.acquire()
+        when(val texture = handle.texture) {
+            null -> {}
+            else -> {
+                val dataProvider = imageData.dataProvider
+                val width = imageData.width
+                val height = imageData.height
 
-        val dataProvider = lazyTextureData.dataProvider
-        val width = lazyTextureData.width
-        val height = lazyTextureData.height
+                val data = dataProvider()
 
-        val data = dataProvider()
+                data.rewind()
+                buffer.put(data)
 
-        data.rewind()
-        buffer.put(data)
+                val capacity = data.capacity()
 
-        val capacity = data.capacity()
-        val textureId = texture.id
+                if (config.debug.simulateSlowTextureStreaming) {
+                    Thread.sleep((level * 100).toLong())
+                }
 
-        if (config.debug.simulateSlowTextureStreaming) {
-            println("Uploaded level $level")
-            Thread.sleep((level * 100).toLong())
-        }
-
-        graphicsApi.onGpu {
-            profiled("textureSubImage") {
-                buffer.bound {
-                    if (info.dataCompressed) profiled("glCompressedTextureSubImage2D") {
-                        glCompressedTextureSubImage2D(textureId, level, 0, 0, width, height, info.internalFormat.glValue, capacity, 0)
-                    } else profiled("glTextureSubImage2D") {
-                        glTextureSubImage2D(textureId, level, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                graphicsApi.onGpu {
+                    profiled("textureSubImage") {
+                        buffer.bound {
+                            graphicsApi.onGpu {
+                                if (texture.internalFormat.isCompressed) profiled("glCompressedTextureSubImage2D") {
+                                    glCompressedTextureSubImage2D(texture.id, level, 0, 0, width, height, texture.internalFormat.glValue, capacity, 0)
+                                } else profiled("glTextureSubImage2D") {
+                                    glTextureSubImage2D(texture.id, level, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+                                }
+                            }
+                        }
+                    }
+                    CommandSync {
+                        if(level == 0) {
+                            handle.uploadState = UploadState.Uploaded
+                        }
+                        semaphore.release()
                     }
                 }
-            }
-            CommandSync {
-                if(level == 0) {
-                    texture.uploadState = UploadState.Uploaded
-                }
-                semaphore.release()
+                handle.uploadState = UploadState.Uploading(level)
             }
         }
-        texture.uploadState = UploadState.Uploading(level)
+
         semaphore.acquire()
         semaphore.release()
     }

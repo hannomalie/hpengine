@@ -89,7 +89,7 @@ class ExtensibleDeferredRenderer(
         GPUCulledPipeline(graphicsApi, config, programManager, textureManager, deferredRenderingBuffer, true, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem)
     }
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, firstpassProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture) {
+        object: DirectPipeline(graphicsApi, config, firstpassProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture.texture) {
             override fun RenderState.extractRenderBatches(camera: Camera) = if(useIndirectRendering) {
                 this[defaultBatchesSystem.renderBatchesStatic].filterNot { it.canBeRenderedInIndirectBatch }
             } else {
@@ -100,7 +100,7 @@ class ExtensibleDeferredRenderer(
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, firstPassProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture) {
+        object: DirectPipeline(graphicsApi, config, firstPassProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem, textureManager.defaultTexture.texture) {
             override fun RenderState.extractRenderBatches(camera: Camera) = if(useIndirectRendering) {
                 this[defaultBatchesSystem.renderBatchesAnimated].filterNot { it.canBeRenderedInIndirectBatch }
             } else {

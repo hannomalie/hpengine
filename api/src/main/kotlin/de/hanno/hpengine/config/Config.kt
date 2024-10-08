@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Level
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import java.io.File
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
 
@@ -101,8 +102,15 @@ data class PerformanceConfig (
     var isVsync: Boolean = true,
     var usePixelBufferForTextureUpload: Boolean = true,
     var textureCompressionByDefault: Boolean = false, // This messes up textures, figure out why
-    var maxMipMapToKeepLoaded: Int = 8,
+    var textureUnloadStrategy: TextureUnloadStrategy = UnloadCompletely,
+    var mipBiasDecreasePerSecond: Float = 20f,
+    var unloadBiasInNanos: Long = TimeUnit.SECONDS.toNanos(2),
 )
+
+sealed interface TextureUnloadStrategy
+data object NoUnloading: TextureUnloadStrategy
+data object UnloadCompletely: TextureUnloadStrategy
+data class HighersMipMapToKeepLoaded(val level: Int): TextureUnloadStrategy
 
 class ProfilingConfig {
     var showFps = false

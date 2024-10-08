@@ -3,8 +3,10 @@ package de.hanno.hpengine.graphics.rendertarget
 import InternalTextureFormat
 import de.hanno.hpengine.graphics.constants.*
 import de.hanno.hpengine.graphics.createOpenGLContext
+import de.hanno.hpengine.graphics.texture.OpenGLCubeMapArray
+import de.hanno.hpengine.graphics.texture.TextureDescription
+import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import de.hanno.hpengine.graphics.texture.TextureDimension
-import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.toHalfFloat
 import format
 import io.kotest.matchers.shouldBe
@@ -35,12 +37,12 @@ class ClearTextureTest {
         val (_, graphicsApi) = createOpenGLContext()
 
         val texture = graphicsApi.Texture2D(
-            TextureDimension(500, 500),
-            TextureTarget.TEXTURE_2D,
-            InternalTextureFormat.RGBA16F,
-            TextureFilterConfig(MinFilter.NEAREST),
-            WrapMode.Repeat,
-            UploadState.Uploaded
+            Texture2DDescription(
+                dimension = TextureDimension(500, 500),
+                internalFormat = InternalTextureFormat.RGBA16F,
+                textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST),
+                wrapMode = WrapMode.Repeat,
+            ),
         )
 
         val renderTarget = graphicsApi.RenderTarget(
@@ -88,25 +90,45 @@ class ClearTextureTest {
     fun `cubeMapArray texture is cleared`() {
         val (_, graphicsApi) = createOpenGLContext()
 
-        val texture = graphicsApi.CubeMapArray(
+        val description = TextureDescription.CubeMapArrayDescription(
             TextureDimension(500, 500, 4),
-            TextureFilterConfig(MinFilter.NEAREST),
-            InternalTextureFormat.RGBA16F,
-            WrapMode.Repeat
+            internalFormat = InternalTextureFormat.RGBA16F,
+            textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST),
+            wrapMode = WrapMode.Repeat,
+        )
+        val (textureId, handle) = graphicsApi.allocateTexture(
+            description,
+            TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
+        )
+        val texture = OpenGLCubeMapArray(
+            description,
+            textureId,
+            TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
+            handle,
         )
 
-        val cubeMapArrayRenderTarget = graphicsApi.RenderTarget(
-            graphicsApi.FrameBuffer(
-                graphicsApi.createDepthBuffer(
-                    graphicsApi.CubeMapArray(
-                        TextureDimension(
+        val description1 = TextureDescription.CubeMapArrayDescription(
+            TextureDimension(
                             texture.dimension.width,
                             texture.dimension.height,
                             texture.dimension.depth
                         ),
-                        TextureFilterConfig(minFilter = MinFilter.NEAREST),
-                        internalFormat = InternalTextureFormat.DEPTH_COMPONENT24,
-                        wrapMode = WrapMode.ClampToEdge
+            internalFormat = InternalTextureFormat.DEPTH_COMPONENT24,
+            textureFilterConfig = TextureFilterConfig(minFilter = MinFilter.NEAREST),
+            wrapMode = WrapMode.ClampToEdge,
+        )
+        val (textureId, handle) = graphicsApi.allocateTexture(
+            description1,
+            TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
+        )
+        val cubeMapArrayRenderTarget = graphicsApi.RenderTarget(
+            graphicsApi.FrameBuffer(
+                graphicsApi.createDepthBuffer(
+                    OpenGLCubeMapArray(
+                        description1,
+                        textureId,
+                        TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
+                        handle,
                     )
                 )
             ),

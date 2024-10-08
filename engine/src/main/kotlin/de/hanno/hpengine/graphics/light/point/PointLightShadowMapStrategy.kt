@@ -22,6 +22,7 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
+import de.hanno.hpengine.graphics.texture.TextureDescription
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
 import de.hanno.hpengine.math.OmniCamera
@@ -31,15 +32,11 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.scene.GeometryBuffer
-import de.hanno.hpengine.scene.VertexBuffer
-import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.transform.EntityMovementSystem
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
-import struktgen.api.Strukt
 import struktgen.api.get
 import java.nio.FloatBuffer
 import kotlin.math.min
@@ -76,25 +73,39 @@ class CubeShadowMapStrategy(
     )
 
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, simpleColorProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
-            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic]
+        object : DirectPipeline(
+            graphicsApi,
+            config,
+            simpleColorProgramStatic,
+            entitiesStateHolder,
+            entityBuffer,
+            primaryCameraStateHolder,
+            defaultBatchesSystem,
+            materialSystem
+        ) {
+            override fun RenderState.extractRenderBatches(camera: Camera) =
+                this[defaultBatchesSystem.renderBatchesStatic]
         }
     }
     val cubeMapArray = graphicsApi.CubeMapArray(
-        TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
-        TextureFilterConfig(MinFilter.NEAREST),
-        RGBA16F,
-        Repeat
+        TextureDescription.CubeMapArrayDescription(
+            TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
+            RGBA16F,
+            TextureFilterConfig(MinFilter.NEAREST),
+            Repeat,
+        )
     )
     val depthCubeMapArray = graphicsApi.CubeMapArray(
-        TextureDimension(
-            cubeMapArray.dimension.width,
-            cubeMapArray.dimension.height,
-            cubeMapArray.dimension.depth
-        ),
-        TextureFilterConfig(minFilter = MinFilter.NEAREST),
-        internalFormat = DEPTH_COMPONENT24,
-        wrapMode = ClampToEdge
+        TextureDescription.CubeMapArrayDescription(
+            TextureDimension(
+                cubeMapArray.dimension.width,
+                cubeMapArray.dimension.height,
+                cubeMapArray.dimension.depth
+            ),
+            internalFormat = DEPTH_COMPONENT24,
+            textureFilterConfig = TextureFilterConfig(minFilter = MinFilter.NEAREST),
+            wrapMode = ClampToEdge,
+        )
     )
     val pointLightDepthMapsArrayCube = depthCubeMapArray.id
     var cubemapArrayRenderTarget = graphicsApi.RenderTarget(
@@ -133,7 +144,7 @@ class CubeShadowMapStrategy(
         val pointLights = renderState[pointLightStateHolder.lightState].pointLightBuffer
         val pointLightCount = renderState[pointLightStateHolder.lightState].pointLightCount
         val needToRedraw = movementSystem.anyEntityHasMoved
-        if(!needToRedraw) return
+        if (!needToRedraw) return
 
         profiled("PointLight shadowmaps") {
             depthMask = true
@@ -157,7 +168,7 @@ class CubeShadowMapStrategy(
             }
 
             val renderWithPointCubeShadowProgram = false // TODO: Using single pass rendering doesn't work
-            if(renderWithPointCubeShadowProgram) {
+            if (renderWithPointCubeShadowProgram) {
                 cubemapArrayRenderTarget.use(true)
             } else {
                 renderTarget2D.use(true)
@@ -177,14 +188,20 @@ class CubeShadowMapStrategy(
                     omniCamera.updatePosition(light.position.toJoml())
                     light
                 }
-                if(pointLights.typedBuffer.byteBuffer.run { !light.shadow }) continue // TODO: This messes up the index, do differently
+                if (pointLights.typedBuffer.byteBuffer.run { !light.shadow }) continue // TODO: This messes up the index, do differently
 
-                if(renderWithPointCubeShadowProgram) {
+                if (renderWithPointCubeShadowProgram) {
                     pointLights.typedBuffer.byteBuffer.run {
                         pointCubeShadowPassProgram.use()
-                        pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
+                        pointCubeShadowPassProgram.bindShaderStorageBuffer(
+                            1,
+                            renderState[materialSystem.materialBuffer]
+                        )
                         pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState[entityBuffer.entitiesBuffer])
-                        pointCubeShadowPassProgram.bindShaderStorageBuffer(7, entitiesState.geometryBufferStatic.vertexStructArray)
+                        pointCubeShadowPassProgram.bindShaderStorageBuffer(
+                            7,
+                            entitiesState.geometryBufferStatic.vertexStructArray
+                        )
                         pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.position.toJoml())
                         pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
                         pointCubeShadowPassProgram.setUniform("lightIndex", lightIndex)
@@ -200,8 +217,14 @@ class CubeShadowMapStrategy(
 
                             viewMatrices[floatBufferIndex]!!.rewind()
                             projectionMatrices[floatBufferIndex]!!.rewind()
-                            pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex]!!)
-                            pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex]!!)
+                            pointCubeShadowPassProgram.setUniformAsMatrix4(
+                                "viewMatrices[$floatBufferIndex]",
+                                viewMatrices[floatBufferIndex]!!
+                            )
+                            pointCubeShadowPassProgram.setUniformAsMatrix4(
+                                "projectionMatrices[$floatBufferIndex]",
+                                projectionMatrices[floatBufferIndex]!!
+                            )
                         }
                         pointCubeShadowPassProgram.bind()
                         profiled("PointLight shadowmap entity rendering") {
@@ -219,9 +242,17 @@ class CubeShadowMapStrategy(
                     }
                 } else {
                     for (faceIndex in 0..5) {
-                        graphicsApi.framebufferDepthTexture(cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * lightIndex + faceIndex], 0)
+                        graphicsApi.framebufferDepthTexture(
+                            cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * lightIndex + faceIndex],
+                            0
+                        )
                         graphicsApi.clearDepthBuffer()
-                        graphicsApi.framebufferTextureLayer(0, cubemapArrayRenderTarget.cubeMapFaceViews[6 * lightIndex + faceIndex], 0, 0)
+                        graphicsApi.framebufferTextureLayer(
+                            0,
+                            cubemapArrayRenderTarget.cubeMapFaceViews[6 * lightIndex + faceIndex],
+                            0,
+                            0
+                        )
 
                         renderState[staticDirectPipeline].prepare(renderState, omniCamera.cameras[faceIndex])
                         renderState[staticDirectPipeline].draw(renderState, omniCamera.cameras[faceIndex])
@@ -254,12 +285,20 @@ class CubeShadowMapStrategy(
                 omniCamera.updatePosition(light.position.toJoml())
                 light
             }
-            if(pointLights.typedBuffer.byteBuffer.run { !light.shadow }) return // TODO: This messes up the index, do differently
+            if (pointLights.typedBuffer.byteBuffer.run { !light.shadow }) return // TODO: This messes up the index, do differently
 
             for (faceIndex in 0..5) {
-                graphicsApi.framebufferDepthTexture(cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * lightIndex + faceIndex], 0)
+                graphicsApi.framebufferDepthTexture(
+                    cubemapArrayRenderTarget.cubeMapDepthFaceViews[6 * lightIndex + faceIndex],
+                    0
+                )
                 graphicsApi.clearDepthBuffer()
-                graphicsApi.framebufferTextureLayer(0, cubemapArrayRenderTarget.cubeMapFaceViews[6 * lightIndex + faceIndex], 0, 0)
+                graphicsApi.framebufferTextureLayer(
+                    0,
+                    cubemapArrayRenderTarget.cubeMapFaceViews[6 * lightIndex + faceIndex],
+                    0,
+                    0
+                )
 
                 renderState[staticDirectPipeline].prepare(renderState, omniCamera.cameras[faceIndex])
                 renderState[staticDirectPipeline].draw(renderState, omniCamera.cameras[faceIndex])

@@ -1,46 +1,39 @@
 package de.hanno.hpengine.graphics.texture
 
-import InternalTextureFormat
 import com.artemis.BaseSystem
 import de.hanno.hpengine.directory.AbstractDirectory
-import de.hanno.hpengine.graphics.constants.MagFilter
-import de.hanno.hpengine.graphics.constants.MinFilter
-import de.hanno.hpengine.graphics.constants.WrapMode
-import de.hanno.hpengine.model.material.Material
 
 interface TextureManager {
-    val defaultTexture: Texture
+    val defaultTexture: StaticFileBasedTexture2D
     val textures: Map<String, Texture>
+    val fileBasedTextures: Map<String, FileBasedTexture2D>
     val texturesForDebugOutput : Map<String, Texture>
     val generatedCubeMaps: Map<String, CubeMap>
-    val cubeMap: CubeMap
+    val cubeMap: StaticHandle<CubeMap>
     val lensFlareTexture: Texture
 
     fun registerGeneratedCubeMap(s: String, texture: CubeMap)
     fun registerTextureForDebugOutput(s: String, texture2D: Texture)
+
     fun getTexture3D(
-        gridResolution: Int,
-        internalFormat: InternalTextureFormat,
-        minFilter: MinFilter,
-        magFilter: MagFilter,
-        wrapMode: WrapMode
+        description: TextureDescription.Texture3DDescription,
     ): Texture3D
+
+    fun getStaticTextureHandle(
+        resourcePath: String,
+        srgba: Boolean = false,
+        directory: AbstractDirectory,
+    ): StaticFileBasedTexture2D
 
     fun getTexture(
         resourcePath: String,
         srgba: Boolean = false,
         directory: AbstractDirectory,
-        unloadable: Boolean
-    ): Texture
+        unloadable: Boolean,
+    ): FileBasedTexture2D
 
-    fun getTexture(
-        resourcePath: String,
-        srgba: Boolean = false,
-        directory: AbstractDirectory
-    ): Texture = getTexture(resourcePath, srgba, directory, true)
-
-    fun setTexturesUsedInCycle(maps: Collection<Texture>, cycle: Long)
-    fun getTextureUsedInCycle(texture: Texture): Long
+    fun setTexturesUsedInCycle(maps: MutableCollection<TextureHandle<*>>, cycle: Long)
+    fun getTextureUsedInCycle(texture: TextureHandle<*>): Long
 }
 
 abstract class TextureManagerBaseSystem: TextureManager, BaseSystem()

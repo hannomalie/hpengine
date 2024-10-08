@@ -33,7 +33,7 @@ import de.hanno.hpengine.graphics.renderer.forward.DefaultUniforms
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.texture.TextureManager
-import de.hanno.hpengine.graphics.texture.UploadInfo.SingleMipLevelTexture2DUploadInfo
+import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
@@ -87,25 +87,23 @@ open class GPUCulledPipeline(
     }
 
     private val baseDepthTexture = graphicsApi.Texture2D(
-        SingleMipLevelTexture2DUploadInfo(
-            data = null,
+        Texture2DDescription(
             dimension = TextureDimension(config.width, config.height),
             internalFormat = RGBA16F,
             textureFilterConfig = textureFilterConfig,
+            wrapMode = WrapMode.ClampToEdge,
         ),
-        wrapMode = WrapMode.ClampToEdge,
     ).apply {
         textureManager.registerTextureForDebugOutput("High Z base depth", this)
     }
 
     private val debugMinMaxTexture = graphicsApi.Texture2D(
-        info = SingleMipLevelTexture2DUploadInfo(
-            data = null,
+        description = Texture2DDescription(
             dimension = TextureDimension(config.width / 2, config.height / 2),
             internalFormat = RGBA16F,
             textureFilterConfig = textureFilterConfig,
+            wrapMode = WrapMode.ClampToEdge,
         ),
-        wrapMode = WrapMode.ClampToEdge,
     ).apply {
         textureManager.registerTextureForDebugOutput("Min Max Debug", this)
     }
@@ -116,13 +114,12 @@ open class GPUCulledPipeline(
         height = config.height / 2,
         textures = listOf(
             graphicsApi.Texture2D(
-                info = SingleMipLevelTexture2DUploadInfo(
-                    data = null,
+                description = Texture2DDescription(
                     dimension = TextureDimension(config.width / 2, config.height / 2),
                     internalFormat = RGBA16F,
                     textureFilterConfig = textureFilterConfig,
+                    wrapMode = WrapMode.ClampToEdge,
                 ),
-                wrapMode = WrapMode.ClampToEdge,
             )
         ),
         name = "High Z",

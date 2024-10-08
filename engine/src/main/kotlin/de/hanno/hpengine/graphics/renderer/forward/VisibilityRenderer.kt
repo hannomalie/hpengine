@@ -19,8 +19,8 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
+import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
-import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
@@ -49,7 +49,7 @@ class VisibilityRenderer(
     private val directionalLightStateHolder: DirectionalLightStateHolder,
     private val sharedDepthBuffer: SharedDepthBuffer,
     private val cubeShadowMapStrategy: CubeShadowMapStrategy,
-): PrimaryRenderer {
+) : PrimaryRenderer {
     init {
         require(graphicsApi.isSupported(BindlessTextures)) {
             "BindlessTextures not supported, visibility rendering impossible!"
@@ -57,20 +57,20 @@ class VisibilityRenderer(
     }
 
     private val visibilityTexture = graphicsApi.Texture2D(
-        TextureDimension2D(config.width, config.height),
-        TextureTarget.TEXTURE_2D,
-        InternalTextureFormat.RGBA16F,
-        TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
-        WrapMode.ClampToEdge,
-        UploadState.Uploaded
+        Texture2DDescription(
+            TextureDimension2D(config.width, config.height),
+            InternalTextureFormat.RGBA16F,
+            TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
+            WrapMode.ClampToEdge
+        )
     )
     private val normalTexture = graphicsApi.Texture2D(
-        TextureDimension2D(config.width, config.height),
-        TextureTarget.TEXTURE_2D,
-        InternalTextureFormat.RGBA16F,
-        TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
-        WrapMode.ClampToEdge,
-        UploadState.Uploaded
+        Texture2DDescription(
+            TextureDimension2D(config.width, config.height),
+            InternalTextureFormat.RGBA16F,
+            TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
+            WrapMode.ClampToEdge
+        )
     )
     private val visibilityRenderTarget = graphicsApi.RenderTarget(
         graphicsApi.FrameBuffer(sharedDepthBuffer.depthBuffer),
@@ -102,15 +102,36 @@ class VisibilityRenderer(
     )
 
     private val staticDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, visibilityProgramStatic, entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
-            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic]
+        object : DirectPipeline(
+            graphicsApi,
+            config,
+            visibilityProgramStatic,
+            entitiesStateHolder,
+            entityBuffer,
+            primaryCameraStateHolder,
+            defaultBatchesSystem,
+            materialSystem
+        ) {
+            override fun RenderState.extractRenderBatches(camera: Camera) =
+                this[defaultBatchesSystem.renderBatchesStatic]
         }
     }
     private val animatedDirectPipeline: StateRef<DirectPipeline> = renderStateContext.renderState.registerState {
-        object: DirectPipeline(graphicsApi, config, visibilityProgramAnimated,entitiesStateHolder, entityBuffer, primaryCameraStateHolder, defaultBatchesSystem, materialSystem) {
-            override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated]
+        object : DirectPipeline(
+            graphicsApi,
+            config,
+            visibilityProgramAnimated,
+            entitiesStateHolder,
+            entityBuffer,
+            primaryCameraStateHolder,
+            defaultBatchesSystem,
+            materialSystem
+        ) {
+            override fun RenderState.extractRenderBatches(camera: Camera) =
+                this[defaultBatchesSystem.renderBatchesAnimated]
 
-            override fun RenderState.selectGeometryBuffer() = this[entitiesStateHolder.entitiesState].geometryBufferAnimated
+            override fun RenderState.selectGeometryBuffer() =
+                this[entitiesStateHolder.entitiesState].geometryBufferAnimated
         }
     }
 
@@ -141,13 +162,27 @@ class VisibilityRenderer(
             resolveComputeProgram.use()
             resolveComputeProgram.setUniform("width", renderTarget.width)
             resolveComputeProgram.setUniform("height", renderTarget.height)
-            resolveComputeProgram.setUniformAsMatrix4("viewMatrix", renderState[primaryCameraStateHolder.camera].viewMatrixBuffer)
-            resolveComputeProgram.setUniformAsMatrix4("projectionMatrix", renderState[primaryCameraStateHolder.camera].projectionMatrixBuffer)
+            resolveComputeProgram.setUniformAsMatrix4(
+                "viewMatrix",
+                renderState[primaryCameraStateHolder.camera].viewMatrixBuffer
+            )
+            resolveComputeProgram.setUniformAsMatrix4(
+                "projectionMatrix",
+                renderState[primaryCameraStateHolder.camera].projectionMatrixBuffer
+            )
 
             graphicsApi.bindTexture(0, visibilityTexture)
             graphicsApi.bindTexture(1, sharedDepthBuffer.depthBuffer.texture)
             graphicsApi.bindTexture(3, normalTexture)
-            graphicsApi.bindImageTexture(3, renderTarget.renderedTexture, 0, false, 0, Access.ReadWrite, renderTarget.textures.first().internalFormat)
+            graphicsApi.bindImageTexture(
+                3,
+                renderTarget.renderedTexture,
+                0,
+                false,
+                0,
+                Access.ReadWrite,
+                renderTarget.textures.first().internalFormat
+            )
             cubeShadowMapStrategy.bindTextures()
             if (!graphicsApi.isSupported(BindlessTextures)) {
                 graphicsApi.bindTexture(
@@ -167,7 +202,11 @@ class VisibilityRenderer(
             resolveComputeProgram.setUniform("pointLightCount", pointLightState.pointLightCount)
             resolveComputeProgram.bindShaderStorageBuffer(3, pointLightState.pointLightBuffer)
             resolveComputeProgram.bindShaderStorageBuffer(4, directionalLightState.gpuBuffer)
-            resolveComputeProgram.dispatchCompute(renderTarget.width.toCount() / 4, renderTarget.height.toCount() / 4, 1.toCount())
+            resolveComputeProgram.dispatchCompute(
+                renderTarget.width.toCount() / 4,
+                renderTarget.height.toCount() / 4,
+                1.toCount()
+            )
         }
     }
 }

@@ -172,7 +172,11 @@ class ImGuiEditor(
         } finally {
             try {
 
-                ImGui.render()
+                try {
+                    ImGui.render()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 imGuiImplGl3.renderDrawData(ImGui.getDrawData())
                 if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
                     val backupWindowHandle = GLFW.glfwGetCurrentContext()

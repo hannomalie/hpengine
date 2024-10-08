@@ -1,6 +1,7 @@
 package de.hanno.hpengine.skybox
 
 import InternalTextureFormat
+import com.sksamuel.hoplite.fp.invalid
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -36,7 +37,7 @@ class SkyboxRenderExtension(
         graphicsApi.bindTexture(
             6,
             TextureTarget.TEXTURE_CUBE_MAP,
-            textureManager.cubeMap.id
+            textureManager.cubeMap.texture.id
         )
         val loadSomeSkyboxes = true
         if(loadSomeSkyboxes) {
@@ -83,12 +84,12 @@ class SkyboxRenderExtension(
         bindTexture(4, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
         bindTexture(5, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
         val skyBoxMaterialIndex = renderState[skyBoxStateHolder.skyBoxMaterialIndex]
-        val skyboxTexture = if(skyBoxMaterialIndex > -1) {
-            materialSystem.materials[renderState[skyBoxStateHolder.skyBoxMaterialIndex]].maps[Material.MAP.ENVIRONMENT]!!
+        val skyboxTextureId = if(skyBoxMaterialIndex > -1) {
+            materialSystem.materials[renderState[skyBoxStateHolder.skyBoxMaterialIndex]].maps[Material.MAP.ENVIRONMENT]?.texture?.id ?: textureManager.cubeMap.texture.id
         } else {
-            textureManager.cubeMap
+            textureManager.cubeMap.texture.id
         }
-        bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, skyboxTexture.id)
+        bindTexture(6, TextureTarget.TEXTURE_CUBE_MAP, skyboxTextureId)
         bindTexture(8, probeSystem.cubeMapArray)
         bindImageTexture(4, deferredRenderingBuffer.reflectionBuffer.renderedTextures[0], 0, false, 0, Access.ReadWrite, InternalTextureFormat.RGBA16F)
         bindImageTexture(7, deferredRenderingBuffer.reflectionBuffer.renderedTextures[1], 0, false, 0, Access.ReadWrite, InternalTextureFormat.RGBA16F)

@@ -38,7 +38,4 @@ class SimpleForwardRenderingModule {
             clear = Vector4f(),
         )
     }
-
-    @Single
-    fun debugOutput() = DebugOutput(null, 0)
 }

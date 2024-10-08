@@ -4,6 +4,9 @@ import InternalTextureFormat
 import InternalTextureFormat.*
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.config.HighersMipMapToKeepLoaded
+import de.hanno.hpengine.config.NoUnloading
+import de.hanno.hpengine.config.UnloadCompletely
 import de.hanno.hpengine.directory.AbstractDirectory
 import de.hanno.hpengine.graphics.Access
 import de.hanno.hpengine.graphics.OpenGLContext
@@ -13,6 +16,7 @@ import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.toCount
 import org.apache.commons.io.FileUtils
@@ -24,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
+import javax.imageio.ImageReader
 import kotlin.math.max
 
 
@@ -37,10 +42,12 @@ class OpenGLTextureManager(
 
     val engineDir = config.directories.engineDir
 
-    /** The table of textures that have been loaded in this loader  */
-    override var textures: MutableMap<String, Texture> = ConcurrentHashMap()
+    override val textures: MutableMap<String, Texture> = ConcurrentHashMap()
+    override val fileBasedTextures: MutableMap<String, FileBasedTexture2D> = ConcurrentHashMap()
+    private val texturePool: MutableList<Pair<Texture2DDescription, Texture2D>> = CopyOnWriteArrayList()
+    private val allTextures: MutableList<Texture2D> = CopyOnWriteArrayList()
 
-    private var textureUsedAtTime: MutableMap<Int, Long> = ConcurrentHashMap()
+    private var textureUsedAtTime: MutableMap<TextureHandle<*>, Long> = ConcurrentHashMap()
     override val texturesForDebugOutput: MutableMap<String, Texture> = LinkedHashMap()
     override val generatedCubeMaps = mutableMapOf<String, CubeMap>()
 
@@ -48,15 +55,15 @@ class OpenGLTextureManager(
 //    	loadAllAvailableTextures();
     }
 
-    override val lensFlareTexture = getTexture("assets/textures/lens_flare_tex.jpg", true, engineDir)
+    override val lensFlareTexture = getStaticTextureHandle("assets/textures/lens_flare_tex.jpg", true, engineDir).texture
     override fun registerGeneratedCubeMap(s: String, texture: CubeMap) {
         generatedCubeMaps[s] = texture
     }
 
-    override var cubeMap = getCubeMap(
+    override var cubeMap = StaticHandleImpl(getCubeMap(
         "assets/textures/skybox/skybox.png",
         config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")
-    )
+    ), UploadState.Uploaded, 0f) // TODO: Verify if just setting this is okay
 
     //    var cubeMap = getCubeMap("assets/textures/skybox/skybox1.jpg", config.directories.engineDir.resolve("assets/textures/skybox/skybox5.jpg"))
     private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram(
@@ -68,13 +75,62 @@ class OpenGLTextureManager(
             .toCodeSource(), Defines(Define("VERTICAL", true)), Uniforms.Empty
     )
 
-    override val defaultTexture = getTexture("assets/textures/default/gi_flag.png", true, engineDir, true)
+    override val defaultTexture = getStaticTextureHandle("assets/textures/default/gi_flag.png", true, engineDir).apply {
+        graphicsApi.run {
+            uploadAsync()
+        }
+    }
 
     private fun loadAllAvailableTextures() {
         val textureDir = config.directories.engineDir.textures
         val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).toList()
         for (file in files) {
-            this.getTexture(file.absolutePath, srgba = false, directory = config.directories.engineDir)
+            getTexture(file.absolutePath, srgba = false, directory = config.directories.engineDir, true)
+        }
+    }
+
+    override fun getStaticTextureHandle(
+        resourcePath: String,
+        srgba: Boolean,
+        directory: AbstractDirectory
+    ): StaticFileBasedTexture2D {
+
+        val file = directory.resolve(resourcePath)
+        require(file.exists()) { "File ${file.absolutePath} must exist!" }
+        require(file.isFile) { "File ${file.absolutePath} is not a file!" }
+        val compressInternal = config.performance.textureCompressionByDefault
+
+        val internalFormat = when {
+            compressInternal -> when {
+                srgba -> COMPRESSED_RGBA_S3TC_DXT5
+                else -> COMPRESSED_RGBA_S3TC_DXT5
+            }
+            else -> when {
+                srgba -> SRGB8_ALPHA8
+                else -> RGBA16F
+            }
+        }
+
+        val textureDescription = Texture2DDescription(
+            getImageDimension(file),
+            internalFormat = internalFormat,
+            textureFilterConfig = TextureFilterConfig(),
+            wrapMode = WrapMode.Repeat,
+        )
+
+        val openGLTexture = graphicsApi.Texture2D(
+            textureDescription,
+        ).apply {
+            allTextures.add(this)
+        }
+        return StaticFileBasedTexture2D(
+            resourcePath,
+            file,
+            openGLTexture,
+            textureDescription,
+            UploadState.Unloaded(null)
+        ).apply {
+            fileBasedTextures.ifAbsentPutInSingleThreadContext(resourcePath) { this }
         }
     }
 
@@ -83,37 +139,88 @@ class OpenGLTextureManager(
         srgba: Boolean,
         directory: AbstractDirectory,
         unloadable: Boolean,
-    ): FileBasedTexture2D<Texture2D> {
+    ): FileBasedTexture2D {
         val file = directory.resolve(resourcePath)
         require(file.exists()) { "File ${file.absolutePath} must exist!" }
         require(file.isFile) { "File ${file.absolutePath} is not a file!" }
         val compressInternal = config.performance.textureCompressionByDefault
 
-        val internalFormat = if (compressInternal) {
-            if (srgba) COMPRESSED_RGBA_S3TC_DXT5 else COMPRESSED_RGBA_S3TC_DXT5
-        } else {
-            if (srgba) SRGB8_ALPHA8 else RGBA16F
+        val internalFormat = when {
+            compressInternal -> when {
+                srgba -> COMPRESSED_RGBA_S3TC_DXT5
+                else -> COMPRESSED_RGBA_S3TC_DXT5
+            }
+            else -> when {
+                srgba -> SRGB8_ALPHA8
+                else -> RGBA16F
+            }
         }
-
-        // TODO: Loading the whole image only to determine dimension is wasteful
-        val bufferedImage = ImageIO.read(file) ?: throw IllegalStateException("Cannot load $file")
-
-        val uploadInfo = graphicsApi.createUploadInfo(bufferedImage, internalFormat, srgba)
-        // TODO: Abstract over indexable textures somehow
-        val openGLTexture = graphicsApi.Texture2D(
-            uploadInfo,
-            WrapMode.Repeat
+        val textureDescription = Texture2DDescription(
+            getImageDimension(file),
+            internalFormat = internalFormat,
+            textureFilterConfig = TextureFilterConfig(),
+            wrapMode = WrapMode.Repeat,
         )
 
-        return FileBasedTexture2D(
-            resourcePath,
-            file,
-            openGLTexture,
-            unloadable,
-        ).apply {
-            uploadState = UploadState.Unloaded(mipmapCount - 1)
-            textures.ifAbsentPutInSingleThreadContext(resourcePath) { this }
+        return if(unloadable) {
+            val texturesWithSameDimension = allTextures.groupBy { it.dimension }[textureDescription.dimension]?.size ?: 0
+
+            if(texturesWithSameDimension >= 100) {
+                DynamicFileBasedTexture2D(
+                    resourcePath,
+                    file,
+                    null,
+                    textureDescription,
+                    UploadState.Unloaded(null)
+                ).apply {
+                    fileBasedTextures.ifAbsentPutInSingleThreadContext(resourcePath) { this }
+
+                    when(val fromPool = getFromPool(textureDescription)) {
+                        null -> logger.info("Can't allocate $resourcePath, already $texturesWithSameDimension textures allocated of dimension ${textureDescription.dimension}")
+                        else -> texture = fromPool
+                    }
+                }
+            } else {
+                val openGLTexture = getFromPool(textureDescription) ?: graphicsApi.Texture2D(
+                    textureDescription,
+                ).apply {
+                    allTextures.add(this)
+                }
+                FileBasedTexture2D(
+                    resourcePath,
+                    file,
+                    openGLTexture,
+                    unloadable,
+                    textureDescription,
+                ).apply {
+                    uploadState = UploadState.Unloaded(null)
+                    fileBasedTextures.ifAbsentPutInSingleThreadContext(resourcePath) { this }
+                }
+            }
+        } else {
+            getStaticTextureHandle(
+                resourcePath,
+                srgba,
+                directory
+            )
         }
+    }
+
+    // https://stackoverflow.com/questions/1559253/java-imageio-getting-image-dimensions-without-reading-the-entire-file
+    private fun getImageDimension(file: File): TextureDimension2D {
+        ImageIO.createImageInputStream(file).use { inputStream ->
+            val readers: Iterator<ImageReader> = ImageIO.getImageReaders(inputStream)
+            if (readers.hasNext()) {
+                val reader: ImageReader = readers.next()
+                try {
+                    reader.input = inputStream
+                    return TextureDimension2D(reader.getWidth(0), reader.getHeight(0))
+                } finally {
+                    reader.dispose()
+                }
+            }
+        }
+        throw IllegalStateException("Can't determine dimension of ${file.absolutePath}")
     }
 
     private inline fun <T> MutableMap<String, T>.ifAbsentPutInSingleThreadContext(
@@ -129,17 +236,19 @@ class OpenGLTextureManager(
         } else this[resourceName]!!
     }
 
-    override fun setTexturesUsedInCycle(maps: Collection<Texture>, cycle: Long) {
+    override fun setTexturesUsedInCycle(maps: MutableCollection<TextureHandle<*>>, cycle: Long) {
         maps.forEach { texture ->
-            textureUsedAtTime[texture.id] = System.nanoTime()
+            textureUsedAtTime[texture] = System.nanoTime()
         }
     }
 
-    override fun getTextureUsedInCycle(texture: Texture) = textureUsedAtTime.getOrDefault(texture.id, 0)
+    override fun getTextureUsedInCycle(texture: TextureHandle<*>) = textureUsedAtTime.getOrDefault(texture, 0)
 
     fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-            ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, file, srgba)
+            ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, file, srgba).apply {
+                load()
+            }
 
         textures[resourceName + "_cube"] = tex
         return tex
@@ -147,68 +256,22 @@ class OpenGLTextureManager(
 
     fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-            ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, files, srgba)
+            ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, files, srgba).apply {
+                load()
+            }
 
         textures[resourceName + "_cube"] = tex
         return tex
     }
 
-    fun copyCubeMap(sourceTexture: CubeMap): Int = graphicsApi.copyCubeMap(sourceTexture).id
-
-    //TODO: Add texture filters as params
-    fun getCubeMap(width: Int, height: Int, internalTextureFormat: InternalTextureFormat): Texture {
-        return getTexture(width, height, internalTextureFormat, TEXTURE_CUBE_MAP)
-    }
-
-    fun getCubeMapArray(width: Int, height: Int, internalTextureFormat: InternalTextureFormat): Texture {
-        return getTexture(width, height, internalTextureFormat, TEXTURE_CUBE_MAP_ARRAY, 1)
-    }
-
-    fun getCubeMapArray(width: Int, height: Int, internalTextureFormat: InternalTextureFormat, depth: Int): Texture {
-        return getTexture(width, height, internalTextureFormat, TEXTURE_CUBE_MAP_ARRAY, depth)
-    }
-
-    fun getTexture(
-        width: Int,
-        height: Int,
-        internalFormat: InternalTextureFormat,
-        target: TextureTarget,
-        depth: Int = 1
-    ): Texture = when (target) {
-        TEXTURE_2D -> graphicsApi.Texture2D(
-            TextureDimension2D(width, height),
-            target,
-            internalFormat,
-            TextureFilterConfig(),
-            WrapMode.Repeat,
-            UploadState.Uploaded
-        )
-
-        TEXTURE_CUBE_MAP -> graphicsApi.CubeMap(
-            TextureDimension2D(width, height),
-            internalFormat,
-            TextureFilterConfig(),
-            WrapMode.Repeat,
-        )
-
-        TEXTURE_CUBE_MAP_ARRAY -> TODO() // TODO: Implement those
-        TEXTURE_2D_ARRAY -> TODO()
-        TEXTURE_3D -> TODO()
-    }
-
     override fun getTexture3D(
-        gridResolution: Int,
-        internalFormat: InternalTextureFormat,
-        minFilter: MinFilter,
-        magFilter: MagFilter,
-        wrapMode: WrapMode
-    ): Texture3D = OpenGLTexture3D(
-        graphicsApi,
-        TextureDimension(gridResolution, gridResolution, gridResolution),
-        TextureFilterConfig(minFilter, magFilter),
-        internalFormat,
-        wrapMode
-    )
+        description: TextureDescription.Texture3DDescription,
+    ): OpenGLTexture3D {
+        return OpenGLTexture3D.invoke(
+            graphicsApi,
+            description
+        )
+    }
 
     fun blur2DTextureRGBA16F(sourceTexture: Int, width: Int, height: Int, mipmapTarget: Int, mipmapSource: Int) {
         var width = width
@@ -300,51 +363,98 @@ class OpenGLTextureManager(
         }
     }
 
-    private val mipBiasDecreasePerSecond = 2f
-    private val unloadBiasInNanos = TimeUnit.SECONDS.toNanos(2)
     override fun processSystem() {
         val currentTime = System.nanoTime()
 
-        textures.values.filterIsInstance<Texture2D>().forEach { texture ->
-            when(texture.uploadState) {
+        fileBasedTextures.values.forEach { handle ->
+            when(handle.uploadState) {
                 is UploadState.MarkedForUpload -> {}
                 is UploadState.Unloaded -> {}
                 UploadState.Uploaded, is UploadState.Uploading -> {
-                    texture.currentMipMapBias -= world.delta * mipBiasDecreasePerSecond
+                    handle.handle.currentMipMapBias -= world.delta * config.performance.mipBiasDecreasePerSecond
                 }
             }
-            if (texture.currentMipMapBias < 0f) {
-                texture.currentMipMapBias = 0f
+            if (handle.handle.currentMipMapBias < 0f) {
+                handle.handle.currentMipMapBias = 0f
             }
-        }
+            when(handle) {
+                is DynamicFileBasedTexture2D -> {
+                    val notUsedForNanos = currentTime - textureUsedAtTime.getOrDefault(handle, currentTime)
+                    val canBeUnloaded = notUsedForNanos >= config.performance.unloadBiasInNanos
+                    val needsToBeLoaded = !canBeUnloaded
 
-        // TODO: Support all textures
-        textures.values.filterIsInstance<FileBasedTexture2D<*>>().forEach { texture ->
-            val notUsedForNanos = currentTime - textureUsedAtTime.getOrDefault(texture.id, currentTime)
-            val canBeUnloaded = notUsedForNanos >= unloadBiasInNanos
-            val needsToBeLoaded = !canBeUnloaded
+                    when (val texture = handle.texture) {
+                        null -> {
+                            if(needsToBeLoaded) {
+                                when(val fromPool = getFromPool(handle.description)) {
+                                    null -> logger.debug("Cannot load ${handle.file.absolutePath}, no capacity left")
+                                    else -> {
+                                        logger.info("Now able to load texture formerly replaced by default texture: ${handle.path}")
+                                        handle.texture = fromPool
+                                        graphicsApi.run {
+                                            handle.uploadAsync()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else -> {
+                            when (handle.uploadState) {
+                                is UploadState.Unloaded -> {
+                                    if (needsToBeLoaded) {
+                                        logger.info("Uploading ${handle.path}")
+                                        graphicsApi.run {
+                                            handle.uploadAsync()
+                                        }
+                                    }
+                                }
 
-            when (texture.uploadState) {
-                is UploadState.Unloaded -> {
-                    if (needsToBeLoaded) {
-                        if (texture is FileBasedTexture2D<*>) {
-                            graphicsApi.run {
-                                texture.uploadAsync() // TODO: Don't cast, use for all textures
+                                UploadState.Uploaded -> {
+                                    if (canBeUnloaded) {//&& handle.currentMipMapBias == 0f) {
+                                        when(val strategy = config.performance.textureUnloadStrategy) {
+                                            is HighersMipMapToKeepLoaded -> {
+                                                logger.info("Unloading ${handle.file.absolutePath}")
+                                                val unloaded = UploadState.Unloaded(strategy.level)
+                                                handle.uploadState = unloaded
+                                                handle.currentMipMapBias = mipMapBiasForUploadState(unloaded, handle.description.dimension)
+                                            }
+
+                                            NoUnloading -> { }
+                                            UnloadCompletely -> {
+                                                logger.info("Unloading ${handle.file.absolutePath} - ${handle.description}")
+                                                val unloaded = UploadState.Unloaded(null)
+                                                handle.uploadState = unloaded
+                                                handle.currentMipMapBias = mipMapBiasForUploadState(unloaded, handle.description.dimension)
+                                                handle.texture = null
+                                                returnToPool(handle.description, texture)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                is UploadState.Uploading -> {}
+                                is UploadState.MarkedForUpload -> {}
                             }
                         }
                     }
                 }
-                UploadState.Uploaded -> {
-                    if (texture.unloadable && canBeUnloaded && texture.currentMipMapBias == 0f) {
-                        println("Unloading $texture")
-                        val nextUploadState = UploadState.Unloaded(config.performance.maxMipMapToKeepLoaded)
-                        texture.uploadState = nextUploadState
-                        texture.currentMipMapBias = nextUploadState.mipMapLevel.toFloat()
-                    }
+                is StaticFileBasedTexture2D -> {
+
                 }
-                is UploadState.Uploading -> {}
-                is UploadState.MarkedForUpload -> {}
             }
         }
     }
+
+    private fun returnToPool(
+        texture2DDescription: Texture2DDescription,
+        texture: Texture2D
+    ) {
+        texturePool.add(Pair(texture2DDescription, texture))
+    }
+
+    private fun getFromPool(textureDescription: Texture2DDescription) = texturePool.firstOrNull {
+        it.first == textureDescription
+    }?.apply {
+        texturePool.remove(this)
+    }?.second
 }

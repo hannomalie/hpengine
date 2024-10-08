@@ -18,6 +18,7 @@ import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
+import de.hanno.hpengine.graphics.texture.TextureDescription
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.graphics.texture.calculateMipMapCount
 import de.hanno.hpengine.math.OmniCamera
@@ -45,16 +46,19 @@ class ProbeRenderStrategy(
     private val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     private val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
+    val filterConfig1 = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
     private val cubeMapRenderTarget = graphicsApi.RenderTarget(
         frameBuffer = OpenGLFrameBuffer(
             graphicsApi,
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
                     graphicsApi,
-                    TextureDimension(resolution, resolution),
-                    TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
-                    DEPTH_COMPONENT24,
-                    WrapMode.Repeat
+                    TextureDescription.CubeMapDescription(
+                        TextureDimension(resolution, resolution),
+                        internalFormat = DEPTH_COMPONENT24,
+                        textureFilterConfig = filterConfig1,
+                        wrapMode = WrapMode.Repeat,
+                    )
                 )
             )
         ),
@@ -165,11 +169,21 @@ class ProbeRenderStrategy(
                     val filterConfig = TextureFilterConfig(MinFilter.LINEAR)
                     val cubeMap = OpenGLCubeMap.invoke(
                         graphicsApi,
-                        dimension,
-                        filterConfig,
-                        RGBA8
+                        description = TextureDescription.CubeMapDescription(
+                            dimension,
+                            internalFormat = RGBA8,
+                            textureFilterConfig = filterConfig,
+                            wrapMode = WrapMode.Repeat,
+                        )
                     )
-                    val distanceCubeMap = OpenGLCubeMap(graphicsApi, dimension, filterConfig, RG16F)
+                    val distanceCubeMap = OpenGLCubeMap(
+                        graphicsApi, description = TextureDescription.CubeMapDescription(
+                            dimension,
+                            internalFormat = RG16F,
+                            textureFilterConfig = filterConfig,
+                            wrapMode = WrapMode.Repeat,
+                        )
+                    )
                     AmbientCubeData(
                         Vector3f(x.toFloat(), y.toFloat(), z.toFloat()),
                         cubeMap,

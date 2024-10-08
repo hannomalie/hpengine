@@ -6,11 +6,10 @@ import com.artemis.Component
 import com.artemis.annotations.All
 import de.hanno.hpengine.graphics.constants.MagFilter
 import de.hanno.hpengine.graphics.constants.MinFilter
+import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.WrapMode
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.texture.Texture3D
-import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.graphics.texture.*
 import org.koin.core.annotation.Single
 
 
@@ -37,32 +36,60 @@ class GiVolumeSystem(
 
 fun TextureManager.createGIVolumeGrids(gridSize: Int = 256) = GIVolumeGrids(
     getTexture3D(
-        gridSize,
-        gridTextureFormatSized,
-        MinFilter.LINEAR_MIPMAP_LINEAR,
-        MagFilter.LINEAR,
-        WrapMode.ClampToEdge
+        TextureDescription.Texture3DDescription(
+            TextureDimension3D(
+                gridSize,
+                gridSize, gridSize
+            ),
+            gridTextureFormatSized,
+            TextureFilterConfig(
+                MinFilter.LINEAR_MIPMAP_LINEAR,
+                MagFilter.LINEAR
+            ),
+            WrapMode.ClampToEdge
+        )
     ),
     getTexture3D(
-        gridSize,
-        indexGridTextureFormatSized,
-        MinFilter.NEAREST,
-        MagFilter.NEAREST,
-        WrapMode.ClampToEdge
+        TextureDescription.Texture3DDescription(
+            TextureDimension3D(
+                gridSize,
+                gridSize, gridSize
+            ),
+            indexGridTextureFormatSized,
+            TextureFilterConfig(
+                MinFilter.NEAREST,
+                MagFilter.NEAREST
+            ),
+            WrapMode.ClampToEdge
+        )
     ),
     getTexture3D(
-        gridSize,
-        gridTextureFormatSized,
-        MinFilter.LINEAR_MIPMAP_LINEAR,
-        MagFilter.LINEAR,
-        WrapMode.ClampToEdge
+        TextureDescription.Texture3DDescription(
+            TextureDimension3D(
+                gridSize,
+                gridSize, gridSize
+            ),
+            gridTextureFormatSized,
+            TextureFilterConfig(
+                MinFilter.LINEAR_MIPMAP_LINEAR,
+                MagFilter.LINEAR
+            ),
+            WrapMode.ClampToEdge
+        )
     ),
     getTexture3D(
-        gridSize,
-        gridTextureFormatSized,
-        MinFilter.LINEAR_MIPMAP_LINEAR,
-        MagFilter.LINEAR,
-        WrapMode.ClampToEdge
+        TextureDescription.Texture3DDescription(
+            TextureDimension3D(
+                gridSize,
+                gridSize, gridSize
+            ),
+            gridTextureFormatSized,
+            TextureFilterConfig(
+                MinFilter.LINEAR_MIPMAP_LINEAR,
+                MagFilter.LINEAR
+            ),
+            WrapMode.ClampToEdge
+        )
     )
 )
 val gridTextureFormatSized = InternalTextureFormat.RGBA8//GL30.GL_R32UI;

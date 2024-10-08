@@ -20,7 +20,7 @@ fun textureSelection(
     Material.MAP.entries.forEach { type ->
         if(type == Material.MAP.ENVIRONMENT) {
             material.maps[type].let { currentTexture ->
-                val currentIndex = all3DTextures.values.indexOf(currentTexture)
+                val currentIndex = all3DTextures.values.indexOf(currentTexture?.texture)
                 val is3DTexture = currentIndex > -1
                 val previewValue = when {
                     is3DTexture -> all3DTexturesNames[currentIndex]
@@ -34,7 +34,7 @@ fun textureSelection(
                     all3DTextures.forEach { (name, texture) ->
                         val selected = currentTexture == texture
                         if (ImGui.selectable(name, selected)) {
-                            material.maps[type] = texture
+                            material.maps[type] = StaticHandleImpl(texture, UploadState.Uploaded, 0f) // TODO: Figure out if this is okay for here
                         }
                         if (selected) {
                             ImGui.setItemDefaultFocus()
@@ -46,7 +46,7 @@ fun textureSelection(
             }
         } else {
             material.maps[type].let { currentTexture ->
-                val currentIndex = all2DTextures.values.indexOf(currentTexture)
+                val currentIndex = all2DTextures.values.indexOf(currentTexture?.texture)
                 val is2DTexture = currentIndex > -1
                 val previewValue = when {
                     is2DTexture -> all2DTexturesNames[currentIndex]
@@ -60,7 +60,7 @@ fun textureSelection(
                     all2DTextures.forEach { (name, texture) ->
                         val selected = currentTexture == texture
                         if (ImGui.selectable(name, selected)) {
-                            material.maps[type] = texture
+                            material.maps[type] = StaticHandleImpl(texture, UploadState.Uploaded, 0f) // TODO: Figure out if this is okay for here
                         }
                         if (selected) {
                             ImGui.setItemDefaultFocus()

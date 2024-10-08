@@ -7,7 +7,6 @@ import java.nio.ByteOrder
 data class TextureAllocationData(
     val textureId: Int,
     val handle: Long,
-    val wrapMode: WrapMode
 )
 
 enum class CubeMapFileDataFormat {

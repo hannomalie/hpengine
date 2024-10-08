@@ -20,6 +20,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.IRenderState
 import de.hanno.hpengine.graphics.sync.GpuCommandSync
 import de.hanno.hpengine.graphics.texture.*
+import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.CodeSource
 import de.hanno.hpengine.scene.GeometryBuffer
@@ -178,12 +179,7 @@ interface GraphicsApi {
     val maxLineWidth: Float
 
     fun Texture2D(
-        dimension: TextureDimension2D,
-        target: TextureTarget,
-        internalFormat: InternalTextureFormat, // TODO: Is this needed?
-        textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
-        wrapMode: WrapMode,
-        uploadState: UploadState,
+        description: Texture2DDescription
     ): Texture2D
 
     fun CubeMap(
@@ -194,32 +190,20 @@ interface GraphicsApi {
     ): CubeMap
 
     fun allocateTexture(
-        info: UploadInfo,
+        description: TextureDescription,
         textureTarget: TextureTarget,
-        wrapMode: WrapMode,
     ): TextureAllocationData
 
     fun Texture2D(
         image: BufferedImage,
         srgba: Boolean
-    ): Texture2D
-
-    fun Texture2D(
-        info: UploadInfo.Texture2DUploadInfo,
-        wrapMode: WrapMode
-    ): Texture2D
-
-    fun createUploadInfo(
-        image: BufferedImage,
-        internalFormat: InternalTextureFormat,
-        srgba: Boolean
-    ): UploadInfo.Texture2DUploadInfo
+    ): Pair<Texture2D, List<ImageData>>
 
     fun getTextureHandle(textureId: Int): Long
 
-    fun FileBasedTexture2D<Texture2D>.uploadAsync()
+    fun FileBasedTexture2D.uploadAsync()
 
-    fun <T: Texture2D> T.upload(info: UploadInfo.Texture2DUploadInfo)
+    fun TextureHandle<Texture2D>.upload(data: List<ImageData>)
 
     fun delete(texture: Texture)
 
@@ -367,11 +351,9 @@ interface GraphicsApi {
         clear: Vector4f
     ): CubeMapRenderTarget
 
+
     fun CubeMapArray(
-        dimension: TextureDimension3D,
-        filterConfig: TextureFilterConfig,
-        internalFormat: InternalTextureFormat,
-        wrapMode: WrapMode
+        description: TextureDescription.CubeMapArrayDescription
     ): CubeMapArray
 
 

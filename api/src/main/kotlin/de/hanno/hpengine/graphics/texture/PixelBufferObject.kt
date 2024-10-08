@@ -1,10 +1,10 @@
 package de.hanno.hpengine.graphics.texture
 
 interface PixelBufferObject {
-    fun upload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D)
-    fun upload(texture: Texture2D, level: Int, info: UploadInfo.Texture2DUploadInfo, lazyTextureData: LazyTextureData)
+    fun upload(handle: TextureHandle<Texture2D>, data: List<ImageData>)
+    fun upload(handle: TextureHandle<Texture2D>, level: Int, imageData: ImageData)
 }
 
 interface PixelBufferObjectPool {
-    fun scheduleUpload(info: UploadInfo.Texture2DUploadInfo, texture: Texture2D)
+    fun scheduleUpload(handle: TextureHandle<Texture2D>, data: List<ImageData>)
 }

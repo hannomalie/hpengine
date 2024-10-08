@@ -12,7 +12,7 @@ import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
-import de.hanno.hpengine.graphics.texture.UploadInfo
+import de.hanno.hpengine.graphics.texture.TextureDescription
 import de.hanno.hpengine.lifecycle.Termination
 import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
@@ -56,15 +56,14 @@ fun main() {
         graphicsApi.FrameBuffer(null),
         textures = listOf(
             graphicsApi.Texture2D(
-                UploadInfo.SingleMipLevelTexture2DUploadInfo(
-                    data = null,
+                TextureDescription.Texture2DDescription(
                     dimension = TextureDimension2D(1024, 1024),
                     internalFormat = InternalTextureFormat.RGBA16F,
                     textureFilterConfig = TextureFilterConfig(
                         minFilter = MinFilter.LINEAR_MIPMAP_LINEAR,
                     ),
+                    wrapMode = WrapMode.ClampToEdge,
                 ),
-                WrapMode.ClampToEdge
             )
         ),
         "Main Target",

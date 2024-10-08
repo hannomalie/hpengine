@@ -45,7 +45,7 @@ class OceanWaterRenderSystem(
     private val random1 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_1.png", srgba = false, directory = engineDir)
     private val random2 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_2.png", srgba = false, directory = engineDir)
     private val random3 = createRandomTexture()//textureManager.getTexture("assets/textures/noise_256_3.png", srgba = false, directory = engineDir)
-    val waterNormalMap = textureManager.getTexture("assets/textures/water_normal_map.jpg", srgba = false, directory = config.engineDir)
+    val waterNormalMap = textureManager.getStaticTextureHandle("assets/textures/water_normal_map.jpg", srgba = false, directory = config.engineDir)
 
     private fun createRandomTexture(): Texture2D = listOf(ColorAttachmentDefinition("Random",
         RGBA32F

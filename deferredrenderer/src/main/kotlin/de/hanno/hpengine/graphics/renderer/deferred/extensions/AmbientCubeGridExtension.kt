@@ -25,6 +25,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.TextureDescription
 import de.hanno.hpengine.graphics.texture.TextureDimension
 import de.hanno.hpengine.math.OmniCamera
 import de.hanno.hpengine.math.Vector4fStrukt
@@ -114,15 +115,18 @@ class ProbeRenderer(
         Uniforms.Empty
     )
 
+    val filterConfig = TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR)
     val cubeMapRenderTarget = graphicsApi.RenderTarget(
         frameBuffer = graphicsApi.FrameBuffer(
             depthBuffer = DepthBuffer(
                 OpenGLCubeMap(
                     graphicsApi,
-                    TextureDimension(probeResolution, probeResolution),
-                    TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
-                    InternalTextureFormat.DEPTH_COMPONENT24,
-                    WrapMode.Repeat
+                    TextureDescription.CubeMapDescription(
+                        TextureDimension(probeResolution, probeResolution),
+                        internalFormat = InternalTextureFormat.DEPTH_COMPONENT24,
+                        textureFilterConfig = filterConfig,
+                        wrapMode = WrapMode.Repeat,
+                    )
                 )
             )
         ),
@@ -188,7 +192,7 @@ class ProbeRenderer(
                         directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
-                graphicsApi.bindTexture(8, skyBox)
+                graphicsApi.bindTexture(8, skyBox.texture)
 
                 omniCamera.updatePosition(probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)

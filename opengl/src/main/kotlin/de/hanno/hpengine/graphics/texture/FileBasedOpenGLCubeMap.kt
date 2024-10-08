@@ -57,11 +57,11 @@ data class FileBasedOpenGLCubeMap(
                     GlobalScope.async {
                         ImageIO.read(it)
                     }
-                }.awaitAll().let { upload(it.getCubeMapUploadInfo()) }
+                }.awaitAll().let { upload(it.getCubeMapUploadInfo().second) }
             }
         } else {
             val bufferedImage: BufferedImage = ImageIO.read(file)
-            upload(bufferedImage.getCubeMapUploadInfo())
+            upload(bufferedImage.getCubeMapUploadInfo().second)
         }
     }
 
@@ -80,15 +80,15 @@ data class FileBasedOpenGLCubeMap(
         )
     }
 
-    fun upload(info: UploadInfo.CubeMapUploadInfo) = graphicsApi.onGpu {
+    fun upload(data: List<ImageData>) = graphicsApi.onGpu {
         bindTexture(this)
 
-        upload(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, info.buffers[0])
-        upload(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, info.buffers[1])
-        upload(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, info.buffers[2])
-        upload(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, info.buffers[3])
-        upload(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, info.buffers[4])
-        upload(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, info.buffers[5])
+        upload(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, data[0].dataProvider())
+        upload(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, data[1].dataProvider())
+        upload(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, data[2].dataProvider())
+        upload(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, data[3].dataProvider())
+        upload(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, data[4].dataProvider())
+        upload(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, data[5].dataProvider())
 
         onGpu {
             GL30.glGenerateMipmap(TextureTarget.TEXTURE_CUBE_MAP.glValue)
@@ -112,17 +112,22 @@ data class FileBasedOpenGLCubeMap(
 
             val isBgrFormat = bufferedImage.isBgrFormat
 
-            val fileBasedCubeMap = FileBasedOpenGLCubeMap(
+            val filterConfig = TextureFilterConfig()
+            return FileBasedOpenGLCubeMap(
                 graphicsApi,
                 path,
-                OpenGLCubeMap(graphicsApi, tileDimension, TextureFilterConfig(), internalFormat, WrapMode.Repeat),
+                OpenGLCubeMap(
+                    graphicsApi,
+                    TextureDescription.CubeMapDescription(
+                        tileDimension,
+                        internalFormat = internalFormat,
+                        textureFilterConfig = filterConfig,
+                        wrapMode = WrapMode.Repeat,
+                    )
+                ),
                 files,
                 isBgrFormat
             )
-
-            return fileBasedCubeMap.apply {
-                load()
-            }
         }
 
         private val BufferedImage.isBgrFormat: Boolean
@@ -141,10 +146,19 @@ data class FileBasedOpenGLCubeMap(
             val height = bufferedImage.height
             val tileDimension = TextureDimension(width / 4, height / 3)
 
+            val filterConfig = TextureFilterConfig()
             val fileBasedCubeMap = FileBasedOpenGLCubeMap(
                 graphicsApi,
                 path,
-                OpenGLCubeMap(graphicsApi, tileDimension, TextureFilterConfig(), internalFormat, WrapMode.Repeat),
+                OpenGLCubeMap(
+                    graphicsApi,
+                    TextureDescription.CubeMapDescription(
+                        tileDimension,
+                        internalFormat = internalFormat,
+                        textureFilterConfig = filterConfig,
+                        wrapMode = WrapMode.Repeat,
+                    )
+                ),
                 file
             )
 
@@ -155,34 +169,43 @@ data class FileBasedOpenGLCubeMap(
     }
 }
 
-private fun List<BufferedImage>.getCubeMapUploadInfo() = UploadInfo.CubeMapUploadInfo(
+private fun List<BufferedImage>.getCubeMapUploadInfo() = Pair(TextureDescription.CubeMapDescription(
     TextureDimension(first().width, first().height),
-    toByteArrays().map { byteArray ->
+    internalFormat = RGBA8,
+    textureFilterConfig = TextureFilterConfig(),
+    wrapMode = WrapMode.Repeat
+), toByteArrays().map { byteArray ->
+    ImageData(
+        first().width, first().height
+    ) {
         ByteBuffer.allocateDirect(byteArray.size).apply {
             buffer(byteArray)
         }
-    },
-    internalFormat = RGBA8,
-    textureFilterConfig = TextureFilterConfig()
-)
+    }
+})
 
 fun List<BufferedImage>.toByteArrays() = map { image ->
     (image.raster.dataBuffer as DataBufferByte).data
 }
 
-private fun BufferedImage.getCubeMapUploadInfo(): UploadInfo.CubeMapUploadInfo {
+private fun BufferedImage.getCubeMapUploadInfo(): Pair<TextureDescription.CubeMapDescription, List<ImageData>> {
     val tileDimension = TextureDimension(width / 4, height / 3)
 
-    val data = convertCubeMapData()
-
-    val buffers = data.map { byteArray ->
-        ByteBuffer.allocateDirect(byteArray.size).apply {
-            buffer(byteArray)
+    val data = convertCubeMapData().map { byteArray ->
+        ImageData(tileDimension.width, tileDimension.height
+        ) {
+            ByteBuffer.allocateDirect(byteArray.size).apply {
+                buffer(byteArray)
+            }
         }
     }
-    return UploadInfo.CubeMapUploadInfo(tileDimension, buffers,
-        internalFormat = RGBA8,
-        textureFilterConfig = TextureFilterConfig()
+    return Pair(
+        TextureDescription.CubeMapDescription(
+            tileDimension,
+            internalFormat = RGBA8,
+            textureFilterConfig = TextureFilterConfig(),
+            wrapMode = WrapMode.Repeat,
+        ), data
     )
 }
 

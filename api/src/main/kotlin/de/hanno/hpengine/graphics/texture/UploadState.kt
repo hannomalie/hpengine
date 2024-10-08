@@ -2,7 +2,9 @@ package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
+import de.hanno.hpengine.graphics.constants.WrapMode
 import de.hanno.hpengine.graphics.logger
+import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import java.awt.RenderingHints
 import java.awt.Transparency
 import java.awt.image.BufferedImage
@@ -14,9 +16,9 @@ import kotlin.math.roundToInt
 
 
 sealed interface UploadState {
-    data class Unloaded(val mipMapLevel: Int) : UploadState
+    data class Unloaded(val mipMapLevelToKeep: Int?) : UploadState
     data class Uploading(val mipMapLevel: Int): UploadState
-    data class MarkedForUpload(val mipMapLevel: Int): UploadState
+    data class MarkedForUpload(val mipMapLevel: Int?): UploadState
     data object Uploaded : UploadState
 }
 // https://stackoverflow.com/questions/9417356/bufferedimage-resize
@@ -51,110 +53,76 @@ fun BufferedImage.resize(targetSize: Int): BufferedImage {
     }
 }
 
-sealed interface UploadInfo {
+typealias Texture2DArrayDescription = TextureDescription.Texture3DDescription
+
+sealed interface TextureDescription {
     val dimension: TextureDimension
     val internalFormat: InternalTextureFormat
     val textureFilterConfig: TextureFilterConfig
-    val mipMapCount: Int
+    val mipMapCount: Int get() = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
+    val wrapMode: WrapMode
 
-    sealed interface Texture2DUploadInfo: UploadInfo {
-        override val dimension: TextureDimension2D
-        val dataCompressed: Boolean
-        val srgba: Boolean
-    }
-
-    data class SingleMipLevelTexture2DUploadInfo(
+    data class Texture2DDescription(
         override val dimension: TextureDimension2D,
-        val data: LazyTextureData?,
-        override val dataCompressed: Boolean = false,
-        override val srgba: Boolean = false,
         override val internalFormat: InternalTextureFormat,
-        override val textureFilterConfig: TextureFilterConfig
-    ) : Texture2DUploadInfo {
-        override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
-    }
+        override val textureFilterConfig: TextureFilterConfig,
+        override val wrapMode: WrapMode,
+    ) : TextureDescription
 
-    data class AllMipLevelsTexture2DUploadInfo(
+    data class CubeMapDescription(
         override val dimension: TextureDimension2D,
-        val data: List<LazyTextureData>,
-        override val dataCompressed: Boolean = false,
-        override val srgba: Boolean = false,
         override val internalFormat: InternalTextureFormat,
-        override val textureFilterConfig: TextureFilterConfig
-    ) : Texture2DUploadInfo {
-        override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
+        override val textureFilterConfig: TextureFilterConfig,
+        override val wrapMode: WrapMode,
+    ) : TextureDescription
 
-        init {
-            require(mipMapCount == data.size) {
-                "Provided mipmap count plus main image (${data.size}) is unequal to expected mipmap count ($mipMapCount)!"
-            }
-        }
-    }
-
-
-    data class Texture3DUploadInfo(
+    data class CubeMapArrayDescription(
         override val dimension: TextureDimension3D,
         override val internalFormat: InternalTextureFormat,
         override val textureFilterConfig: TextureFilterConfig,
-    ) : UploadInfo {
-        override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
-    }
+        override val wrapMode: WrapMode,
+    ) : TextureDescription
 
-    data class CubeMapUploadInfo(
-        override val dimension: TextureDimension2D,
-        val buffers: List<ByteBuffer> = emptyList(),
-        override val internalFormat: InternalTextureFormat,
-        override val textureFilterConfig: TextureFilterConfig,
-    ) : UploadInfo {
-        override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
-    }
-    data class CubeMapArrayUploadInfo(
+    data class Texture3DDescription(
         override val dimension: TextureDimension3D,
         override val internalFormat: InternalTextureFormat,
         override val textureFilterConfig: TextureFilterConfig,
-    ) : UploadInfo {
-        override val mipMapCount: Int = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
-    }
+        override val wrapMode: WrapMode,
+    ) : TextureDescription
 }
 
-data class LazyTextureData(val width: Int, val height: Int, val dataProvider: () -> ByteBuffer)
+data class ImageData(val width: Int, val height: Int, val dataProvider: () -> ByteBuffer)
 
 
-fun createAllMipLevelsLazyTexture2DUploadInfo(
-    image: BufferedImage,
-    internalFormat: InternalTextureFormat
-): UploadInfo.AllMipLevelsTexture2DUploadInfo {
-    val srgba =
-        internalFormat == InternalTextureFormat.SRGB8_ALPHA8 || internalFormat == InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
+fun createSingleMipLevelTexture2DUploadInfo(
+    image: BufferedImage
+): ImageData {
+    return ImageData(image.width, image.height) { image.resize(image.width).toByteBuffer() }
+}
+fun createAllMipLevelsImageData(
+    image: BufferedImage
+): List<ImageData> {
     val mipMapSizes = calculateMipMapSizes(image.width, image.height)
 
-    val data = mipMapSizes.map {
-        LazyTextureData(it.width, it.height) { image.resize(it.width).toByteBuffer() }
+    return mipMapSizes.map {
+        ImageData(it.width, it.height) { image.resize(it.width).toByteBuffer() }
     }
-    return UploadInfo.AllMipLevelsTexture2DUploadInfo(
-        TextureDimension(image.width, image.height), data, false, srgba,
-        internalFormat = internalFormat,
-        textureFilterConfig = TextureFilterConfig(),
-    )
 }
-fun createAllMipLevelsLazyTexture2DUploadInfo(
+fun createAllMipLevelsTexture2DUploadInfo(
     files: List<File>,
     width: Int, height: Int,
     internalFormat: InternalTextureFormat
-): UploadInfo.AllMipLevelsTexture2DUploadInfo {
-    val srgba =
-        internalFormat == InternalTextureFormat.SRGB8_ALPHA8 || internalFormat == InternalTextureFormat.COMPRESSED_RGBA_S3TC_DXT5
+): Pair<Texture2DDescription, List<ImageData>> {
     val mipMapSizes = calculateMipMapSizes(width, height)
 
     val data = mipMapSizes.mapIndexed { index, it ->
-        LazyTextureData(it.width, it.height) {
+        ImageData(it.width, it.height) {
             logger.debug("Loading texture ${files[index]}")
             ImageIO.read(files[index]).toByteBuffer()
         }
     }
-    return UploadInfo.AllMipLevelsTexture2DUploadInfo(
-        TextureDimension(width, height), data, false, srgba,
-        internalFormat = internalFormat,
-        textureFilterConfig = TextureFilterConfig(),
-    )
+    return Pair(Texture2DDescription(
+        TextureDimension(width, height), internalFormat = internalFormat,
+        textureFilterConfig = TextureFilterConfig(), wrapMode = WrapMode.Repeat,
+    ), data)
 }

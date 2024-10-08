@@ -7,6 +7,8 @@ import de.hanno.hpengine.model.ModelComponent
 import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.shader.ProgramManager
+import de.hanno.hpengine.graphics.texture.StaticHandleImpl
+import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.model.BoundingVolumeComponent
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.ocean.OceanWaterComponent
@@ -75,9 +77,9 @@ private fun World.addOceanSurface(
                 useWorldSpaceXZAsTexCoords = true,
                 uvScale = Vector2f(0.05f)
             ).apply {
-                maps.putIfAbsent(Material.MAP.DIFFUSE, oceanWaterRenderSystem.albedoMap)
-                maps.putIfAbsent(Material.MAP.DISPLACEMENT, oceanWaterRenderSystem.displacementMap)
-                maps.putIfAbsent(Material.MAP.NORMAL, oceanWaterRenderSystem.waterNormalMap)
+                maps.putIfAbsent(Material.MAP.DIFFUSE, StaticHandleImpl(oceanWaterRenderSystem.albedoMap, UploadState.Uploaded, 0f))
+                maps.putIfAbsent(Material.MAP.DISPLACEMENT, StaticHandleImpl(oceanWaterRenderSystem.displacementMap, UploadState.Uploaded, 0f))
+                maps.putIfAbsent(Material.MAP.NORMAL, StaticHandleImpl(oceanWaterRenderSystem.waterNormalMap.texture, UploadState.Uploaded, 0f))
             }
         }
         add(OceanWaterComponent())
