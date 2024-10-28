@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 class MipMapTest {
     @Test
     fun `mip map count is calculated`() {
-        calculateMipMapCount(16) shouldBe 5
+        getMipMapCountForDimension(16, 16, 16) shouldBe 5
     }
 
     @Test

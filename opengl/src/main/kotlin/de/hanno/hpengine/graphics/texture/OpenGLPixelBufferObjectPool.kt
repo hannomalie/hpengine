@@ -70,14 +70,18 @@ class OpenGLPixelBufferObjectPool(
             else -> when {
                 data.isEmpty() -> throw IllegalStateException("Cannot upload empty data!")
                 data.size > 1 -> {
+                    if(!texture.textureFilterConfig.minFilter.isMipMapped) {
+                        throw IllegalStateException("Can't upload multiple data to non mip mapped texture!")
+                    }
                     queue.put(Task(0) { pbo ->
                         data.reversed().forEachIndexed { index, textureData ->
                             val level = data.size - 1 - index
                             val currentlyLoadedLevel = when(val uploadState = handle.uploadState) {
-                                is UploadState.Unloaded -> uploadState.mipMapLevelToKeep ?: data.size
+                                is UploadState.Unloaded -> data.size
                                 UploadState.Uploaded -> 0
                                 is UploadState.Uploading -> uploadState.mipMapLevel
                                 is UploadState.MarkedForUpload -> data.size
+                                UploadState.ForceFallback -> 0
                             }
                             if(level < currentlyLoadedLevel) {
                                 try {

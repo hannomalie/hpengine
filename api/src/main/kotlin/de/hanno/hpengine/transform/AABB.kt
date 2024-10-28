@@ -317,6 +317,12 @@ fun AABB.containsOrIntersectsSphere(position: Vector3f, radius: Float): Boolean 
     return result
 }
 
+fun Vector3f.isInside(min: Vector3f, max: Vector3f): Boolean {
+    return x >= min.x && x <= max.x &&
+    y >= min.y && y <= max.y &&
+    z >= min.z && z <= max.z
+}
+
 private fun smallestDistance(points: List<Vector3fc>, pivot: Vector3f): Float {
     var length = Float.MAX_VALUE
     for (point in points) {

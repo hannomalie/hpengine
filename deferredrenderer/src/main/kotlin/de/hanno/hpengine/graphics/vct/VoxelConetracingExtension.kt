@@ -281,10 +281,10 @@ class VoxelConeTracingExtension(
                 colorMask(red = false, green = false, blue = false, alpha = false)
 
                 renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.bind()
-                for (entity in batches) {
-                    voxelizerStatic.setTextureUniforms(graphicsApi, entity.material.maps)
+                for (batch in batches) {
+                    voxelizerStatic.setTextureUniforms(graphicsApi, material = batch.material)
                     renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.draw(
-                        entity.drawElementsIndirectCommand,
+                        batch.drawElementsIndirectCommand,
                         bindIndexBuffer = false,
                         primitiveType = PrimitiveType.Triangles,
                         mode = RenderingMode.Fill

@@ -9,7 +9,7 @@ import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.rendertarget.*
 import de.hanno.hpengine.graphics.texture.Texture2D
-import de.hanno.hpengine.graphics.texture.calculateMipMapCount
+import de.hanno.hpengine.graphics.texture.getMipMapCountForDimension
 import de.hanno.hpengine.sizeInBytes
 import de.hanno.hpengine.toCount
 import org.joml.Matrix4f
@@ -104,7 +104,7 @@ class DeferredRenderingBuffer(
         clear = Vector4f(),
     )
 
-    val fullScreenMipmapCount = calculateMipMapCount(max(width, height))
+    val fullScreenMipmapCount = getMipMapCountForDimension(width, height)
     val exposureBuffer =
         graphicsApi.PersistentShaderStorageBuffer(capacityInBytes = 4.toCount() * Double.sizeInBytes).apply {
             buffer.rewind()

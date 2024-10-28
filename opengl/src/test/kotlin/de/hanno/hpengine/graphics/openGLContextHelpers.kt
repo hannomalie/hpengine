@@ -1,6 +1,7 @@
 package de.hanno.hpengine.graphics
 
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.lifecycle.Termination
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 
 
@@ -11,6 +12,7 @@ fun createOpenGLContext(
     val window = GlfwWindow(
         config,
         profiler,
+        Termination(),
         visible = false,
     )
     return Pair(

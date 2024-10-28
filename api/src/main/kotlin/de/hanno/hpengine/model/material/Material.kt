@@ -1,7 +1,7 @@
 package de.hanno.hpengine.model.material
 
 import de.hanno.hpengine.directory.Directories
-import de.hanno.hpengine.graphics.texture.TextureHandle
+import de.hanno.hpengine.graphics.texture.*
 import org.joml.Vector2f
 import org.joml.Vector3f
 
@@ -82,10 +82,27 @@ data class Material(
     }
 
     companion object {
-
-        var MIPMAP_DEFAULT = true
-
-        val directory: String
-            get() = Directories.ENGINEDIR_NAME + "/assets/materials/"
+        val directory: String get() = Directories.ENGINEDIR_NAME + "/assets/materials/"
     }
+}
+
+fun deriveHandle(handle: TextureHandle<*>?, fallbackTexture: TextureHandle<Texture2D>? = null): TextureHandle<out Texture>? {
+    return when (handle) {
+        is DynamicHandle -> when (val texture = handle.texture) {
+            null -> handle.fallback
+            else -> when (val fallback = handle.fallback) {
+                null -> handle
+                else -> {
+                    val imageCountToUseFromActualImage = texture.imageCount - (fallback.texture.imageCount - fallback.currentMipMapBias)
+                    if (handle.uploadState !is UploadState.ForceFallback && handle.currentMipMapBias <= imageCountToUseFromActualImage) {
+                        handle
+                    } else {
+                        fallback
+                    }
+                }
+            }
+        }
+        is StaticHandle -> handle
+        null -> null
+    } ?: fallbackTexture
 }

@@ -16,10 +16,11 @@ import kotlin.math.roundToInt
 
 
 sealed interface UploadState {
-    data class Unloaded(val mipMapLevelToKeep: Int?) : UploadState
+    data object Unloaded : UploadState
     data class Uploading(val mipMapLevel: Int): UploadState
-    data class MarkedForUpload(val mipMapLevel: Int?): UploadState
+    data object MarkedForUpload: UploadState
     data object Uploaded : UploadState
+    data object ForceFallback: UploadState
 }
 // https://stackoverflow.com/questions/9417356/bufferedimage-resize
 fun BufferedImage.resize(targetSize: Int): BufferedImage {
@@ -59,7 +60,8 @@ sealed interface TextureDescription {
     val dimension: TextureDimension
     val internalFormat: InternalTextureFormat
     val textureFilterConfig: TextureFilterConfig
-    val mipMapCount: Int get() = if(textureFilterConfig.minFilter.isMipMapped) dimension.getMipMapCount() else 1
+    val mipMapCount: Int get() = if(textureFilterConfig.minFilter.isMipMapped) dimension.mipMapCount else 1
+    val imageCount: Int get() = mipMapCount + 1
     val wrapMode: WrapMode
 
     data class Texture2DDescription(

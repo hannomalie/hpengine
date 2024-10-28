@@ -68,6 +68,12 @@ class Engine(
             window.close()
             exitProcess(0)
         }
+        Runtime.getRuntime().addShutdownHook(object : Thread() {
+            override fun run() {
+                logger.info("Termination requested")
+                termination.terminationRequested.set(true)
+            }
+        })
     }
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }

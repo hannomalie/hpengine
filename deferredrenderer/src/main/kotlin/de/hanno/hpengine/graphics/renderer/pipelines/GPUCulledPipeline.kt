@@ -34,7 +34,7 @@ import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.texture.TextureManager
 import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
-import de.hanno.hpengine.graphics.texture.calculateMipMapCount
+import de.hanno.hpengine.graphics.texture.getMipMapCountForDimension
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
@@ -230,7 +230,7 @@ open class GPUCulledPipeline(
             var lastHeight = config.height
             var currentWidth = lastWidth / 2
             var currentHeight = lastHeight / 2
-            val mipMapCount = calculateMipMapCount(currentWidth, currentHeight)
+            val mipMapCount = getMipMapCountForDimension(currentWidth, currentHeight)
             for (mipmapTarget in 0 until mipMapCount) {
                 highZProgram.setUniform("width", currentWidth)
                 highZProgram.setUniform("height", currentHeight)

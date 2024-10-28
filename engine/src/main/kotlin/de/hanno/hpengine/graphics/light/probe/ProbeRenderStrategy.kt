@@ -17,10 +17,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
-import de.hanno.hpengine.graphics.texture.TextureDescription
-import de.hanno.hpengine.graphics.texture.TextureDimension
-import de.hanno.hpengine.graphics.texture.calculateMipMapCount
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.math.OmniCamera
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
@@ -230,7 +227,7 @@ class ProbeRenderStrategy(
         const val extent = 20f
 
         private const val resolution = 16
-        private val mipmapCount = calculateMipMapCount(resolution)
+        private val mipmapCount = getMipMapCountForDimension(resolution)
     }
 }
 

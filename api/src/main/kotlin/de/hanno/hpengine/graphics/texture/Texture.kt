@@ -50,12 +50,13 @@ interface CubeMapArray: Texture {
 }
 
 val Texture.isMipMapped: Boolean get() = textureFilterConfig.minFilter.isMipMapped
-val Texture.mipmapCount: Int get() = if(isMipMapped) { dimension.getMipMapCount() } else 0
+val Texture.mipMapCount: Int get() = if(isMipMapped) dimension.mipMapCount else 0
+val Texture.imageCount: Int get() = mipMapCount + 1
 
 sealed interface TextureHandle<T: Texture> {
     val texture: T?
     var uploadState: UploadState
-    var currentMipMapBias: Float
+    var currentMipMapBias: Float // TODO: Make this a proper type and restrict range
 }
 interface StaticHandle<T: Texture>: TextureHandle<T> {
     override val texture: T
@@ -66,6 +67,7 @@ class StaticHandleImpl<T: Texture>(override val texture: T,
 ): StaticHandle<T>
 interface DynamicHandle<T: Texture>: TextureHandle<T> {
     override var texture: T?
+    var fallback: StaticHandle<T>?
 }
 
 fun FileBasedTexture2D(
@@ -75,9 +77,9 @@ fun FileBasedTexture2D(
     unloadable: Boolean,
     description: Texture2DDescription,
 ): FileBasedTexture2D = if(unloadable) {
-    DynamicFileBasedTexture2D(path, file, texture, description, UploadState.Unloaded(null))
+    DynamicFileBasedTexture2D(path, file, texture, null, description, UploadState.Unloaded)
 } else {
-    StaticFileBasedTexture2D(path, file, texture!!, description, UploadState.Unloaded(null))
+    StaticFileBasedTexture2D(path, file, texture!!, description, UploadState.Unloaded)
 }
 
 sealed interface FileBasedTexture2D{
@@ -90,6 +92,7 @@ sealed interface FileBasedTexture2D{
         is StaticFileBasedTexture2D -> this
     }
 }
+
 class StaticFileBasedTexture2D(
     val path: String,
     val file: File,
@@ -100,69 +103,105 @@ class StaticFileBasedTexture2D(
 ): StaticHandle<Texture2D>, FileBasedTexture2D {
     private val bufferedImage: BufferedImage get() = ImageIO.read(file) ?: throw IllegalStateException("Cannot load $file")
     private val ddsImage: DDSImage get() = DDSImage.read(file)
-    override fun getData(): List<ImageData> = if (file.extension == "dds") {
-        ddsImage.allMipMaps.map {
-            if (description.internalFormat.isCompressed) {
-                ImageData(it.width, it.height) { it.data }
-            } else {
-                ImageData(it.width, it.height) {
-                    val decompressed = DDSUtil.decompressTexture(
-                        ddsImage.getMipMap(0).data,
-                        ddsImage.width,
-                        ddsImage.height,
-                        ddsImage.compressionFormat
-                    ).apply {
-                        rescaleToNextPowerOfTwo()
+    override fun getData(): List<ImageData> {
+        val imageData = if (file.extension == "dds") {
+            ddsImage.allMipMaps.map {
+                if (description.internalFormat.isCompressed) {
+                    ImageData(it.width, it.height) { it.data }
+                } else {
+                    ImageData(it.width, it.height) {
+                        val decompressed = DDSUtil.decompressTexture(
+                            ddsImage.getMipMap(0).data,
+                            ddsImage.width,
+                            ddsImage.height,
+                            ddsImage.compressionFormat
+                        ).apply {
+                            rescaleToNextPowerOfTwo()
+                        }
+                        decompressed.toByteBuffer()
                     }
-                    decompressed.toByteBuffer()
                 }
             }
-        }
-    } else {
-        val precalculateMipMapsOnCpu = true
-        if (precalculateMipMapsOnCpu) {
-            createAllMipLevelsImageData(bufferedImage)
         } else {
-            listOf(createSingleMipLevelTexture2DUploadInfo(bufferedImage))
+            val precalculateMipMapsOnCpu = true
+            if (precalculateMipMapsOnCpu) {
+                val mipMapSizes = calculateMipMapSizes(description.dimension.width, description.dimension.height)
+                (listOf(file) + precalculateMipMapFilesIfNecessary(
+                    file,
+                    description.dimension
+                )).mapIndexed { index, file ->
+                    ImageData(mipMapSizes[index].width, mipMapSizes[index].height) {
+                        ImageIO.read(file).toByteBuffer()
+                    }
+                }
+            } else {
+                listOf(createSingleMipLevelTexture2DUploadInfo(bufferedImage))
+            }
         }
+        return if(description.textureFilterConfig.minFilter.isMipMapped) imageData else listOf(imageData.first())
     }
 }
-
+// TODO: Eliminate duplication
 class DynamicFileBasedTexture2D(
     val path: String,
     val file: File,
     override var texture: Texture2D?,
+    override var fallback: StaticHandle<Texture2D>?,
     val description: Texture2DDescription,
     override var uploadState: UploadState,
     override var currentMipMapBias: Float = mipMapBiasForUploadState(uploadState, description.dimension)
 ): DynamicHandle<Texture2D>, FileBasedTexture2D {
     private val bufferedImage: BufferedImage get() = ImageIO.read(file) ?: throw IllegalStateException("Cannot load $file")
     private val ddsImage: DDSImage get() = DDSImage.read(file)
-    override fun getData(): List<ImageData> = if (file.extension == "dds") {
-        ddsImage.allMipMaps.map {
-            if (description.internalFormat.isCompressed) {
-                ImageData(it.width, it.height) { it.data }
-            } else {
-                ImageData(it.width, it.height) {
-                    val decompressed = DDSUtil.decompressTexture(
-                        ddsImage.getMipMap(0).data,
-                        ddsImage.width,
-                        ddsImage.height,
-                        ddsImage.compressionFormat
-                    ).apply {
-                        rescaleToNextPowerOfTwo()
+
+    private val mipMapSizes = calculateMipMapSizes(description.dimension.width, description.dimension.height)
+    private val mipMapFiles = getFileAndMipMapFiles(file, mipMapSizes.size).subList(1, mipMapSizes.size)
+    private val files = listOf(file) + mipMapFiles
+    private val allMipsPrecalculated = mipMapFiles.all { it.exists() }
+
+    override fun getData(): List<ImageData> {
+        val imageData = if (file.extension == "dds") {
+            ddsImage.allMipMaps.map { // TODO: Does it contain all images or all mipmaps?
+                if (description.internalFormat.isCompressed) {
+                    ImageData(it.width, it.height) { it.data }
+                } else {
+                    ImageData(it.width, it.height) {
+                        val decompressed = DDSUtil.decompressTexture(
+                            ddsImage.getMipMap(0).data,
+                            ddsImage.width,
+                            ddsImage.height,
+                            ddsImage.compressionFormat
+                        ).apply {
+                            rescaleToNextPowerOfTwo()
+                        }
+                        decompressed.toByteBuffer()
                     }
-                    decompressed.toByteBuffer()
                 }
             }
-        }
-    } else {
-        val precalculateMipMapsOnCpu = true
-        if (precalculateMipMapsOnCpu) {
-            createAllMipLevelsImageData(bufferedImage)
         } else {
-            listOf(createSingleMipLevelTexture2DUploadInfo(bufferedImage))
+            val precalculateMipMapsOnCpu = true
+            if (precalculateMipMapsOnCpu) {
+                if (allMipsPrecalculated) {
+                    files.mapIndexed { index, file ->
+                        ImageData(mipMapSizes[index].width, mipMapSizes[index].height) {
+                            ImageIO.read(file).toByteBuffer()
+                        }
+                    }
+                } else {
+                    val mipMapSizes = calculateMipMapSizes(description.dimension.width, description.dimension.height)
+                    actuallyCalculateMipMapFiles(mipMapSizes, bufferedImage, file, mipMapFiles)
+
+                    files.mapIndexed { index, file ->
+                        ImageData(mipMapSizes[index].width, mipMapSizes[index].height) {
+                            ImageIO.read(file).toByteBuffer()
+                        }
+                    }
+                }
+            } else {
+                listOf(createSingleMipLevelTexture2DUploadInfo(bufferedImage))
+            }
         }
+        return if(description.textureFilterConfig.minFilter.isMipMapped) imageData else listOf(imageData.first())
     }
 }
 
@@ -175,10 +214,11 @@ fun mipMapBiasForUploadState(
     uploadState: UploadState,
     dimension: TextureDimension
 ) = when (uploadState) {
-    is UploadState.Unloaded -> dimension.getMipMapCount().toFloat()
+    is UploadState.Unloaded -> dimension.mipMapCount.toFloat()
     UploadState.Uploaded -> 0f
     is UploadState.Uploading -> uploadState.mipMapLevel.toFloat()
-    is UploadState.MarkedForUpload -> uploadState.mipMapLevel?.toFloat() ?: dimension.getMipMapCount().toFloat()
+    is UploadState.MarkedForUpload -> dimension.mipMapCount.toFloat()
+    UploadState.ForceFallback -> dimension.mipMapCount.toFloat()
 }
 
 fun BufferedImage.toByteBuffer(): ByteBuffer {

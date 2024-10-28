@@ -91,7 +91,7 @@ class OpenGLPixelBufferObject(
                                         }
                                     }
                                     when(val uploadState = handle.uploadState) {
-                                        is UploadState.Unloaded -> {
+                                        is UploadState.Unloaded, is UploadState.MarkedForUpload  -> {
                                             handle.uploadState = UploadState.Uploading(level)
                                         }
                                         UploadState.Uploaded -> {}
@@ -100,9 +100,8 @@ class OpenGLPixelBufferObject(
                                                 handle.uploadState = UploadState.Uploading(level)
                                             }
                                         }
-                                        is UploadState.MarkedForUpload -> {
-                                            handle.uploadState = UploadState.Uploading(level)
-                                        }
+
+                                        UploadState.ForceFallback -> {}
                                     }
                                     CommandSync {
                                         if (level1 == 0) {

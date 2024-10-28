@@ -96,15 +96,15 @@ class ClearTextureTest {
             textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST),
             wrapMode = WrapMode.Repeat,
         )
-        val (textureId, handle) = graphicsApi.allocateTexture(
+        val cubeMapArrayAllocation = graphicsApi.allocateTexture(
             description,
             TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
         )
         val texture = OpenGLCubeMapArray(
             description,
-            textureId,
+            cubeMapArrayAllocation.textureId,
             TextureTarget.TEXTURE_CUBE_MAP_ARRAY,
-            handle,
+            cubeMapArrayAllocation.handle,
         )
 
         val description1 = TextureDescription.CubeMapArrayDescription(

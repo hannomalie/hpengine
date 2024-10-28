@@ -30,6 +30,8 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
+import de.hanno.hpengine.transform.isInside
+import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import org.koin.ksp.generated.module
 import org.lwjgl.BufferUtils
@@ -87,7 +89,7 @@ class ColorOnlyRenderer(
             primaryCameraStateHolder = primaryCameraStateHolder,
             defaultBatchesSystem = defaultBatchesSystem,
             materialSystem = materialSystem,
-            fallbackTexture = textureManager.defaultTexture.texture,
+            fallbackTexture = textureManager.defaultTexture,
         ) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic].filter {
                 !it.hasOwnProgram && it.isVisibleForCamera
@@ -104,7 +106,7 @@ class ColorOnlyRenderer(
             primaryCameraStateHolder = primaryCameraStateHolder,
             defaultBatchesSystem = defaultBatchesSystem,
             materialSystem = materialSystem,
-            fallbackTexture = textureManager.defaultTexture.texture,
+            fallbackTexture = textureManager.defaultTexture,
         ) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated].filter {
                 !it.hasOwnProgram && it.isVisibleForCamera
@@ -120,11 +122,24 @@ class ColorOnlyRenderer(
         currentWriteState[staticDirectPipeline].prepare(currentWriteState)
         currentWriteState[animatedDirectPipeline].prepare(currentWriteState)
 
+        fun Float.closest(min: Float, max: Float) = if(this > max) max else if(this < min) min else this
+        fun Vector3f.closest(min: Vector3f, max: Vector3f) = Vector3f(
+            x.closest(min.x, max.x),
+            y.closest(min.y, max.y),
+            z.closest(min.z, max.z)
+        )
+
         currentWriteState[staticDirectPipeline].preparedBatches.forEach {
-            textureManager.setTexturesUsedInCycle(it.material.maps.values, cycleSystem.cycle)
+            val closestPointOnAABB = it.cameraWorldPosition.closest(it.meshMinWorld, it.meshMaxWorld)
+            val distance = it.cameraWorldPosition.distance(closestPointOnAABB)
+            val cameraIsInside = it.cameraWorldPosition.isInside(it.meshMinWorld, it.meshMaxWorld)
+            textureManager.setTexturesUsedInCycle(it.material.maps.values, cycleSystem.cycle, if(cameraIsInside) 0f else distance)
         }
         currentWriteState[animatedDirectPipeline].preparedBatches.forEach {
-            textureManager.setTexturesUsedInCycle(it.material.maps.values, cycleSystem.cycle)
+            val closestPointOnAABB = it.cameraWorldPosition.closest(it.meshMinWorld, it.meshMaxWorld)
+            val distance = it.cameraWorldPosition.distance(closestPointOnAABB)
+            val cameraIsInside = it.cameraWorldPosition.isInside(it.meshMinWorld, it.meshMaxWorld)
+            textureManager.setTexturesUsedInCycle(it.material.maps.values, cycleSystem.cycle, if(cameraIsInside) 0f else distance)
         }
     }
 
@@ -149,7 +164,7 @@ class ColorOnlyRenderer(
                     renderState[primaryCameraStateHolder.camera],
                     config, materialSystem, entityBuffer
                 )
-                simpleColorProgramSkyBox.setTextureUniforms(graphicsApi, batch.material.maps, null)
+                simpleColorProgramSkyBox.setTextureUniforms(graphicsApi, null, batch.material)
             }, block = {
                 renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.draw(
                     batch.drawElementsIndirectCommand,

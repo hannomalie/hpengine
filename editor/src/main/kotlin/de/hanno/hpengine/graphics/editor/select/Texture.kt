@@ -3,15 +3,14 @@ package de.hanno.hpengine.graphics.editor.select
 import com.artemis.Component
 import com.artemis.utils.Bag
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.config.HighersMipMapToKeepLoaded
-import de.hanno.hpengine.config.NoUnloading
-import de.hanno.hpengine.config.UnloadCompletely
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.texture.*
+import de.hanno.hpengine.model.material.deriveHandle
 import imgui.ImGui
 import org.koin.core.annotation.Single
+import java.util.concurrent.TimeUnit
 
 data class TextureSelection(val path: String, val texture: Texture?): Selection
 data class FileBasedTexture2DSelection(val path: String, val texture: FileBasedTexture2D): Selection
@@ -47,22 +46,45 @@ class TextureEditorExtension(
         config: Config,
         graphicsApi: GraphicsApi,
         key: String,
-        fileBasedTexture2D: FileBasedTexture2D?
+        handle: FileBasedTexture2D
     ) {
         ImGui.text(key)
+        ImGui.text("Can be unloaded: " + textureManagerBaseSystem.run {
+            handle.canBeUnloaded
+        })
+        textureManagerBaseSystem.getTextureUsedInCycle(handle.handle)?.let {
+            ImGui.text("Usage:")
+            val ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - it.time).toFloat()
+            ImGui.text("Not used for $ms ms")
+            ImGui.text("Current distance: ${it.distance}")
+        }
 
-        val texture = fileBasedTexture2D?.texture
-        if(texture != null) {
-            if (ImGui.beginCombo("UploadState", fileBasedTexture2D.uploadState.toString())) {
+        when(handle) {
+            is DynamicFileBasedTexture2D -> {
+                ImGui.text("-> dynamic handle")
+            }
+            is StaticFileBasedTexture2D -> {
+                ImGui.text("-> static handle")
+            }
+        }
+
+        val texture = handle.texture
+        if (texture == null) {
+            ImGui.text("Currently unloaded")
+        } else {
+            ImGui.text("Filter config: " + texture.textureFilterConfig)
+            ImGui.text("Image count: " + texture.imageCount)
+            if (ImGui.beginCombo("UploadState", handle.uploadState.toString())) {
                 val states = listOf(
                     UploadState.Uploaded,
-                    UploadState.Unloaded(texture.mipmapCount)
-                ) + (0..< texture.mipmapCount).map { UploadState.Uploading(it) }
+                    UploadState.Unloaded,
+                    UploadState.ForceFallback,
+                ) + (0..< texture.mipMapCount).map { UploadState.Uploading(it) }
 
                 states.forEach { state ->
-                    val selected = fileBasedTexture2D.uploadState == state
+                    val selected = handle.uploadState == state
                     if (ImGui.selectable(state.toString(), selected)) {
-                        fileBasedTexture2D.uploadState = state
+                        handle.uploadState = state
                     }
                     if (selected) {
                         ImGui.setItemDefaultFocus()
@@ -70,30 +92,30 @@ class TextureEditorExtension(
                 }
                 ImGui.endCombo()
             }
-            ImGui.text("Current MipMap bias " + fileBasedTexture2D.currentMipMapBias)
+            ImGui.text("Current MipMap bias " + handle.currentMipMapBias)
 
             if (ImGui.button("Load")) {
                 graphicsApi.run {
-                    fileBasedTexture2D.uploadState = UploadState.Unloaded(null)
-                    fileBasedTexture2D.uploadAsync()
+                    handle.uploadState = UploadState.Unloaded
+                    handle.uploadAsync()
                 }
             }
-            when(val strategy = config.performance.textureUnloadStrategy) {
-                is HighersMipMapToKeepLoaded -> {
-                    if (ImGui.button("Load (from mip ${strategy.level})")) {
-                        (texture as? FileBasedTexture2D)?.let {
-                            graphicsApi.run {
-                                texture.uploadState = UploadState.Unloaded(strategy.level)
-                                texture.uploadAsync()
-                            }
-                        }
+        }
+
+        when(handle) {
+            is DynamicFileBasedTexture2D -> {
+                when(val fallback = handle.fallback) {
+                    null -> {}
+                    else -> {
+                        val derivesFallback = deriveHandle(handle.handle, handle) == fallback
+                        ImGui.text("Fallback will be used: $derivesFallback")
+                        ImGui.text("Fallback uploadstate ${fallback.uploadState}")
+                        ImGui.text("Fallback image count ${fallback.texture.imageCount}")
+                        ImGui.text("Fallback mipmap bias ${fallback.currentMipMapBias}")
                     }
                 }
-                NoUnloading -> {}
-                UnloadCompletely -> {}
             }
-        } else {
-            ImGui.text("Currently unloaded")
+            is StaticFileBasedTexture2D -> { }
         }
     }
 }

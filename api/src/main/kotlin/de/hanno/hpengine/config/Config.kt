@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Level
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import java.io.File
+import java.sql.Time
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
@@ -102,15 +103,26 @@ data class PerformanceConfig (
     var isVsync: Boolean = true,
     var usePixelBufferForTextureUpload: Boolean = true,
     var textureCompressionByDefault: Boolean = false, // This messes up textures, figure out why
-    var textureUnloadStrategy: TextureUnloadStrategy = UnloadCompletely,
-    var mipBiasDecreasePerSecond: Float = 20f,
+    var textureUnloadStrategy: TextureUnloadStrategy = Unloading(),
+    var mipBiasDecreasePerSecond: Float = 2f,
     var unloadBiasInNanos: Long = TimeUnit.SECONDS.toNanos(2),
-)
+    var unloadDistance: Float = 10f,
+) {
+    var unloadBiasInMillis: Long
+        get() = TimeUnit.NANOSECONDS.toMillis(unloadBiasInNanos)
+        set(value) {
+            unloadBiasInNanos = TimeUnit.MILLISECONDS.toNanos(value)
+        }
+    var unloadBiasInSeconds: Float
+        get() = TimeUnit.NANOSECONDS.toSeconds(unloadBiasInNanos).toFloat()
+        set(value) {
+            unloadBiasInNanos = TimeUnit.SECONDS.toNanos(value.toLong())
+        }
+}
 
 sealed interface TextureUnloadStrategy
 data object NoUnloading: TextureUnloadStrategy
-data object UnloadCompletely: TextureUnloadStrategy
-data class HighersMipMapToKeepLoaded(val level: Int): TextureUnloadStrategy
+data class Unloading(val mipMapCountToKeepLoaded: Int = 5): TextureUnloadStrategy
 
 class ProfilingConfig {
     var showFps = false

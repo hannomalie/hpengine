@@ -19,7 +19,8 @@ import de.hanno.hpengine.graphics.shader.using
 import de.hanno.hpengine.graphics.state.EntitiesState
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.Texture
+import de.hanno.hpengine.graphics.texture.StaticHandle
+import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
@@ -40,7 +41,7 @@ open class DirectPipeline(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
-    private val fallbackTexture: Texture? = null,
+    private val fallbackTexture: StaticHandle<Texture2D>? = null,
     protected val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = { cullCam: Camera ->
         isCulled(cullCam) || isForwardRendered
     }
@@ -101,7 +102,7 @@ open class DirectPipeline(
                 depthMask = batch.material.writesDepth
                 cullFace = batch.material.cullBackFaces
                 depthTest = batch.material.depthTest
-                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, fallbackTexture, batch.material)
                 program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
                 geometryBuffer.draw(
@@ -145,7 +146,7 @@ open class DirectPipeline(
                         entityBuffer
                     )
                 }
-                program.setTextureUniforms(graphicsApi, batch.material.maps, fallbackTexture)
+                program.setTextureUniforms(graphicsApi, fallbackTexture, batch.material)
 
                 program.bind()
                 geometryBuffer.draw(

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.graphics.texture
 
-import de.hanno.hpengine.graphics.constants.WrapMode
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 

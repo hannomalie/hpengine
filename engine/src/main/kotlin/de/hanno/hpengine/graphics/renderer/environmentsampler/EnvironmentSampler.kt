@@ -20,7 +20,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.texture.calculateMipMapCount
+import de.hanno.hpengine.graphics.texture.getMipMapCountForDimension
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -280,4 +280,4 @@ class EnvironmentSampler(
 }
 
 private val RESOLUTION = 512
-private val CUBEMAP_MIPMAP_COUNT = calculateMipMapCount(RESOLUTION)
+private val CUBEMAP_MIPMAP_COUNT = getMipMapCountForDimension(RESOLUTION)

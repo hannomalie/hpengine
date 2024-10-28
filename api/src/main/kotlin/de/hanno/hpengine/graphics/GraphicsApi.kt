@@ -201,6 +201,7 @@ interface GraphicsApi {
 
     fun getTextureHandle(textureId: Int): Long
 
+    fun TextureHandle<Texture2D>.uploadAsync(data: List<ImageData>)
     fun FileBasedTexture2D.uploadAsync()
 
     fun TextureHandle<Texture2D>.upload(data: List<ImageData>)

@@ -1,5 +1,7 @@
 package de.hanno.hpengine.graphics.texture
 
+import org.apache.logging.log4j.LogManager
+import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.math.floor
@@ -7,24 +9,13 @@ import kotlin.math.log2
 import kotlin.math.max
 import kotlin.math.nextUp
 
-fun calculateMipMapCount(width: Int, height: Int) = calculateMipMapCount(max(width, height))
 
-fun calculateMipMapCount(size: Int): Int {
-    var maxLength = size
-    var count = 0
-    while (maxLength >= 1) {
-        count++
-        maxLength /= 2
-    }
-    return count
-}
+private val logger = LogManager.getLogger("MipMap")
 
-fun getMipMapCountForDimension(w: Int, h: Int, d: Int): Int {
-    return 1 + floor(log2(max(w, max(h, d)).toDouble())).nextUp().toInt()
-}
+fun getMipMapCountForDimension(w: Int, h: Int = 0, d: Int = 0): Int = floor(log2(max(w, max(h, d)).toDouble())).nextUp().toInt()
 
 fun calculateMipMapSizes(width: Int, height: Int): List<TextureDimension2D> {
-    val mipMapCount = getMipMapCountForDimension(width, height, 0)
+    val mipMapCount = getMipMapCountForDimension(width, height)
     val widths = mutableListOf<Int>().apply {
         add(width)
     }
@@ -33,7 +24,7 @@ fun calculateMipMapSizes(width: Int, height: Int): List<TextureDimension2D> {
     }
     var nextWidth = max(1, floor(width * 0.5).toInt())
     var nextHeight = max(1, floor(height * 0.5).toInt())
-    (0 until mipMapCount - 1).forEach { _ ->
+    (0 until mipMapCount).forEach { _ ->
         widths.add(nextWidth)
         heights.add(nextHeight)
         nextWidth = max(1, floor(nextWidth * 0.5).toInt())
@@ -53,18 +44,25 @@ fun precalculateMipMapFilesIfNecessary(file: File, dimension: TextureDimension2D
     val files = getFileAndMipMapFiles(file, mipMapSizes.size).subList(1, mipMapSizes.size)
     val allMipsPrecalculated = files.all { it.exists() }
     return if(allMipsPrecalculated) {
-        println("All mipmaps precalculated for ${file.absolutePath}")
+        logger.info("All mipmaps already precalculated for ${file.absolutePath}")
         files
     } else {
-        mipMapSizes.mapIndexed { index, it ->
-            val currentImage = bufferedImage.resize(it.width)
-            val buffer = currentImage.toByteBuffer()
-            val array = ByteArray(buffer.remaining())
-            buffer.get(array)
-
-            ImageIO.write(currentImage, file.extension, files[index])
-            println("Saving ${files[index]}")
-            files[index]
-        }
+        actuallyCalculateMipMapFiles(mipMapSizes, bufferedImage, file, files)
     }
+}
+
+fun actuallyCalculateMipMapFiles(
+    mipMapSizes: List<TextureDimension2D>,
+    bufferedImage: BufferedImage,
+    file: File,
+    files: List<File>,
+) = mipMapSizes.mapIndexed { index, it ->
+    val currentImage = bufferedImage.resize(it.width)
+    val buffer = currentImage.toByteBuffer()
+    val array = ByteArray(buffer.remaining())
+    buffer.get(array)
+
+    ImageIO.write(currentImage, file.extension, files[index])
+    logger.info("Saving ${files[index]}")
+    files[index]
 }

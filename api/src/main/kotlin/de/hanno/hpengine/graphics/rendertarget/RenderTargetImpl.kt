@@ -4,7 +4,7 @@ import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.TextureTarget
 import de.hanno.hpengine.graphics.texture.CubeMapArray
 import de.hanno.hpengine.graphics.texture.Texture
-import de.hanno.hpengine.graphics.texture.calculateMipMapCount
+import de.hanno.hpengine.graphics.texture.getMipMapCountForDimension
 import org.joml.Vector4f
 import kotlin.math.max
 
@@ -26,7 +26,7 @@ class RenderTargetImpl<T : Texture>(
     override var renderedTextures: IntArray = IntArray(textures.size)
     override var renderedTextureHandles: LongArray = LongArray(textures.size)
     override var drawBuffers: IntArray = IntArray(textures.size)
-    override var mipMapCount = calculateMipMapCount(max(width, height))
+    override var mipMapCount = getMipMapCountForDimension(width, height)
 
     // TODO: This is probably not the nicest way to implement this but i am in a hurry :)
     override val factorsForDebugRendering = textures.map { 1f }.toMutableList()

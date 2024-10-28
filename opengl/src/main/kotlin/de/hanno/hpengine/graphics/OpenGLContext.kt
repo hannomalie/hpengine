@@ -121,7 +121,7 @@ class OpenGLContext private constructor(
                 texture.id,
                 texture.internalFormat.glValue,
                 0,
-                texture.mipmapCount + 1,
+                texture.mipMapCount + 1,
                 index,
                 1
             )
@@ -151,7 +151,7 @@ class OpenGLContext private constructor(
                 texture.id,
                 texture.internalFormat.glValue,
                 0,
-                texture.mipmapCount + 1,
+                texture.mipMapCount + 1,
                 6 * cubeMapIndex,
                 6
             )
@@ -180,7 +180,7 @@ class OpenGLContext private constructor(
                 texture.id,
                 texture.internalFormat.glValue,
                 0,
-                texture.mipmapCount + 1,
+                texture.mipMapCount + 1,
                 6 * cubeMapIndex + faceIndex,
                 1
             )
@@ -623,23 +623,25 @@ class OpenGLContext private constructor(
         }
     } else -1
 
-    override fun FileBasedTexture2D.uploadAsync() {
+    override fun TextureHandle<Texture2D>.uploadAsync(data: List<ImageData>) {
         when(texture) {
             null -> throw IllegalStateException("Cannot upload texture when underlying texture is null!")
             else -> {
                 when (val uploadState = uploadState) {
-                    is UploadState.MarkedForUpload -> {}
+                    is UploadState.MarkedForUpload, UploadState.Uploaded,
+                    is UploadState.Uploading, UploadState.ForceFallback -> {}
                     is UploadState.Unloaded -> {
-                        this.uploadState = UploadState.MarkedForUpload(uploadState.mipMapLevelToKeep)
+                        this.uploadState = UploadState.MarkedForUpload
                         GlobalScope.launch(Dispatchers.IO) {
-                            handle.upload(getData())
+                            upload(data)
                         }
                     }
-                    UploadState.Uploaded -> {}
-                    is UploadState.Uploading -> {}
                 }
             }
         }
+    }
+    override fun FileBasedTexture2D.uploadAsync() {
+        handle.uploadAsync(getData())
     }
 
     override fun TextureHandle<Texture2D>.upload(data: List<ImageData>) {
@@ -705,10 +707,9 @@ class OpenGLContext private constructor(
                                 )
                             }
                             uploadState = when (uploadState) {
-                                is UploadState.Unloaded -> UploadState.Uploading(mipLevel)
                                 UploadState.Uploaded -> uploadState
-                                is UploadState.Uploading -> UploadState.Uploading(mipLevel)
-                                is UploadState.MarkedForUpload -> UploadState.Uploading(mipLevel)
+                                is UploadState.Unloaded, is UploadState.Uploading,
+                                is UploadState.MarkedForUpload, UploadState.ForceFallback -> UploadState.Uploading(mipLevel)
                             }
                         }
                         uploadState = UploadState.Uploaded
@@ -816,7 +817,7 @@ class OpenGLContext private constructor(
     private fun texStorage(info: TextureDescription, glTarget: Int) = when (info) {
         is TextureDescription.CubeMapArrayDescription -> GL42.glTexStorage3D(
             GL40.GL_TEXTURE_CUBE_MAP_ARRAY,
-            info.mipMapCount,
+            info.imageCount,
             info.internalFormat.glValue,
             info.dimension.width,
             info.dimension.height,
@@ -825,7 +826,7 @@ class OpenGLContext private constructor(
 
         is CubeMapDescription -> GL42.glTexStorage2D(
             GL40.GL_TEXTURE_CUBE_MAP,
-            info.mipMapCount,
+            info.imageCount,
             info.internalFormat.glValue,
             info.dimension.width,
             info.dimension.height
@@ -833,7 +834,7 @@ class OpenGLContext private constructor(
 
         is Texture2DDescription -> GL42.glTexStorage2D(
             glTarget,
-            info.mipMapCount,
+            info.imageCount,
             info.internalFormat.glValue,
             info.dimension.width,
             info.dimension.height
@@ -841,7 +842,7 @@ class OpenGLContext private constructor(
 
         is TextureDescription.Texture3DDescription -> GL42.glTexStorage3D(
             glTarget,
-            info.mipMapCount,
+            info.imageCount,
             info.internalFormat.glValue,
             info.dimension.width,
             info.dimension.height,
@@ -979,7 +980,7 @@ class OpenGLContext private constructor(
     override fun getTextureSubImage(cubeMap: CubeMap): FloatArray {
         val floatArray = (0 until 6 * 4).map { 0f }.toFloatArray()
         glGetTextureSubImage(
-            cubeMap.id, cubeMap.mipmapCount - 1,
+            cubeMap.id, cubeMap.mipMapCount - 1,
             0, 0, 0, 1, 1, 6, GL_RGBA, GL_FLOAT, floatArray
         )
         return floatArray

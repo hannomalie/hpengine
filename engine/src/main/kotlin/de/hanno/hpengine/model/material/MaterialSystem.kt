@@ -128,53 +128,18 @@ class MaterialSystem(
                 lodFactor = material.lodFactor
                 useWorldSpaceXZAsTexCoords = if (material.useWorldSpaceXZAsTexCoords) 1 else 0
                 environmentMapId = material.maps[MAP.ENVIRONMENT]?.texture?.id ?: 0
-                diffuseMapHandle = material.deriveHandle(MAP.DIFFUSE, textureManager.defaultTexture.texture)
-                diffuseMipmapBias = material.deriveDiffuseMipMapBias()
+                val actualDiffuseMapHandle = deriveHandle(material.maps[MAP.DIFFUSE], textureManager.defaultTexture)
+                diffuseMapHandle = actualDiffuseMapHandle?.texture?.handle ?: 0
+                diffuseMipmapBias = actualDiffuseMapHandle?.currentMipMapBias ?: 0f
                 diffuseMapIndex = (material.maps[MAP.DIFFUSE] as? OpenGLTexture2DView)?.index ?: 0 // TODO: Remove
-                normalMapHandle = material.deriveHandle(MAP.NORMAL)
-                specularMapHandle = material.deriveHandle(MAP.SPECULAR)
-                heightMapHandle = material.deriveHandle(MAP.HEIGHT)
-                displacementMapHandle = material.deriveHandle(MAP.DISPLACEMENT)
-                roughnessMapHandle = material.deriveHandle(MAP.ROUGHNESS)
+                normalMapHandle = deriveHandle(handle = material.maps[MAP.NORMAL])?.texture?.handle ?: 0
+                specularMapHandle = deriveHandle(handle = material.maps[MAP.SPECULAR])?.texture?.handle ?: 0
+                heightMapHandle = deriveHandle(handle = material.maps[MAP.HEIGHT])?.texture?.handle ?: 0
+                displacementMapHandle = deriveHandle(handle = material.maps[MAP.DISPLACEMENT])?.texture?.handle ?: 0
+                roughnessMapHandle = deriveHandle(handle = material.maps[MAP.ROUGHNESS])?.texture?.handle ?: 0
                 uvScale.x = material.uvScale.x
                 uvScale.y = material.uvScale.y
             }
-        }
-    }
-    private fun Material.deriveDiffuseMipMapBias(): Float = when(val handle = maps[MAP.DIFFUSE]) {
-        is DynamicHandle -> if(handle.texture == null) {
-            0f
-        } else {
-            when(handle.uploadState) {
-                is UploadState.MarkedForUpload -> 0f
-                is UploadState.Unloaded -> 0f
-                UploadState.Uploaded -> handle.currentMipMapBias
-                is UploadState.Uploading -> handle.currentMipMapBias
-            }
-        }
-        is StaticHandle -> handle.currentMipMapBias
-        null -> 0f
-    }
-
-    private fun Material.deriveHandle(key: MAP, fallbackTexture: Texture? = null): Long {
-        val fallbackHandle = (fallbackTexture?.handle ?: 0)
-
-        return when(val handle = maps[key]) {
-            is DynamicHandle -> when(val texture = handle.texture) {
-                null -> fallbackHandle
-                else -> when(val uploadState = handle.uploadState) {
-                    is UploadState.MarkedForUpload -> fallbackHandle
-                    is UploadState.Unloaded -> if (uploadState.mipMapLevelToKeep == texture.mipmapCount - 1) {
-                        fallbackHandle
-                    } else {
-                        texture.handle
-                    }
-                    UploadState.Uploaded -> texture.handle
-                    is UploadState.Uploading -> texture.handle
-                }
-            }
-            is StaticHandle -> handle.texture.handle
-            null -> fallbackHandle
         }
     }
 
@@ -187,9 +152,8 @@ class MaterialSystem(
                 null -> { materialsFinishedLoadingInCycle[material] = 0 }
                 else -> when(handle.uploadState) {
                     UploadState.Uploaded -> materialsFinishedLoadingInCycle[material]  = cycle
-                    is UploadState.Uploading -> { }
-                    is UploadState.Unloaded -> { }
-                    is UploadState.MarkedForUpload -> { }
+                    is UploadState.Uploading, is UploadState.Unloaded,
+                    is UploadState.MarkedForUpload, UploadState.ForceFallback -> { }
                 }
             }
         }

@@ -120,6 +120,11 @@ void main(void) {
 #endif
 
 	if(hasDiffuseMap) {
+		// https://www.reddit.com/r/opengl/comments/3cdg5r/derivation_of_opengls_mipmap_level_computation/
+//		vec2  dx_vtc        = dFdx(UV);
+//		vec2  dy_vtc        = dFdy(UV);
+//		float delta_max_sqr = max(dot(dx_vtc, dx_vtc), dot(dy_vtc, dy_vtc));
+//		color = textureLod(diffuseMap, UV, material.diffuseMipmapBias + delta_max_sqr);
 		color = texture(diffuseMap, UV, material.diffuseMipmapBias);
 		alpha *= color.a;
 	}
