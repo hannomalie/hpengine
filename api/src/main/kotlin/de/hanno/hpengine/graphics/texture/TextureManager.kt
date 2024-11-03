@@ -32,13 +32,24 @@ interface TextureManager {
         unloadable: Boolean,
     ): FileBasedTexture2D
 
-    fun setTexturesUsedInCycle(maps: MutableCollection<TextureHandle<*>>, cycle: Long, distance: Float)
+    fun setTexturesUsedInCycle(
+        texture: TextureHandle<*>,
+        cycle: Long?,
+        distance: Float,
+        isBehindCamera: Boolean
+    )
     fun getTextureUsedInCycle(texture: TextureHandle<*>): TextureUsageInfo?
 
     val FileBasedTexture2D.canBeUnloaded: Boolean
     val texturePool: List<DynamicFileBasedTexture2D>
 }
 
-data class TextureUsageInfo(var time: Long, var distance: Float, var cycle: Long)
+data class TextureUsageInfo(
+    var time: Long?,
+    var distance: Float,
+    var behindCamera: Boolean,
+    var cameraIsInside: Boolean,
+    var cycle: Long?
+)
 
 abstract class TextureManagerBaseSystem: TextureManager, BaseSystem()

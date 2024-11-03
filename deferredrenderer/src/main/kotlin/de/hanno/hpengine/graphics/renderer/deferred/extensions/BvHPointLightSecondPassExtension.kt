@@ -321,7 +321,6 @@ class BvHPointLightSecondPassExtension(
             graphicsApi.blend = false
             val camera = renderState[primaryCameraStateHolder.camera]
             graphicsApi.drawLines(
-                programManager,
                 linesProgram,
                 lineVertices,
                 linePoints,

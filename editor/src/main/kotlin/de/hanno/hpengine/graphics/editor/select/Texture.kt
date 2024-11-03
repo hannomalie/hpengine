@@ -54,7 +54,11 @@ class TextureEditorExtension(
         })
         textureManagerBaseSystem.getTextureUsedInCycle(handle.handle)?.let {
             ImGui.text("Usage:")
-            val ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - it.time).toFloat()
+            val notUsedForNanos = when (val time = it.time) {
+                null -> Long.MAX_VALUE
+                else -> System.nanoTime() - time
+            }
+            val ms = TimeUnit.NANOSECONDS.toMillis(notUsedForNanos).toFloat()
             ImGui.text("Not used for $ms ms")
             ImGui.text("Current distance: ${it.distance}")
         }

@@ -4,9 +4,42 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.imgui.dsl.TabBar
 import de.hanno.hpengine.graphics.window.Window
 import imgui.ImGui
+import imgui.type.ImInt
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.core.config.Configurator
+import kotlin.reflect.KMutableProperty0
+
+// TODO: global variable is probably not the best idea
+private val logLevelInt = ImInt()
+private val logLevels = listOf(
+    Level.OFF,
+    Level.FATAL,
+    Level.ERROR,
+    Level.WARN,
+    Level.INFO,
+    Level.DEBUG,
+    Level.TRACE,
+    Level.ALL
+)
 
 fun TabBar.configTab(config: Config, window: Window) {
     tab("Config") {
+
+        if (ImGui.beginCombo("Log level", config.logLevel.toString())) {
+            logLevels.forEach {
+                val selected = config.logLevel == it
+                if (ImGui.selectable(it.toString(), selected)) {
+                    config.logLevel = it
+                    Configurator.setRootLevel(it)
+                }
+                if (selected) {
+                    ImGui.setItemDefaultFocus()
+                }
+            }
+            ImGui.endCombo()
+        }
+
         if (ImGui.checkbox("Draw lines", config.debug.isDrawLines)) {
             config.debug.isDrawLines = !config.debug.isDrawLines
         }
@@ -41,5 +74,13 @@ fun TabBar.configTab(config: Config, window: Window) {
         if (ImGui.checkbox("VSync", window.vSync)) {
             window.vSync = !window.vSync
         }
+
+        checkbox("Draw bounding volumes", config.debug::drawBoundingVolumes)
+    }
+}
+
+fun checkbox(name: String, property: KMutableProperty0<Boolean>) {
+    if (ImGui.checkbox(name, property.get())) {
+        property.set(!property.get())
     }
 }

@@ -250,7 +250,6 @@ class ReflectionProbeRenderExtension(
 
         val camera = renderState[primaryCameraStateHolder.camera]
         drawLines(
-            programManager,
             linesProgram,
             lineVertices,
             linePoints,

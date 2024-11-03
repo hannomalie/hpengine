@@ -24,11 +24,11 @@ class StaticMesh(
         vertices.forEach {
             min.x = minOf(min.x, it.position.x)
             min.y = minOf(min.y, it.position.y)
-            min.z = minOf(min.x, it.position.z)
+            min.z = minOf(min.z, it.position.z)
 
             max.x = maxOf(max.x, it.position.x)
             max.y = maxOf(max.y, it.position.y)
-            max.z = maxOf(max.x, it.position.z)
+            max.z = maxOf(max.z, it.position.z)
         }
     }
 

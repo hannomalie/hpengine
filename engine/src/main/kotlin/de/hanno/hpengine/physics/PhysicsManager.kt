@@ -181,7 +181,6 @@ class PhysicsManager(
             val camera = renderState[primaryCameraStateHolder.camera]
             debugDrawWorld()
             graphicsApi.drawLines(
-                programManager,
                 linesProgram,
                 lineVertices,
                 linePoints,

@@ -5,10 +5,7 @@ import de.hanno.hpengine.config.NoUnloading
 import de.hanno.hpengine.config.Unloading
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.texture.DynamicHandle
-import de.hanno.hpengine.graphics.texture.StaticHandle
-import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
-import de.hanno.hpengine.graphics.texture.UploadState
+import de.hanno.hpengine.graphics.texture.*
 import imgui.ImGui
 
 fun textureManagerGrid(
@@ -20,6 +17,11 @@ fun textureManagerGrid(
 
     floatInput("Unload bias in seconds", config.performance::unloadBiasInSeconds, 0.1f, 20f)
     floatInput("Unload distance", config.performance::unloadDistance, 1f, 300f)
+
+    graphicsApi.pixelBufferObjectPool.buffers.forEachIndexed { index, it ->
+        ImGui.text("PixelBufferObject $index uploading: ${it.uploading}")
+    }
+    ImGui.text("Texture upload queue size: ${graphicsApi.pixelBufferObjectPool.queue.size}")
 
     if (ImGui.beginCombo("Texture unload strategy", config.performance.textureUnloadStrategy.toString())) {
         (listOf(NoUnloading) + (0..<6).map { Unloading(it) }).forEach {
@@ -57,6 +59,10 @@ fun textureManagerGrid(
 
     ImGui.text("Texture Pool:")
     textureManagerBaseSystem.texturePool.forEach {
+        ImGui.text(it.path)
+    }
+    ImGui.text("Texture with handle:")
+    textureManagerBaseSystem.fileBasedTextures.values.filterIsInstance<DynamicFileBasedTexture2D>().forEach {
         ImGui.text(it.path)
     }
 }

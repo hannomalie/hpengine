@@ -626,15 +626,13 @@ class OpenGLContext private constructor(
     override fun TextureHandle<Texture2D>.uploadAsync(data: List<ImageData>) {
         when(texture) {
             null -> throw IllegalStateException("Cannot upload texture when underlying texture is null!")
-            else -> {
-                when (val uploadState = uploadState) {
-                    is UploadState.MarkedForUpload, UploadState.Uploaded,
-                    is UploadState.Uploading, UploadState.ForceFallback -> {}
-                    is UploadState.Unloaded -> {
-                        this.uploadState = UploadState.MarkedForUpload
-                        GlobalScope.launch(Dispatchers.IO) {
-                            upload(data)
-                        }
+            else -> when (uploadState) {
+                is UploadState.MarkedForUpload, UploadState.Uploaded,
+                is UploadState.Uploading, UploadState.ForceFallback -> {}
+                is UploadState.Unloaded -> {
+                    this.uploadState = UploadState.MarkedForUpload
+                    GlobalScope.launch(Dispatchers.IO) {
+                        upload(data)
                     }
                 }
             }

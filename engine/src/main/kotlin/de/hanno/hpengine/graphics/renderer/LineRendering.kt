@@ -17,7 +17,6 @@ import java.nio.FloatBuffer
 import kotlin.math.min
 
 fun GraphicsApi.drawLines(
-    programManager: ProgramManager,
     linesProgram: Program<LinesProgramUniforms>,
     vertices: TypedGpuBuffer<Vector4fStrukt>,
     linePoints: List<Vector3fc>,
@@ -65,13 +64,14 @@ fun GraphicsApi.drawLines(
 
     if (verticesCount <= 0) return
 
-    using(linesProgram) { uniforms ->
-        uniforms.modelMatrix.safePut(modelMatrix)
-        uniforms.projectionMatrix.safePut(projectionMatrix)
-        uniforms.viewMatrix.safePut(viewMatrix)
-        uniforms.color.set(color)
-        uniforms.vertices = vertices
-    }
-    drawLines(min(lineWidth, maxLineWidth), verticesCount)
+    linesProgram.useAndBind({
+        this.modelMatrix.safePut(modelMatrix)
+        this.projectionMatrix.safePut(projectionMatrix)
+        this.viewMatrix.safePut(viewMatrix)
+        this.color.set(color)
+        this.vertices = vertices
+    }, {
+        drawLines(min(lineWidth, maxLineWidth), verticesCount)
+    })
 }
 

@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Level
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import java.io.File
-import java.sql.Time
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
@@ -66,7 +65,7 @@ data class DebugConfig(
     var isUseGpuFrustumCulling: Boolean = true,
     var isUseGpuOcclusionCulling: Boolean = true,
     var isDrawLines: Boolean = false,
-    var isDrawBoundingVolumes: Boolean = false,
+    var drawBoundingVolumes: Boolean = false,
     var isDrawPointLightShadowMaps: Boolean = false,
     var isDrawCameras: Boolean = false,
     var isDrawScene: Boolean = true,

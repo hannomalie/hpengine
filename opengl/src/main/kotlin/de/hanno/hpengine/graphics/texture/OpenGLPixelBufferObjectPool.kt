@@ -5,6 +5,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.constants.BufferTarget
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executors
 import java.util.concurrent.PriorityBlockingQueue
 
@@ -12,7 +13,7 @@ class OpenGLPixelBufferObjectPool(
     graphicsApi: GraphicsApi,
     config: Config,
 ): PixelBufferObjectPool {
-    private val buffers = buildList {
+    override val buffers = buildList {
         repeat(6) {
             add(
                 OpenGLPixelBufferObject(
@@ -23,7 +24,8 @@ class OpenGLPixelBufferObjectPool(
             )
         }
     }
-    private val queue = PriorityBlockingQueue(10000, TaskComparator)
+    override val queue = PriorityBlockingQueue(10000, TaskComparator)
+
     private val threadPool = Executors.newFixedThreadPool(buffers.size).apply {
         repeat(buffers.size) { index ->
             val pbo = buffers[index]
@@ -73,7 +75,7 @@ class OpenGLPixelBufferObjectPool(
                     if(!texture.textureFilterConfig.minFilter.isMipMapped) {
                         throw IllegalStateException("Can't upload multiple data to non mip mapped texture!")
                     }
-                    queue.put(Task(0) { pbo ->
+                    queue.put(Task(handle, 0) { pbo ->
                         data.reversed().forEachIndexed { index, textureData ->
                             val level = data.size - 1 - index
                             val currentlyLoadedLevel = when(val uploadState = handle.uploadState) {
@@ -94,7 +96,7 @@ class OpenGLPixelBufferObjectPool(
                     })
                 }
                 else -> {
-                    queue.put(Task(0) { pbo ->
+                    queue.put(Task(handle, 0) { pbo ->
                         pbo.upload(handle, data)
                     })
                 }

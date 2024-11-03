@@ -28,7 +28,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 import javax.imageio.ImageIO
 import javax.imageio.ImageReader
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.pow
 
 
@@ -49,7 +48,7 @@ class OpenGLTextureManager(
     private val fallbacks: MutableList<TextureHandle<Texture2D>> = CopyOnWriteArrayList()
     private val allTextures: MutableList<Texture2D> = CopyOnWriteArrayList()
 
-    private var textureUsedAtTime: MutableMap<TextureHandle<*>, TextureUsageInfo> = ConcurrentHashMap()
+    private var textureUsageInfos: MutableMap<TextureHandle<*>, TextureUsageInfo> = ConcurrentHashMap()
     override val texturesForDebugOutput: MutableMap<String, Texture> = LinkedHashMap()
     override val generatedCubeMaps = mutableMapOf<String, CubeMap>()
 
@@ -259,17 +258,28 @@ class OpenGLTextureManager(
         } else this[resourceName]!!
     }
 
-    override fun setTexturesUsedInCycle(maps: MutableCollection<TextureHandle<*>>, cycle: Long, distance: Float) {
-        maps.forEach { texture ->
-            textureUsedAtTime.computeIfAbsent(texture) { TextureUsageInfo(System.nanoTime(), distance, cycle) }.apply {
-                this.time = max(time, System.nanoTime())
-                this.distance = if(this.cycle == cycle) min(this.distance, distance) else distance
-                this.cycle = cycle
-            }
+    override fun setTexturesUsedInCycle(
+        texture: TextureHandle<*>,
+        cycle: Long?,
+        distance: Float,
+        isBehindCamera: Boolean
+    ) {
+        textureUsageInfos.computeIfAbsent(texture) { TextureUsageInfo(
+            if(cycle == null) null else System.nanoTime(),
+            distance,
+            false,
+            distance == 0f,
+            cycle
+        ) }.apply {
+            this.time = if(cycle == null) this.time else System.nanoTime()
+            this.distance = distance
+            this.cycle = cycle ?: this.cycle
+            this.behindCamera = isBehindCamera
+            this.cameraIsInside = distance == 0f
         }
     }
 
-    override fun getTextureUsedInCycle(texture: TextureHandle<*>) = textureUsedAtTime.getOrDefault(texture, null)
+    override fun getTextureUsedInCycle(texture: TextureHandle<*>) = textureUsageInfos.getOrDefault(texture, null)
 
     fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
@@ -402,7 +412,7 @@ class OpenGLTextureManager(
                 handle.currentMipMapBias = 0f
             }
         }
-        fileBasedTextures.values.forEach { handle ->
+        fileBasedTextures.values.filterIsInstance<DynamicFileBasedTexture2D>().sortedBy { textureUsageInfos[it]?.distance ?: Float.MAX_VALUE }.forEach { handle ->
             when(handle.uploadState) {
                 is UploadState.MarkedForUpload, is UploadState.Unloaded -> {}
                 UploadState.Uploaded, is UploadState.Uploading, UploadState.ForceFallback -> {
@@ -430,47 +440,58 @@ class OpenGLTextureManager(
             if (handle.handle.currentMipMapBias < 0f) {
                 handle.handle.currentMipMapBias = 0f
             }
-            when(handle) {
-                is DynamicFileBasedTexture2D -> {
-                    val canBeUnloaded = handle.canBeUnloaded
-                    val needsToBeLoaded = !canBeUnloaded
+            val canBeUnloaded = handle.canBeUnloaded
+            val needsToBeLoaded = !canBeUnloaded
 
-                    when (handle.texture) {
-                        null -> if(needsToBeLoaded) {
-                            when(val fromPool = findSuitableHandleInPool(handle.description)) {
-                                null -> logger.debug("Cannot load ${handle.file.absolutePath}, no capacity left")
-                                else -> {
-                                    moveTexture(from = fromPool, to = handle)
-
-                                    graphicsApi.run {
-                                        handle.uploadAsync()
-                                    }
+            when (handle.texture) {
+                null -> if (needsToBeLoaded) {
+                    when (val fromPool = findSuitableHandleInPool(handle.description)) {
+                        null -> {
+                            logger.debug("Cannot load ${handle.file.absolutePath}, no capacity left")
+                            val candidatesToStealHandleFrom =
+                                fileBasedTextures.values.filterIsInstance<DynamicFileBasedTexture2D>().filter {
+                                    it.texture != null && it.texture!!.description == handle.description
+                                }.sortedByDescending {
+                                    textureUsageInfos[it]?.distance ?: 0f
                                 }
+                            candidatesToStealHandleFrom.firstOrNull {
+                                (textureUsageInfos[handle]?.distance ?: 0f) < (textureUsageInfos[it]?.distance
+                                    ?: 0f)
+                            }?.let { candidate ->
+                                logger.debug("Stealing texture from ${candidate.path} to load ${handle.path}")
+//                                TODO: This is not working yet, it puts too much work on the queue
+//                                moveTexture(from = candidate, to = handle)
                             }
                         }
-                        else -> when (handle.uploadState) {
-                            is UploadState.Unloaded -> if (needsToBeLoaded) {
-                                logger.info("Uploading ${handle.path}")
-                                graphicsApi.run {
-                                    handle.uploadAsync()
-                                }
-                            }
-                            UploadState.Uploaded -> if (canBeUnloaded && !_texturePool.contains(handle)) {
-                                when(config.performance.textureUnloadStrategy) {
-                                    NoUnloading -> { }
-                                    is Unloading -> {
-                                        logger.debug("Unloading ${handle.file.absolutePath} - ${handle.description}")
-                                        returnToPool(handle)
-                                    }
-                                }
-                            }
 
-                            is UploadState.Uploading, is UploadState.MarkedForUpload, UploadState.ForceFallback -> {}
+                        else -> {
+                            moveTexture(from = fromPool, to = handle)
+                            graphicsApi.run {
+                                handle.uploadAsync()
+                            }
                         }
                     }
                 }
-                is StaticFileBasedTexture2D -> {
 
+                else -> when (handle.uploadState) {
+                    is UploadState.Unloaded -> if (needsToBeLoaded) {
+                        logger.info("Uploading ${handle.path}")
+                        graphicsApi.run {
+                            handle.uploadAsync()
+                        }
+                    }
+
+                    UploadState.Uploaded -> if (canBeUnloaded && !_texturePool.contains(handle)) {
+                        when (config.performance.textureUnloadStrategy) {
+                            NoUnloading -> {}
+                            is Unloading -> {
+                                logger.debug("Unloading ${handle.file.absolutePath} - ${handle.description}")
+                                returnToPool(handle)
+                            }
+                        }
+                    }
+
+                    is UploadState.Uploading, is UploadState.MarkedForUpload, UploadState.ForceFallback -> {}
                 }
             }
         }
@@ -497,12 +518,16 @@ class OpenGLTextureManager(
 
     override val FileBasedTexture2D.canBeUnloaded: Boolean
         get() {
+            val usageInfo = textureUsageInfos.getOrDefault(handle, null) ?: return true
+
             val currentTime = System.nanoTime()
-            val usageInfo = textureUsedAtTime.getOrDefault(handle, null)
-            val distance = usageInfo?.distance ?: 0f
-            val notUsedForNanos = currentTime - (usageInfo?.time ?: currentTime)
+            val distance = usageInfo.distance
+            val notUsedForNanos = when (val time = usageInfo.time) {
+                null -> Long.MAX_VALUE
+                else -> currentTime - time
+            }
             val unusedForLongTime = notUsedForNanos >= config.performance.unloadBiasInNanos
-            val canBeUnloaded = unusedForLongTime || distance > config.performance.unloadDistance
+            val canBeUnloaded = unusedForLongTime //|| distance > config.performance.unloadDistance || usageInfo?.behindCamera ?: false
             return canBeUnloaded
         }
 

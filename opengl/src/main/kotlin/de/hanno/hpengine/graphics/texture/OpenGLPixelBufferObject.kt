@@ -19,11 +19,10 @@ import java.util.concurrent.Semaphore
 class OpenGLPixelBufferObject(
     private val graphicsApi: GraphicsApi,
     private val config: Config,
-    _buffer: GpuBuffer? = null
+    private val buffer: GpuBuffer = graphicsApi.PersistentMappedBuffer(BufferTarget.PixelUnpack, SizeInBytes(5_000_000))
 ): PixelBufferObject {
-    private val buffer = _buffer ?: graphicsApi.PersistentMappedBuffer(BufferTarget.PixelUnpack, SizeInBytes(5_000_000))
     private val semaphore = Semaphore(1)
-    val uploading
+    override val uploading
         get() = semaphore.availablePermits() == 0
 
     init {
@@ -175,11 +174,5 @@ class OpenGLPixelBufferObject(
     }
     fun delete() {
         buffer.delete()
-    }
-}
-
-class Task(val priority: Int, val action: (PixelBufferObject) -> Unit) {
-    fun run(pbo: PixelBufferObject) {
-        action(pbo)
     }
 }

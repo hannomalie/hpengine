@@ -1,38 +1,32 @@
-package de.hanno.hpengine.graphics.renderer.deferred.extensions
+package de.hanno.hpengine.graphics.renderer.forward
 
 import Vector4fStruktImpl.Companion.type
 import de.hanno.hpengine.SizeInBytes
-import de.hanno.hpengine.camera.CameraComponentsStateHolder
-
-import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
-import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.renderer.drawLines
-import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.buffer.TypedGpuBuffer
 import de.hanno.hpengine.graphics.buffer.typed
+import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.shader.LinesProgramUniforms
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.ressources.StringBasedCodeSource
 import de.hanno.hpengine.toCount
 import org.joml.Vector3f
-import org.koin.core.annotation.Single
+import org.joml.Vector3fc
 
-@Single(binds = [CameraRenderExtension::class, DeferredRenderExtension::class])
-class CameraRenderExtension(
+class ColorOnlyLineRenderer(
     private val graphicsApi: GraphicsApi,
-    renderStateContext: RenderStateContext,
-    private val config: Config,
     private val programManager: ProgramManager,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
-    private val cameraComponentsStateHolder: CameraComponentsStateHolder,
-) : DeferredRenderExtension {
+) {
 
-    private val lineVertices: TypedGpuBuffer<Vector4fStrukt> = graphicsApi.PersistentShaderStorageBuffer(24.toCount() * SizeInBytes(Vector4fStrukt.type.sizeInBytes)).typed(Vector4fStrukt.type)
+    private val lineVertices: TypedGpuBuffer<Vector4fStrukt> = graphicsApi.PersistentShaderStorageBuffer(24.toCount() * SizeInBytes(
+        Vector4fStrukt.type.sizeInBytes)
+    ).typed(Vector4fStrukt.type)
+
     val linesProgram = programManager.run {
         val uniforms = LinesProgramUniforms(graphicsApi)
         getProgram(
@@ -73,18 +67,19 @@ class CameraRenderExtension(
         )
     }
 
-    override fun renderFirstPass(renderState: RenderState) {
-        if (config.debug.isDrawCameras) {
-            val camera = renderState[primaryCameraStateHolder.camera]
+    fun render(
+        renderState: RenderState,
+        linePoints: List<Vector3fc>,
+    ) {
+        val camera = renderState[primaryCameraStateHolder.camera]
 
-            graphicsApi.drawLines(
-                linesProgram,
-                lineVertices,
-                renderState[cameraComponentsStateHolder.frustumLines],
-                viewMatrix = camera.viewMatrixBuffer,
-                projectionMatrix = camera.projectionMatrixBuffer,
-                color = Vector3f(1f, 0f, 0f)
-            )
-        }
+        graphicsApi.drawLines(
+            linesProgram,
+            lineVertices,
+            linePoints,
+            viewMatrix = camera.viewMatrixBuffer,
+            projectionMatrix = camera.projectionMatrixBuffer,
+            color = Vector3f(1f, 0f, 0f)
+        )
     }
 }

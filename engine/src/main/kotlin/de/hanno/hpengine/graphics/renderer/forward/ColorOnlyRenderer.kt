@@ -24,6 +24,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.graphics.texture.TextureManager
+import de.hanno.hpengine.graphics.texture.TextureUsageInfo
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
@@ -32,6 +33,7 @@ import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
 import de.hanno.hpengine.transform.isInside
 import org.joml.Vector3f
+import org.joml.Vector4f
 import org.koin.core.annotation.Single
 import org.koin.ksp.generated.module
 import org.lwjgl.BufferUtils
@@ -53,6 +55,7 @@ class ColorOnlyRenderer(
     private val textureManager: TextureManager,
 ): PrimaryRenderer {
 
+    private val lineRenderer = ColorOnlyLineRenderer(graphicsApi, programManager, primaryCameraStateHolder)
     override val finalOutput = SimpleFinalOutput(renderTarget.textures.first(), 0, this)
 
     val simpleColorProgramStatic = programManager.getProgram(
@@ -129,18 +132,42 @@ class ColorOnlyRenderer(
             z.closest(min.z, max.z)
         )
 
-        currentWriteState[staticDirectPipeline].preparedBatches.forEach {
-            val closestPointOnAABB = it.cameraWorldPosition.closest(it.meshMinWorld, it.meshMaxWorld)
-            val distance = it.cameraWorldPosition.distance(closestPointOnAABB)
-            val cameraIsInside = it.cameraWorldPosition.isInside(it.meshMinWorld, it.meshMaxWorld)
-            textureManager.setTexturesUsedInCycle(it.material.maps.values, cycleSystem.cycle, if(cameraIsInside) 0f else distance)
+        val usageInfos = currentWriteState[defaultBatchesSystem.renderBatchesStatic].flatMap { batch ->
+            val cycle = if(currentWriteState[staticDirectPipeline].preparedBatches.any { it.entityId == batch.entityId && it.meshIndex == batch.meshIndex }) cycleSystem.cycle else null
+
+            batch.material.maps.map { map ->
+                val closestPointOnAABB = batch.cameraWorldPosition.closest(batch.meshMinWorld, batch.meshMaxWorld)
+                val distance = batch.cameraWorldPosition.distance(closestPointOnAABB)
+                val cameraIsInside = batch.cameraWorldPosition.isInside(batch.meshMinWorld, batch.meshMaxWorld)
+                val isBehindCamera = currentWriteState[primaryCameraStateHolder.camera].viewMatrix.transform(Vector4f(
+                    closestPointOnAABB.x, closestPointOnAABB.y, closestPointOnAABB.z, 1f
+                )).z > 0
+                Pair(
+                    map.value,
+                    TextureUsageInfo(
+                        if(cycle == null) null else System.nanoTime(),
+                        distance,
+                        isBehindCamera,
+                        cameraIsInside,
+                        cycle,
+                    )
+                )
+            }
+        }.groupBy { it.first }.mapValues {
+            val entries = it.value
+            TextureUsageInfo(
+                entries.first().second.time, entries.minBy { entry -> entry.second.distance }.second.distance,
+                entries.all { entry -> entry.second.behindCamera }, entries.any { entry -> entry.second.cameraIsInside }, entries.firstNotNullOfOrNull { it.second.cycle }
+            )
         }
-        currentWriteState[animatedDirectPipeline].preparedBatches.forEach {
-            val closestPointOnAABB = it.cameraWorldPosition.closest(it.meshMinWorld, it.meshMaxWorld)
-            val distance = it.cameraWorldPosition.distance(closestPointOnAABB)
-            val cameraIsInside = it.cameraWorldPosition.isInside(it.meshMinWorld, it.meshMaxWorld)
-            textureManager.setTexturesUsedInCycle(it.material.maps.values, cycleSystem.cycle, if(cameraIsInside) 0f else distance)
+        usageInfos.forEach { (handle, usageInfo) ->
+            textureManager.setTexturesUsedInCycle(
+                handle, usageInfo.cycle,
+                if(usageInfo.cameraIsInside) 0f else usageInfo.distance,
+                usageInfo.behindCamera,
+            )
         }
+        // TODO: Do for animated batches as well
     }
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
@@ -173,9 +200,28 @@ class ColorOnlyRenderer(
                     bindIndexBuffer = true,
                 )
             })
+
+            if(config.debug.drawBoundingVolumes) {
+                lineRenderer.render(
+                    renderState,
+                    renderState[defaultBatchesSystem.renderBatchesStatic].flatMap {
+                        listOf(
+                            it.meshMinWorld, it.meshMinWorld.copy(x = it.meshMaxWorld.x),
+                            it.meshMinWorld, it.meshMinWorld.copy(y = it.meshMaxWorld.y),
+                            it.meshMinWorld, it.meshMinWorld.copy(z = it.meshMaxWorld.z),
+
+                            it.meshMaxWorld, it.meshMaxWorld.copy(x = it.meshMinWorld.x),
+                            it.meshMaxWorld, it.meshMaxWorld.copy(y = it.meshMinWorld.y),
+                            it.meshMaxWorld, it.meshMaxWorld.copy(z = it.meshMinWorld.z),
+                        )
+                    }
+                )
+            }
         }
     }
 }
+
+fun Vector3f.copy(x: Float = this.x, y: Float = this.y, z: Float = this.z) = Vector3f(x, y, z)
 
 fun createTransformBuffer() = BufferUtils.createFloatBuffer(16).apply { Transform().get(this) }
 
