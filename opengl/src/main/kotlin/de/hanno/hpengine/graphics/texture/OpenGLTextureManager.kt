@@ -199,7 +199,9 @@ class OpenGLTextureManager(
                 graphicsApi.run {
                     val data = getData()
                     if(fallbackHandle.texture.textureFilterConfig.minFilter.isMipMapped) {
-                        fallbackHandle.uploadAsync(data.subList(data.size - mipMapCountToKeepLoaded, data.size))
+                        fallbackHandle.uploadAsync(data.subList(data.size - mipMapCountToKeepLoaded, data.size).mapIndexed { index, it ->
+                            it.copy(mipMapLevel =  index)
+                        })
                     } else {
                         fallbackHandle.uploadAsync(listOf(data.first()))
                     }
@@ -455,12 +457,10 @@ class OpenGLTextureManager(
                                     textureUsageInfos[it]?.distance ?: 0f
                                 }
                             candidatesToStealHandleFrom.firstOrNull {
-                                (textureUsageInfos[handle]?.distance ?: 0f) < (textureUsageInfos[it]?.distance
-                                    ?: 0f)
+                                (textureUsageInfos[handle]?.distance ?: 0f) < (textureUsageInfos[it]?.distance ?: 0f) - 5f // TODO: Don't use arbitrary bias
                             }?.let { candidate ->
                                 logger.debug("Stealing texture from ${candidate.path} to load ${handle.path}")
-//                                TODO: This is not working yet, it puts too much work on the queue
-//                                moveTexture(from = candidate, to = handle)
+                                moveTexture(from = candidate, to = handle)
                             }
                         }
 

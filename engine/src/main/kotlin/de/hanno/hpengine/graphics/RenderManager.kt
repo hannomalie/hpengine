@@ -85,7 +85,7 @@ class RenderManager(
                             }
 
                             profiled("checkCommandSyncs") {
-                                checkCommandSyncs()
+                                update()
                             }
 
                             profiled("finishFrame") {

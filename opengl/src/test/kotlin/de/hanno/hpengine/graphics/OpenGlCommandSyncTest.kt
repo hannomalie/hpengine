@@ -13,7 +13,7 @@ class OpenGlCommandSyncTest {
         val commandSync = openGLContext.second.CommandSync { signaled.getAndSet(true) }
 
         commandSync.isSignaled shouldBe false
-        openGLContext.second.checkCommandSyncs()
+        openGLContext.second.update()
         commandSync.isSignaled shouldBe true
     }
 }

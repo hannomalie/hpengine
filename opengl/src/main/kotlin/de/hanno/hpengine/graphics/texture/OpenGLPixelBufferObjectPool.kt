@@ -5,7 +5,8 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.constants.BufferTarget
-import java.util.concurrent.CopyOnWriteArraySet
+import kotlinx.coroutines.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.PriorityBlockingQueue
 
@@ -25,6 +26,23 @@ class OpenGLPixelBufferObjectPool(
         }
     }
     override val queue = PriorityBlockingQueue(10000, TaskComparator)
+    private val staging = ConcurrentHashMap<TextureHandle<*>, Task>()
+    private val currentJobs = ConcurrentHashMap<TextureHandle<*>, Job>()
+
+    fun update() = runBlocking {
+        staging.forEach { (key, value) ->
+            if(currentJobs.contains(value.handle)) {
+//                TODO: Make cancellation possible
+//                currentJobs[value.handle]?.cancel()
+//                currentJobs.remove(value.handle)
+//                queue.put(value)
+            } else {
+                staging.remove(key)
+                queue.put(value)
+            }
+        }
+//        staging.clear()
+    }
 
     private val threadPool = Executors.newFixedThreadPool(buffers.size).apply {
         repeat(buffers.size) { index ->
@@ -36,7 +54,12 @@ class OpenGLPixelBufferObjectPool(
 
                     while(pbo.uploading) { }
                     try {
-                        current.run(pbo)
+                        val job = current.run(pbo)
+                        currentJobs[current.handle] = job
+                        runBlocking {
+                            job.join()
+                            currentJobs.remove(current.handle)
+                        }
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -75,30 +98,20 @@ class OpenGLPixelBufferObjectPool(
                     if(!texture.textureFilterConfig.minFilter.isMipMapped) {
                         throw IllegalStateException("Can't upload multiple data to non mip mapped texture!")
                     }
-                    queue.put(Task(handle, 0) { pbo ->
-                        data.reversed().forEachIndexed { index, textureData ->
-                            val level = data.size - 1 - index
-                            val currentlyLoadedLevel = when(val uploadState = handle.uploadState) {
-                                is UploadState.Unloaded -> data.size
-                                UploadState.Uploaded -> 0
-                                is UploadState.Uploading -> uploadState.mipMapLevel
-                                is UploadState.MarkedForUpload -> data.size
-                                UploadState.ForceFallback -> 0
-                            }
-                            if(level < currentlyLoadedLevel) {
-                                try {
-                                    pbo.upload(handle, level, textureData)
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
+                    staging[handle] = Task(handle, 0) { pbo ->
+                        GlobalScope.launch {
+                            data.reversed().map {
+                                pbo.upload(handle, it).join()
                             }
                         }
-                    })
+                    }
                 }
                 else -> {
-                    queue.put(Task(handle, 0) { pbo ->
-                        pbo.upload(handle, data)
-                    })
+                    staging[handle] = Task(handle, 0) { pbo ->
+                        GlobalScope.launch {
+                            pbo.upload(handle, data.first()).join()
+                        }
+                    }
                 }
             }
         }

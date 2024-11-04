@@ -176,7 +176,7 @@ private fun List<BufferedImage>.getCubeMapUploadInfo() = Pair(TextureDescription
     wrapMode = WrapMode.Repeat
 ), toByteArrays().map { byteArray ->
     ImageData(
-        first().width, first().height
+        first().width, first().height, 0
     ) {
         ByteBuffer.allocateDirect(byteArray.size).apply {
             buffer(byteArray)
@@ -192,7 +192,7 @@ private fun BufferedImage.getCubeMapUploadInfo(): Pair<TextureDescription.CubeMa
     val tileDimension = TextureDimension(width / 4, height / 3)
 
     val data = convertCubeMapData().map { byteArray ->
-        ImageData(tileDimension.width, tileDimension.height
+        ImageData(tileDimension.width, tileDimension.height, 0
         ) {
             ByteBuffer.allocateDirect(byteArray.size).apply {
                 buffer(byteArray)

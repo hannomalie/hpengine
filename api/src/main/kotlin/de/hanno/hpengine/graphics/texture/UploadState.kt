@@ -93,21 +93,21 @@ sealed interface TextureDescription {
     ) : TextureDescription
 }
 
-data class ImageData(val width: Int, val height: Int, val dataProvider: () -> ByteBuffer)
+data class ImageData(val width: Int, val height: Int, val mipMapLevel: Int, val dataProvider: () -> ByteBuffer)
 
 
 fun createSingleMipLevelTexture2DUploadInfo(
     image: BufferedImage
 ): ImageData {
-    return ImageData(image.width, image.height) { image.resize(image.width).toByteBuffer() }
+    return ImageData(image.width, image.height, 0) { image.resize(image.width).toByteBuffer() }
 }
 fun createAllMipLevelsImageData(
     image: BufferedImage
 ): List<ImageData> {
     val mipMapSizes = calculateMipMapSizes(image.width, image.height)
 
-    return mipMapSizes.map {
-        ImageData(it.width, it.height) { image.resize(it.width).toByteBuffer() }
+    return mipMapSizes.mapIndexed { index, it ->
+        ImageData(it.width, it.height, mipMapSizes.size - 1 - index) { image.resize(it.width).toByteBuffer() }
     }
 }
 fun createAllMipLevelsTexture2DUploadInfo(
@@ -118,7 +118,7 @@ fun createAllMipLevelsTexture2DUploadInfo(
     val mipMapSizes = calculateMipMapSizes(width, height)
 
     val data = mipMapSizes.mapIndexed { index, it ->
-        ImageData(it.width, it.height) {
+        ImageData(it.width, it.height, mipMapSizes.size - 1 - index) {
             logger.debug("Loading texture ${files[index]}")
             ImageIO.read(files[index]).toByteBuffer()
         }

@@ -387,6 +387,7 @@ interface GraphicsApi {
     fun setPointsSize(size: Float)
     fun <T: Texture> createDepthBuffer(texture: T): DepthBuffer<T>
     fun createView(texture: Texture2DArray, index: Int): Texture2D
+    fun update()
 }
 
 fun GraphicsApi.RenderTarget(

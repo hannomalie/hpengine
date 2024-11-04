@@ -243,6 +243,10 @@ class OpenGLContext private constructor(
         }
     }
 
+    override fun update() {
+        checkCommandSyncs()
+        pixelBufferObjectPool.update()
+    }
     private fun getMaxCombinedTextureImageUnits() =
         onGpuInline { glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
 
@@ -675,7 +679,7 @@ class OpenGLContext private constructor(
                         uploadState = UploadState.Uploaded
                     }
                     // TODO: throw on wrong data size?
-                    else -> data.reversed().forEachIndexed { i, textureData ->
+                    else -> data.sortedByDescending { it.mipMapLevel }.forEachIndexed { i, textureData ->
                         val mipLevel = data.size - i - 1
                         val data = textureData.dataProvider()
                         onGpuInline {

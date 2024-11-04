@@ -105,11 +105,11 @@ class StaticFileBasedTexture2D(
     private val ddsImage: DDSImage get() = DDSImage.read(file)
     override fun getData(): List<ImageData> {
         val imageData = if (file.extension == "dds") {
-            ddsImage.allMipMaps.map {
+            ddsImage.allMipMaps.mapIndexed { index, it ->
                 if (description.internalFormat.isCompressed) {
-                    ImageData(it.width, it.height) { it.data }
+                    ImageData(it.width, it.height, index) { it.data }
                 } else {
-                    ImageData(it.width, it.height) {
+                    ImageData(it.width, it.height, index) {
                         val decompressed = DDSUtil.decompressTexture(
                             ddsImage.getMipMap(0).data,
                             ddsImage.width,
@@ -130,7 +130,7 @@ class StaticFileBasedTexture2D(
                     file,
                     description.dimension
                 )).mapIndexed { index, file ->
-                    ImageData(mipMapSizes[index].width, mipMapSizes[index].height) {
+                    ImageData(mipMapSizes[index].width, mipMapSizes[index].height, index) {
                         ImageIO.read(file).toByteBuffer()
                     }
                 }
@@ -161,11 +161,11 @@ class DynamicFileBasedTexture2D(
 
     override fun getData(): List<ImageData> {
         val imageData = if (file.extension == "dds") {
-            ddsImage.allMipMaps.map { // TODO: Does it contain all images or all mipmaps?
+            ddsImage.allMipMaps.mapIndexed { index, it -> // TODO: Does it contain all images or all mipmaps?
                 if (description.internalFormat.isCompressed) {
-                    ImageData(it.width, it.height) { it.data }
+                    ImageData(it.width, it.height, index) { it.data }
                 } else {
-                    ImageData(it.width, it.height) {
+                    ImageData(it.width, it.height, index) {
                         val decompressed = DDSUtil.decompressTexture(
                             ddsImage.getMipMap(0).data,
                             ddsImage.width,
@@ -183,7 +183,7 @@ class DynamicFileBasedTexture2D(
             if (precalculateMipMapsOnCpu) {
                 if (allMipsPrecalculated) {
                     files.mapIndexed { index, file ->
-                        ImageData(mipMapSizes[index].width, mipMapSizes[index].height) {
+                        ImageData(mipMapSizes[index].width, mipMapSizes[index].height, index) {
                             ImageIO.read(file).toByteBuffer()
                         }
                     }
@@ -192,7 +192,7 @@ class DynamicFileBasedTexture2D(
                     actuallyCalculateMipMapFiles(mipMapSizes, bufferedImage, file, mipMapFiles)
 
                     files.mapIndexed { index, file ->
-                        ImageData(mipMapSizes[index].width, mipMapSizes[index].height) {
+                        ImageData(mipMapSizes[index].width, mipMapSizes[index].height, index) {
                             ImageIO.read(file).toByteBuffer()
                         }
                     }
