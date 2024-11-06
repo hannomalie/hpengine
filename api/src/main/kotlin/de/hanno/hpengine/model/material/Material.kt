@@ -94,7 +94,11 @@ fun deriveHandle(handle: TextureHandle<*>?, fallbackTexture: TextureHandle<Textu
                 null -> handle
                 else -> {
                     val imageCountToUseFromActualImage = texture.imageCount - (fallback.texture.imageCount - fallback.currentMipMapBias)
-                    if (handle.uploadState !is UploadState.ForceFallback && handle.currentMipMapBias <= imageCountToUseFromActualImage) {
+                    if (
+                        handle.uploadState !is UploadState.ForceFallback &&
+                        handle.uploadState !is UploadState.MarkedForUpload &&
+                        handle.currentMipMapBias <= imageCountToUseFromActualImage
+                    ) {
                         handle
                     } else {
                         fallback

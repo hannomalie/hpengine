@@ -635,9 +635,7 @@ class OpenGLContext private constructor(
                 is UploadState.Uploading, UploadState.ForceFallback -> {}
                 is UploadState.Unloaded -> {
                     this.uploadState = UploadState.MarkedForUpload
-                    GlobalScope.launch(Dispatchers.IO) {
-                        upload(data)
-                    }
+                    upload(data)
                 }
             }
         }
@@ -655,12 +653,11 @@ class OpenGLContext private constructor(
         }
     }
 
-    private fun TextureHandle<Texture2D>.uploadWithPixelBuffer(data: List<ImageData>) {
+    private fun TextureHandle<Texture2D>.uploadWithPixelBuffer(data: List<ImageData>) = GlobalScope.launch(Dispatchers.IO) {
         pixelBufferObjectPool.scheduleUpload(this@uploadWithPixelBuffer, data)
     }
 
     private fun TextureHandle<Texture2D>.uploadWithoutPixelBuffer(data: List<ImageData>) = GlobalScope.launch(Dispatchers.IO) {
-
         when(val texture = texture) {
             null -> {}
             else -> texture.run {

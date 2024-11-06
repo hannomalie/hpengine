@@ -37,51 +37,49 @@ class OpenGLPixelBufferObject(
             uploading = true
 
             when(val texture = handle.texture) {
-                null -> { uploading = false }
-                else -> {
-                    graphicsApi.run {
+                null -> {  }
+                else -> graphicsApi.run {
 
-                        val data = imageData.dataProvider()
+                    val data = imageData.dataProvider()
 
-                        data.rewind()
-                        buffer.put(data)
+                    data.rewind()
+                    buffer.put(data)
 
-                        val capacity = data.capacity()
-                        val textureId = texture.id
+                    val capacity = data.capacity()
+                    val textureId = texture.id
 
-                        if (config.debug.simulateSlowTextureStreaming) {
-                            println("Uploaded level ${imageData.mipMapLevel}")
-                            Thread.sleep((imageData.mipMapLevel * 100).toLong())
-                        }
+                    if (config.debug.simulateSlowTextureStreaming) {
+                        println("Uploaded level ${imageData.mipMapLevel}")
+                        Thread.sleep((imageData.mipMapLevel * 100).toLong())
+                    }
 
-                        graphicsApi.onGpu {
-                            profiled("textureSubImage") {
-                                buffer.bound {
-                                    if (texture.internalFormat.isCompressed) profiled("glCompressedTextureSubImage2D") {
-                                        glCompressedTextureSubImage2D(textureId, imageData.mipMapLevel, 0, 0, imageData.width, imageData.height, texture.internalFormat.glValue, capacity, 0)
-                                    } else profiled("glTextureSubImage2D") {
-                                        glTextureSubImage2D(textureId, imageData.mipMapLevel, 0, 0, imageData.width, imageData.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
-                                    }
+                    onGpu {
+                        profiled("textureSubImage") {
+                            buffer.bound {
+                                if (texture.internalFormat.isCompressed) profiled("glCompressedTextureSubImage2D") {
+                                    glCompressedTextureSubImage2D(textureId, imageData.mipMapLevel, 0, 0, imageData.width, imageData.height, texture.internalFormat.glValue, capacity, 0)
+                                } else profiled("glTextureSubImage2D") {
+                                    glTextureSubImage2D(textureId, imageData.mipMapLevel, 0, 0, imageData.width, imageData.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
                                 }
                             }
-                            when (val uploadState = handle.uploadState) {
-                                is UploadState.Unloaded, is UploadState.MarkedForUpload -> {
+                        }
+                        when (val uploadState = handle.uploadState) {
+                            is UploadState.Unloaded, is UploadState.MarkedForUpload -> {
+                                handle.uploadState = UploadState.Uploading(imageData.mipMapLevel)
+                            }
+
+                            UploadState.Uploaded -> {}
+                            is UploadState.Uploading -> {
+                                if (uploadState.mipMapLevel < imageData.mipMapLevel) {
                                     handle.uploadState = UploadState.Uploading(imageData.mipMapLevel)
                                 }
-
-                                UploadState.Uploaded -> {}
-                                is UploadState.Uploading -> {
-                                    if (uploadState.mipMapLevel < imageData.mipMapLevel) {
-                                        handle.uploadState = UploadState.Uploading(imageData.mipMapLevel)
-                                    }
-                                }
-
-                                UploadState.ForceFallback -> {}
                             }
-                            CommandSync {
-                                if (imageData.mipMapLevel == 0) {
-                                    handle.uploadState = UploadState.Uploaded
-                                }
+
+                            UploadState.ForceFallback -> {}
+                        }
+                        CommandSync {
+                            if (imageData.mipMapLevel == 0) {
+                                handle.uploadState = UploadState.Uploaded
                             }
                         }
                     }

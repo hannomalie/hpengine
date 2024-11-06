@@ -17,11 +17,19 @@ fun textureManagerGrid(
 
     floatInput("Unload bias in seconds", config.performance::unloadBiasInSeconds, 0.1f, 20f)
     floatInput("Unload distance", config.performance::unloadDistance, 1f, 300f)
+    ImGui.text("-----")
 
     graphicsApi.pixelBufferObjectPool.buffers.forEachIndexed { index, it ->
         ImGui.text("PixelBufferObject $index uploading: ${it.uploading}")
     }
     ImGui.text("Texture upload queue size: ${graphicsApi.pixelBufferObjectPool.queue.size}")
+    ImGui.text("Currently loading: ${graphicsApi.pixelBufferObjectPool.currentJobs.size}")
+    graphicsApi.pixelBufferObjectPool.currentJobs.forEach { (key, _) ->
+        if(key is DynamicFileBasedTexture2D) {
+            ImGui.text(key.path)
+        }
+    }
+    ImGui.text("-----")
 
     if (ImGui.beginCombo("Texture unload strategy", config.performance.textureUnloadStrategy.toString())) {
         (listOf(NoUnloading) + (0..<6).map { Unloading(it) }).forEach {
@@ -62,7 +70,7 @@ fun textureManagerGrid(
         ImGui.text(it.path)
     }
     ImGui.text("Texture with handle:")
-    textureManagerBaseSystem.fileBasedTextures.values.filterIsInstance<DynamicFileBasedTexture2D>().forEach {
+    textureManagerBaseSystem.fileBasedTextures.values.filterIsInstance<DynamicFileBasedTexture2D>().filter { it.texture != null }.forEach {
         ImGui.text(it.path)
     }
 }

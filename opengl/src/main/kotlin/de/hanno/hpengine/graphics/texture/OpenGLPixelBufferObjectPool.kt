@@ -25,49 +25,86 @@ class OpenGLPixelBufferObjectPool(
             )
         }
     }
+    private val buffersForStaticHandles = buffers
+    private val buffersForDynamicHandles = buffers
     override val queue = PriorityBlockingQueue(10000, TaskComparator)
-    private val staging = ConcurrentHashMap<TextureHandle<*>, Task>()
-    private val currentJobs = ConcurrentHashMap<TextureHandle<*>, Job>()
+    private val _queue = ConcurrentHashMap<TextureHandle<*>, Task>()
+    private val stagingDynamic = ConcurrentHashMap<DynamicHandle<*>, Task>()
+    private val stagingStatic = ConcurrentHashMap<StaticHandle<*>, Task>()
+    override val currentJobs = ConcurrentHashMap<TextureHandle<*>, Job>()
 
-    fun update() = runBlocking {
-        staging.forEach { (key, value) ->
-            if(currentJobs.contains(value.handle)) {
+    fun update() {
+        stagingStatic.forEach { (handle, task) ->
+            buffersForStaticHandles.firstOrNull { !it.uploading }?.let { buffer ->
+                stagingStatic.remove(handle)
+                GlobalScope.launch { // TODO: This is not entirely working i think
+                    while (buffer.uploading) {
+                        delay(100)
+                    }
+                    val job = task.run(buffer)
+                    job.join()
+                }
+            }
+        }
+        stagingDynamic.forEach { (handle, task) ->
+            if(currentJobs.contains(task.handle)) {
 //                TODO: Make cancellation possible
 //                currentJobs[value.handle]?.cancel()
 //                currentJobs.remove(value.handle)
 //                queue.put(value)
             } else {
-                staging.remove(key)
-                queue.put(value)
+                stagingDynamic.remove(handle)
+//                queue.put(task)
+                _queue[handle] = task
+                buffersForDynamicHandles.firstOrNull { !it.uploading }?.let { buffer ->
+                    GlobalScope.launch {
+                        while (buffer.uploading) {
+                            delay(100)
+                        }
+                        val job = task.run(buffer)
+                        currentJobs[task.handle] = job
+                        job.join()
+                    }.invokeOnCompletion {
+                        currentJobs.remove(task.handle)
+                    }
+                }
             }
         }
 //        staging.clear()
     }
 
-    private val threadPool = Executors.newFixedThreadPool(buffers.size).apply {
-        repeat(buffers.size) { index ->
-            val pbo = buffers[index]
-
-            submit {
-                var current = queue.take()
-                while(current != null) {
-
-                    while(pbo.uploading) { }
-                    try {
-                        val job = current.run(pbo)
-                        currentJobs[current.handle] = job
-                        runBlocking {
-                            job.join()
-                            currentJobs.remove(current.handle)
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                    current = queue.take()
-                }
-            }
-        }
-    }
+//    private val threadPool = Executors.newFixedThreadPool(buffers.size).apply {
+//        repeat(buffers.size) { index ->
+//            val pbo = buffers[index]
+//
+//            submit {
+////                var current = queue.take()
+////                while(current != null) {
+//                while(true) {
+//
+//                    while(pbo.uploading) { }
+//                    when(val first = _queue.entries.firstOrNull()) {
+//                        null ->  {}
+//                        else -> {
+//                            val current = _queue.remove(first.key)!!
+//                            try {
+//                                val job = current.run(pbo)
+//                                currentJobs[current.handle] = job
+//                                runBlocking {
+//                                    job.join()
+//                                    currentJobs.remove(current.handle)
+//                                }
+//                            } catch (e: Exception) {
+//                                e.printStackTrace()
+//                            }
+//                        }
+//                    }
+////                    current = queue.take()
+//
+//                }
+//            }
+//        }
+//    }
 
     override fun scheduleUpload(handle: TextureHandle<Texture2D>, data: List<ImageData>) {
 
@@ -90,26 +127,29 @@ class OpenGLPixelBufferObjectPool(
 //            }
 //        })
 
-        when(val texture = handle.texture) {
+        when(handle.texture) {
             null -> { }
             else -> when {
                 data.isEmpty() -> throw IllegalStateException("Cannot upload empty data!")
-                data.size > 1 -> {
-                    if(!texture.textureFilterConfig.minFilter.isMipMapped) {
-                        throw IllegalStateException("Can't upload multiple data to non mip mapped texture!")
-                    }
-                    staging[handle] = Task(handle, 0) { pbo ->
-                        GlobalScope.launch {
-                            data.reversed().map {
-                                pbo.upload(handle, it).join()
+                else -> {
+                    when(handle) {
+                        is DynamicHandle -> {
+                            stagingDynamic[handle] = Task(handle, 0) { pbo ->
+                                GlobalScope.launch {
+                                    data.sortedByDescending { it.mipMapLevel }.map {
+                                        pbo.upload(handle, it).join()
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                else -> {
-                    staging[handle] = Task(handle, 0) { pbo ->
-                        GlobalScope.launch {
-                            pbo.upload(handle, data.first()).join()
+                        is StaticHandle -> {
+                            stagingStatic[handle] = Task(handle, 0) { pbo ->
+                                GlobalScope.launch {
+                                    data.sortedByDescending { it.mipMapLevel }.map {
+                                        pbo.upload(handle, it).join()
+                                    }
+                                }
+                            }
                         }
                     }
                 }
