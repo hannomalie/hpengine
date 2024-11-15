@@ -77,9 +77,9 @@ private fun World.addOceanSurface(
                 useWorldSpaceXZAsTexCoords = true,
                 uvScale = Vector2f(0.05f)
             ).apply {
-                maps.putIfAbsent(Material.MAP.DIFFUSE, StaticHandleImpl(oceanWaterRenderSystem.albedoMap, UploadState.Uploaded, 0f))
-                maps.putIfAbsent(Material.MAP.DISPLACEMENT, StaticHandleImpl(oceanWaterRenderSystem.displacementMap, UploadState.Uploaded, 0f))
-                maps.putIfAbsent(Material.MAP.NORMAL, StaticHandleImpl(oceanWaterRenderSystem.waterNormalMap.texture, UploadState.Uploaded, 0f))
+                maps.putIfAbsent(Material.MAP.DIFFUSE, StaticHandleImpl(oceanWaterRenderSystem.albedoMap, uploadState = UploadState.Uploaded, currentMipMapBias = 0f))
+                maps.putIfAbsent(Material.MAP.DISPLACEMENT, StaticHandleImpl(oceanWaterRenderSystem.displacementMap, uploadState = UploadState.Uploaded, currentMipMapBias = 0f))
+                maps.putIfAbsent(Material.MAP.NORMAL, StaticHandleImpl(oceanWaterRenderSystem.waterNormalMap.texture, uploadState = UploadState.Uploaded, currentMipMapBias = 0f))
             }
         }
         add(OceanWaterComponent())

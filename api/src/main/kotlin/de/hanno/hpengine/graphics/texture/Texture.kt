@@ -55,6 +55,7 @@ val Texture.imageCount: Int get() = mipMapCount + 1
 
 sealed interface TextureHandle<T: Texture> {
     val texture: T?
+    val description: TextureDescription
     var uploadState: UploadState
     var currentMipMapBias: Float // TODO: Make this a proper type and restrict range
 }
@@ -62,6 +63,7 @@ interface StaticHandle<T: Texture>: TextureHandle<T> {
     override val texture: T
 }
 class StaticHandleImpl<T: Texture>(override val texture: T,
+                                   override val description: TextureDescription = texture.description,
                                    override var uploadState: UploadState,
                                    override var currentMipMapBias: Float
 ): StaticHandle<T>
@@ -97,7 +99,7 @@ class StaticFileBasedTexture2D(
     val path: String,
     val file: File,
     override val texture: Texture2D,
-    val description: Texture2DDescription,
+    override val description: Texture2DDescription,
     override var uploadState: UploadState,
     override var currentMipMapBias: Float = mipMapBiasForUploadState(uploadState, description.dimension)
 ): StaticHandle<Texture2D>, FileBasedTexture2D {
@@ -147,7 +149,7 @@ class DynamicFileBasedTexture2D(
     val file: File,
     override var texture: Texture2D?,
     override var fallback: StaticHandle<Texture2D>?,
-    val description: Texture2DDescription,
+    override val description: Texture2DDescription,
     override var uploadState: UploadState,
     override var currentMipMapBias: Float = mipMapBiasForUploadState(uploadState, description.dimension)
 ): DynamicHandle<Texture2D>, FileBasedTexture2D {
@@ -159,7 +161,16 @@ class DynamicFileBasedTexture2D(
     private val files = listOf(file) + mipMapFiles
     private val allMipsPrecalculated = mipMapFiles.all { it.exists() }
 
+    override fun toString(): String = "DynamicFileBasedTexture2D(${file.path})"
+
+    val cachedData by lazy { actualGetData() }
+
     override fun getData(): List<ImageData> {
+        return cachedData
+//        return actualGetData()
+    }
+
+    private fun actualGetData(): List<ImageData> {
         val imageData = if (file.extension == "dds") {
             ddsImage.allMipMaps.mapIndexed { index, it -> // TODO: Does it contain all images or all mipmaps?
                 if (description.internalFormat.isCompressed) {
@@ -201,7 +212,7 @@ class DynamicFileBasedTexture2D(
                 listOf(createSingleMipLevelTexture2DUploadInfo(bufferedImage))
             }
         }
-        return if(description.textureFilterConfig.minFilter.isMipMapped) imageData else listOf(imageData.first())
+        return if (description.textureFilterConfig.minFilter.isMipMapped) imageData else listOf(imageData.first())
     }
 }
 

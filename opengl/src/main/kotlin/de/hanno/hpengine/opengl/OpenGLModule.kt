@@ -19,7 +19,7 @@ import org.koin.ksp.generated.module
 
 @Module
 class OpenGLModule {
-    @Single(binds = [GraphicsApi::class])
+    @Single(binds = [GraphicsApi::class, BaseSystem::class])
     fun openGLContext(window: Window, config: Config) = OpenGLContext(window, config)
     @Single(binds = [GPUProfiler::class, OpenGLGPUProfiler::class])
     fun openGLProfiler(config: Config) = OpenGLGPUProfiler(config.debug::profiling)

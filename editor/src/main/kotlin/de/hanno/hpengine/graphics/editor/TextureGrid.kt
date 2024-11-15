@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.texture.*
 import imgui.ImGui
+import java.util.concurrent.TimeUnit
 
 fun textureManagerGrid(
     config: Config,
@@ -20,9 +21,8 @@ fun textureManagerGrid(
     ImGui.text("-----")
 
     graphicsApi.pixelBufferObjectPool.buffers.forEachIndexed { index, it ->
-        ImGui.text("PixelBufferObject $index uploading: ${it.uploading}")
+        ImGui.text("PBO $index uploading: ${it.uploading}")
     }
-    ImGui.text("Texture upload queue size: ${graphicsApi.pixelBufferObjectPool.queue.size}")
     ImGui.text("Currently loading: ${graphicsApi.pixelBufferObjectPool.currentJobs.size}")
     graphicsApi.pixelBufferObjectPool.currentJobs.forEach { (key, _) ->
         if(key is DynamicFileBasedTexture2D) {
@@ -43,25 +43,42 @@ fun textureManagerGrid(
         }
         ImGui.endCombo()
     }
+
+    ImGui.text("-----")
+
+    textureManagerBaseSystem.fileBasedTextures.values.filterIsInstance<DynamicFileBasedTexture2D>().forEach {
+        val postfix = when (val usageTimeStamp = graphicsApi.getHandleUsageTimeStamp(it)) {
+            null -> "(never used)"
+            else -> {
+                val notUsedForNanos = System.nanoTime() - usageTimeStamp
+                "(unused ${TimeUnit.NANOSECONDS.toMillis(notUsedForNanos)} ms)"
+            }
+        }
+        val postfixDistance = when (val distance = graphicsApi.getHandleUsageDistance(it)) {
+            null -> ""
+            else -> {
+                "($distance)"
+            }
+        }
+
+        ImGui.text("${it.file.nameWithoutExtension}$postfix$postfixDistance")
+    }
+
+    ImGui.text("-----")
+
     if (ImGui.button("Reload all dynamic handles")) {
         textureManagerBaseSystem.fileBasedTextures.values.filterIsInstance<DynamicHandle<*>>().forEach { texture ->
-            graphicsApi.run {
-                texture.uploadState = UploadState.Unloaded
-            }
+            texture.uploadState = UploadState.Unloaded
         }
     }
     if (ImGui.button("Reload all static handles")) {
         textureManagerBaseSystem.fileBasedTextures.values.filterIsInstance<StaticHandle<*>>().forEach { texture ->
-            graphicsApi.run {
-                texture.uploadState = UploadState.Unloaded
-            }
+            texture.uploadState = UploadState.Unloaded
         }
     }
     if (ImGui.button("Reload all dynamic handles (${config.performance.textureUnloadStrategy})")) {
         textureManagerBaseSystem.fileBasedTextures.values.filterIsInstance<DynamicHandle<*>>().forEach { texture ->
-            graphicsApi.run {
-                texture.uploadState = UploadState.Unloaded
-            }
+            texture.uploadState = UploadState.Unloaded
         }
     }
 

@@ -21,6 +21,7 @@ import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.StaticHandle
 import de.hanno.hpengine.graphics.texture.Texture2D
+import de.hanno.hpengine.graphics.texture.TextureHandle
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
@@ -30,7 +31,9 @@ import de.hanno.hpengine.scene.GeometryBuffer
 import de.hanno.hpengine.toCount
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
+import org.jetbrains.kotlin.utils.toSmartList
 import org.joml.FrustumIntersection
+import kotlin.math.min
 
 open class DirectPipeline(
     private val graphicsApi: GraphicsApi,
@@ -113,6 +116,20 @@ open class DirectPipeline(
                 )
                 verticesCount += batch.vertexCount
                 entitiesCount += 1.toCount()
+            }
+
+            val distancesForHandle = mutableMapOf<TextureHandle<*>, Float>()
+            (renderState[defaultBatchesSystem.renderBatchesStatic] + renderState[defaultBatchesSystem.renderBatchesAnimated]).forEach { batch ->
+                batch.material.maps.forEach { map ->
+                    distancesForHandle[map.value] = if(distancesForHandle.contains(map.value)) {
+                        min(distancesForHandle[map.value]!!, batch.closestDistance)
+                    } else {
+                        batch.closestDistance
+                    }
+                }
+            }
+            distancesForHandle.forEach {
+                setHandleUsageDistance(it.key, it.value)
             }
         }
     }

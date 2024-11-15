@@ -30,6 +30,7 @@ class RenderBatch(
     var entityBufferIndex: Int = 0,
     var entityId: Int = 0,
     var contributesToGi: Boolean = true,
+    var closestDistance: Float = Float.MAX_VALUE,
 ) {
     val isShadowCasting: Boolean get() = material.isShadowCasting
     val neverCull: Boolean get() = material.neverCull

@@ -1,4 +1,5 @@
 import InternalTextureFormat.*
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.constants.Format
 import de.hanno.hpengine.graphics.constants.TexelComponentType
 
@@ -195,4 +196,61 @@ val InternalTextureFormat.texelComponentType: TexelComponentType
         R16I -> TexelComponentType.Int
         R32F -> TexelComponentType.Float
         DEPTH24_STENCIL8 -> TexelComponentType.UnsignedInt_24_8
+    }
+
+val InternalTextureFormat.bitsPerPixel: Int
+    get() = when(this) {
+        ALPHA4 -> 4
+        ALPHA8 -> 8
+        ALPHA12 -> 12
+        ALPHA16 -> 16
+        LUMINANCE4 -> 4
+        LUMINANCE8 -> 8
+        LUMINANCE12 -> 12
+        LUMINANCE16 -> 16
+        LUMINANCE4_ALPHA4 -> 8
+        LUMINANCE6_ALPHA2 -> 8
+        LUMINANCE8_ALPHA8 -> 16
+        LUMINANCE12_ALPHA4 -> 16
+        LUMINANCE12_ALPHA12 -> 24
+        LUMINANCE16_ALPHA16 -> 32
+        INTENSITY -> 8
+        INTENSITY4 -> 4
+        INTENSITY8 -> 8
+        INTENSITY12 -> 12
+        INTENSITY16 -> 16
+        R3_G3_B2 -> 8
+        RGB4 -> 12
+        RGB5 -> 15
+        RGB8 -> 24
+        RGB10 -> 30
+        RGB12 -> 36
+        RGB16 -> 48
+        RGBA2 -> 8
+        RGBA4 -> 16
+        RGB5_A1 -> 16
+        RGBA8 -> 32
+        RGB10_A2 -> 32
+        RGBA12 -> 48
+        RGBA16 -> 64
+        TEXTURE_RED_SIZE -> TODO()
+        TEXTURE_GREEN_SIZE -> TODO()
+        TEXTURE_BLUE_SIZE -> TODO()
+        TEXTURE_ALPHA_SIZE -> TODO()
+        TEXTURE_LUMINANCE_SIZE -> TODO()
+        TEXTURE_INTENSITY_SIZE -> TODO()
+        PROXY_TEXTURE_1D -> TODO()
+        PROXY_TEXTURE_2D -> TODO()
+        RGBA32F -> 128
+        RGB32F -> 96
+        RGBA16F -> 64
+        RGB16F -> 48
+        DEPTH_COMPONENT24 -> 24
+        COMPRESSED_SRGB_ALPHA_S3TC_DXT5 -> 8 // TODO: That's probably wrong
+        COMPRESSED_RGBA_S3TC_DXT5 -> 8 // TODO: That's probably wrong
+        SRGB8_ALPHA8 -> 32
+        RG16F -> 32
+        R16I -> 16
+        R32F -> 32
+        DEPTH24_STENCIL8 -> 32
     }

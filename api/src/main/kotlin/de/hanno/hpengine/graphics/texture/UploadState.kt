@@ -1,6 +1,8 @@
 package de.hanno.hpengine.graphics.texture
 
 import InternalTextureFormat
+import bitsPerPixel
+import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.WrapMode
 import de.hanno.hpengine.graphics.logger
@@ -63,6 +65,19 @@ sealed interface TextureDescription {
     val mipMapCount: Int get() = if(textureFilterConfig.minFilter.isMipMapped) dimension.mipMapCount else 1
     val imageCount: Int get() = mipMapCount + 1
     val wrapMode: WrapMode
+
+    val pixelCount: Int get() = when(val dimension = dimension) {
+        is TextureDimension1D -> dimension.width
+        is TextureDimension2D -> dimension.width * dimension.height
+        is TextureDimension3D -> dimension.width * dimension.height * dimension.depth
+    }
+    val gpuSizeInBytes: SizeInBytes get() {
+        val mipMapFactor = if(textureFilterConfig.minFilter.isMipMapped) 1.3f else 1.0f
+        return SizeInBytes( ((mipMapFactor * pixelCount * internalFormat.bitsPerPixel) / 8f).toInt()) // TODO: Account for multiple of 8
+    }
+    val gpuSizeOfImageInBytes: SizeInBytes get() {
+        return SizeInBytes( ((pixelCount * internalFormat.bitsPerPixel) / 8f).toInt()) // TODO: Account for multiple of 8
+    }
 
     data class Texture2DDescription(
         override val dimension: TextureDimension2D,

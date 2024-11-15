@@ -52,15 +52,11 @@ class TextureEditorExtension(
         ImGui.text("Can be unloaded: " + textureManagerBaseSystem.run {
             handle.canBeUnloaded
         })
-        textureManagerBaseSystem.getTextureUsedInCycle(handle.handle)?.let {
+        graphicsApi.getHandleUsageTimeStamp(handle.handle)?.let { usageTimeStamp ->
             ImGui.text("Usage:")
-            val notUsedForNanos = when (val time = it.time) {
-                null -> Long.MAX_VALUE
-                else -> System.nanoTime() - time
-            }
+            val notUsedForNanos = System.nanoTime() - usageTimeStamp
             val ms = TimeUnit.NANOSECONDS.toMillis(notUsedForNanos).toFloat()
             ImGui.text("Not used for $ms ms")
-            ImGui.text("Current distance: ${it.distance}")
         }
 
         when(handle) {

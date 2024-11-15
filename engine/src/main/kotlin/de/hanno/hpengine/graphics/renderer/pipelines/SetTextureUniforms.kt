@@ -16,14 +16,18 @@ fun Program<*>.setTextureUniforms(
 
         val handle = material.maps[mapEnumEntry]
         val actualHandle = if(handle == null) null else deriveHandle(
-            material.maps[mapEnumEntry],
+            handle,
             if(isDiffuse) diffuseFallbackTexture else null
         )
 
-        when (val texture = actualHandle?.texture) {
+        when (actualHandle) {
             null -> setUniform(mapEnumEntry.uniformKey, false)
             else -> {
-                bindTexture(mapEnumEntry.textureSlot, texture)
+                bindHandle(mapEnumEntry.textureSlot, actualHandle)
+//                bindTexture(mapEnumEntry.textureSlot, actualHandle.texture!!)
+                handle?.let {
+                    setHandleUsageTimeStamp(it)
+                }
                 setUniform(mapEnumEntry.uniformKey, true)
                 if(isDiffuse) {
                     setUniform("diffuseMipBias", actualHandle.currentMipMapBias)

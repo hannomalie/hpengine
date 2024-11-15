@@ -4,7 +4,6 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
-import de.hanno.hpengine.ElementCount
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.camera.Camera
@@ -28,6 +27,7 @@ import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.visibility.InvisibleComponent
 import org.apache.logging.log4j.LogManager
 import org.joml.FrustumIntersection
+import org.joml.Vector3f
 import org.koin.core.annotation.Single
 
 @Single(binds = [BaseSystem::class, Extractor::class, DefaultBatchesSystem::class])
@@ -99,11 +99,14 @@ class DefaultBatchesSystem(
                         recalculate(transform)
                     }
 
-                    val visibleForCamera = camera.contains(aabb) || instanceCount > 1.toCount() // TODO: Better culling for instances
+                    val visibleForCamera =
+                        camera.contains(aabb) || instanceCount > 1.toCount() // TODO: Better culling for instances
                     val meshBufferIndex = entityIndexOf + meshIndex //* entity.instanceCount
 
-                    val allocation = modelSystem.allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex]
-                    val meshMaterial = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
+                    val allocation =
+                        modelSystem.allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex]
+                    val meshMaterial = materialComponentOrNull?.material
+                        ?: mesh.material // TODO: Think about override per mesh instead of all at once
 
                     val batch = getOrCreateBatch(currentWriteState, mesh, entityIndexOf)
 
@@ -114,7 +117,7 @@ class DefaultBatchesSystem(
                     batch.cameraWorldPosition = camera.getPosition()
                     batch.isVisible = entityVisible
                     batch.isVisibleForCamera = visibleForCamera
-                    batch.update = when(modelComponent.modelComponentDescription) {
+                    batch.update = when (modelComponent.modelComponentDescription) {
                         is AnimatedModelComponentDescription -> Update.DYNAMIC
                         is StaticModelComponentDescription -> Update.STATIC
                     }
@@ -126,7 +129,7 @@ class DefaultBatchesSystem(
                     batch.boundingSphereRadius = aabb.boundingSphereRadius
                     batch.drawElementsIndirectCommand.instanceCount = instanceCount
                     batch.drawElementsIndirectCommand.count = model.meshIndexCounts[meshIndex]
-                    batch.drawElementsIndirectCommand.firstIndex = when(allocation) {
+                    batch.drawElementsIndirectCommand.firstIndex = when (allocation) {
                         is VertexIndexOffsets -> allocation.indexOffset
                         is VertexOffsets -> 0.toCount()
                     }
@@ -139,6 +142,16 @@ class DefaultBatchesSystem(
                     batch.entityName = mesh.name // TODO: use entity name component
                     batch.contributesToGi = true//entity.contributesToGi TODO: reimplement
                     batch.meshIndex = meshIndex
+
+                    fun Float.closest(min: Float, max: Float) = if (this > max) max else if (this < min) min else this
+                    fun Vector3f.closest(min: Vector3f, max: Vector3f) = Vector3f(
+                        x.closest(min.x, max.x),
+                        y.closest(min.y, max.y),
+                        z.closest(min.z, max.z)
+                    )
+
+                    val closestPointOnAABB = batch.cameraWorldPosition.closest(batch.meshMinWorld, batch.meshMaxWorld)
+                    batch.closestDistance = batch.cameraWorldPosition.distance(closestPointOnAABB)
 
                     val targetBatches = if (batch.isStatic) {
                         currentWriteState[renderBatchesStatic]

@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics
 
 import CubeMapFace
 import InternalTextureFormat
+import com.artemis.BaseSystem
 import de.hanno.hpengine.ElementCount
 import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.config.Config
@@ -51,18 +52,25 @@ import java.awt.image.BufferedImage
 import java.lang.Integer.max
 import java.nio.*
 import java.util.*
+import kotlin.math.min
 
 class OpenGLContext private constructor(
     private val gpuExecutor: GpuExecutor,
     private val config: Config,
     override val profiler: GPUProfiler,
-) : GraphicsApi, GpuExecutor by gpuExecutor {
+) : GraphicsApi, GpuExecutor by gpuExecutor, BaseSystem() {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
+
+    private val handleUsageTimeStamps = mutableMapOf<TextureHandle<*>, Long>()
+    private val handleUsageDistances = mutableMapOf<TextureHandle<*>, Float>()
 
     override fun <T> onGpu(block: context(GraphicsApi)() -> T) = invoke { block(this) }
     internal inline fun <T> onGpuInline(crossinline block: context(GraphicsApi)() -> T) = invoke { block(this) }
 
+    override fun processSystem() {
+        updateCpu()
+    }
     init {
         onGpuInline {
             // TODO: Test whether this does what it is intended to do: binding dummy vertex and index buffers
@@ -245,6 +253,9 @@ class OpenGLContext private constructor(
 
     override fun update() {
         checkCommandSyncs()
+    }
+
+    override fun updateCpu() {
         pixelBufferObjectPool.update()
     }
     private fun getMaxCombinedTextureImageUnits() =
@@ -343,6 +354,19 @@ class OpenGLContext private constructor(
         onGpuInline { GL44.glBindTextures(firstUnit, textureIds) }
     }
 
+    override fun setHandleUsageTimeStamp(handle: TextureHandle<*>) {
+        handleUsageTimeStamps[handle] = System.nanoTime()
+    }
+    override fun getHandleUsageTimeStamp(handle: TextureHandle<*>): Long? {
+        return handleUsageTimeStamps[handle]
+    }
+
+    override fun setHandleUsageDistance(handle: TextureHandle<*>, distance: Float) {
+        handleUsageDistances[handle] = distance
+    }
+    override fun getHandleUsageDistance(handle: TextureHandle<*>): Float? {
+        return handleUsageDistances[handle]
+    }
     override fun viewPort(x: Int, y: Int, width: Int, height: Int) {
         glViewport(x, y, max(width, 0), max(height, 0))
     }
@@ -653,11 +677,11 @@ class OpenGLContext private constructor(
         }
     }
 
-    private fun TextureHandle<Texture2D>.uploadWithPixelBuffer(data: List<ImageData>) = GlobalScope.launch(Dispatchers.IO) {
+    override fun TextureHandle<Texture2D>.uploadWithPixelBuffer(data: List<ImageData>) = GlobalScope.launch(Dispatchers.IO) {
         pixelBufferObjectPool.scheduleUpload(this@uploadWithPixelBuffer, data)
     }
 
-    private fun TextureHandle<Texture2D>.uploadWithoutPixelBuffer(data: List<ImageData>) = GlobalScope.launch(Dispatchers.IO) {
+    override fun TextureHandle<Texture2D>.uploadWithoutPixelBuffer(data: List<ImageData>) = GlobalScope.launch(Dispatchers.IO) {
         when(val texture = texture) {
             null -> {}
             else -> texture.run {

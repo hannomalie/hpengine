@@ -124,50 +124,6 @@ class ColorOnlyRenderer(
 
         currentWriteState[staticDirectPipeline].prepare(currentWriteState)
         currentWriteState[animatedDirectPipeline].prepare(currentWriteState)
-
-        fun Float.closest(min: Float, max: Float) = if(this > max) max else if(this < min) min else this
-        fun Vector3f.closest(min: Vector3f, max: Vector3f) = Vector3f(
-            x.closest(min.x, max.x),
-            y.closest(min.y, max.y),
-            z.closest(min.z, max.z)
-        )
-
-        val usageInfos = currentWriteState[defaultBatchesSystem.renderBatchesStatic].flatMap { batch ->
-            val cycle = if(currentWriteState[staticDirectPipeline].preparedBatches.any { it.entityId == batch.entityId && it.meshIndex == batch.meshIndex }) cycleSystem.cycle else null
-
-            batch.material.maps.map { map ->
-                val closestPointOnAABB = batch.cameraWorldPosition.closest(batch.meshMinWorld, batch.meshMaxWorld)
-                val distance = batch.cameraWorldPosition.distance(closestPointOnAABB)
-                val cameraIsInside = batch.cameraWorldPosition.isInside(batch.meshMinWorld, batch.meshMaxWorld)
-                val isBehindCamera = currentWriteState[primaryCameraStateHolder.camera].viewMatrix.transform(Vector4f(
-                    closestPointOnAABB.x, closestPointOnAABB.y, closestPointOnAABB.z, 1f
-                )).z > 0
-                Pair(
-                    map.value,
-                    TextureUsageInfo(
-                        if(cycle == null) null else System.nanoTime(),
-                        distance,
-                        isBehindCamera,
-                        cameraIsInside,
-                        cycle,
-                    )
-                )
-            }
-        }.groupBy { it.first }.mapValues {
-            val entries = it.value
-            TextureUsageInfo(
-                entries.first().second.time, entries.minBy { entry -> entry.second.distance }.second.distance,
-                entries.all { entry -> entry.second.behindCamera }, entries.any { entry -> entry.second.cameraIsInside }, entries.firstNotNullOfOrNull { it.second.cycle }
-            )
-        }
-        usageInfos.forEach { (handle, usageInfo) ->
-            textureManager.setTexturesUsedInCycle(
-                handle, usageInfo.cycle,
-                if(usageInfo.cameraIsInside) 0f else usageInfo.distance,
-                usageInfo.behindCamera,
-            )
-        }
-        // TODO: Do for animated batches as well
     }
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {

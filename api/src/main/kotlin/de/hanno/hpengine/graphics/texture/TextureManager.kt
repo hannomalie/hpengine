@@ -32,14 +32,6 @@ interface TextureManager {
         unloadable: Boolean,
     ): FileBasedTexture2D
 
-    fun setTexturesUsedInCycle(
-        texture: TextureHandle<*>,
-        cycle: Long?,
-        distance: Float,
-        isBehindCamera: Boolean
-    )
-    fun getTextureUsedInCycle(texture: TextureHandle<*>): TextureUsageInfo?
-
     val FileBasedTexture2D.canBeUnloaded: Boolean
     val texturePool: List<DynamicFileBasedTexture2D>
 }

@@ -34,7 +34,7 @@ fun textureSelection(
                     all3DTextures.forEach { (name, texture) ->
                         val selected = currentTexture == texture
                         if (ImGui.selectable(name, selected)) {
-                            material.maps[type] = StaticHandleImpl(texture, UploadState.Uploaded, 0f) // TODO: Figure out if this is okay for here
+                            material.maps[type] = StaticHandleImpl(texture, uploadState = UploadState.Uploaded, currentMipMapBias = 0f) // TODO: Figure out if this is okay for here
                         }
                         if (selected) {
                             ImGui.setItemDefaultFocus()
@@ -60,7 +60,7 @@ fun textureSelection(
                     all2DTextures.forEach { (name, texture) ->
                         val selected = currentTexture == texture
                         if (ImGui.selectable(name, selected)) {
-                            material.maps[type] = StaticHandleImpl(texture, UploadState.Uploaded, 0f) // TODO: Figure out if this is okay for here
+                            material.maps[type] = StaticHandleImpl(texture, uploadState = UploadState.Uploaded, currentMipMapBias = 0f) // TODO: Figure out if this is okay for here
                         }
                         if (selected) {
                             ImGui.setItemDefaultFocus()

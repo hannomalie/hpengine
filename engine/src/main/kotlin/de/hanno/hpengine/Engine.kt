@@ -6,6 +6,7 @@ import com.artemis.WorldConfigurationBuilder
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
@@ -41,6 +42,7 @@ class Engine(
     val renderManager = systems.firstIsInstance<RenderManager>() // TODO: See above
     val updateCycle = systems.firstIsInstance<UpdateCycle>() // TODO: See above
     val termination = systems.firstIsInstance<Termination>() // TODO: See above
+    val graphicsApi = systems.firstIsInstance<GraphicsApi>()
 
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
         *(systems.distinct().toTypedArray())

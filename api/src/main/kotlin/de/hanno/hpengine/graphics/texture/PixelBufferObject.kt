@@ -2,7 +2,6 @@ package de.hanno.hpengine.graphics.texture
 
 import kotlinx.coroutines.Job
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.PriorityBlockingQueue
 
 interface PixelBufferObject {
     fun upload(handle: TextureHandle<Texture2D>, imageData: ImageData): Job
@@ -15,6 +14,5 @@ data class Task(val handle: TextureHandle<Texture2D>, val priority: Int, val act
 interface PixelBufferObjectPool {
     fun scheduleUpload(handle: TextureHandle<Texture2D>, data: List<ImageData>)
     val buffers: List<PixelBufferObject>
-    val queue: PriorityBlockingQueue<Task>
     val currentJobs: ConcurrentHashMap<TextureHandle<*>, Job>
 }

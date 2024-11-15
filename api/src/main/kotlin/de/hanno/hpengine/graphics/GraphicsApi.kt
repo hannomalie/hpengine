@@ -24,6 +24,7 @@ import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescriptio
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.CodeSource
 import de.hanno.hpengine.scene.GeometryBuffer
+import kotlinx.coroutines.Job
 import org.joml.Vector4f
 import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
@@ -77,10 +78,24 @@ interface GraphicsApi {
     fun bindTexture(textureUnitIndex: Int, texture: Texture) {
         bindTexture(textureUnitIndex, texture.target, texture.id)
     }
+    fun bindHandle(textureUnitIndex: Int, handle: TextureHandle<*>) {
+        when (val texture = handle.texture) {
+            null -> {}
+            else -> {
+                bindTexture(textureUnitIndex, texture)
+                setHandleUsageTimeStamp(handle)
+            }
+        }
+    }
 
     fun bindTexture(texture: Texture) {
         bindTexture(texture.target, texture.id)
     }
+
+    fun setHandleUsageTimeStamp(handle: TextureHandle<*>)
+    fun getHandleUsageTimeStamp(handle: TextureHandle<*>): Long?
+    fun setHandleUsageDistance(handle: TextureHandle<*>, distance: Float)
+    fun getHandleUsageDistance(handle: TextureHandle<*>): Float?
 
     fun bindTextures(textureIds: IntBuffer)
 
@@ -388,6 +403,9 @@ interface GraphicsApi {
     fun <T: Texture> createDepthBuffer(texture: T): DepthBuffer<T>
     fun createView(texture: Texture2DArray, index: Int): Texture2D
     fun update()
+    fun updateCpu()
+    fun TextureHandle<Texture2D>.uploadWithPixelBuffer(data: List<ImageData>): Job
+    fun TextureHandle<Texture2D>.uploadWithoutPixelBuffer(data: List<ImageData>): Job
 }
 
 fun GraphicsApi.RenderTarget(
