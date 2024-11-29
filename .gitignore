@@ -32,3 +32,5 @@ nbactions.xml
 *META-INF
 
 *.log
+
+demos/src/main/resources/game/assets/models/textures/
