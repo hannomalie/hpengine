@@ -16,12 +16,14 @@ import de.hanno.hpengine.buffers.enlarge
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.buffer.typed
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.instancing.InstancesComponent
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.toCount
+import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.org.jline.terminal.Size
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
@@ -39,6 +41,10 @@ class EntityBuffer(
     graphicsApi: GraphicsApi,
     private val renderStateContext: RenderStateContext,
 ): BaseEntitySystem(), Extractor, LinkListener {
+    private val logger = LogManager.getLogger(EntityBuffer::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var instancesComponentMapper: ComponentMapper<InstancesComponent>
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
 

@@ -32,7 +32,9 @@ class Engine(
     private val window: Window,
     private val addResourceContext: AddResourceContext,
 ) {
-    private val logger = LogManager.getLogger(Engine::class.java)
+    private val logger = LogManager.getLogger(Engine::class.java).apply {
+        info("Creating engine instance")
+    }
 
     val systems = baseSystems.sortedByDescending {
         (it as? PrioritySystem)?.priority ?: -1
@@ -87,15 +89,20 @@ class Engine(
         }) { deltaSeconds ->
             // Input and window updates need to be done on the main thread, they can't be moved to
             // the base system regular update below. Same for Executing the commands
+            logger.debug("Updating input")
             input.update()
+            logger.debug("Polling window events")
             window.pollEvents()
 
+            logger.debug("Executing commands")
             addResourceContext.executeCommands()
 
+            logger.debug("Processing world")
             withContext(updateScopeDispatcher) {
                 world.delta = deltaSeconds
                 world.process()
             }
+            logger.debug("Extracting world")
             renderManager.extract(extractors, world.delta)
             updateCycle.cycle.getAndIncrement()
         }

@@ -18,8 +18,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.toCount
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
 import org.apache.logging.log4j.LogManager
@@ -27,7 +26,6 @@ import org.koin.core.annotation.Single
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 import javax.imageio.ImageReader
 import kotlin.math.max
@@ -41,7 +39,9 @@ class OpenGLTextureManager(
     programManager: OpenGlProgramManager,
 ) : TextureManagerBaseSystem() {
     private val logger = LogManager.getLogger(OpenGLTextureManager::class.java)
-
+    init {
+        logger.info("Creating system")
+    }
     val engineDir = config.directories.engineDir
 
     override val textures: MutableMap<String, Texture> = ConcurrentHashMap()
@@ -58,17 +58,10 @@ class OpenGLTextureManager(
 //    	loadAllAvailableTextures();
     }
 
-    override val lensFlareTexture = getStaticTextureHandle("assets/textures/lens_flare_tex.jpg", true, engineDir).texture
     override fun registerGeneratedCubeMap(s: String, texture: CubeMap) {
         generatedCubeMaps[s] = texture
     }
 
-    override var cubeMap = StaticHandleImpl(getCubeMap(
-        "assets/textures/skybox/skybox.png",
-        config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")
-    ), uploadState = UploadState.Uploaded, currentMipMapBias = 0f) // TODO: Verify if just setting this is okay
-
-    //    var cubeMap = getCubeMap("assets/textures/skybox/skybox1.jpg", config.directories.engineDir.resolve("assets/textures/skybox/skybox5.jpg"))
     private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram(
         programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}")
             .toCodeSource(), Defines(Define("HORIZONTAL", true)), Uniforms.Empty
@@ -150,7 +143,7 @@ class OpenGLTextureManager(
 
         val internalFormat = when {
             compressInternal -> when {
-                srgba -> COMPRESSED_RGBA_S3TC_DXT5
+                srgba -> COMPRESSED_SRGB_ALPHA_S3TC_DXT5
                 else -> COMPRESSED_RGBA_S3TC_DXT5
             }
             else -> when {
@@ -167,7 +160,6 @@ class OpenGLTextureManager(
 
         val textureUnloadStrategy = config.performance.textureUnloadStrategy
         return if(unloadable && textureUnloadStrategy is Unloading) {
-            val texturesWithSameDimension = allTextures.groupBy { it.dimension }[textureDescription.dimension]?.size ?: 0
             val mipMapCountToKeepLoaded = textureUnloadStrategy.mipMapCountToKeepLoaded
 
             val highesMipMapDimensionToKeepLoaded = 2.0.pow(mipMapCountToKeepLoaded.toDouble() - 1).toInt()
@@ -198,28 +190,31 @@ class OpenGLTextureManager(
                     fallbacks.add(this)
                 }
                 fallback = fallbackHandle
-                graphicsApi.run {
-                    val data = getData()
-                    if(fallbackHandle.texture.textureFilterConfig.minFilter.isMipMapped) {
-                        fallbackHandle.uploadWithoutPixelBuffer(data.subList(data.size - mipMapCountToKeepLoaded, data.size).mapIndexed { index, it ->
-                            it.copy(mipMapLevel =  index)
-                        })
-                    } else {
-                        fallbackHandle.uploadWithoutPixelBuffer(listOf(data.first()))
-                    }
-                }
-                when(val fromPool = findSuitableHandleInPool(textureDescription)) {
-                    null -> {
-                        if(texturesWithSameDimension <= 10) {
-                            texture = graphicsApi.Texture2D(textureDescription).apply {
-                                allTextures.add(this)
-                            }
+                GlobalScope.launch(Dispatchers.IO) {
+                    graphicsApi.run {
+                        val data = getData()
+                        if(fallbackHandle.texture.textureFilterConfig.minFilter.isMipMapped) {
+                            fallbackHandle.uploadWithoutPixelBuffer(data.subList(data.size - mipMapCountToKeepLoaded, data.size).mapIndexed { index, it ->
+                                it.copy(mipMapLevel =  index)
+                            })
                         } else {
-                            logger.info("Can't allocate $resourcePath, already $texturesWithSameDimension textures allocated of dimension ${textureDescription.dimension}")
+                            fallbackHandle.uploadWithoutPixelBuffer(listOf(data.first()))
                         }
                     }
-                    else -> {
-                        moveTexture(from = fromPool, to = this)
+                    when(val fromPool = findSuitableHandleInPool(textureDescription)) {
+                        null -> {
+                            val texturesWithSameDescription = allTextures.count { it.description == textureDescription }
+                            if(texturesWithSameDescription <= 10) {
+                                texture = graphicsApi.Texture2D(textureDescription).apply {
+                                    allTextures.add(this)
+                                }
+                            } else {
+                                logger.info("Can't allocate $resourcePath, already $texturesWithSameDescription textures allocated of dimension ${textureDescription.dimension}")
+                            }
+                        }
+                        else -> {
+                            moveTexture(from = fromPool, to = this@apply)
+                        }
                     }
                 }
             }
@@ -262,10 +257,10 @@ class OpenGLTextureManager(
         } else this[resourceName]!!
     }
 
-    fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap {
+    override fun getCubeMap(resourceName: String, file: File, srgba: Boolean): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
             ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, file, srgba).apply {
-                load()
+                loadAsync()
             }
 
         textures[resourceName + "_cube"] = tex
@@ -275,7 +270,7 @@ class OpenGLTextureManager(
     fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
             ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, files, srgba).apply {
-                load()
+                loadAsync()
             }
 
         textures[resourceName + "_cube"] = tex

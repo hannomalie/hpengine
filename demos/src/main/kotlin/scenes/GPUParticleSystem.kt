@@ -43,6 +43,7 @@ import de.hanno.hpengine.toCount
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import imgui.ImGui
+import org.apache.logging.log4j.LogManager
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
@@ -106,6 +107,10 @@ class GPUParticleSystem(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val materialSystem: MaterialSystem,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
+    private val logger = LogManager.getLogger(GPUParticleSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var attractorComponentMapper: ComponentMapper<Attractor>
     lateinit var particlesComponentMapper: ComponentMapper<GPUParticles>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>

@@ -15,6 +15,7 @@ import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.constants.WrapMode
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -35,6 +36,7 @@ import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.EntityMovementSystem
+import org.apache.logging.log4j.LogManager
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
@@ -80,7 +82,10 @@ class EnvironmentProbeSystem(
     private val entityMovementSystem: EntityMovementSystem,
     private val environmentProbesStateHolder: EnvironmentProbesStateHolder,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
-
+    private val logger = LogManager.getLogger(EnvironmentProbeSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var environmentProbeComponentMapper: ComponentMapper<EnvironmentProbeComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 

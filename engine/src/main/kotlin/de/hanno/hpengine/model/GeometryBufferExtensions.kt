@@ -7,7 +7,9 @@ import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
 import de.hanno.hpengine.scene.*
 import de.hanno.hpengine.toCount
+import org.apache.logging.log4j.LogManager
 
+private val logger = LogManager.getLogger("GeometryBufferExtensions")
 
 fun Model<*>.captureGeometryOffsets(
     currentGeometryOffset: GeometryOffset
@@ -47,10 +49,12 @@ fun StaticModel.putToBuffer(
         is VertexBuffer ->  unindexedVerticesPacked
         is VertexIndexBuffer -> verticesPacked
     }
+    logger.info("Captured geometry offsets")
     buffer.vertexStructArray.addAll(
         geometryOffset.vertexOffset * SizeInBytes(VertexStruktPacked.type.sizeInBytes),
         vertices.byteBuffer
     )
+    logger.info("Added geometry to buffer")
     when (geometryOffset) {
         is VertexIndexOffsets -> (buffer as VertexIndexBuffer<*>).indexBuffer.appendIndices(
             geometryOffset.indexOffset,

@@ -3,7 +3,6 @@ layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
 layout(binding=3) uniform sampler2D motionMap;
-layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=7) uniform sampler2D visibilityMap;
 layout(binding=9) uniform sampler2D aoBentNormalsMap;

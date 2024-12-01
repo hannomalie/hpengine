@@ -23,6 +23,7 @@ import de.hanno.hpengine.graphics.editor.select.MeshSelection
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.editor.select.SimpleEntitySelection
 import de.hanno.hpengine.graphics.fps.FPSCounter
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.output.FinalOutputImpl
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
@@ -44,6 +45,7 @@ import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
+import org.apache.logging.log4j.LogManager
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 
@@ -76,6 +78,10 @@ class ImGuiEditor(
     internal val entityMovementSystem: EntityMovementSystem,
     _editorExtensions: List<EditorExtension>,
 ) : BaseEntitySystem(), PrimaryRenderer {
+    private val logger = LogManager.getLogger(ImGuiEditor::class.java)
+    init {
+        logger.info("Creating system")
+    }
     override val renderPriority: Int get() = 100
 
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language

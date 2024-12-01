@@ -7,6 +7,7 @@ import de.hanno.hpengine.graphics.ProgramChangeListenerManager
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.ressources.*
+import org.apache.logging.log4j.LogManager
 import java.util.concurrent.CopyOnWriteArrayList
 
 class OpenGlProgramManager(
@@ -14,7 +15,10 @@ class OpenGlProgramManager(
     fileMonitor: FileMonitor?,
     override val config: Config,
 ) : BaseSystem(), ProgramManager {
-
+    private val logger = LogManager.getLogger(OpenGlProgramManager::class.java)
+    init {
+        logger.info("Creating system")
+    }
     private var programsCache: MutableList<Program<*>> = CopyOnWriteArrayList()
 
     private val programChangeListener = fileMonitor?.let { fileMonitor -> ProgramChangeListenerManager(fileMonitor) }

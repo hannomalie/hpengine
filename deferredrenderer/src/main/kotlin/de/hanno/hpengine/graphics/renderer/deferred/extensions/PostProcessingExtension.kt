@@ -33,6 +33,9 @@ class PostProcessingExtension(
             FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
             FileBasedCodeSource(config.engineDir.resolve("shaders/postprocess_fragment.glsl"))
     )
+    private val lensFlareTexture by lazy {
+        textureManager.getStaticTextureHandle("assets/textures/lens_flare_tex.jpg", true, config.engineDir).texture
+    }
 
     override fun renderSecondPassFullScreen(renderState: RenderState): Unit = graphicsApi.run {
         profiled("Post processing") {
@@ -62,7 +65,7 @@ class PostProcessingExtension(
             bindTexture(1, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
             bindTexture(2, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
             bindTexture(3, TextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
-            bindTexture(4, TextureTarget.TEXTURE_2D, textureManager.lensFlareTexture.id)
+            bindTexture(4, TextureTarget.TEXTURE_2D, lensFlareTexture.id)
             postProcessProgram.bind()
             fullscreenBuffer.draw(indexBuffer = null)
         }

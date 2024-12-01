@@ -23,10 +23,7 @@ import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.OpenGLCubeMap
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.graphics.texture.TextureDescription
-import de.hanno.hpengine.graphics.texture.TextureDimension
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.math.OmniCamera
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.EntityBuffer
@@ -55,6 +52,11 @@ class ProbeRenderer(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
 ) {
+    private val cubeMap = StaticHandleImpl(textureManager.getCubeMap(
+        "assets/textures/skybox/skybox.png",
+        config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")
+    ), uploadState = UploadState.Uploaded, currentMipMapBias = 0f) // TODO: Verify if just setting this is okay
+
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
     val probesPerDimension = Vector3i(10, 6, 10)
@@ -162,7 +164,7 @@ class ProbeRenderer(
             for (probeIndex in probeStartIndex until (probeStartIndex + probesPerFrame)) {
                 graphicsApi.clearDepthBuffer()
 
-                val skyBox = textureManager.cubeMap
+                val skyBox = cubeMap
 
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])

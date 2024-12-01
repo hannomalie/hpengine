@@ -6,7 +6,6 @@ import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.World
 import com.artemis.annotations.All
-import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.WorldPopulator
 import de.hanno.hpengine.artemis.forEachEntity
@@ -17,12 +16,11 @@ import de.hanno.hpengine.component.NameComponent
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.component.primaryCameraTag
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.state.Box
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.model.BoundingVolumeComponent
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.Material
@@ -46,8 +44,17 @@ class SkyBoxSystem(
     private val skyBoxStateHolder: SkyBoxStateHolder,
     private val config: Config,
     private val defaultBatchesSystem: DefaultBatchesSystem,
+    private val textureManager: TextureManager,
 ) : BaseEntitySystem(), WorldPopulator, Extractor {
-    val logger = LogManager.getLogger(SkyBoxSystem::class.java)
+    private val logger = LogManager.getLogger(SkyBoxSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
+
+    private val cubeMap = StaticHandleImpl(textureManager.getCubeMap(
+        "assets/textures/skybox/skybox.png",
+        config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")
+    ), uploadState = UploadState.Uploaded, currentMipMapBias = 0f) // TODO: Verify if just setting this is okay
 
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
@@ -81,7 +88,7 @@ class SkyBoxSystem(
     }
 
     override fun World.populate() {
-        addSkyBox(config)
+        addSkyBox(config, cubeMap)
     }
 }
 
@@ -91,7 +98,7 @@ class SkyBoxStateHolder(renderStateContext: RenderStateContext) {
     val batch = renderStateContext.renderState.registerState { Box(RenderBatch()) }
 }
 
-fun World.addSkyBox(config: Config) {
+fun World.addSkyBox(config: Config, cubeMap: StaticHandleImpl<CubeMap>) {
     edit(create()).apply {
         create(NameComponent::class.java).apply {
             name = "SkyBox"
@@ -130,7 +137,7 @@ fun World.addSkyBox(config: Config) {
                         )
                 )
             ).apply {
-                this.put(Material.MAP.ENVIRONMENT, getSystem(OpenGLTextureManager::class.java).cubeMap)
+                this.put(Material.MAP.ENVIRONMENT, cubeMap)
             }
         }
     }

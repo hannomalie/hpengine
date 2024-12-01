@@ -19,6 +19,7 @@ import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
 import de.hanno.hpengine.graphics.feature.BindlessTextures
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.deferred.extensions.PostProcessingExtensionProxy
 import de.hanno.hpengine.graphics.renderer.forward.AnimatedDefaultUniforms
@@ -31,6 +32,7 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.koin.core.annotation.Single
 
@@ -53,6 +55,10 @@ class ExtensibleDeferredRenderer(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
 ): PrimaryRenderer, BaseSystem() {
+    private val logger = LogManager.getLogger(ExtensibleDeferredRenderer::class.java)
+    init {
+        logger.info("Creating system")
+    }
     override val finalOutput = DeferredFinalOutput(deferredRenderingBuffer.finalMap, 0, this)
     override val renderPriority: Int get() = 10
 

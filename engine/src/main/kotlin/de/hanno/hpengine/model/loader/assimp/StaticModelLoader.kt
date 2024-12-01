@@ -8,10 +8,8 @@ import de.hanno.hpengine.model.StaticModel
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.Vertex
 import de.hanno.hpengine.transform.AABBData
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import org.apache.logging.log4j.LogManager.*
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -43,28 +41,43 @@ import kotlin.math.max
 const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_GenNormals + Assimp.aiProcess_GenSmoothNormals
 
 class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
+    private val logger = getLogger(StaticModelLoader::class.java)
+
     fun load(file: String, textureManager: OpenGLTextureManager, resourcesDir: AbstractDirectory): StaticModel {
         val absolutePath = resourcesDir.resolve(file).absolutePath.apply {
             check(File(this).exists()) { "File $this does not exist, can't load static model" }
         }
+        logger.info("Loading model $file")
         val aiScene = Assimp.aiImportFile(absolutePath, flags) ?: throw IllegalStateException("Cannot load model $absolutePath")
+        logger.info("Processing materials")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
         val deferredMaterials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
-            GlobalScope.async { aiMaterial.processMaterial(Path.of(file).parent.toString(), resourcesDir, textureManager) }
+            GlobalScope.async(Dispatchers.IO) { aiMaterial.processMaterial(Path.of(file).parent.toString(), resourcesDir, textureManager) }
         }
-
+        logger.info("Processing meshes")
         val numMeshes: Int = aiScene.mNumMeshes()
-        val aiMeshes: PointerBuffer = aiScene.mMeshes()!!
+        val aiMeshesX = (0 until numMeshes).map { i ->
+            AIMesh.create(aiScene.mMeshes()!![i])
+        }
+        val meshes: List<StaticMesh> = (0 until numMeshes).map { i ->
+            aiMeshesX[i].processMesh()
+        }
+        logger.info("Waiting for materials")
         val materials = runBlocking {
             deferredMaterials.awaitAll()
         }
-        val meshes: List<StaticMesh> = (0 until numMeshes).map { i ->
-            val aiMesh = AIMesh.create(aiMeshes[i])
-            aiMesh.processMesh(materials)
+        (0 until numMeshes).map { i ->
+            val materialIdx = aiMeshesX[i].mMaterialIndex()
+            val material = if (materialIdx >= 0 && materialIdx < materials.size) {
+                materials[materialIdx]
+            } else {
+                Material(aiMeshesX[i].mName().dataString() + "_material")
+            }
+            meshes[i].material = material
         }
-
+        logger.info("Processing finished")
         return StaticModel(resourcesDir.resolve(file), meshes)
     }
 
@@ -114,17 +127,12 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         is StaticFileBasedTexture2D -> put(map, texture)
         null -> { }
     }
-    private fun AIMesh.processMesh(materials: List<Material>): StaticMesh {
+    private fun AIMesh.processMesh(): StaticMesh {
         val positions = retrievePositions()
         val normals = retrieveNormals().let { it.ifEmpty { (positions.indices).map { Vector3f(0f,1f,0f) } } }
         val texCoords = retrieveTexCoords()
         val indexedTriangles = retrieveFaces()
-        val materialIdx = mMaterialIndex()
-        val material = if (materialIdx >= 0 && materialIdx < materials.size) {
-            materials[materialIdx]
-        } else {
-            Material(mName().dataString() + "_material")
-        }
+
         val vertices = positions.indices.map {
             Vertex(positions[it], texCoords[it], normals[it])
         }
@@ -132,7 +140,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
             mName().dataString(),
             vertices,
             indexedTriangles,
-            material
+            Material(mName().dataString() + "_material")
         )
     }
 }

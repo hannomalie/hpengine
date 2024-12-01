@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.texture
 
 import com.artemis.BaseSystem
 import de.hanno.hpengine.directory.AbstractDirectory
+import java.io.File
 
 interface TextureManager {
     val defaultTexture: StaticFileBasedTexture2D
@@ -9,8 +10,6 @@ interface TextureManager {
     val fileBasedTextures: Map<String, FileBasedTexture2D>
     val texturesForDebugOutput : Map<String, Texture>
     val generatedCubeMaps: Map<String, CubeMap>
-    val cubeMap: StaticHandle<CubeMap>
-    val lensFlareTexture: Texture
 
     fun registerGeneratedCubeMap(s: String, texture: CubeMap)
     fun registerTextureForDebugOutput(s: String, texture2D: Texture)
@@ -34,6 +33,7 @@ interface TextureManager {
 
     val FileBasedTexture2D.canBeUnloaded: Boolean
     val texturePool: List<DynamicFileBasedTexture2D>
+    fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap
 }
 
 data class TextureUsageInfo(

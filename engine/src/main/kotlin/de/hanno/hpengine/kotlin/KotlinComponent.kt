@@ -5,10 +5,12 @@ import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
+import de.hanno.hpengine.graphics.fps.CPSCounterSystem
 import de.hanno.hpengine.lifecycle.Updatable
 import de.hanno.hpengine.ressources.CodeSource
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileMonitor
+import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
@@ -27,6 +29,10 @@ class KotlinComponent : Component() {
 class KotlinComponentSystem(
     private val fileMonitor: FileMonitor,
 ) : BaseEntitySystem() {
+    private val logger = LogManager.getLogger(KotlinComponentSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var kotlinComponentMapper: ComponentMapper<KotlinComponent>
 
     // TODO: Abstract over extension points maybe?

@@ -14,6 +14,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
@@ -36,6 +37,7 @@ import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.toCount
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
+import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
@@ -67,6 +69,10 @@ class GrassSystem(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val materialSystem: MaterialSystem,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
+    private val logger = LogManager.getLogger(GrassSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     private val positions = renderStateContext.renderState.registerState {
         graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)
     }

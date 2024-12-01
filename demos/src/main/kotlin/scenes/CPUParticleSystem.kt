@@ -17,6 +17,7 @@ import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.imgui.dsl.Window
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
@@ -43,6 +44,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.apache.logging.log4j.LogManager
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
@@ -84,6 +86,10 @@ class CPUParticleSystem(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val materialSystem: MaterialSystem,
 ): BaseEntitySystem(), Extractor, DeferredRenderExtension {
+    private val logger = LogManager.getLogger(CPUParticleSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var particlesComponentMapper: ComponentMapper<CPUParticles>
     private val positions = renderStateContext.renderState.registerState {
         graphicsApi.PersistentShaderStorageBuffer(1000.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes)).typed(Vector4fStrukt.type)

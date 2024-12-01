@@ -36,6 +36,7 @@ import isCompressed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.apache.logging.log4j.LogManager
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -59,6 +60,10 @@ class OpenGLContext private constructor(
     private val config: Config,
     override val profiler: GPUProfiler,
 ) : GraphicsApi, GpuExecutor by gpuExecutor, BaseSystem() {
+    private val logger = LogManager.getLogger(OpenGLContext::class.java)
+    init {
+        logger.info("Creating system")
+    }
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
 
@@ -72,6 +77,7 @@ class OpenGLContext private constructor(
         updateCpu()
     }
     init {
+        logger.info("Initializing")
         onGpuInline {
             // TODO: Test whether this does what it is intended to do: binding dummy vertex and index buffers
             VertexBufferImpl(this, EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).bind()
@@ -88,6 +94,7 @@ class OpenGLContext private constructor(
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
             GL11.glLineWidth(1f)
         }
+        logger.info("Initializing finished")
     }
 
     private fun getCapabilities() = onGpuInline { GL.getCapabilities() }

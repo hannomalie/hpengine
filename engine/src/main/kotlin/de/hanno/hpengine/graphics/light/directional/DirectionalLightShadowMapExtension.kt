@@ -11,6 +11,7 @@ import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.DepthFunc
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.rendertarget.OpenGLFrameBuffer
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -25,6 +26,7 @@ import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.EntityMovementSystem
+import org.apache.logging.log4j.LogManager
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
 import struktgen.api.forIndex
@@ -45,6 +47,10 @@ class DirectionalLightShadowMapExtension(
     private val entityMovementSystem: EntityMovementSystem,
     private val cycleSystem: CycleSystem,
 ) : Extractor, BaseEntitySystem(), RenderSystem {
+    private val logger = LogManager.getLogger(DirectionalLightShadowMapExtension::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
 

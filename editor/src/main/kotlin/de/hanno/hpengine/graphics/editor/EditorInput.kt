@@ -2,8 +2,10 @@ package de.hanno.hpengine.graphics.editor
 
 import com.artemis.BaseSystem
 import com.carrotsearch.hppc.IntArrayList
+import de.hanno.hpengine.graphics.fps.CPSCounterSystem
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
+import org.apache.logging.log4j.LogManager
 import org.joml.Vector2i
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
@@ -12,6 +14,10 @@ import org.lwjgl.glfw.GLFW
 class EditorInput(
     private val window: Window
 ): BaseSystem(), Input {
+    private val logger = LogManager.getLogger(EditorInput::class.java)
+    init {
+        logger.info("Creating system")
+    }
 
     internal var swallowInput = false
     internal var prioritizeGameInput = false

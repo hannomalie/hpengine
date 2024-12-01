@@ -38,6 +38,7 @@ import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.texture.TextureDescription.Texture2DDescription
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
+import org.apache.logging.log4j.LogManager
 import org.joml.Matrix4f
 import org.joml.Vector4f
 import org.koin.core.annotation.Single
@@ -61,6 +62,10 @@ class AreaLightSystem(
     private val entityBuffer: EntityBuffer,
     private val defaultBatchesSystem: DefaultBatchesSystem,
 ) : BaseEntitySystem(), RenderSystem, Extractor {
+    private val logger = LogManager.getLogger(AreaLightSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     private var gpuAreaLightArray = TypedBuffer(
         BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes),
         AreaLightStrukt.type,

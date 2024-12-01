@@ -138,6 +138,7 @@ class ModelSystem(
             localMin.set(model.boundingVolume.min)
             localMax.set(model.boundingVolume.max)
         }
+        logger.info("Updated bounding volume")
         return world.edit(entityId).run {
             when (model) {
                 is AnimatedModel -> {
@@ -149,6 +150,7 @@ class ModelSystem(
             val allocation = allocateGeometryBufferSpace(model).apply {
                 allocations[descr] = this
             }
+            logger.info("Allocated geometry buffer space")
             ModelCacheComponent(model, allocation).apply {
                 add(this)
                 logger.info("Added modelcache component for entity $entityId")
@@ -165,7 +167,7 @@ class ModelSystem(
         }
     }
 
-    fun allocateGeometryBufferSpace(
+    private fun allocateGeometryBufferSpace(
         model: Model<*>
     ): Allocation = when (model) {
         is AnimatedModel -> {

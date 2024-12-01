@@ -18,11 +18,13 @@ import de.hanno.hpengine.graphics.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
 import de.hanno.hpengine.graphics.texture.Texture2D
 import de.hanno.hpengine.graphics.texture.TextureDimension2D
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.toCount
+import org.apache.logging.log4j.LogManager
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
 import struktgen.api.forIndex
@@ -38,6 +40,10 @@ class OceanWaterRenderSystem(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val oceanWaterSystem: OceanWaterSystem,
 ) : BaseSystem(), RenderSystem {
+    private val logger = LogManager.getLogger(OceanWaterRenderSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     private val N = 512
 
     private val dimension = TextureDimension2D(N, N)

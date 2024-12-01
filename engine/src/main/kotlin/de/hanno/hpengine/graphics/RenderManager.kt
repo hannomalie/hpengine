@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics
 
 import com.artemis.BaseSystem
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
 import de.hanno.hpengine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -25,8 +26,10 @@ class RenderManager(
     private val gpuProfiler: GPUProfiler,
     private val updateCycle: UpdateCycle,
 ) : BaseSystem() {
-
-    val logger = LogManager.getLogger(RenderManager::class.java)
+    private val logger = LogManager.getLogger(RenderManager::class.java)
+    init {
+        logger.info("Creating system")
+    }
 
     var renderMode: RenderMode = RenderMode.Normal
 

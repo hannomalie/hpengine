@@ -337,7 +337,8 @@ class ReflectionProbeRenderExtension(
             for (probeIndex in range) {
                 clearDepthBuffer()
 
-                val skyBox = textureManager.cubeMap
+                // TODO: Re-enable skybox here
+//                val skyBox = textureManager.cubeMap
 
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState[materialSystem.materialBuffer])
@@ -359,7 +360,7 @@ class ReflectionProbeRenderExtension(
                         directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
-                bindTexture(8, skyBox.texture)
+//                bindTexture(8, skyBox.texture)
                 omniCamera.updatePosition(currentReflectionProbeRenderState.probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)

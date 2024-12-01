@@ -6,9 +6,11 @@ import com.artemis.EntitySystem
 import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.model.MaterialComponent
+import org.apache.logging.log4j.LogManager
 import org.koin.core.annotation.Single
 
 class OceanWaterState {
@@ -20,6 +22,10 @@ class OceanWaterState {
 @All(OceanWaterComponent::class, MaterialComponent::class)
 @Single(binds = [OceanWaterSystem::class, BaseSystem::class, RenderSystem::class])
 class OceanWaterSystem(renderStateContext: RenderStateContext): RenderSystem, EntitySystem() {
+    private val logger = LogManager.getLogger(OceanWaterSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var oceanWaterComponentMapper: ComponentMapper<OceanWaterComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
 

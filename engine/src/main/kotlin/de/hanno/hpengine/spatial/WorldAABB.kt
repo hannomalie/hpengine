@@ -5,6 +5,7 @@ import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
 import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.model.ModelCacheComponent
@@ -22,6 +23,9 @@ class WorldAABB(
     private val worldAABBStateHolder: WorldAABBStateHolder,
 ): BaseEntitySystem(), Extractor {
     private val logger = LogManager.getLogger(WorldAABB::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
     lateinit var transformComponentComponentMapper: ComponentMapper<TransformComponent>
 

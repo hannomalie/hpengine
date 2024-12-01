@@ -10,7 +10,6 @@ layout(binding=8) uniform sampler2D environment; // reflection
 layout(binding=9) uniform sampler2D environmentReflection;
 layout(binding=11) uniform sampler2D aoScattering;
 layout(binding=13) uniform sampler3D grid;
-layout(binding=14) uniform samplerCube environmentMap;
 layout(binding=15) uniform sampler2D indirectHalfScreen;
 
 layout(std430, binding=0) buffer myBlock

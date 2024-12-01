@@ -25,6 +25,10 @@ class AnimatedModel(
 
     val animationController = AnimationController(animations)
 
+    // TODO: Move these out of model classes and put directly to shared geometry buffer, otherwise we waste 2 seconds
+    // when loading sponza
+//    10:06:01.820 [pool-30-thread-1] INFO  GeometryBufferExtensions - Captured geometry offsets
+//    10:06:03.599 [pool-30-thread-1] INFO  GeometryBufferExtensions - Added geometry to buffer
     override val verticesPacked = TypedBuffer(
         BufferUtils.createByteBuffer(meshes.sumOf { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes),
         AnimatedVertexStruktPacked.type

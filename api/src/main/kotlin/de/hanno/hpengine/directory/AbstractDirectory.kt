@@ -2,6 +2,7 @@ package de.hanno.hpengine.directory
 
 import io.github.classgraph.ClassGraph
 import io.github.classgraph.Resource
+import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -9,8 +10,9 @@ import kotlin.io.path.createDirectory
 import kotlin.io.path.exists
 
 abstract class AbstractDirectory(val baseDir: File, sourceLocationIsJarFile: Boolean) {
-    val useExistingFolder = baseDir.exists() && !sourceLocationIsJarFile
+    private val logger = LogManager.getLogger(AbstractDirectory::class.java)
 
+    val useExistingFolder = baseDir.exists() && !sourceLocationIsJarFile
     private val path = Path.of(System.getProperty("java.io.tmpdir"))
         .resolve("hpengine")
         .apply { if(!exists()) createDirectory() }
@@ -22,12 +24,14 @@ abstract class AbstractDirectory(val baseDir: File, sourceLocationIsJarFile: Boo
     }
 
     init {
+        logger.info("Initializing directory")
         if(useExistingFolder) {
             require(!baseDir.isFile) { "${baseDir.path} is a file, not a directory" }
             require(baseDir.exists()) { "Used baseDir for game doesn't exist: ${baseDir.path}" }
         } else {
             extractJarContentToTempDir()
         }
+        logger.info("Finished initializing")
     }
 
     private fun extractJarContentToTempDir() {

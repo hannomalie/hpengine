@@ -8,7 +8,9 @@ import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
+import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.transform.AABB
+import org.apache.logging.log4j.LogManager
 import org.joml.Matrix4f
 import org.koin.core.annotation.Singleton
 
@@ -19,6 +21,10 @@ class BoundingVolumeComponent: Component() {
 @Singleton(binds = [BaseSystem::class])
 @All(value = [TransformComponent::class, BoundingVolumeComponent::class])
 class BoundingVolumeComponentSystem: BaseEntitySystem() {
+    private val logger = LogManager.getLogger(BoundingVolumeComponentSystem::class.java)
+    init {
+        logger.info("Creating system")
+    }
     lateinit var boundingVolumeComponentMapper: ComponentMapper<BoundingVolumeComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>

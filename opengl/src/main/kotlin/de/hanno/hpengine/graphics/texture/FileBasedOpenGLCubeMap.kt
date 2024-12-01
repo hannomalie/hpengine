@@ -50,7 +50,7 @@ data class FileBasedOpenGLCubeMap(
     } else TextureDimension(width / 4, height / 3)
 
 
-    fun load() = CompletableFuture.supplyAsync {
+    fun loadAsync() = CompletableFuture.supplyAsync {
         if (backingFileMode == CubeMapFileDataFormat.Six) {
             GlobalScope.launch {
                 files.map {
@@ -163,7 +163,7 @@ data class FileBasedOpenGLCubeMap(
             )
 
             return fileBasedCubeMap.apply {
-                load()
+                loadAsync()
             }
         }
     }
