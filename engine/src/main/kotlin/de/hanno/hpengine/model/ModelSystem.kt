@@ -1,8 +1,6 @@
 package de.hanno.hpengine.model
 
-import AnimatedVertexStruktPackedImpl.Companion.type
 import Matrix4fStruktImpl.Companion.sizeInBytes
-import VertexStruktPackedImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
@@ -14,7 +12,6 @@ import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
-import de.hanno.hpengine.graphics.buffer.vertex.appendIndices
 import de.hanno.hpengine.graphics.renderer.forward.DefaultUniforms
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.shader.ProgramImpl
@@ -147,7 +144,7 @@ class ModelSystem(
 
                 is StaticModel -> {}
             }
-            val allocation = allocateGeometryBufferSpace(model).apply {
+            val allocation = putToBuffer(model).apply {
                 allocations[descr] = this
             }
             logger.info("Allocated geometry buffer space")
@@ -167,7 +164,7 @@ class ModelSystem(
         }
     }
 
-    private fun allocateGeometryBufferSpace(
+    private fun putToBuffer(
         model: Model<*>
     ): Allocation = when (model) {
         is AnimatedModel -> {

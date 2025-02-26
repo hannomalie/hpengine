@@ -20,6 +20,14 @@ inline fun <T> BaseEntitySystem.forEachEntity(block: (Int) -> T) {
     subscription.entities.forEach(block)
 }
 
+inline fun BaseEntitySystem.sumByEntity(block: (Int) -> Int): Int {
+    var result = 0
+    subscription.entities.forEach { result += block(it) }
+    return result
+}
+
+val BaseEntitySystem.entityCount: Int get() = subscription.entities.size()
+
 inline fun <T> BaseEntitySystem.forFirstEntityIfPresent(block: (Int) -> T): T? {
     val ids = subscription.entities.data
     val s = subscription.entities.size()

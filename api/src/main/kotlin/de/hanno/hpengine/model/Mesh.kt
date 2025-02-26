@@ -7,9 +7,9 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
+import java.nio.IntBuffer
 
 interface Mesh<T> {
-    val indexBufferValues: ByteBuffer
     val boundingVolume: AABBData
 
     val triangleCount: ElementCount
@@ -31,13 +31,14 @@ class CompiledFace(val positions: Array<Vector3f>, val texCoords: Array<Vector2f
 
 data class IndexedTriangle(val a: Int, val b: Int, val c: Int)
 
-fun List<IndexedTriangle>.extractIndices(): ByteBuffer =
-    BufferUtils.createByteBuffer(Integer.BYTES * size * 3).apply {
-        asIntBuffer().apply {
-            forEachIndexed { index, face ->
-                put(3 * index, face.a)
-                put(3 * index + 1, face.b)
-                put(3 * index + 2, face.c)
-            }
-        }
+fun List<IndexedTriangle>.extractIndices(): ByteBuffer = BufferUtils.createByteBuffer(Integer.BYTES * size * 3).apply {
+    extractIndices(this.asIntBuffer(), 0)
+}
+
+fun List<IndexedTriangle>.extractIndices(target: IntBuffer, baseIndex: Int) = target.apply {
+    forEachIndexed { index, face ->
+        put(baseIndex + 3 * index, face.a)
+        put(baseIndex + 3 * index + 1, face.b)
+        put(baseIndex + 3 * index + 2, face.c)
     }
+}

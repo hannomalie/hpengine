@@ -59,7 +59,7 @@ interface IntStrukt : Strukt {
     companion object
 }
 
-fun IndexBuffer(graphicsApi: GraphicsApi, size: ElementCount = 1000.toCount()) = graphicsApi.PersistentMappedBuffer(
+fun IndexBuffer(graphicsApi: GraphicsApi, size: ElementCount = 100000.toCount()) = graphicsApi.PersistentMappedBuffer(
     BufferTarget.ElementArray, size * SizeInBytes(IntStrukt.sizeInBytes)
 ).typed(IntStrukt.type)
 

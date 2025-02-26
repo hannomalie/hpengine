@@ -9,6 +9,7 @@ import org.lwjgl.opengl.GL15.*
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT
 import org.lwjgl.opengl.GL44
+import org.lwjgl.opengl.GL44.GL_BUFFER_IMMUTABLE_STORAGE
 import org.lwjgl.opengl.GL45.glCopyNamedBufferSubData
 import java.nio.ByteBuffer
 
@@ -54,15 +55,15 @@ class OpenGLGpuBuffer(
         val id = glGenBuffers()
         glBindBuffer(target.glValue, id)
         GL44.glBufferStorage(target.glValue, capacityInBytes.value, flags)
-        val xxxx = BufferUtils.createByteBuffer(capacityInBytes.value.toInt())
 
         val byteBuffer = GL30.glMapBufferRange(
             target.glValue,
             0, capacityInBytes.value, flags,
-            xxxx
+            BufferUtils.createByteBuffer(capacityInBytes.value.toInt())
         )!!
 
-        BufferDefinition(id, byteBuffer)
+        val isImmutable = glGetBufferParameteri(target.glValue, GL_BUFFER_IMMUTABLE_STORAGE) == GL_TRUE
+        BufferDefinition(id, byteBuffer, isImmutable)
     }
     override fun bind() = graphicsApi.onGpu {
         glBindBuffer(target.glValue, id)

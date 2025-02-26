@@ -51,13 +51,14 @@ class EntityBuffer(
     var entityCount = ElementCount(0)
 
     var entitiesBuffer = renderStateContext.renderState.registerState {
-        graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(EntityStrukt.type.sizeInBytes)).typed(EntityStrukt.type)
+        graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(EntityStrukt.type.sizeInBytes) * 100).typed(EntityStrukt.type)
     }
     val entityIndices: MutableMap<Int, Int> = mutableMapOf()
 
     fun add(entityId: Int, instancesCount: Int) {
         entityIndices[entityId] = instancesCount
     }
+
     fun cacheEntityIndices() {
         entityIndices.clear()
         var instanceIndex = 0

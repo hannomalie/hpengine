@@ -6,8 +6,10 @@ import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.One
 import de.hanno.hpengine.SizeInBytes
+import de.hanno.hpengine.artemis.entityCount
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
+import de.hanno.hpengine.artemis.sumByEntity
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
@@ -43,8 +45,10 @@ class EntityBufferExtractorSystem(
     private val tempAABB = AABB()
 
     override fun extract(currentWriteState: RenderState) {
+        val meshes = sumByEntity { modelCacheComponentMapper[it]?.model?.meshes?.size ?: 0 }
+
         val entitiesBufferToWrite = currentWriteState[entityBuffer.entitiesBuffer]
-        entitiesBufferToWrite.ensureCapacityInBytes(entityBuffer.entityCount * SizeInBytes(EntityStrukt.sizeInBytes))
+        entitiesBufferToWrite.ensureCapacityInBytes(SizeInBytes(meshes * 2 * EntityStrukt.sizeInBytes))
 
         var entityBufferIndex = 0
 

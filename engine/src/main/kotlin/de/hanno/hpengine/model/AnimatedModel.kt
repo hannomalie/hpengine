@@ -7,6 +7,7 @@ import de.hanno.hpengine.model.animation.Animation
 import de.hanno.hpengine.model.animation.AnimationController
 import de.hanno.hpengine.scene.AnimatedVertex
 import de.hanno.hpengine.scene.AnimatedVertexStruktPacked
+import de.hanno.hpengine.scene.VertexStruktPacked
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import org.lwjgl.BufferUtils
@@ -14,6 +15,39 @@ import struktgen.api.TypedBuffer
 import struktgen.api.forIndex
 import java.io.File
 import java.nio.ByteBuffer
+
+
+fun AnimatedModel.putVerticesPacked(buffer: TypedBuffer<AnimatedVertexStruktPacked>, baseIndex: Int) = buffer.run {
+    byteBuffer.run {
+        indexedVertices.forEachIndexed { index, vertex ->
+            buffer.forIndex(baseIndex + index) {
+                it.position.set(vertex.position)
+                it.texCoord.set(vertex.texCoord)
+                it.normal.set(vertex.normal)
+                it.weights.set(vertex.weights)
+                it.jointIndices.set(vertex.jointIndices)
+            }
+        }
+    }
+}
+fun AnimatedModel.putUnindexedVerticesPacked(buffer: TypedBuffer<AnimatedVertexStruktPacked>, baseIndex: Int) = buffer.run {
+    byteBuffer.run {
+        unindexedVertices.forEachIndexed { index, vertex ->
+            buffer.forIndex(baseIndex + index) {
+                it.position.set(vertex.position)
+                it.texCoord.set(vertex.texCoord)
+                it.normal.set(vertex.normal)
+                when (index % 3) {
+                    0 -> it.dummy.x = 1f
+                    1 -> it.dummy.y = 1f
+                    2 -> it.dummy.z = 1f
+                }
+                it.weights.set(vertex.weights)
+                it.jointIndices.set(vertex.jointIndices)
+            }
+        }
+    }
+}
 
 class AnimatedModel(
     override val file: File,
@@ -25,49 +59,6 @@ class AnimatedModel(
 
     val animationController = AnimationController(animations)
 
-    // TODO: Move these out of model classes and put directly to shared geometry buffer, otherwise we waste 2 seconds
-    // when loading sponza
-//    10:06:01.820 [pool-30-thread-1] INFO  GeometryBufferExtensions - Captured geometry offsets
-//    10:06:03.599 [pool-30-thread-1] INFO  GeometryBufferExtensions - Added geometry to buffer
-    override val verticesPacked = TypedBuffer(
-        BufferUtils.createByteBuffer(meshes.sumOf { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes),
-        AnimatedVertexStruktPacked.type
-    ).apply {
-        byteBuffer.run {
-            indexedVertices.forEachIndexed { index, vertex ->
-                this@apply.forIndex(index) {
-                    it.position.set(vertex.position)
-                    it.texCoord.set(vertex.texCoord)
-                    it.normal.set(vertex.normal)
-                    it.weights.set(vertex.weights)
-                    it.jointIndices.set(vertex.jointIndices)
-                }
-            }
-        }
-    }
-    override val unindexedVerticesPacked by lazy {
-        TypedBuffer(
-            BufferUtils.createByteBuffer((triangleCount * 3 * SizeInBytes(AnimatedVertexStruktPacked.sizeInBytes)).value.toInt()),
-            AnimatedVertexStruktPacked.type
-        ).apply {
-            byteBuffer.run {
-                unindexedVertices.forEachIndexed { index, vertex ->
-                    this@apply.forIndex(index) {
-                        it.position.set(vertex.position)
-                        it.texCoord.set(vertex.texCoord)
-                        it.normal.set(vertex.normal)
-                        when (index % 3) {
-                            0 -> it.dummy.x = 1f
-                            1 -> it.dummy.y = 1f
-                            2 -> it.dummy.z = 1f
-                        }
-                        it.weights.set(vertex.weights)
-                        it.jointIndices.set(vertex.jointIndices)
-                    }
-                }
-            }
-        }
-    }
     fun update(deltaSeconds: Float) {
         animationController.update(deltaSeconds)
     }

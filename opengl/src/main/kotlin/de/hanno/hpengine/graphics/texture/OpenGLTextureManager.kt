@@ -62,14 +62,18 @@ class OpenGLTextureManager(
         generatedCubeMaps[s] = texture
     }
 
-    private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram(
+    private val blur2dProgramSeparableHorizontal by lazy {
+        programManager.getComputeProgram(
         programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}")
             .toCodeSource(), Defines(Define("HORIZONTAL", true)), Uniforms.Empty
     )
-    private val blur2dProgramSeparableVertical = programManager.getComputeProgram(
+    }
+    private val blur2dProgramSeparableVertical by lazy {
+        programManager.getComputeProgram(
         programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}")
             .toCodeSource(), Defines(Define("VERTICAL", true)), Uniforms.Empty
     )
+    }
 
     override val defaultTexture = getStaticTextureHandle("assets/textures/default/gi_flag.png", true, engineDir).apply {
         graphicsApi.run {
@@ -168,9 +172,7 @@ class OpenGLTextureManager(
             )
             val highestMipLevelTexture = graphicsApi.Texture2D(
                 highMipLevelDescription,
-            ).apply {
-                // TODO: Add to handle list somehow?
-            }
+            )
 
             DynamicFileBasedTexture2D(
                 resourcePath,
@@ -225,23 +227,6 @@ class OpenGLTextureManager(
                 directory
             )
         }
-    }
-
-    // https://stackoverflow.com/questions/1559253/java-imageio-getting-image-dimensions-without-reading-the-entire-file
-    private fun getImageDimension(file: File): TextureDimension2D {
-        ImageIO.createImageInputStream(file).use { inputStream ->
-            val readers: Iterator<ImageReader> = ImageIO.getImageReaders(inputStream)
-            if (readers.hasNext()) {
-                val reader: ImageReader = readers.next()
-                try {
-                    reader.input = inputStream
-                    return TextureDimension2D(reader.getWidth(0), reader.getHeight(0))
-                } finally {
-                    reader.dispose()
-                }
-            }
-        }
-        throw IllegalStateException("Can't determine dimension of ${file.absolutePath}")
     }
 
     private inline fun <T> MutableMap<String, T>.ifAbsentPutInSingleThreadContext(

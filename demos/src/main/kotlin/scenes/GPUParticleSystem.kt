@@ -95,7 +95,7 @@ interface AttractorStrukt: Strukt {
 
 @All(ModelComponent::class)
 @One(GPUParticles::class, Attractor::class)
-@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
+//@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
 class GPUParticleSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,

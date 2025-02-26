@@ -61,13 +61,16 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         val aiMeshesX = (0 until numMeshes).map { i ->
             AIMesh.create(aiScene.mMeshes()!![i])
         }
-        val meshes: List<StaticMesh> = (0 until numMeshes).map { i ->
-            aiMeshesX[i].processMesh()
+        val meshes = runBlocking {
+            ((0 until numMeshes).map { i ->
+                async(Dispatchers.Default) { aiMeshesX[i].processMesh() }
+            }).awaitAll()
         }
         logger.info("Waiting for materials")
         val materials = runBlocking {
             deferredMaterials.awaitAll()
         }
+        logger.info("Materials finished")
         (0 until numMeshes).map { i ->
             val materialIdx = aiMeshesX[i].mMaterialIndex()
             val material = if (materialIdx >= 0 && materialIdx < materials.size) {
@@ -87,7 +90,10 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
                 val textPath = path.dataString()
                 return if (textPath.isNotEmpty()) {
-                    textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir, unloadable = true)
+                    logger.info("Getting texture")
+                    textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir, unloadable = true).apply {
+                        logger.info("Got texture")
+                    }
                 } else null
             }
         }

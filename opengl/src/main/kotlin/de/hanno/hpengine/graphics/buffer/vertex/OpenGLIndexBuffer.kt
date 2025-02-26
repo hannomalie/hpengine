@@ -20,6 +20,6 @@ fun OpenGLIndexBuffer(
     graphicsApi: GraphicsApi,
     intBuffer: IntBuffer
 ): IndexBuffer = OpenGLIndexBuffer(graphicsApi).apply {
-    ensureCapacityInBytes(SizeInBytes(intBuffer.capacity()))
+    ensureCapacityInBytes(SizeInBytes(intBuffer.capacity() * Int.SIZE_BYTES))
     buffer.asIntBuffer().put(intBuffer)
 }

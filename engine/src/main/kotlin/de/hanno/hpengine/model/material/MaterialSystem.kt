@@ -45,7 +45,7 @@ class MaterialSystem(
     var cycle = 0
 
     val materialBuffer = renderStateContext.renderState.registerState {
-        graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(MaterialStrukt.type.sizeInBytes)).typed(MaterialStrukt.type)
+        graphicsApi.PersistentShaderStorageBuffer(SizeInBytes(MaterialStrukt.type.sizeInBytes) * 150).typed(MaterialStrukt.type)
     }
 
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>

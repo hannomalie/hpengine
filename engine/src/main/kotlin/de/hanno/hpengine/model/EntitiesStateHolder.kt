@@ -16,8 +16,8 @@ class EntitiesStateHolder(
     graphicsApi: GraphicsApi,
     renderStateContext: RenderStateContext,
 ) {
-    val geometryBufferStatic = VertexIndexBuffer(graphicsApi, VertexStruktPacked.type, 10)
-    val geometryBufferAnimated = VertexIndexBuffer(graphicsApi, AnimatedVertexStruktPacked.type, 10)
+    val geometryBufferStatic = VertexIndexBuffer(graphicsApi, VertexStruktPacked.type, 5000000)
+    val geometryBufferAnimated = VertexIndexBuffer(graphicsApi, AnimatedVertexStruktPacked.type, 5000000)
 //    val geometryBufferStatic = VertexBuffer(graphicsApi, VertexStruktPacked.type)
 //    val geometryBufferAnimated = VertexBuffer(graphicsApi, AnimatedVertexStruktPacked.type)
     val entitiesState = renderStateContext.renderState.registerState {

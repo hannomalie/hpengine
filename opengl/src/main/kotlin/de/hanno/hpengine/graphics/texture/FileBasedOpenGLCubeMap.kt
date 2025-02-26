@@ -141,9 +141,10 @@ data class FileBasedOpenGLCubeMap(
         ): FileBasedOpenGLCubeMap = graphicsApi.run {
             val internalFormat = if (srgba) COMPRESSED_SRGB_ALPHA_S3TC_DXT5 else COMPRESSED_RGBA_S3TC_DXT5
 
-            val bufferedImage: BufferedImage = ImageIO.read(file)
-            val width = bufferedImage.width
-            val height = bufferedImage.height
+//            val bufferedImage: BufferedImage = ImageIO.read(file)
+            val dimension = getImageDimension(file)
+            val width = dimension.width
+            val height = dimension.height
             val tileDimension = TextureDimension(width / 4, height / 3)
 
             val filterConfig = TextureFilterConfig()
@@ -162,9 +163,7 @@ data class FileBasedOpenGLCubeMap(
                 file
             )
 
-            return fileBasedCubeMap.apply {
-                loadAsync()
-            }
+            return fileBasedCubeMap
         }
     }
 }

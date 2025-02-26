@@ -57,7 +57,7 @@ fun main() {
 class Grass: Component()
 
 @All(Grass::class, ModelComponent::class)
-@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
+//@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
 class GrassSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,

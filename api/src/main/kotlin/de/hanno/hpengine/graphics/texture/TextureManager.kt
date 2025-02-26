@@ -3,6 +3,8 @@ package de.hanno.hpengine.graphics.texture
 import com.artemis.BaseSystem
 import de.hanno.hpengine.directory.AbstractDirectory
 import java.io.File
+import javax.imageio.ImageIO
+import javax.imageio.ImageReader
 
 interface TextureManager {
     val defaultTexture: StaticFileBasedTexture2D
@@ -36,6 +38,22 @@ interface TextureManager {
     fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap
 }
 
+// https://stackoverflow.com/questions/1559253/java-imageio-getting-image-dimensions-without-reading-the-entire-file
+fun getImageDimension(file: File): TextureDimension2D {
+    ImageIO.createImageInputStream(file).use { inputStream ->
+        val readers: Iterator<ImageReader> = ImageIO.getImageReaders(inputStream)
+        if (readers.hasNext()) {
+            val reader: ImageReader = readers.next()
+            try {
+                reader.input = inputStream
+                return TextureDimension2D(reader.getWidth(0), reader.getHeight(0))
+            } finally {
+                reader.dispose()
+            }
+        }
+    }
+    throw IllegalStateException("Can't determine dimension of ${file.absolutePath}")
+}
 data class TextureUsageInfo(
     var time: Long?,
     var distance: Float,

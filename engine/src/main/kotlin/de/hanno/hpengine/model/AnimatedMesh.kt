@@ -12,10 +12,8 @@ class AnimatedMesh(
     val aabb: AABBData,
     override var material: Material
 ) : Mesh<AnimatedVertex> {
-    override val indexBufferValues = triangles.extractIndices()
 
-    override val triangleCount: ElementCount
-        get() = ElementCount(triangles.size)
+    override val triangleCount = ElementCount(triangles.size)
 
     override val boundingVolume = AABBData().apply {
         vertices.forEach {

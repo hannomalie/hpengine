@@ -9,6 +9,7 @@ import de.hanno.hpengine.graphics.OpenGLContext
 import de.hanno.hpengine.graphics.buffer.print
 import de.hanno.hpengine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
+import de.hanno.hpengine.lifecycle.Termination
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.scene.*
@@ -137,6 +138,7 @@ fun createOpenGLContext(
     val window = GlfwWindow(
         config,
         profiler,
+        Termination(),
         visible = false,
     )
     return Pair(

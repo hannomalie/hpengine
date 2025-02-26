@@ -32,9 +32,7 @@ class StaticMesh(
         }
     }
 
-    override val indexBufferValues = triangles.extractIndices()
-
-    override val triangleCount get() = triangles.size.toCount()
+    override val triangleCount = triangles.size.toCount()
 
     override fun equals(other: Any?): Boolean {
         if (other !is StaticMesh) {
