@@ -3,31 +3,9 @@ import de.hanno.hpengine.build.Dependencies.LWJGL
 import de.hanno.hpengine.build.Dependencies.StruktGen
 import de.hanno.hpengine.build.Dependencies.configureCommonTestDependencies
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath("net.onedaybeard.artemis:artemis-odb-gradle-plugin:2.3.0")
-    }
-}
-
 plugins {
     kotlin("jvm")
     id("com.google.devtools.ksp")
-}
-
-plugins.apply("artemis")
-
-tasks.named("weave", net.onedaybeard.gradle.ArtemisWeavingTask::class) {
-    classesDirs = sourceSets.main.get().output.classesDirs
-    isEnableArtemisPlugin = true
-    isEnablePooledWeaving = true
-    isGenerateLinkMutators = true
-    isOptimizeEntitySystems = true
-}
-tasks.build {
-    finalizedBy(tasks.named("weave"))
 }
 
 tasks.classes {
