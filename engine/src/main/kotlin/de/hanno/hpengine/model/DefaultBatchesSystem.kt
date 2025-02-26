@@ -3,6 +3,7 @@ package de.hanno.hpengine.model
 import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
+import com.artemis.annotations.All
 import com.artemis.annotations.One
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.getOrNull
@@ -14,8 +15,6 @@ import de.hanno.hpengine.graphics.renderer.RenderBatches
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
-import de.hanno.hpengine.instancing.InstanceComponent
-import de.hanno.hpengine.instancing.InstancesComponent
 import de.hanno.hpengine.scene.VertexIndexOffsets
 import de.hanno.hpengine.scene.VertexOffsets
 import de.hanno.hpengine.scene.dsl.AnimatedModelComponentDescription
@@ -31,7 +30,7 @@ import org.joml.Vector3f
 import org.koin.core.annotation.Single
 
 @Single(binds = [BaseSystem::class, Extractor::class, DefaultBatchesSystem::class])
-@One(ModelComponent::class,)
+@All(ModelComponent::class, TransformComponent::class)
 class DefaultBatchesSystem(
     private val config: Config,
     private val entityBuffer: EntityBuffer,
@@ -49,9 +48,7 @@ class DefaultBatchesSystem(
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
     lateinit var invisibleComponentMapper: ComponentMapper<InvisibleComponent>
-    lateinit var instanceComponentMapper: ComponentMapper<InstanceComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
-    lateinit var instancesComponentMapper: ComponentMapper<InstancesComponent>
 
     val renderBatchesStatic = renderStateContext.renderState.registerState { RenderBatches() }
     val renderBatchesAnimated = renderStateContext.renderState.registerState { RenderBatches() }
@@ -64,29 +61,23 @@ class DefaultBatchesSystem(
         currentWriteState[renderBatchesStatic].clear()
         currentWriteState[renderBatchesAnimated].clear()
 
-        forEachEntity { parentEntityId ->
-            logger.trace("Processing $parentEntityId")
-            val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
-            val entityIds = listOf(parentEntityId) + instances
+        forEachEntity { entityId ->
+            logger.trace("Processing $entityId")
+            val entityIds = listOf(entityId)
             val instanceCount = entityIds.size.toCount()
 
-            val modelComponent = modelComponentMapper.getOrNull(parentEntityId)
-            val modelCacheComponent = modelCacheComponentMapper.getOrNull(parentEntityId)
+            val modelComponent = modelComponentMapper.getOrNull(entityId)
+            val modelCacheComponent = modelCacheComponentMapper.getOrNull(entityId)
 
-            if (preventDefaultRenderingComponentMapper[parentEntityId] == null && modelComponent != null && modelCacheComponent != null) {
+            if (preventDefaultRenderingComponentMapper[entityId] == null && modelComponent != null && modelCacheComponent != null) {
 
-                val instanceComponent = instanceComponentMapper.getOrNull(parentEntityId)
-                val transformComponent = transformComponentMapper.getOrNull(parentEntityId) ?: transformComponentMapper.get(
-                    instanceComponent!!.targetEntity
-                )
+                val transformComponent = transformComponentMapper.get(entityId)
                 val transform = transformComponent.transform
 
-                val materialComponentOrNull = materialComponentMapper.getOrNull(parentEntityId) ?: instanceComponent?.targetEntity?.let { targetEntity ->
-                    materialComponentMapper.getOrNull(targetEntity)
-                }
-                val entityVisible = !invisibleComponentMapper.has(parentEntityId)
+                val materialComponentOrNull = materialComponentMapper.get(entityId)
+                val entityVisible = !invisibleComponentMapper.has(entityId)
 
-                val entityIndexOf = entityBuffer.getEntityIndex(parentEntityId)!! // TODO: Factor in instance index here
+                val entityIndexOf = modelCacheComponent.gpuBufferIndex
 
                 val model: Model<*> = modelCacheComponent.model
                 val meshes = model.meshes
@@ -110,7 +101,7 @@ class DefaultBatchesSystem(
 
                     val batch = getOrCreateBatch(currentWriteState, mesh, entityIndexOf)
 
-                    batch.entityId = parentEntityId
+                    batch.entityId = entityId
                     batch.entityBufferIndex = meshBufferIndex
                     batch.movedInCycle = currentWriteState.cycle// entity.movedInCycle TODO: reimplement
                     batch.isDrawLines = config.debug.isDrawLines

@@ -8,7 +8,6 @@ import com.artemis.annotations.One
 import com.artemis.utils.IntBag
 import de.hanno.hpengine.SizeInBytes
 import de.hanno.hpengine.artemis.forEach
-import de.hanno.hpengine.artemis.getOrNull
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
@@ -18,7 +17,6 @@ import de.hanno.hpengine.graphics.shader.ProgramImpl
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.texture.OpenGLTextureManager
-import de.hanno.hpengine.instancing.InstanceComponent
 import de.hanno.hpengine.math.Matrix4fStrukt
 import de.hanno.hpengine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.model.loader.assimp.StaticModelLoader
@@ -57,7 +55,6 @@ class ModelSystem(
     private val geometryBufferStatic: GeometryBuffer<VertexStruktPacked> = entitiesStateHolder.geometryBufferStatic
 
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
-    lateinit var instanceComponentMapper: ComponentMapper<InstanceComponent>
     lateinit var boundingVolumeComponentMapper: ComponentMapper<BoundingVolumeComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
@@ -95,15 +92,12 @@ class ModelSystem(
             }
         }
     }
-
+    private var currentGpuBufferIndex = 0
     private fun loadModelToCache(entityId: Int): ModelCacheComponent {
         logger.info("loading model to cache for entity $entityId")
-        val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
-        val instanceComponent = instanceComponentMapper.getOrNull(entityId)
+        val materialComponent = materialComponentMapper.get(entityId)
 
-        val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
-
-        val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
+        val modelComponent = modelComponentMapper.get(entityId)
         val descr = modelComponent.modelComponentDescription
         logger.info("model description: $descr")
         val dir = when (descr.directory) {
@@ -116,7 +110,7 @@ class ModelSystem(
                 is StaticModelComponentDescription -> staticModelLoader.load(descr.file, textureManager, dir)
             }.apply {
                 meshes.forEach { mesh ->
-                    val meshMaterial = materialComponentOrNull?.material ?: mesh.material
+                    val meshMaterial = materialComponent?.material ?: mesh.material
                     materialSystem.registerMaterial(meshMaterial)
                     meshMaterial.programDescription?.let { programDescription ->
                         programCache[programDescription] =
@@ -148,8 +142,9 @@ class ModelSystem(
                 allocations[descr] = this
             }
             logger.info("Allocated geometry buffer space")
-            ModelCacheComponent(model, allocation).apply {
+            ModelCacheComponent(model, allocation, currentGpuBufferIndex).apply {
                 add(this)
+                currentGpuBufferIndex += model.meshes.size
                 logger.info("Added modelcache component for entity $entityId")
             }
         }

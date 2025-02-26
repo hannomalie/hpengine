@@ -139,9 +139,7 @@ class GrassSystem(
         val entityId = renderState[entityId].value
         if(entityId == -1) return
         val modelCacheComponent = defaultBatchesSystem.modelCacheComponentMapper.get(entityId)
-        if(modelCacheComponent == null) return
-        val entityIndex = entityBuffer.getEntityIndex(entityId) // TODO: Encapsulate this in own system
-        if(entityIndex == null) return
+        val entityIndex = modelCacheComponent.gpuBufferIndex
 
         val materialComponent = defaultBatchesSystem.materialComponentMapper.get(entityId)
         val entitiesState = renderState[entitiesStateHolder.entitiesState]

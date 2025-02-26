@@ -14,8 +14,6 @@ import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.EntityStrukt
 import de.hanno.hpengine.graphics.envprobe.EnvironmentProbesStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.instancing.InstanceComponent
-import de.hanno.hpengine.instancing.InstancesComponent
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.toCount
@@ -35,9 +33,7 @@ class EntityBufferExtractorSystem(
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
-    lateinit var instanceComponentMapper: ComponentMapper<InstanceComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
-    lateinit var instancesComponentMapper: ComponentMapper<InstancesComponent>
 
     override fun processSystem() {
     }
@@ -55,19 +51,15 @@ class EntityBufferExtractorSystem(
         forEachEntity { parentEntityId ->
             modelComponentMapper.getOrNull(parentEntityId)?.let { _ ->
 
-                val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances
-                val entityIds = if (instances == null) arrayOf(parentEntityId) else arrayOf(parentEntityId) + instances
+                val entityIds = arrayOf(parentEntityId)
 
                 for (entityId in entityIds) {
-                    val instanceComponent = instanceComponentMapper.getOrNull(entityId)
                     val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
                     val modelCacheComponent = modelCacheComponentMapper.getOrNull(entityId, parentEntityId)
 
                     if (modelCacheComponent != null) {
                         val model = modelCacheComponent.model
-                        val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(
-                            instanceComponent!!.targetEntity
-                        )
+                        val transformComponent = transformComponentMapper.get(entityId)
                         val transform = transformComponent!!.transform
 
                         val allocation = modelCacheComponent.allocation

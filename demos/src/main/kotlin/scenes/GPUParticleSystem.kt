@@ -212,7 +212,7 @@ class GPUParticleSystem(
     override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
         val entityId = renderState[entityId].value ?: return
         val modelCacheComponent = defaultBatchesSystem.modelCacheComponentMapper.get(entityId) ?: return
-        val entityIndex = entityBuffer.getEntityIndex(entityId) ?: return // TODO: Encapsulate this in own system
+        val entityIndex = modelCacheComponent.gpuBufferIndex
 
         val particlesComponent = particlesComponentMapper.get(entityId)
 
