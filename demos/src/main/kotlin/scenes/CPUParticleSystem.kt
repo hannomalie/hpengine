@@ -74,7 +74,7 @@ class CPUParticles: Component() {
 }
 
 @All(CPUParticles::class, ModelComponent::class)
-//@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
+@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
 class CPUParticleSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,

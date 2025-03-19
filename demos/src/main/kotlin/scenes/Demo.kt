@@ -9,6 +9,7 @@ import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.editor.PrimaryRendererSelection
 import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
+import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
 import de.hanno.hpengine.graphics.renderer.forward.ColorOnlyRenderer
 import de.hanno.hpengine.graphics.renderer.forward.NoOpRenderer
 import de.hanno.hpengine.graphics.renderer.forward.VisibilityRenderer
@@ -62,7 +63,7 @@ fun createEngine(demoAndEngineConfig: DemoAndEngineConfig): Engine {
     val modules = listOf(
         glfwModule,
         openglModule,
-//        deferredRendererModule,
+        deferredRendererModule,
         simpleForwardRendererModule,
         editorModule,
         demoAndEngineConfig.configModule,

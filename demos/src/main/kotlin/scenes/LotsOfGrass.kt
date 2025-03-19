@@ -57,7 +57,7 @@ fun main() {
 class Grass: Component()
 
 @All(Grass::class, ModelComponent::class)
-//@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
+@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
 class GrassSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,
@@ -138,7 +138,7 @@ class GrassSystem(
     override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
         val entityId = renderState[entityId].value
         if(entityId == -1) return
-        val modelCacheComponent = defaultBatchesSystem.modelCacheComponentMapper.get(entityId)
+        val modelCacheComponent = defaultBatchesSystem.modelCacheComponentMapper.get(entityId) ?: return
         val entityIndex = modelCacheComponent.gpuBufferIndex
 
         val materialComponent = defaultBatchesSystem.materialComponentMapper.get(entityId)
