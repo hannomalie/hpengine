@@ -18,6 +18,7 @@ import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.stopwatch.OpenGLGPUProfiler
 import imgui.ImGui
 import imgui.gl3.ImGuiImplGl3
+import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImBoolean
 import kotlin.system.exitProcess
 
@@ -42,7 +43,7 @@ fun main() {
         ImGui.createContext()
     }
 
-    val imGuiImplGlfw = ImGuiImplGlfwFrameBufferAware().apply {
+    val imGuiImplGlfw = ImGuiImplGlfw().apply {
         init(window.handle, true)
     }
     val glslVersion = "#version 450"
@@ -89,6 +90,7 @@ fun main() {
         renderTarget.use(true)
         graphicsApi.clearColor(1f, 0f, 0f, 1f)
         imGuiImplGlfw.newFrame(renderTarget.width, renderTarget.height)
+//        imGuiImplGlfw.newFrame(renderTarget.width, renderTarget.height)
         ImGui.newFrame()
         ImGui.showDemoWindow(ImBoolean(true))
         ImGui.render()

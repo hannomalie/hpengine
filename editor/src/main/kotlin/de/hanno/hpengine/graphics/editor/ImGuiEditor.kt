@@ -23,7 +23,6 @@ import de.hanno.hpengine.graphics.editor.select.MeshSelection
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.editor.select.SimpleEntitySelection
 import de.hanno.hpengine.graphics.fps.FPSCounter
-import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.output.FinalOutputImpl
 import de.hanno.hpengine.graphics.profiling.GPUProfiler
@@ -45,6 +44,7 @@ import imgui.flag.ImGuiDir
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
+import imgui.glfw.ImGuiImplGlfw
 import org.apache.logging.log4j.LogManager
 import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
@@ -127,7 +127,7 @@ class ImGuiEditor(
     }
 
     private val imGuiImplGlfw = graphicsApi.onGpu {
-        ImGuiImplGlfwFrameBufferAware().apply {
+        ImGuiImplGlfw().apply {
             init(window.handle, true)
         }
     }
@@ -150,10 +150,10 @@ class ImGuiEditor(
         outputSelection.draw()
 
         renderTarget.use(true)
+        imGuiImplGl3.newFrame()
         imGuiImplGlfw.newFrame(renderTarget.width, renderTarget.height)
 
         try {
-
             ImGui.newFrame()
 
             background(layout.windowWidth, layout.windowHeight)
@@ -263,7 +263,7 @@ class ImGuiEditor(
                 ImGui.popStyleVar()
 
                 ImGui.image(
-                    outputSelection.textureOrNull ?: primaryRendererSelection.primaryRenderer.finalOutput?.texture2D?.id ?: 0,
+                    outputSelection.textureOrNull?.toLong() ?: primaryRendererSelection.primaryRenderer.finalOutput?.texture2D?.id?.toLong() ?: 0,
                     screenWidth,
                     screenHeight,
                     0f,

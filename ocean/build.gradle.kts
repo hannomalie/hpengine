@@ -13,12 +13,6 @@ dependencies {
     api(project(":engine"))
     api(project(":editor"))
 
-    val imguiVersion = "1.86.1"
-
-    api("io.github.spair:imgui-java-binding:$imguiVersion")
-    api("io.github.spair:imgui-java-lwjgl3:$imguiVersion")
-    api("io.github.spair:imgui-java-natives-windows:$imguiVersion") // TODO Make OS aware
-
     api(StruktGen.api)
     ksp(StruktGen.processor)
 

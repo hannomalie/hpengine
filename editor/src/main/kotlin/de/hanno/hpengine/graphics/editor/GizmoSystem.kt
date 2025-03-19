@@ -4,6 +4,7 @@ import de.hanno.hpengine.Transform
 import de.hanno.hpengine.graphics.editor.panels.PanelLayout
 import de.hanno.hpengine.transform.AABB
 import imgui.ImGui
+import imgui.ImVec2
 import imgui.extension.imguizmo.ImGuizmo
 import imgui.extension.imguizmo.flag.Operation
 import imgui.flag.ImGuiInputTextFlags
@@ -34,7 +35,7 @@ class GizmoSystem(val input: EditorInput) {
         0f, 0f, 0f, 1f
     )
 
-    private val viewManipulationSize = floatArrayOf(128f, 128f)
+    private val viewManipulationSize = ImVec2(128f, 128f)
 
     private val empty = floatArrayOf(0f)
 
@@ -121,37 +122,37 @@ class GizmoSystem(val input: EditorInput) {
             ImGui.beginChild("prevent_window_from_moving_by_drag", 0f, 0f, false, ImGuiWindowFlags.NoMove)
 
             ImGuizmo.setOrthographic(false)
-            ImGuizmo.setEnabled(true)
+            ImGuizmo.enable(true)
             ImGuizmo.setDrawList()
 
             ImGuizmo.setRect(windowPositionX, windowPositionY, windowWidth, windowHeight)
 
 //    ImGuizmo.drawGrid(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, IDENTITY_MATRIX, 100)
-            ImGuizmo.setId(0)
+            ImGuizmo.setID(0)
 //    ImGuizmo.drawCubes(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, OBJECT_MATRIX)
 
             when {
                 useSnap.get() && showBoundingSize.get() && boundSizingSnap -> {
-                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, objectMatrix, currentGizmoOperation, currentSpace.imGuiValue, snapValue, bounds, boundsSnap)
+                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, currentGizmoOperation, currentSpace.imGuiValue, snapValue, bounds, boundsSnap, objectMatrix)
                 }
                 useSnap.get() && showBoundingSize.get() -> {
-                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, objectMatrix, currentGizmoOperation, currentSpace.imGuiValue, snapValue, bounds)
+                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, currentGizmoOperation, currentSpace.imGuiValue, snapValue, bounds, objectMatrix)
                 }
                 showBoundingSize.get() && boundSizingSnap -> {
-                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, objectMatrix, currentGizmoOperation, currentSpace.imGuiValue, empty, bounds, boundsSnap)
+                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, currentGizmoOperation, currentSpace.imGuiValue, empty, bounds, boundsSnap, objectMatrix)
                 }
                 showBoundingSize.get() -> {
-                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, objectMatrix, currentGizmoOperation, currentSpace.imGuiValue, empty, bounds)
+                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, currentGizmoOperation, currentSpace.imGuiValue, empty, bounds, objectMatrix)
                 }
                 useSnap.get() -> {
-                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, objectMatrix, currentGizmoOperation, currentSpace.imGuiValue, snapValue)
+                    ImGuizmo.manipulate(viewMatrix, projectionMatrix, currentGizmoOperation, currentSpace.imGuiValue, snapValue, objectMatrix)
                 }
-                else -> ImGuizmo.manipulate(viewMatrix, projectionMatrix, objectMatrix, currentGizmoOperation, currentSpace.imGuiValue)
+                else -> ImGuizmo.manipulate(viewMatrix, projectionMatrix, currentGizmoOperation, currentSpace.imGuiValue, objectMatrix)
             }
 
             val viewManipulateRight = midPanelPositionX + midPanelHeight
             val viewManipulateTop = panelPositionY
-            ImGuizmo.viewManipulate(viewMatrix, camDistance.toFloat(), floatArrayOf(viewManipulateRight - 128, viewManipulateTop), viewManipulationSize, 0x10101010)
+            ImGuizmo.viewManipulate(viewMatrix, camDistance.toFloat(), ImVec2(viewManipulateRight - 128, viewManipulateTop), viewManipulationSize, 0x10101010)
 
             ImGui.endChild()
         }
