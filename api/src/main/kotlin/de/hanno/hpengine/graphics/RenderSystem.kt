@@ -12,7 +12,6 @@ interface RenderSystem: Updatable {
     val supportsSingleStep: Boolean get() = true
     fun render(renderState: RenderState) { }
     fun afterFrameFinished() { }
-    fun extract(renderState: RenderState) { }
 }
 
 interface PrimaryRenderer: RenderSystem {

@@ -6,10 +6,10 @@ import com.artemis.EntitySystem
 import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.graphics.RenderSystem
-import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.model.MaterialComponent
+import de.hanno.hpengine.system.Extractor
 import org.apache.logging.log4j.LogManager
 import org.koin.core.annotation.Single
 
@@ -21,7 +21,7 @@ class OceanWaterState {
 
 @All(OceanWaterComponent::class, MaterialComponent::class)
 @Single(binds = [OceanWaterSystem::class, BaseSystem::class, RenderSystem::class])
-class OceanWaterSystem(renderStateContext: RenderStateContext): RenderSystem, EntitySystem() {
+class OceanWaterSystem(renderStateContext: RenderStateContext): RenderSystem, EntitySystem(), Extractor {
     private val logger = LogManager.getLogger(OceanWaterSystem::class.java)
     init {
         logger.info("Creating system")
@@ -34,16 +34,16 @@ class OceanWaterSystem(renderStateContext: RenderStateContext): RenderSystem, En
     }
 
     private var seconds = 0.0f
-    override fun extract(renderState: RenderState) {
-        renderState[state].apply {
-            val writeState = renderState[state]
+    override fun extract(currentWriteState: RenderState) {
+        currentWriteState[state].apply {
+            val writeState = currentWriteState[state]
             writeState.oceanWaterComponents.clear()
             writeState.materialComponents.clear()
             forEachEntity { entityId ->
                 writeState.oceanWaterComponents.add(oceanWaterComponentMapper[entityId]) // TODO: Copy components here, this is a race condition
                 writeState.materialComponents.add(materialComponentMapper[entityId]) // TODO: Copy components here, this is a race condition
 
-                this@OceanWaterSystem.seconds += oceanWaterComponentMapper[entityId].timeFactor * renderState.deltaSeconds // TODO: Doesn't work with multiple entities
+                this@OceanWaterSystem.seconds += oceanWaterComponentMapper[entityId].timeFactor * currentWriteState.deltaSeconds // TODO: Doesn't work with multiple entities
                 this.seconds = this@OceanWaterSystem.seconds
             }
         }

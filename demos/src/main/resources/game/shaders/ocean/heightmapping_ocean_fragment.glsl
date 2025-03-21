@@ -168,7 +168,7 @@ void main()
         alpha *= color.a;
     }
     if(hasNormalMap) {
-        vec2 normalUV = 4f*(UV + 0.00001f * vec2(time%100000));
+        vec2 normalUV = 4.0f*(UV + 0.00001f * vec2(time%100000));
         vec3 PN_world = normalize(perturb_normal(Normal_FS_in, V, normalUV, normalMap));
         vec3 PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 
@@ -207,9 +207,9 @@ void main()
         const bool useVoronoiFoam = true;
         if(useVoronoiFoam) {
             //////////////// voronoi foam, based on https://github.com/MaxBittker/glsl-voronoi-noise/blob/master/2d.glsl
-            vec3 voronoi = 0.5f * vec3(voronoi2d(1f * displacement.y * normalUV))  * PN_world.y;
-            voronoi += 0.25f * vec3(voronoi2d(220f * clamp(displacement.y/20f, 0, 5) * normalUV));
-            voronoi += 0.25f * vec3(voronoi2d(160f * normalUV));
+            vec3 voronoi = 0.5f * vec3(voronoi2d(1.0f * displacement.y * normalUV))  * PN_world.y;
+            voronoi += 0.25f * vec3(voronoi2d(220.0f * clamp(displacement.y/20.0f, 0, 5) * normalUV));
+            voronoi += 0.25f * vec3(voronoi2d(160.0f * normalUV));
             color.rgb += voronoi * displacement.y;
             ////////////////
         } else {

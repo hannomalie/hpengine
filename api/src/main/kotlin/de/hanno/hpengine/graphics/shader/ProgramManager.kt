@@ -13,7 +13,7 @@ interface ProgramManager {
     val config: Config
 
     fun update(deltaSeconds: Float)
-    fun <T: Uniforms> getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: T): ComputeProgram<T>
+    fun <T: Uniforms> getComputeProgram(codeSource: CodeSource, defines: Defines = Defines(), uniforms: T): ComputeProgram<T>
     fun getComputeProgram(codeSourceAsset: Asset): ComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), Defines(), Uniforms.Empty)
 
     fun <T: Uniforms>getComputeProgram(codeSourceAsset: Asset, defines: Defines = Defines(), uniforms: T): ComputeProgram<Uniforms> = getComputeProgram(codeSourceAsset.toCodeSource(), defines, uniforms)

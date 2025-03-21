@@ -43,7 +43,7 @@ class OpenGlProgramManager(
     override val heightMappingFirstPassProgramDescription = getFirstPassHeightMappingProgramDescription()
 
     override fun <T: Uniforms> getComputeProgram(
-        codeSource: FileBasedCodeSource,
+        codeSource: CodeSource,
         defines: Defines,
         uniforms: T
     ): ComputeProgramImpl<T> = graphicsApi.run { ComputeProgramImpl(
@@ -58,6 +58,8 @@ class OpenGlProgramManager(
             }
         }
     }
+
+    override fun getComputeProgram(codeSource: CodeSource) = getComputeProgram(codeSource, Defines(), Uniforms())
 
     override fun <T : Uniforms> getProgram(
         vertexShaderSource: CodeSource,
@@ -94,10 +96,6 @@ class OpenGlProgramManager(
             }
         }
     }
-
-    override fun getComputeProgram(codeSource: CodeSource): ComputeProgramImpl<Uniforms> = ComputeProgramImpl(
-        ComputeShader(graphicsApi, codeSource, Defines()), graphicsApi, Uniforms.Empty,
-    )
 
     override fun update(deltaSeconds: Float) { }
 

@@ -64,6 +64,7 @@ fun createEngine(demoAndEngineConfig: DemoAndEngineConfig): Engine {
         glfwModule,
         openglModule,
         deferredRendererModule,
+        oceanModule,
         simpleForwardRendererModule,
         editorModule,
         demoAndEngineConfig.configModule,

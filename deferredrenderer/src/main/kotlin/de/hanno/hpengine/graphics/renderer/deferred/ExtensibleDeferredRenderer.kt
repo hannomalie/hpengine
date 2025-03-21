@@ -32,6 +32,7 @@ import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.system.Extractor
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.koin.core.annotation.Single
@@ -54,7 +55,7 @@ class ExtensibleDeferredRenderer(
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
-): PrimaryRenderer, BaseSystem() {
+): PrimaryRenderer, BaseSystem(), Extractor {
     private val logger = LogManager.getLogger(ExtensibleDeferredRenderer::class.java)
     init {
         logger.info("Creating system")

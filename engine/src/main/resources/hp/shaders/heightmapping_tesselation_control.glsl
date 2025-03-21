@@ -44,7 +44,7 @@ float getTesselationLevel(float Distance0, float Distance1, Material material) {
     float d = (Distance0 + Distance1) / 2.0f;
 
     if(d < 10) return gl_MaxTessGenLevel;
-    float lodFactor = d / 100f;//material.lodFactor;
+    float lodFactor = d / 100.0f;//material.lodFactor;
     lodFactor = 1-clamp(lodFactor, 0.0f, 1.0f);
     return mix(3, gl_MaxTessGenLevel, pow(lodFactor, 2));
 
