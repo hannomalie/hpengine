@@ -14,7 +14,6 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
-import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
@@ -47,7 +46,7 @@ import struktgen.api.get
 import kotlin.random.Random
 
 fun main() {
-    val demoAndEngineConfig = createDemoAndEngineConfig()
+    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.LotsOfGrass)
 
     val engine = createEngine(demoAndEngineConfig)
 
@@ -57,7 +56,6 @@ fun main() {
 class Grass: Component()
 
 @All(Grass::class, ModelComponent::class)
-@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
 class GrassSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,

@@ -17,7 +17,6 @@ import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.imgui.dsl.Window
-import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
@@ -53,7 +52,7 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 fun main() {
-    val demoAndEngineConfig = createDemoAndEngineConfig()
+    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.CPUParticles)
 
     val engine = createEngine(demoAndEngineConfig)
 
@@ -74,7 +73,6 @@ class CPUParticles: Component() {
 }
 
 @All(CPUParticles::class, ModelComponent::class)
-@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
 class CPUParticleSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,
@@ -235,7 +233,6 @@ private fun calculateParticlePositions(instancesPerCluster: Int, clusterPosition
 }
 
 class CPUParticlesSelection(val component: CPUParticles): Selection
-@Single(binds = [EntitySystem::class, EditorExtension::class])
 class CPUParticlesEditorExtension: BaseSystem(), EditorExtension {
     override fun getSelectionForComponentOrNull(
         component: Component,

@@ -55,8 +55,8 @@ class OpenGLPixelBufferObject(
                     val capacity = data.capacity()
                     val textureId = texture.id
 
-                    profiled("textureSubImage") {
-                        onGpu {
+                    onGpu {
+                        profiled("textureSubImage") {
                             logger.debug("textureSubImage started")
                             handle.uploadState = UploadState.Uploading(imageData.mipMapLevel)
                             buffer.bound {

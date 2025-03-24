@@ -180,5 +180,3 @@ class ColorOnlyRenderer(
 fun Vector3f.copy(x: Float = this.x, y: Float = this.y, z: Float = this.z) = Vector3f(x, y, z)
 
 fun createTransformBuffer() = BufferUtils.createFloatBuffer(16).apply { Transform().get(this) }
-
-val simpleForwardRendererModule = SimpleForwardRenderingModule().module

@@ -6,7 +6,7 @@ import de.hanno.hpengine.world.loadScene
 
 fun main() {
 
-    val demoAndEngineConfig = createDemoAndEngineConfig()
+    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.Sponza)
 
     val engine = createEngine(demoAndEngineConfig)
 

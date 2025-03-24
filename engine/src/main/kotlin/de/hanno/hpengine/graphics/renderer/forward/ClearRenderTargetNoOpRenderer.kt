@@ -8,7 +8,7 @@ import de.hanno.hpengine.graphics.state.RenderState
 import org.koin.core.annotation.Single
 
 @Single(binds = [RenderSystem::class, PrimaryRenderer::class])
-class NoOpRenderer(
+class ClearRenderTargetNoOpRenderer(
     private val graphicsApi: GraphicsApi,
     private val renderTarget: RenderTarget2D,
 ): PrimaryRenderer {

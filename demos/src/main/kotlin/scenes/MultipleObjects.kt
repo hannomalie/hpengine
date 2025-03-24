@@ -12,10 +12,9 @@ import de.hanno.hpengine.world.addAnimatedModelEntity
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import org.joml.Vector3f
-import java.util.concurrent.CompletableFuture
 
 fun main() {
-    val demoAndEngineConfig = createDemoAndEngineConfig()
+    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.MultipleObjects)
 
     val engine = createEngine(demoAndEngineConfig)
 

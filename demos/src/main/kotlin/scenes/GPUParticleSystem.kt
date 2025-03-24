@@ -57,7 +57,7 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 fun main() {
-    val demoAndEngineConfig = createDemoAndEngineConfig()
+    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.GPUParticles)
 
     val engine = createEngine(demoAndEngineConfig)
 
@@ -95,7 +95,6 @@ interface AttractorStrukt: Strukt {
 
 @All(ModelComponent::class)
 @One(GPUParticles::class, Attractor::class)
-//@Single(binds = [Extractor::class, DeferredRenderExtension::class, BaseSystem::class])
 class GPUParticleSystem(
     private val config: Config,
     private val graphicsApi: GraphicsApi,
@@ -302,7 +301,6 @@ private fun calculateParticlePositions(instancesPerCluster: Int, clusterPosition
 class GPUParticlesSelection(val component: GPUParticles): Selection
 class AttractorSelection(val component: Attractor): Selection
 
-@Single(binds = [EntitySystem::class, EditorExtension::class])
 class GPUParticlesEditorExtension: BaseSystem(), EditorExtension {
     override fun getSelectionForComponentOrNull(
         component: Component,

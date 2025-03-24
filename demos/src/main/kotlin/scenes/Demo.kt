@@ -1,5 +1,7 @@
 package scenes
 
+import com.artemis.BaseSystem
+import com.artemis.EntitySystem
 import de.hanno.hpengine.Engine
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Directories
@@ -8,27 +10,23 @@ import de.hanno.hpengine.directory.GameDirectory
 import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.editor.PrimaryRendererSelection
 import de.hanno.hpengine.graphics.editor.editorModule
+import de.hanno.hpengine.graphics.editor.extension.EditorExtension
+import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.deferred.deferredRendererModule
-import de.hanno.hpengine.graphics.renderer.forward.ColorOnlyRenderer
-import de.hanno.hpengine.graphics.renderer.forward.NoOpRenderer
-import de.hanno.hpengine.graphics.renderer.forward.VisibilityRenderer
-import de.hanno.hpengine.graphics.renderer.forward.simpleForwardRendererModule
+import de.hanno.hpengine.graphics.renderer.forward.*
 import de.hanno.hpengine.ocean.oceanModule
 import de.hanno.hpengine.opengl.openglModule
+import de.hanno.hpengine.system.Extractor
 import glfwModule
 import invoke
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.config.Configurator
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
-import org.koin.core.annotation.ComponentScan
-import org.koin.core.annotation.Module
+import org.koin.dsl.binds
 import org.koin.dsl.module
-import org.koin.ksp.generated.module
 import java.io.File
-import java.io.FileNotFoundException
-import java.io.IOException
 import java.util.*
 
 
@@ -37,7 +35,7 @@ private val logger = LogManager.getLogger("Demo")
 fun main() {
     Configurator.setAllLevels(LogManager.getRootLogger().name, Level.INFO)
     logger.info("Creating demo and engine config")
-    val demoAndEngineConfig = createDemoAndEngineConfig()
+    val demoAndEngineConfig = createDemoAndEngineConfig(null)
     logger.info("Finished creating config")
     Configurator.setAllLevels(LogManager.getRootLogger().name, demoAndEngineConfig.config.logLevel)
 
@@ -50,7 +48,7 @@ fun main() {
             Renderer.Deferred -> renderSystems.firstIsInstance<ExtensibleDeferredRenderer>()
             Renderer.Forward -> renderSystems.firstIsInstance<ColorOnlyRenderer>()
             Renderer.Visibility -> renderSystems.firstIsInstance<VisibilityRenderer>()
-            Renderer.NoOp -> renderSystems.firstIsInstance<NoOpRenderer>()
+            Renderer.NoOp -> renderSystems.firstIsInstance<ClearRenderTargetNoOpRenderer>()
         }
     }
 
@@ -63,22 +61,14 @@ fun createEngine(demoAndEngineConfig: DemoAndEngineConfig): Engine {
     val modules = listOf(
         glfwModule,
         openglModule,
-        deferredRendererModule,
-        oceanModule,
-        simpleForwardRendererModule,
-        editorModule,
         demoAndEngineConfig.configModule,
-        DemoModule().module
-    ) + demoAndEngineConfig.demoConfig.demo.additionalModules
+    ) + demoAndEngineConfig.demoConfig.demo.additionalModules +
+            demoAndEngineConfig.demoConfig.renderer.additionalModules
     logger.info("Finished gathering list of modules")
     return Engine(modules)
 }
 
-@Module
-@ComponentScan
-class DemoModule
-
-fun createDemoAndEngineConfig(): DemoAndEngineConfig {
+fun createDemoAndEngineConfig(demo: Demo?): DemoAndEngineConfig {
 //    TODO: Remove that framework, it takes 3 effing seconds -.-
 //    val demoConfig = ConfigLoaderBuilder.default()
 //        .addEnvironmentSource()
@@ -91,7 +81,7 @@ fun createDemoAndEngineConfig(): DemoAndEngineConfig {
     val demoConfig = DemoConfig(
         engineDir = File(prop["engineDir"].toString()),
         gameDir = File(prop["gameDir"].toString()),
-        demo = Demo.valueOf(prop["demo"].toString()),
+        demo = demo ?: Demo.valueOf(prop["demo"].toString()),
         renderer = prop["renderer"]?.let { Renderer.valueOf(it.toString()) } ?: Renderer.Deferred,
         logLevel = prop["logLevel"]?.toString() ?: "INFO",
     )
@@ -114,19 +104,28 @@ fun createDemoAndEngineConfig(): DemoAndEngineConfig {
 }
 
 enum class Demo(val run: (Engine) -> Unit, val additionalModules: List<org.koin.core.module.Module> = emptyList()) {
-    LotsOfGrass(Engine::runLotsOfGrass),
+    LotsOfGrass(Engine::runLotsOfGrass, listOf(module {
+        single { GrassSystem(get(),get(),get(),get(),get(),get(),get(),get(),get()) } binds(arrayOf(Extractor::class, DeferredRenderExtension::class, com.artemis.BaseSystem::class))
+    })),
     MultipleObjects(Engine::runMultipleObjects),
     Ocean(Engine::runOcean, listOf(oceanModule)),
     Sponza(Engine::runSponza),
-    CPUParticles(Engine::runCPUParticles),
-    GPUParticles(Engine::runGPUParticles),
+    CPUParticles(Engine::runCPUParticles, listOf(module {
+        single { CPUParticleSystem(get(),get(),get(),get(),get(),get(),get(),get(),get()) } binds(arrayOf(Extractor::class, DeferredRenderExtension::class, BaseSystem::class))
+        single { CPUParticlesEditorExtension() } binds(arrayOf(EntitySystem::class, EditorExtension::class))
+    })),
+    GPUParticles(Engine::runGPUParticles, listOf(module {
+        single { GPUParticlesEditorExtension() } binds(arrayOf(EntitySystem::class, EditorExtension::class))
+        single { GPUParticleSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()) } binds(arrayOf(EntitySystem::class, EditorExtension::class))
+    })),
     SkyBox(Engine::runSkyBox),
+    Editor(Engine::runEditor, listOf(editorModule)),
 }
-enum class Renderer {
-    Deferred,
-    Forward,
-    Visibility,
-    NoOp
+enum class Renderer(val additionalModules: List<org.koin.core.module.Module> = emptyList()) {
+    Deferred(listOf(deferredRendererModule)),
+    Forward(listOf(simpleForwardRenderingModule)),
+    Visibility(listOf(visibilityRendererModule)),
+    NoOp(listOf(noOpRendererModule))
 }
 data class DemoConfig(
     val engineDir: File?,

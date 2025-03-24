@@ -66,7 +66,6 @@ kotlin {
         kotlin.srcDir("build/generated/ksp/main/kotlin/")
     }
 }
-
 tasks.getByName<JavaExec>("run") {
 //    systemProperty("gameDir", rootDir.resolve("src/main/resources/game"))
 //    systemProperty("engineDir", rootDir.resolve("../engine/src/main/resources/hp"))
