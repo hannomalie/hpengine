@@ -90,7 +90,7 @@ class ModelSystem(
                     e.printStackTrace()
                 }
             }
-        }
+        }.get()
     }
     private var currentGpuBufferIndex = 0
     private fun loadModelToCache(entityId: Int): ModelCacheComponent {

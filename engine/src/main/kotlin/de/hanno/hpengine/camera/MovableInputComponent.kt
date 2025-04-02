@@ -1,23 +1,24 @@
 package de.hanno.hpengine.camera
 
 import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
 import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.component.TransformComponent
-import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.input.Input
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW.*
 import kotlin.math.max
 
 @All(MovableInputComponent::class, TransformComponent::class)
-class MovableInputComponentComponentSystem: BaseEntitySystem() {
-    lateinit var input: Input
-    lateinit var config: Config
-
+@Single(binds = [BaseSystem::class])
+class MovableInputComponentComponentSystem(
+    private val input: Input,
+): BaseEntitySystem() {
     lateinit var movableInputComponentComponentMapper: ComponentMapper<MovableInputComponent>
     lateinit var transformComponentComponentMapper: ComponentMapper<TransformComponent>
 
@@ -90,7 +91,7 @@ class MovableInputComponentComponentSystem: BaseEntitySystem() {
 }
 
 class MovableInputComponent : Component(){
-    var rotationDelta = 10f
+    var rotationDelta = 100f
     var scaleDelta = 0.1f
     var posDelta = 100f
 

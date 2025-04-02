@@ -2,14 +2,15 @@ package de.hanno.hpengine.graphics.editor
 
 import InternalTextureFormat.RGB8
 import com.artemis.BaseEntitySystem
-import com.artemis.BaseSystem
 import com.artemis.ComponentManager
 import com.artemis.World
 import com.artemis.annotations.All
 import com.artemis.utils.Bag
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.graphics.*
+import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.PrimaryRenderer
+import de.hanno.hpengine.graphics.RenderManager
 import de.hanno.hpengine.graphics.constants.Facing
 import de.hanno.hpengine.graphics.constants.MinFilter
 import de.hanno.hpengine.graphics.constants.RenderingMode
@@ -46,7 +47,6 @@ import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import org.apache.logging.log4j.LogManager
-import org.koin.core.annotation.Single
 import org.lwjgl.glfw.GLFW
 
 interface ImGuiEditorExtension {
@@ -56,7 +56,6 @@ interface ImGuiEditorExtension {
 enum class SelectionMode { Entity, Mesh; }
 data class EditorConfig(var selectionMode: SelectionMode = SelectionMode.Entity)
 
-@Single(binds = [BaseSystem::class, BaseEntitySystem::class, RenderSystem::class])
 @All(EditorCameraInputComponent::class)
 class ImGuiEditor(
     private val graphicsApi: GraphicsApi,
@@ -69,8 +68,7 @@ class ImGuiEditor(
     internal val entityClickListener: EntityClickListener,
     internal val primaryCameraStateHolder: PrimaryCameraStateHolder,
     internal val gpuProfiler: GPUProfiler,
-    internal val renderSystemsConfig: Lazy<RenderSystemsConfig>,
-    internal val renderManager: Lazy<RenderManager>,
+    internal val renderManager: RenderManager,
     internal val programManager: ProgramManager,
     internal val input: EditorInput,
     internal val primaryRendererSelection: PrimaryRendererSelection,
@@ -139,19 +137,21 @@ class ImGuiEditor(
 
     override fun processSystem() {}
     override fun render(renderState: RenderState) {
-        primaryRendererSelection.primaryRenderer.render(renderState)
+//        primaryRendererSelection.primaryRenderer.render(renderState)
 
         layout.update(ImGui.getIO().displaySizeX, ImGui.getIO().displaySizeY)
 
         entityClickListener.consumeClick { entityClicked -> handleClick(entityClicked) }
 
+        graphicsApi.depthTest = false
         graphicsApi.polygonMode(Facing.FrontAndBack, RenderingMode.Fill)
 
         outputSelection.draw()
 
-        renderTarget.use(true)
+//        renderTarget.use(true)
         imGuiImplGl3.newFrame()
-        imGuiImplGlfw.newFrame(renderTarget.width, renderTarget.height)
+//        imGuiImplGlfw.newFrame(renderTarget.width, renderTarget.height)
+        imGuiImplGlfw.newFrame(window.width, window.height)
 
         try {
             ImGui.newFrame()
@@ -160,7 +160,7 @@ class ImGuiEditor(
 
             if (renderPanels) {
                 menu(layout.windowWidth, layout.windowHeight)
-                rightPanel(editorConfig, renderManager.value, extensions)
+                rightPanel(editorConfig, renderManager, extensions)
 
                 if (::artemisWorld.isInitialized) {
                     leftPanel(layout.leftPanelYOffset, layout.leftPanelWidth, layout.windowHeight)

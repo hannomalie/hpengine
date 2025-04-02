@@ -10,7 +10,9 @@ import de.hanno.hpengine.graphics.light.point.PointLightStateHolder
 import de.hanno.hpengine.graphics.output.DebugOutput
 import de.hanno.hpengine.graphics.output.FinalOutput
 import de.hanno.hpengine.graphics.renderer.deferred.extensions.BvHPointLightSecondPassExtension
+import de.hanno.hpengine.graphics.renderer.forward.createFinalImageRenderTarget
 import de.hanno.hpengine.graphics.renderer.picking.OnClickListener
+import de.hanno.hpengine.graphics.rendertarget.RenderTarget2D
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderStateContext
@@ -138,6 +140,10 @@ class DeferredRendererModule {
         skyBoxStateHolder,
         probeSystem,
     )
+    @Single(binds = [RenderTarget2D::class])
+    fun renderTarget2D(config: GraphicsApi, graphicsApi: Config): RenderTarget2D {
+        return createFinalImageRenderTarget(config, graphicsApi)
+    }
 }
 
 val deferredRendererModule = DeferredRendererModule().module

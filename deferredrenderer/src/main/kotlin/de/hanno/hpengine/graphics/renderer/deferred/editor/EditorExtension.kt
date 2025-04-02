@@ -26,12 +26,12 @@ class DeferredRendererEditorExtension(
     private val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
     private val renderStateContext: RenderStateContext,
     private val graphicsApi: GraphicsApi,
-    private val renderSystemsConfig: Lazy<RenderSystemsConfig>,
+    private val renderSystemsConfig: RenderSystemsConfig,
 ): EditorExtension {
 
     override fun ImGuiEditor.renderLeftPanelTopLevelNode() {
         Window.treeNode("DeferredRenderer") {
-            renderSystemsConfig.value.primaryRenderers.firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.let { it ->
+            renderSystemsConfig.primaryRenderers.firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.let { it ->
                 text("DeferredRenderer") {
                     selection = DeferredRendererSelection(it)
                 }
@@ -53,7 +53,7 @@ class DeferredRendererEditorExtension(
 
         val renderCommands = false
         if(renderCommands) {
-            renderSystemsConfig.value.renderSystems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.apply {
+            renderSystemsConfig.renderSystems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.apply {
                 val currentReadState = renderStateContext.renderState.currentReadState
                 var counter = 0
                 when (val indirectPipeline = currentReadState[indirectPipeline]) {

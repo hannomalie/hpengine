@@ -15,13 +15,13 @@ data class RenderManagerSelection(private val renderManager: RenderManager): Sel
 @Single(binds = [EditorExtension::class])
 class RenderManagerEditorExtension(
     private val primaryRendererSelection: PrimaryRendererSelection,
-    private val renderSystemsConfig: Lazy<RenderSystemsConfig>,
-    private val renderManager: Lazy<RenderManager>,
+    private val renderSystemsConfig: RenderSystemsConfig,
+    private val renderManager: RenderManager,
 ): EditorExtension {
     override fun ImGuiEditor.renderLeftPanelTopLevelNode() {
         Window.treeNode("RenderManager") {
             text("RenderManager") {
-                selection = RenderManagerSelection(this@RenderManagerEditorExtension.renderManager.value)
+                selection = RenderManagerSelection(this@RenderManagerEditorExtension.renderManager)
             }
         }
     }
@@ -31,7 +31,7 @@ class RenderManagerEditorExtension(
 
     override fun Window.renderRightPanel(selection: Selection?) = when(selection) {
         is RenderManagerSelection -> {
-            renderSystemsConfig.value.run {
+            renderSystemsConfig.run {
                 nonPrimaryRenderers.forEach {
                     if (ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
                         it.enabled = !it.enabled
@@ -40,9 +40,9 @@ class RenderManagerEditorExtension(
             }
 
             ImGui.text("Primary Renderer:")
-            ImGui.text(renderSystemsConfig.value.primaryRenderer.javaClass.simpleName)
+            ImGui.text(renderSystemsConfig.primaryRenderer.javaClass.simpleName)
             ImGui.text("Current output")
-            renderSystemsConfig.value.primaryRenderers.forEach {
+            renderSystemsConfig.primaryRenderers.forEach {
                 if (ImGui.checkbox(it.javaClass.simpleName, primaryRendererSelection.primaryRenderer == it)) {
                     primaryRendererSelection.primaryRenderer = it
                 }

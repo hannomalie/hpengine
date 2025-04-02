@@ -12,6 +12,7 @@ import de.hanno.hpengine.world.addAnimatedModelEntity
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import org.joml.Vector3f
+import org.koin.core.module.Module
 
 fun main() {
     val demoAndEngineConfig = createDemoAndEngineConfig(Demo.MultipleObjects)
@@ -23,6 +24,7 @@ fun main() {
 
 fun Engine.runMultipleObjects() {
     world.loadScene {
+        addPrimaryCameraControls()
         addStaticModelEntity("Sponza", "assets/models/sponza.obj")
         addStaticModelEntity("Ferrari", "assets/models/ferrari.obj", translation = Vector3f(100f, 10f, 0f))
         addAnimatedModelEntity(

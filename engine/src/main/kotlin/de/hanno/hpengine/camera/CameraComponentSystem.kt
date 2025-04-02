@@ -24,6 +24,7 @@ class CameraComponentSystem(
     lateinit var cameraComponentMapper: ComponentMapper<CameraComponent>
 
     override fun extract(currentWriteState: RenderState) {
+        return
         if (config.debug.isDrawCameras) {
             currentWriteState[cameraComponentsStateHolder.frustumLines].apply {
                 clear()
@@ -48,13 +49,6 @@ class CameraComponentSystem(
 //                    addLine(corners[3], corners[5])
                 }
             }
-        }
-
-        if(tagManager.isRegistered(primaryCameraTag)) {
-            val entityId = tagManager.getEntity(primaryCameraTag)
-            val camera = cameraComponentMapper[entityId].camera
-            val cameraState = currentWriteState[primaryCameraStateHolder.camera]
-            cameraState.setFrom(camera)
         }
     }
 

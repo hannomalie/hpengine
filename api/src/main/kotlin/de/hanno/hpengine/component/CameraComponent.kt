@@ -33,8 +33,8 @@ class CameraSystem(
         tagManager.getEntity(primaryCameraTag)?.let { primaryCamera ->
             currentWriteState[primaryCameraStateHolder.camera].apply {
                 cameraComponentMapper[primaryCamera].let { component ->
-                    // TODO: Set other values here
-                    lensFlare = component.camera.lensFlare
+                    val cameraState = currentWriteState[primaryCameraStateHolder.camera]
+                    cameraState.setFrom(component.camera)
                 }
             }
         }
@@ -46,12 +46,12 @@ const val primaryCameraTag = "PRIMARY_CAMERA"
 class DefaultPrimaryCameraComponent: Component()
 fun World.addPrimaryCamera() {
     edit(create()).apply {
-        create(TransformComponent::class.java)
+        val transform = create(TransformComponent::class.java).transform
         create(DefaultPrimaryCameraComponent::class.java)
         create(NameComponent::class.java).apply {
             name = "PrimaryCamera"
         }
-        create(CameraComponent::class.java)
+        add(CameraComponent(Camera(transform)))
 
         getSystem(TagManager::class.java).register(primaryCameraTag, entityId)
     }

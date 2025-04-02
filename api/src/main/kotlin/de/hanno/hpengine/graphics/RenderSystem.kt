@@ -11,7 +11,6 @@ interface RenderSystem: Updatable {
     val requiresClearSharedRenderTarget: Boolean get() = false
     val supportsSingleStep: Boolean get() = true
     fun render(renderState: RenderState) { }
-    fun afterFrameFinished() { }
 }
 
 interface PrimaryRenderer: RenderSystem {
@@ -20,8 +19,8 @@ interface PrimaryRenderer: RenderSystem {
 }
 
 @Single
-class RenderSystemsConfig(allRenderSystems: List<RenderSystem>) {
-    val allRenderSystems = allRenderSystems.distinct()
+class RenderSystemsConfig(_allRenderSystems: List<RenderSystem>) {
+    val allRenderSystems = _allRenderSystems.distinct()
     val nonPrimaryRenderers = allRenderSystems.filterNot { it is PrimaryRenderer }
     val primaryRenderers = allRenderSystems.distinct().filterIsInstance<PrimaryRenderer>().sortedByDescending { it.renderPriority }
     var primaryRenderer = primaryRenderers.first()
@@ -46,13 +45,15 @@ class RenderSystemsConfig(allRenderSystems: List<RenderSystem>) {
         }
 
     var renderSystemsGroupedByTarget = calculateNonPrimaryRenderersGroupedByTarget()
-        private set
+        private set(value) {
+            field = value.mapValues { (_, systems) -> systems.distinct() }
+        }
 
     private fun calculateNonPrimaryRenderersGroupedByTarget() = renderSystems.filterNot { it is PrimaryRenderer }.groupBy { it.sharedRenderTarget }
     var RenderSystem.enabled: Boolean
         get() = renderSystemsEnabled[this]!!
         set(value) {
             renderSystemsEnabled[this] = value
-            renderSystems = allRenderSystems.filter { it.enabled }
+            renderSystems = allRenderSystems.filter { it.enabled }.distinct()
         }
 }

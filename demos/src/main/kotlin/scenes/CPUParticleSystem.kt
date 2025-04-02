@@ -12,12 +12,14 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.engine.graphics.imgui.intInput
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
+import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
@@ -44,9 +46,10 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.LogManager
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
-import org.koin.core.annotation.Single
+import org.koin.core.module.Module
 import struktgen.api.get
 import kotlin.math.sin
 import kotlin.random.Random
@@ -83,7 +86,7 @@ class CPUParticleSystem(
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val materialSystem: MaterialSystem,
-): BaseEntitySystem(), Extractor, DeferredRenderExtension {
+): BaseEntitySystem(), Extractor, DeferredRenderExtension, RenderSystem {
     private val logger = LogManager.getLogger(CPUParticleSystem::class.java)
     init {
         logger.info("Creating system")
@@ -153,6 +156,12 @@ class CPUParticleSystem(
         }
     }
 
+    override fun render(renderState: RenderState) {
+        // Only render when not used as deferred renderer extension
+        if(world.systems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>() == null) {
+            renderFirstPass(renderState)
+        }
+    }
     override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
         val entityId = renderState[entityId].value ?: return
         val modelCacheComponent = defaultBatchesSystem.modelCacheComponentMapper.get(entityId) ?: return
@@ -280,6 +289,7 @@ class CPUParticlesEditorExtension: BaseSystem(), EditorExtension {
 
 fun Engine.runCPUParticles() {
     world.loadScene {
+        addPrimaryCameraControls()
         addStaticModelEntity(
             "Particle",
             "assets/models/plane.obj",

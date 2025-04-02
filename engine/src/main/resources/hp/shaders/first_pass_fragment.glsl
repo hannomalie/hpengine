@@ -163,7 +163,6 @@ void main(void) {
 		discard;
 	}
 
-
 	out_colorMetallic = vec4(color.rgb, material.metallic);
 	out_normalAmbient = vec4(PN_view, material.ambient);
 	out_motionDepthTransparency = vec4(motionVec,depth,material.transparency);

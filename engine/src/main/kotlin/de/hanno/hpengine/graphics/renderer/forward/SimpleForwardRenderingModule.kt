@@ -36,23 +36,28 @@ val noOpRendererModule = module {
     }
     single { ClearRenderTargetNoOpRenderer(get(),get()) } binds(arrayOf(RenderSystem::class,de.hanno.hpengine.graphics.PrimaryRenderer::class))
 }
-private fun Scope.createRenderTargetDefinition(): RenderTarget2D {
+fun Scope.createRenderTargetDefinition(): RenderTarget2D {
     val config = get<Config>()
     val graphicsApi = get<GraphicsApi>()
 
-    return graphicsApi.RenderTarget(
-        frameBuffer = graphicsApi.FrameBuffer(
-            depthBuffer = graphicsApi.DepthBuffer(config.width, config.height)
-        ),
-        width = config.width,
-        height = config.height,
-        textures = listOf(
-            ColorAttachmentDefinition("Color", InternalTextureFormat.RGBA8)
-        ).toTextures(
-            graphicsApi,
-            config.width, config.height
-        ),
-        name = "Final Image",
-        clear = Vector4f(),
-    )
+    return createFinalImageRenderTarget(graphicsApi, config)
 }
+
+fun createFinalImageRenderTarget(
+    graphicsApi: GraphicsApi,
+    config: Config,
+) = graphicsApi.RenderTarget(
+    frameBuffer = graphicsApi.FrameBuffer(
+        depthBuffer = graphicsApi.DepthBuffer(config.width, config.height)
+    ),
+    width = config.width,
+    height = config.height,
+    textures = listOf(
+        ColorAttachmentDefinition("Color", InternalTextureFormat.RGBA8)
+    ).toTextures(
+        graphicsApi,
+        config.width, config.height
+    ),
+    name = "Final Image",
+    clear = Vector4f(),
+)

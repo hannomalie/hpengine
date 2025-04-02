@@ -12,44 +12,60 @@ import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.artemis.forFirstEntityIfPresent
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
+import de.hanno.hpengine.graphics.editor.editorModule
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
+import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.SSBO
+import de.hanno.hpengine.graphics.shader.define.Define
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.shader.using
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.texture.TextureManagerBaseSystem
+import de.hanno.hpengine.graphics.window.Window
+import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.toCount
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
 import org.joml.Vector3fc
-import org.koin.core.annotation.Single
 import struktgen.api.get
 import kotlin.random.Random
 
 fun main() {
-    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.LotsOfGrass)
+    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.LotsOfGrass, listOf(editorModule))
 
-    val engine = createEngine(demoAndEngineConfig)
+    val koin = getKoin(demoAndEngineConfig)
+    val baseSystems = koin.getAll<BaseSystem>()
+    val engine = Engine(
+        baseSystems = baseSystems,
+        config = koin.get<Config>(),
+        input = koin.get<Input>(),
+        window = koin.get<Window>(),
+        addResourceContext = koin.get<AddResourceContext>()
+    )
 
+    addEditor(koin, engine)
     engine.runLotsOfGrass()
 }
 
@@ -66,7 +82,7 @@ class GrassSystem(
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val materialSystem: MaterialSystem,
-): BaseEntitySystem(), Extractor, DeferredRenderExtension {
+): BaseEntitySystem(), Extractor, DeferredRenderExtension, RenderSystem {
     private val logger = LogManager.getLogger(GrassSystem::class.java)
     init {
         logger.info("Creating system")
@@ -88,6 +104,13 @@ class GrassSystem(
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
         Defines(),
+        uniforms1
+    )
+    val programWithOutputChannel0 = programManager.getProgram(
+        config.gameDir.resolve("shaders/first_pass_grass_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
+        null,
+        Defines(Define("COLOR_OUTPUT_0", true)),
         uniforms1
     )
 
@@ -133,6 +156,13 @@ class GrassSystem(
             }
         }
     }
+
+    override fun render(renderState: RenderState) {
+        // Only render when not used as deferred renderer extension
+        if(world.systems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>() == null) {
+            renderFirstPass(renderState)
+        }
+    }
     override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
         val entityId = renderState[entityId].value
         if(entityId == -1) return
@@ -146,6 +176,7 @@ class GrassSystem(
         val indexCount = modelCacheComponent.model.meshIndexCounts[0]
         val allocation = modelCacheComponent.allocation
 
+        val program = if(world.systems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>() == null) programWithOutputChannel0 else program
         program.use()
         using(program) { uniforms ->
             uniforms.apply {
@@ -198,6 +229,7 @@ class GrassSystem(
 fun Engine.runLotsOfGrass() {
     val textureManager = systems.firstIsInstance<TextureManagerBaseSystem>()
     world.loadScene {
+        addPrimaryCameraControls()
         addStaticModelEntity("Plane", "assets/models/plane.obj", rotation = AxisAngle4f(1f, 0f, 0f, -180f)).apply {
             create(MaterialComponent::class.java).apply {
                 material = Material(

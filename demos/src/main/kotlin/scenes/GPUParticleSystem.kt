@@ -17,12 +17,14 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.engine.graphics.imgui.intInput
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.RenderSystem
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
 import de.hanno.hpengine.graphics.editor.select.Selection
 import de.hanno.hpengine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.graphics.renderer.deferred.DeferredRenderExtension
+import de.hanno.hpengine.graphics.renderer.deferred.ExtensibleDeferredRenderer
 import de.hanno.hpengine.graphics.renderer.forward.StaticDefaultUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
@@ -31,6 +33,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
+import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.math.Vector3fStrukt
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.*
@@ -38,15 +41,17 @@ import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.renderer.DrawElementsIndirectCommand
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.scene.AddResourceContext
+import de.hanno.hpengine.spatial.WorldAABB
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.toCount
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
 import imgui.ImGui
 import org.apache.logging.log4j.LogManager
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
-import org.koin.core.annotation.Single
 import struktgen.api.Strukt
 import struktgen.api.forIndex
 import struktgen.api.get
@@ -59,7 +64,17 @@ import kotlin.random.Random
 fun main() {
     val demoAndEngineConfig = createDemoAndEngineConfig(Demo.GPUParticles)
 
-    val engine = createEngine(demoAndEngineConfig)
+    val koin = getKoin(demoAndEngineConfig)
+    val baseSystems = koin.getAll<BaseSystem>()
+    val engine = Engine(
+        baseSystems = baseSystems,
+        config = koin.get<Config>(),
+        input = koin.get<Input>(),
+        window = koin.get<de.hanno.hpengine.graphics.window.Window>(),
+        addResourceContext = koin.get<AddResourceContext>()
+    )
+
+    addEditor(koin, engine)
 
     engine.runGPUParticles()
 }
@@ -75,6 +90,7 @@ class GPUParticles: Component() {
 
     var clusterPositions = calculateClusterPositions(initialClusterCount)
     var particlePositions: List<Vector3f> = calculateParticlePositions(initialClusterCount, clusterPositions)
+    var particleVelocities: List<Vector3f> = calculateParticleVelocities(initialClusterCount, clusterPositions)
 }
 class Attractor: Component() {
     var radius = 100f
@@ -105,7 +121,8 @@ class GPUParticleSystem(
     private val entityBuffer: EntityBuffer,
     private val primaryCameraStateHolder: PrimaryCameraStateHolder,
     private val materialSystem: MaterialSystem,
-): BaseEntitySystem(), Extractor, DeferredRenderExtension {
+    private val worldAABB: WorldAABB,
+): BaseEntitySystem(), Extractor, DeferredRenderExtension, RenderSystem {
     private val logger = LogManager.getLogger(GPUParticleSystem::class.java)
     init {
         logger.info("Creating system")
@@ -137,6 +154,8 @@ class GPUParticleSystem(
         var attractors by SSBO("vec4", 7, this@GPUParticleSystem.attractors)
         var time by FloatType(0f)
         var targetCount by IntType()
+        var worldMin by Vec3(Vector3f(-100f))
+        var worldMax by Vec3(Vector3f(100f))
     }
     val computeProgram = programManager.getComputeProgram(
         config.gameDir.resolve("shaders/particles_compute.glsl").toCodeSource(),
@@ -169,14 +188,16 @@ class GPUParticleSystem(
     override fun inserted(entityId: Int) {
         particlesComponentMapper.getOrNull(entityId)?.apply {
             positions.ensureCapacityInBytes(particlePositions.size.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes))
-            velocities.ensureCapacityInBytes(particlePositions.size.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes))
+            velocities.ensureCapacityInBytes(particleVelocities.size.toCount() * SizeInBytes(Vector4fStrukt.sizeInBytes))
 
             particlePositions.forEachIndexed { index, it ->
                 positions.buffer.run {
                     positions[index].set(it)
                 }
+            }
+            particleVelocities.forEachIndexed { index, it ->
                 velocities.buffer.run {
-                    velocities[index].set(Vector3f())
+                    velocities[index].set(it)
                 }
             }
         }
@@ -208,6 +229,13 @@ class GPUParticleSystem(
         seconds += deltaSeconds
     }
 
+    override fun render(renderState: RenderState) {
+        if(world == null) return
+        // Only render when not used as deferred renderer extension
+        if(world.systems.firstIsInstanceOrNull<ExtensibleDeferredRenderer>() == null) {
+            renderFirstPass(renderState)
+        }
+    }
     override fun renderFirstPass(renderState: RenderState) = graphicsApi.run {
         val entityId = renderState[entityId].value ?: return
         val modelCacheComponent = defaultBatchesSystem.modelCacheComponentMapper.get(entityId) ?: return
@@ -220,6 +248,8 @@ class GPUParticleSystem(
                 maxThreads = particlesComponent.particlePositions.size
                 time = seconds
                 targetCount = renderState[this@GPUParticleSystem.targetCount].value ?: 0
+                worldMin.set(worldAABB.aabb.min)
+                worldMax.set(worldAABB.aabb.max)
             },
         ) {
             computeProgram.dispatchCompute(max(1, particlesComponent.particlePositions.size/8).toCount(), 1.toCount(), 1.toCount())
@@ -287,13 +317,20 @@ private fun calculateClusterPositions(clusterCount: Int) = buildList<Vector3f> {
 }
 
 private fun calculateParticlePositions(instancesPerCluster: Int, clusterPositions: List<Vector3f>) = buildList {
-    repeat(instancesPerCluster) {
-        val random0 = Random.nextFloat()
-        val random1 = Random.nextFloat()
-        val random2 = Random.nextFloat()
-        val position = Vector3f((random0 - 0.5f), (random1 - 0.5f), (random2 - 0.5f)).mul(100f)
-        clusterPositions.forEach {
-            add(Vector3f(position).add(it))
+    clusterPositions.forEach { clusterPosition ->
+        repeat(instancesPerCluster) {
+            val random0 = Random.nextFloat()
+            val random1 = Random.nextFloat()
+            val random2 = Random.nextFloat()
+            val position = Vector3f((random0 - 0.5f), (random1 - 0.5f), (random2 - 0.5f)).mul(100f)
+            add(Vector3f(position).add(clusterPosition))
+        }
+    }
+}
+private fun calculateParticleVelocities(instancesPerCluster: Int, clusterPositions: List<Vector3f>) = buildList {
+    clusterPositions.forEach { _ ->
+        repeat(instancesPerCluster) {
+            add(Vector3f(Random.nextFloat(),Random.nextFloat(),Random.nextFloat()).sub(0.5f, 0.5f, 0.5f).mul(0.01f))
         }
     }
 }
@@ -314,16 +351,14 @@ class GPUParticlesEditorExtension: BaseSystem(), EditorExtension {
 
     override fun Window.renderRightPanel(selection: Selection?) = when (selection) {
         is GPUParticlesSelection -> {
-            intInput("Cluster count", selection.component.clusterCount, 1, 10000) {
-                selection.component.clusterCount = it[0]
-                selection.component.clusterPositions = calculateClusterPositions(selection.component.clusterCount)
-                selection.component.particlePositions = calculateParticlePositions(selection.component.countPerCluster, selection.component.clusterPositions)
-            }
-            intInput("Instances per cluster", selection.component.countPerCluster, 1, 10000) {
+            val onChange: (IntArray) -> Unit = {
                 selection.component.countPerCluster = it[0]
                 selection.component.clusterPositions = calculateClusterPositions(selection.component.clusterCount)
                 selection.component.particlePositions = calculateParticlePositions(selection.component.countPerCluster, selection.component.clusterPositions)
+                selection.component.particleVelocities = calculateParticleVelocities(selection.component.countPerCluster, selection.component.particleVelocities)
             }
+            intInput("Cluster count", selection.component.clusterCount, 1, 10000, onChange)
+            intInput("Instances per cluster", selection.component.countPerCluster, 1, 10000, onChange)
             if (ImGui.beginCombo("Primitive Type", selection.component.primitiveType.toString())) {
                 PrimitiveType.entries.forEach {
                     val selected = selection.component.primitiveType == it
@@ -360,6 +395,7 @@ class GPUParticlesEditorExtension: BaseSystem(), EditorExtension {
 
 fun Engine.runGPUParticles() {
     world.loadScene {
+        addPrimaryCameraControls()
         addStaticModelEntity(
             "Particle",
             "assets/models/plane.obj",

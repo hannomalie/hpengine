@@ -21,9 +21,10 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
+import org.koin.core.module.Module
 
 fun main() {
-    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.Ocean)
+    val demoAndEngineConfig = createDemoAndEngineConfig(Demo.Ocean, emptyList<Module>())
 
     val engine = createEngine(demoAndEngineConfig)
 
@@ -32,6 +33,7 @@ fun main() {
 
 fun Engine.runOcean() {
     world.loadScene {
+        addPrimaryCameraControls()
         addOceanSurface(
             systems.firstIsInstance<ProgramManager>(),
             systems.firstIsInstance<OceanWaterRenderSystem>(),

@@ -41,12 +41,12 @@ class RenderManager(
         window.frontBuffer
     )
 
-    fun finishCycle(deltaSeconds: Float) {
+    private fun finishCycle(deltaSeconds: Float) {
         renderStateContext.renderState.currentWriteState.deltaSeconds = deltaSeconds
         renderStateContext.renderState.swapStaging()
     }
 
-    internal val rendering = AtomicBoolean(false)
+    private val rendering = AtomicBoolean(false)
 
     fun frame() {
         logger.trace("frame")
@@ -59,7 +59,6 @@ class RenderManager(
                         renderSystemsConfig.run {
 
                             // TODO: Reenable single step rendering
-                            logger.trace("renderSystems.render")
                             profiled("renderSystems") {
                                 renderSystemsConfig.renderSystemsGroupedByTarget.forEach { (renderTarget, renderSystems) ->
                                     val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
@@ -76,16 +75,7 @@ class RenderManager(
                                 }
                                 renderSystemsConfig.primaryRenderer.render(currentReadState)
                             }
-
-                            logger.trace("present")
-                            profiled("present") {
-                                window.frontBuffer.use(graphicsApi, true)
-                                val finalOutput = renderSystemsConfig.primaryRenderer.finalOutput
-                                textureRenderer.drawToQuad(
-                                    finalOutput.texture2D,
-                                    mipMapLevel = finalOutput.mipmapLevel
-                                )
-                            }
+                            present()
 
                             profiled("checkCommandSyncs") {
                                 update()
@@ -93,13 +83,7 @@ class RenderManager(
 
                             profiled("finishFrame") {
                                 finishFrame(currentReadState)
-                                renderSystemsConfig.renderSystems.forEach {
-                                    if(it.enabled) {
-                                        it.afterFrameFinished()
-                                    }
-                                }
                             }
-                            logger.trace("swapBuffers")
                             profiled("swapBuffers") {
                                 window.swapBuffers()
                             }
@@ -110,6 +94,18 @@ class RenderManager(
                 } finally {
                     rendering.getAndSet(false)
                 }
+            }
+        }
+    }
+    var present = {
+        graphicsApi.run {
+            profiled("present") {
+                window.frontBuffer.use(graphicsApi, true)
+                val finalOutput = renderSystemsConfig.primaryRenderer.finalOutput
+                textureRenderer.drawToQuad(
+                    finalOutput.texture2D,
+                    mipMapLevel = finalOutput.mipmapLevel
+                )
             }
         }
     }

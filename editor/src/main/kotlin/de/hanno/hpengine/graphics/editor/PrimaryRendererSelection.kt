@@ -9,16 +9,16 @@ import org.koin.core.annotation.Single
 
 @Single(binds = [BaseSystem::class, BaseEntitySystem::class])
 class PrimaryRendererSelection(
-    private val renderSystemsConfig: Lazy<RenderSystemsConfig>,
+    private val renderSystemsConfig: RenderSystemsConfig,
 ): BaseSystem() {
     private var _primaryRenderer: PrimaryRenderer? = null
     var primaryRenderer
-        get() = _primaryRenderer ?: renderSystemsConfig.value.primaryRenderers.filterNot {
+        get() = _primaryRenderer ?: renderSystemsConfig.primaryRenderers.filterNot {
             it is ImGuiEditor
         }.maxByOrNull { it.renderPriority }!!
         set(value) {
             _primaryRenderer = value
-            renderSystemsConfig.value.run {
+            renderSystemsConfig.run {
                 primaryRenderers.forEach {
                     it.enabled = it == value
                 }
