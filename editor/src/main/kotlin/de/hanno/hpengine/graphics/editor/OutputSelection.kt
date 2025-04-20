@@ -54,7 +54,7 @@ class OutputSelection(
 
     data class TextureOutputSelection(val identifier: String, val texture: Texture2D, val isDepthMap: Boolean = false)
 
-    val textureOutputOptions: List<TextureOutputSelection>
+    private val textureOutputOptions: List<TextureOutputSelection>
         get() {
             return graphicsApi.registeredRenderTargets.flatMap { target ->
                 val texture2DSelections = target.textures.filterIsInstance<Texture2D>().mapIndexed { index, texture ->
@@ -97,7 +97,7 @@ class OutputSelection(
     override fun processSystem() { }
     fun draw() {
         debugOutput.texture2D?.let {
-            textureRenderTarget.use(false)
+//            textureRenderTarget.use(false)
             simpleTextureRenderer.drawToQuad(it, mipMapLevel = debugOutput.mipmapLevel)
         }
     }

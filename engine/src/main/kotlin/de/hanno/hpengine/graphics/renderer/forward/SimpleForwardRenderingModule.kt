@@ -19,7 +19,7 @@ val simpleForwardRenderingModule = module {
     single {
         createRenderTargetDefinition()
     }
-    single { ColorOnlyRenderer(get(),get(),get(),get(),get(),get(),get(),get(),get(),get(),get(),get(),get()) } binds(arrayOf(
+    single { ColorOnlyRenderer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) } binds(arrayOf(
         RenderSystem::class,de.hanno.hpengine.graphics.PrimaryRenderer::class))
 }
 

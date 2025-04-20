@@ -32,7 +32,11 @@ void main()
     VertexPacked vertex = vertices[gl_VertexID];
 
     WorldPos_CS_in = (entity.modelMatrix * vec4(vertex.position.xyz, 1.0)).xyz;
-    if(material.useWorldSpaceXZAsTexCoords == 1) {
+    if(material.worldSpaceTexCoords == 1) {
+        vertex.texCoord.xy = WorldPos_CS_in.xy;
+    } else if(material.worldSpaceTexCoords == 2) {
+        vertex.texCoord.xy = WorldPos_CS_in.zy;
+    } else if(material.worldSpaceTexCoords == 3) {
         vertex.texCoord.xy = WorldPos_CS_in.xz;
     }
 

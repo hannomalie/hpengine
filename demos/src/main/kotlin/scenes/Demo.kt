@@ -127,6 +127,9 @@ enum class Demo(val run: (Engine) -> Unit, val additionalModules: List<Module> =
     })),
     SkyBox(Engine::runSkyBox),
     Editor(Engine::runEditor, listOf(editorModule)),
+    InteriorMapping(Engine::runInteriorMapping, listOf(module {
+
+    })),
 }
 enum class Renderer(val additionalModules: List<Module> = emptyList()) {
     Deferred(listOf(deferredRendererModule)),

@@ -141,6 +141,9 @@ class AABB(localMin: Vector3f = Vector3f(absoluteMaximum), localMax: Vector3f = 
 
     inline val max: Vector3f get() = worldAABB.max
 
+    override fun toString(): String {
+        return "AABB[(${"%.2f".format(min.x)},${"%.2f".format(min.y)},${"%.2f".format(min.z)} | ${"%.2f".format(max.x)},${"%.2f".format(max.y)},${"%.2f".format(max.z)},]"
+    }
     var localMin: Vector3f
         get() = localAABB.min
         set(value) = recalculating {

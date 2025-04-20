@@ -11,6 +11,7 @@ import de.hanno.hpengine.graphics.texture.StaticHandleImpl
 import de.hanno.hpengine.graphics.texture.UploadState
 import de.hanno.hpengine.model.BoundingVolumeComponent
 import de.hanno.hpengine.model.material.Material
+import de.hanno.hpengine.model.material.WorldSpaceTexCoords
 import de.hanno.hpengine.ocean.OceanWaterComponent
 import de.hanno.hpengine.ocean.OceanWaterRenderSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource
@@ -76,7 +77,7 @@ private fun World.addOceanSurface(
                 roughness = 0.001f,
                 parallaxScale = 1f,
                 parallaxBias = 0.0f,
-                useWorldSpaceXZAsTexCoords = true,
+                worldSpaceTexCoords = WorldSpaceTexCoords.XZ,
                 uvScale = Vector2f(0.05f)
             ).apply {
                 maps.putIfAbsent(Material.MAP.DIFFUSE, StaticHandleImpl(oceanWaterRenderSystem.albedoMap, uploadState = UploadState.Uploaded, currentMipMapBias = 0f))

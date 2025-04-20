@@ -146,7 +146,7 @@ class VisibilityRenderer(
         val pointLightState = renderState[pointLightStateHolder.lightState]
         val directionalLightState = renderState[directionalLightStateHolder.lightState]
 
-        cullFace = true
+        cullFace = true // TODO: Make possible per batch
         depthMask = true
         depthTest = true
         depthFunc = DepthFunc.LEQUAL

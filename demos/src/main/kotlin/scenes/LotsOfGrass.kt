@@ -201,7 +201,7 @@ class GrassSystem(
                 val vertexIndexBuffer = renderState[entitiesStateHolder.entitiesState].geometryBufferStatic
 
                 depthMask = materialComponent.material.writesDepth
-                cullFace = materialComponent.material.cullBackFaces
+                cullFace = materialComponent.material.cullingEnabled
                 depthTest = materialComponent.material.depthTest
                 program.setTextureUniforms(graphicsApi, material = materialComponent.material)
 

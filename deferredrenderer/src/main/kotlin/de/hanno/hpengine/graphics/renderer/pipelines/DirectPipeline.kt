@@ -3,6 +3,7 @@ package de.hanno.hpengine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.constants.CullMode
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
@@ -38,7 +39,8 @@ fun DirectDrawDescription<DefaultUniforms>.draw() {
             }
             program.uniforms.entityIndex = batch.entityBufferIndex
             beforeDraw(renderState, program, drawCam)
-            cullFace = batch.material.cullBackFaces
+            cullFace = batch.material.cullingEnabled
+            cullMode = if(batch.material.cullFrontFaces) CullMode.FRONT else CullMode.BACK
             depthTest = batch.material.depthTest
             depthMask = batch.material.writesDepth
             program.setTextureUniforms(this@GraphicsApi, material = batch.material)
@@ -58,7 +60,8 @@ fun DirectDrawDescription<DefaultUniforms>.draw() {
     vertexIndexBuffer.indexBuffer.bind()
     for (batch in renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }) {
         depthMask = batch.material.writesDepth
-        cullFace = batch.material.cullBackFaces
+        cullFace = batch.material.cullingEnabled
+        cullMode = if(batch.material.cullFrontFaces) CullMode.FRONT else CullMode.BACK
         depthTest = batch.material.depthTest
         program.setTextureUniforms(this@GraphicsApi, material = batch.material)
         program.uniforms.entityIndex = batch.entityBufferIndex

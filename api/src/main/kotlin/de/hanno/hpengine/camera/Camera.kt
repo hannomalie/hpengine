@@ -32,7 +32,7 @@ class Camera(
             field = value
             updateProjectionMatrixAndFrustum()
         }
-    var far = 2000f
+    var far = 10000f
         set(value) {
             field = value
             updateProjectionMatrixAndFrustum()

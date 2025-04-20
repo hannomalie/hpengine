@@ -170,6 +170,13 @@ void main(void) {
 	position_clip_uv.xyz *= 0.5;
 
 
+	if(material.worldSpaceTexCoords == 1) {
+		texCoord = material.uvScale * position_world.xy;
+	} else if(material.worldSpaceTexCoords == 2) {
+		texCoord = material.uvScale * position_world.zy;
+	} else if(material.worldSpaceTexCoords == 3) {
+		texCoord = material.uvScale * position_world.xz;
+	}
 
 	vec3 normalVec = vertex.normal.xyz;
 	vec3 normal_model = vertex.normal.xyz;

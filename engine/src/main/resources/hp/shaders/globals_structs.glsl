@@ -23,7 +23,7 @@ struct Material {
 
     vec2 uvScale;
     float lodFactor;
-    int useWorldSpaceXZAsTexCoords;
+    int worldSpaceTexCoords;
 
     float diffuseMipmapBias;
     int diffuseMapIndex;

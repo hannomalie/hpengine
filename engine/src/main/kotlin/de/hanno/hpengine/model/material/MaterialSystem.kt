@@ -126,7 +126,12 @@ class MaterialSystem(
                 transparency = material.transparency
                 materialType = material.materialType
                 lodFactor = material.lodFactor
-                useWorldSpaceXZAsTexCoords = if (material.useWorldSpaceXZAsTexCoords) 1 else 0
+                worldSpaceTexCoords = when (material.worldSpaceTexCoords) {
+                    WorldSpaceTexCoords.No -> 0
+                    WorldSpaceTexCoords.XY -> 1
+                    WorldSpaceTexCoords.ZY -> 2
+                    WorldSpaceTexCoords.XZ -> 3
+                }
                 environmentMapId = material.maps[MAP.ENVIRONMENT]?.texture?.id ?: 0
                 val actualDiffuseMapHandle = deriveHandle(material.maps[MAP.DIFFUSE], textureManager.defaultTexture)
                 diffuseMapHandle = actualDiffuseMapHandle?.texture?.handle ?: 0

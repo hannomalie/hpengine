@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.imgui.floatInput
 import de.hanno.hpengine.engine.graphics.imgui.intInput
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.constants.CullMode
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.editor.extension.EditorExtension
@@ -197,7 +198,8 @@ class CPUParticleSystem(
 
 
                 depthMask = materialComponent.material.writesDepth
-                cullFace = materialComponent.material.cullBackFaces
+                cullFace = materialComponent.material.cullingEnabled
+                cullMode = if(materialComponent.material.cullFrontFaces) CullMode.FRONT else CullMode.BACK
                 depthTest = materialComponent.material.depthTest
                 program.setTextureUniforms(graphicsApi, material = materialComponent.material)
 

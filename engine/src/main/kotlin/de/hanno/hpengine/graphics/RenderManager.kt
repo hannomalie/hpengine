@@ -60,6 +60,9 @@ class RenderManager(
 
                             // TODO: Reenable single step rendering
                             profiled("renderSystems") {
+                                // TODO: Render primary renderer first or after?
+                                renderSystemsConfig.primaryRenderer.render(currentReadState)
+
                                 renderSystemsConfig.renderSystemsGroupedByTarget.forEach { (renderTarget, renderSystems) ->
                                     val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
                                     profiled("use rendertarget") {
@@ -73,7 +76,6 @@ class RenderManager(
                                         }
                                     }
                                 }
-                                renderSystemsConfig.primaryRenderer.render(currentReadState)
                             }
                             present()
 

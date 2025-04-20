@@ -87,8 +87,8 @@ class EntityBufferExtractorSystem(
                                     dummy4 = allocation.indexOffset.value.toInt()
 
                                     setTrafoAndBoundingVolume(transform.transformation, tempAABB.apply {
-                                        min.set(mesh.boundingVolume.min)
-                                        max.set(mesh.boundingVolume.max)
+                                        localMin.set(mesh.boundingVolume.min)
+                                        localMax.set(mesh.boundingVolume.max)
                                         recalculate(transform)
                                     })
                                 }

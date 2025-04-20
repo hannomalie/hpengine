@@ -3,7 +3,6 @@ package de.hanno.hpengine.graphics.renderer.forward
 import de.hanno.hpengine.Transform
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
-import de.hanno.hpengine.cycle.CycleSystem
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.PrimaryRenderer
 import de.hanno.hpengine.graphics.RenderSystem
@@ -24,18 +23,15 @@ import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderStateContext
 import de.hanno.hpengine.graphics.state.StateRef
 import de.hanno.hpengine.graphics.texture.TextureManager
-import de.hanno.hpengine.graphics.texture.TextureUsageInfo
 import de.hanno.hpengine.model.DefaultBatchesSystem
 import de.hanno.hpengine.model.EntitiesStateHolder
 import de.hanno.hpengine.model.EntityBuffer
 import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
-import de.hanno.hpengine.transform.isInside
 import org.joml.Vector3f
-import org.joml.Vector4f
 import org.koin.core.annotation.Single
-import org.koin.ksp.generated.module
 import org.lwjgl.BufferUtils
 
 @Single(binds = [RenderSystem::class, PrimaryRenderer::class])
@@ -51,7 +47,6 @@ class ColorOnlyRenderer(
     private val defaultBatchesSystem: DefaultBatchesSystem,
     private val materialSystem: MaterialSystem,
     private val skyBoxStateHolder: SkyBoxStateHolder,
-    private val cycleSystem: CycleSystem,
     private val textureManager: TextureManager,
 ): PrimaryRenderer {
 
@@ -75,7 +70,9 @@ class ColorOnlyRenderer(
     )
 
     val simpleColorProgramSkyBox = programManager.getProgram(
-        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource().enhanced(
+            "first_pass_skybox_vertex", arrayOf("//END" to "//gl_Position.z = 1;")
+        ),
         config.engineDir.resolve("shaders/color_only/first_pass_skybox_fragment.glsl").toCodeSource(),
         null,
         Defines(),
@@ -127,7 +124,7 @@ class ColorOnlyRenderer(
     }
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
-        cullFace = true
+        cullFace = true // TODO: Make possible per batch
         depthMask = true
         depthTest = true
         depthFunc = DepthFunc.LEQUAL
@@ -135,8 +132,6 @@ class ColorOnlyRenderer(
 
         renderTarget.use(true)
         profiled("MainPipeline") {
-            renderState[staticDirectPipeline].draw(renderState)
-            renderState[animatedDirectPipeline].draw(renderState)
 
             val batch = renderState[skyBoxStateHolder.batch].underlying
 
@@ -156,6 +151,11 @@ class ColorOnlyRenderer(
                     bindIndexBuffer = true,
                 )
             })
+
+            renderState[staticDirectPipeline].draw(renderState)
+            renderState[animatedDirectPipeline].draw(renderState)
+
+
 
             if(config.debug.drawBoundingVolumes) {
                 lineRenderer.render(

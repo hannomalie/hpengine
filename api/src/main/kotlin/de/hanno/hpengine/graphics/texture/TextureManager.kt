@@ -2,6 +2,7 @@ package de.hanno.hpengine.graphics.texture
 
 import com.artemis.BaseSystem
 import de.hanno.hpengine.directory.AbstractDirectory
+import de.hanno.hpengine.graphics.constants.TextureFilterConfig
 import java.io.File
 import javax.imageio.ImageIO
 import javax.imageio.ImageReader
@@ -24,6 +25,7 @@ interface TextureManager {
         resourcePath: String,
         srgba: Boolean = false,
         directory: AbstractDirectory,
+        filterConfig: TextureFilterConfig = TextureFilterConfig(),
     ): StaticFileBasedTexture2D
 
     fun getTexture(
@@ -36,6 +38,7 @@ interface TextureManager {
     val FileBasedTexture2D.canBeUnloaded: Boolean
     val texturePool: List<DynamicFileBasedTexture2D>
     fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): CubeMap
+    fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean): CubeMap
 }
 
 // https://stackoverflow.com/questions/1559253/java-imageio-getting-image-dimensions-without-reading-the-entire-file

@@ -28,6 +28,8 @@ uniform mat4 modelMatrix;
 
 uniform vec3 eyePosition;
 
+uniform int time;
+
 flat in VertexShaderFlatOutput vertexShaderFlatOutput;
 in VertexShaderOutput vertexShaderOutput;
 
@@ -99,4 +101,5 @@ void main(void) {
 		discard;
 	}
 	out_color.rgba = vec4(color.rgb * color.a, 1);
+	//END
 }

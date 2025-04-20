@@ -31,7 +31,7 @@ interface MaterialStrukt : Strukt {
 
     context(ByteBuffer) val uvScale: Vector2fStrukt
     context(ByteBuffer) var lodFactor: Float
-    context(ByteBuffer) var useWorldSpaceXZAsTexCoords: Int
+    context(ByteBuffer) var worldSpaceTexCoords: Int
 
     context(ByteBuffer) var diffuseMipmapBias: Float
     context(ByteBuffer) var diffuseMapIndex: Int

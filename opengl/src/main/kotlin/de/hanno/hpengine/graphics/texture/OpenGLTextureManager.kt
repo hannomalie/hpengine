@@ -92,7 +92,8 @@ class OpenGLTextureManager(
     override fun getStaticTextureHandle(
         resourcePath: String,
         srgba: Boolean,
-        directory: AbstractDirectory
+        directory: AbstractDirectory,
+        filterConfig: TextureFilterConfig,
     ): StaticFileBasedTexture2D {
 
         val file = directory.resolve(resourcePath)
@@ -114,7 +115,7 @@ class OpenGLTextureManager(
         val textureDescription = Texture2DDescription(
             getImageDimension(file),
             internalFormat = internalFormat,
-            textureFilterConfig = TextureFilterConfig(),
+            textureFilterConfig = filterConfig,
             wrapMode = WrapMode.Repeat,
         )
 
@@ -252,7 +253,7 @@ class OpenGLTextureManager(
         return tex
     }
 
-    fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): CubeMap {
+    override fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean): CubeMap {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
             ?: FileBasedOpenGLCubeMap(graphicsApi, resourceName, files, srgba).apply {
                 loadAsync()

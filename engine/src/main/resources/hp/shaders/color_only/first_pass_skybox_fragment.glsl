@@ -69,4 +69,5 @@ void main(void) {
 	V = (inverse(viewMatrix) * dir).xyz;
 
 	out_color = vec4(textureLod(environmentMap, V, 0).rgb, 1);
+//	out_color.rgba = vec4(1,0,0,1);
 }

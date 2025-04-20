@@ -93,6 +93,7 @@ data class FileBasedOpenGLCubeMap(
         onGpu {
             GL30.glGenerateMipmap(TextureTarget.TEXTURE_CUBE_MAP.glValue)
         }
+        unbindTexture(this)
     }
 
     companion object {

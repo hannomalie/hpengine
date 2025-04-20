@@ -71,8 +71,7 @@ class SkyBoxSystem(
             val primaryCameraTransform = transformComponentMapper[primaryCameraEntityId].transform
 
             val eyePosition = primaryCameraTransform.position
-            transform.identity().translate(eyePosition)
-            transform.scale(1000f)
+            transform.identity().scale(1000f).translate(eyePosition)
         }
     }
 
@@ -120,6 +119,7 @@ fun World.addSkyBox(config: Config, cubeMap: StaticHandleImpl<CubeMap>) {
                 name = "Skybox",
                 materialType = Material.MaterialType.UNLIT,
                 cullBackFaces = false,
+                cullFrontFaces = false,
                 renderPriority = -1,
                 writesDepth = false,
                 depthTest = true,

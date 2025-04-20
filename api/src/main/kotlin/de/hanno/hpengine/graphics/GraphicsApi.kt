@@ -91,6 +91,9 @@ interface GraphicsApi {
     fun bindTexture(texture: Texture) {
         bindTexture(texture.target, texture.id)
     }
+    fun unbindTexture(texture: Texture) {
+        bindTexture(texture.target, 0)
+    }
 
     fun setHandleUsageTimeStamp(handle: TextureHandle<*>)
     fun getHandleUsageTimeStamp(handle: TextureHandle<*>): Long?

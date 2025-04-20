@@ -14,6 +14,7 @@ import de.hanno.hpengine.model.Model
 import de.hanno.hpengine.model.StaticModel
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
+import de.hanno.hpengine.model.material.WorldSpaceTexCoords
 import imgui.ImGui.*
 import org.koin.core.annotation.Single
 
@@ -97,15 +98,24 @@ fun Window.materialGrid(material: Material, textureManager: TextureManagerBaseSy
     floatInput("ParallaxBias", material.parallaxBias) { floatArray ->
         material.parallaxBias = floatArray[0]
     }
-    floatInput("UVScaleX", material.uvScale.x, 0.01f, 10f) { floatArray ->
+    floatInput("UVScaleX", material.uvScale.x, 0.01f, 100f) { floatArray ->
         material.uvScale.x = floatArray[0]
     }
-    floatInput("UVScaleY", material.uvScale.y, 0.01f, 10f) { floatArray ->
+    floatInput("UVScaleY", material.uvScale.y, 0.01f, 100f) { floatArray ->
         material.uvScale.y = floatArray[0]
     }
     floatInput("LODFactor", material.lodFactor, 1f, 100f) { floatArray -> material.lodFactor = floatArray[0] }
-    if (checkbox("WorldSpaceTexCoords", material.useWorldSpaceXZAsTexCoords)) {
-        material.useWorldSpaceXZAsTexCoords = !material.useWorldSpaceXZAsTexCoords
+    if (beginCombo("WorldSpaceTexCoords", material.worldSpaceTexCoords.toString())) {
+        WorldSpaceTexCoords.entries.forEach { type ->
+            val selected = material.worldSpaceTexCoords == type
+            if (selectable(type.toString(), selected)) {
+                material.worldSpaceTexCoords = type
+            }
+            if (selected) {
+                setItemDefaultFocus()
+            }
+        }
+        endCombo()
     }
     if (beginCombo("Type", material.materialType.toString())) {
         Material.MaterialType.entries.forEach { type ->
@@ -133,6 +143,9 @@ fun Window.materialGrid(material: Material, textureManager: TextureManagerBaseSy
     }
     if (checkbox("BackFaceCulling", material.cullBackFaces)) {
         material.cullBackFaces = !material.cullBackFaces
+    }
+    if (checkbox("FrontFaceCulling", material.cullFrontFaces)) {
+        material.cullFrontFaces = !material.cullFrontFaces
     }
     if (checkbox("DepthTest", material.depthTest)) {
         material.depthTest = !material.depthTest

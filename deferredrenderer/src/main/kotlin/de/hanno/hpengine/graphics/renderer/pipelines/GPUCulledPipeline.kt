@@ -394,6 +394,7 @@ open class GPUCulledPipeline(
             profiled("Actually render") {
 
                 cullFace = useBackFaceCulling
+                cullMode = CullMode.BACK // TODO: Support front face culling
 
                 program.use()
                 program.uniforms.apply {

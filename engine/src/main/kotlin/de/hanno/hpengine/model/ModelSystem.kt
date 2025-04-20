@@ -138,9 +138,13 @@ class ModelSystem(
 
                 is StaticModel -> {}
             }
-            val allocation = putToBuffer(model).apply {
-                allocations[descr] = this
+            val allocation = allocations.computeIfAbsent(descr) {
+                putToBuffer(model)
             }
+
+//            val allocation = putToBuffer(model).apply {
+//                allocations[descr] = this
+//            }
             logger.info("Allocated geometry buffer space")
             ModelCacheComponent(model, allocation, currentGpuBufferIndex).apply {
                 add(this)

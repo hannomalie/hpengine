@@ -311,7 +311,7 @@ class OpenGLContext private constructor(
         set(value) = onGpuInline { Capability.CULL_FACE.run { if (value) enable(this) else disable(this) } }
 
     override var cullMode: CullMode
-        get() = CullMode.values().first { it.glMode == glGetInteger(GL_CULL_FACE_MODE) }
+        get() = CullMode.entries.first { it.glMode == glGetInteger(GL_CULL_FACE_MODE) }
         set(value) = onGpuInline { glCullFace(value.glMode) }
 
     override var depthTest: Boolean

@@ -4,6 +4,7 @@ package de.hanno.hpengine.graphics.renderer.pipelines
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.constants.CullMode
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
 import de.hanno.hpengine.graphics.constants.RenderingMode.Fill
@@ -99,11 +100,12 @@ open class DirectPipeline(
             uniforms.setCommonUniformValues(renderState, entitiesState, camera, config, materialSystem, entityBuffer)
 
             val batchesWithPipelineProgram =
-                renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }
+                renderBatches.filter { !it.hasOwnProgram  && it.isVisible }.sortedBy { it.material.renderPriority }
             logger.trace("Render ${batchesWithPipelineProgram.size} default pipeline program batches")
             for (batch in batchesWithPipelineProgram) {
                 depthMask = batch.material.writesDepth
-                cullFace = batch.material.cullBackFaces
+                cullFace = batch.material.cullingEnabled
+                cullMode = if(batch.material.cullFrontFaces) CullMode.FRONT else CullMode.BACK
                 depthTest = batch.material.depthTest
                 program.setTextureUniforms(graphicsApi, fallbackTexture, batch.material)
                 program.uniforms.entityIndex = batch.entityBufferIndex
@@ -149,7 +151,8 @@ open class DirectPipeline(
             for (batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
                 val program = batch.program!! as Program<DefaultUniforms> // TODO: This is not safe
 
-                cullFace = batch.material.cullBackFaces
+                cullFace = batch.material.cullingEnabled
+                cullMode = if(batch.material.cullFrontFaces) CullMode.FRONT else CullMode.BACK
                 depthTest = batch.material.depthTest
                 depthMask = batch.material.writesDepth
 
