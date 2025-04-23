@@ -4,6 +4,7 @@ package de.hanno.hpengine.graphics.renderer.pipelines
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
+import de.hanno.hpengine.graphics.constants.BlendMode
 import de.hanno.hpengine.graphics.constants.CullMode
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
@@ -84,8 +85,13 @@ open class DirectPipeline(
 
                 val entitiesState = renderState[entitiesStateHolder.entitiesState]
 
-                drawCustomProgramBatches(camera, entitiesState, renderState, geometryBuffer, mode)
+                blend = false
+                depthMask = true
+                depthTest = false
+                cullFace = false
+
                 drawDefaultProgramBatches(camera, entitiesState, renderState, geometryBuffer, mode)
+                drawCustomProgramBatches(camera, entitiesState, renderState, geometryBuffer, mode)
             }
         }
 
@@ -102,23 +108,35 @@ open class DirectPipeline(
             val batchesWithPipelineProgram =
                 renderBatches.filter { !it.hasOwnProgram  && it.isVisible }.sortedBy { it.material.renderPriority }
             logger.trace("Render ${batchesWithPipelineProgram.size} default pipeline program batches")
-            for (batch in batchesWithPipelineProgram) {
-                depthMask = batch.material.writesDepth
-                cullFace = batch.material.cullingEnabled
-                cullMode = if(batch.material.cullFrontFaces) CullMode.FRONT else CullMode.BACK
-                depthTest = batch.material.depthTest
-                program.setTextureUniforms(graphicsApi, fallbackTexture, batch.material)
-                program.uniforms.entityIndex = batch.entityBufferIndex
-                program.bind()
-                geometryBuffer.draw(
-                    batch.drawElementsIndirectCommand,
-                    primitiveType = PrimitiveType.Triangles,
-                    mode = mode,
-                    bindIndexBuffer = false,
-                )
-                verticesCount += batch.vertexCount
-                entitiesCount += 1.toCount()
+
+            val (opaqueBatches, transparentBatches) = batchesWithPipelineProgram.partition { it.material.transparency == 0f }
+
+            fun List<RenderBatch>.actuallyRender(preventDepthWrite: Boolean = false) {
+                for (batch in this) {
+                    depthMask = if(preventDepthWrite) false else batch.material.writesDepth
+                    depthTest = batch.material.depthTest
+                    cullFace = batch.material.cullingEnabled
+                    cullMode = if(batch.material.cullFrontFaces) CullMode.FRONT else CullMode.BACK
+                    program.setTextureUniforms(graphicsApi, fallbackTexture, batch.material)
+                    program.uniforms.entityIndex = batch.entityBufferIndex
+                    program.bind()
+                    geometryBuffer.draw(
+                        batch.drawElementsIndirectCommand,
+                        primitiveType = PrimitiveType.Triangles,
+                        mode = mode,
+                        bindIndexBuffer = false,
+                    )
+                    verticesCount += batch.vertexCount
+                    entitiesCount += 1.toCount()
+                }
             }
+            opaqueBatches.actuallyRender()
+            blend = true
+            depthMask = false
+            blendEquation = BlendMode.FUNC_ADD
+            blendFunc(BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.ONE_MINUS_SRC_ALPHA)
+            transparentBatches.actuallyRender(preventDepthWrite = true)
+            blend = false
 
             val distancesForHandle = mutableMapOf<TextureHandle<*>, Float>()
             (renderState[defaultBatchesSystem.renderBatchesStatic] + renderState[defaultBatchesSystem.renderBatchesAnimated]).forEach { batch ->
@@ -156,18 +174,16 @@ open class DirectPipeline(
                 depthTest = batch.material.depthTest
                 depthMask = batch.material.writesDepth
 
+                blend = batch.material.transparency != 0f
+                blendEquation = BlendMode.FUNC_ADD
+                blendFunc(BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.ONE_MINUS_SRC_ALPHA)
+
+
                 using(program) { uniforms ->
-                    uniforms.setCommonUniformValues(
-                        renderState,
-                        entitiesState,
-                        camera,
-                        config,
-                        materialSystem,
-                        entityBuffer
-                    )
+                    uniforms.setCommonUniformValues(renderState, entitiesState, camera, config, materialSystem, entityBuffer)
                 }
                 program.setTextureUniforms(graphicsApi, fallbackTexture, batch.material)
-
+                program.uniforms.entityIndex = batch.entityBufferIndex
                 program.bind()
                 geometryBuffer.draw(
                     batch.drawElementsIndirectCommand,
@@ -175,6 +191,8 @@ open class DirectPipeline(
                     mode = mode,
                     bindIndexBuffer = false,
                 )
+                blend = false
+
                 verticesCount += batch.vertexCount
                 entitiesCount += 1.toCount()
             }

@@ -27,10 +27,12 @@ import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.*
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.model.material.MaterialSystem
+import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.model.material.WorldSpaceTexCoords
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.scene.AddResourceContext
+import de.hanno.hpengine.skybox.SkyBoxStateHolder
 import de.hanno.hpengine.visibility.InvisibleComponent
 import de.hanno.hpengine.world.addStaticModelEntity
 import de.hanno.hpengine.world.loadScene
@@ -47,8 +49,8 @@ fun main() {
         editorModule,
         module {
             single {
-                InteriorMappingRenderSystem(get(), get(), get(), get(), get(), get(), get(), get())
-            } binds arrayOf(RenderSystem::class, BaseSystem::class, InteriorMappingRenderSystem::class)
+                InteriorMappingRenderSystem()
+            } binds arrayOf(BaseSystem::class, InteriorMappingRenderSystem::class)
         }
     ))
 
@@ -67,73 +69,12 @@ fun main() {
 }
 
 @All(InteriorMappingComponent::class)
-class InteriorMappingRenderSystem(
-    private val programManager: ProgramManager,
-    private val config: Config,
-    private val graphicsApi: GraphicsApi,
-    private val defaultBatchesSystem: DefaultBatchesSystem,
-    private val entitiesStateHolder: EntitiesStateHolder,
-    private val primaryCameraStateHolder: PrimaryCameraStateHolder,
-    private val materialSystem: MaterialSystem,
-    private val entityBuffer: EntityBuffer,
-): RenderSystem, BaseEntitySystem() {
+class InteriorMappingRenderSystem: BaseEntitySystem() {
 
-    private val program = programManager.getProgram(
-        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-        config.engineDir.resolve("shaders/color_only/color_out_fragment.glsl")
-            .toCodeSource()
-            .enhanced("interior_fragment", arrayOf(
-                "//END" to """
-                    vec3 boxProjected = boxProject(eyePosition, V, entity.min, entity.max);
-                    mat4 rotationMatrix = rotationMatrix(vec3(0,1,0), 1.57 * (entityId % 10));
-                    vec3 newV = (rotationMatrix * vec4(boxProjected, 0)).xyz;
-                    out_color.rgba = texture(environmentMap, newV);
-                    """.trimIndent()
-            )),
-        null,
-        Defines(),
-        StaticDefaultUniforms(graphicsApi)
-    )
     private val entityIds = mutableListOf<Int>()
     override fun processSystem() {
         entityIds.clear()
         entityIds.addAll(mapEntity { it }) // move to extract
-    }
-    override fun render(renderState: RenderState) {
-
-        val batches = renderState[defaultBatchesSystem.renderBatchesStatic].filter {
-            it.entityId in entityIds
-        }
-
-        val geometryBuffer = renderState[entitiesStateHolder.entitiesState].geometryBufferStatic
-
-        batches.forEach { batch ->
-            graphicsApi.run {
-
-                cullFace = batch.material.cullingEnabled
-                cullMode = if(batch.material.cullFrontFaces) CullMode.FRONT else CullMode.BACK
-                depthTest = batch.material.depthTest
-                depthMask = batch.material.writesDepth
-
-                program.useAndBind(setUniforms = {
-                    setCommonUniformValues(
-                        renderState,
-                        renderState[entitiesStateHolder.entitiesState],
-                        renderState[primaryCameraStateHolder.camera],
-                        config, materialSystem, entityBuffer
-                    )
-                    program.setTextureUniforms(graphicsApi, null, batch.material)
-                    program.uniforms.entityIndex = batch.entityBufferIndex
-                }, block = {
-                    geometryBuffer.draw(
-                        batch.drawElementsIndirectCommand,
-                        primitiveType = PrimitiveType.Triangles,
-                        mode = if(config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Fill,
-                        bindIndexBuffer = true,
-                    )
-                })
-            }
-        }
     }
 }
 
@@ -167,15 +108,29 @@ internal fun Engine.runInteriorMapping() {
                 ),
                 true
             )
-            val interior0 = Material("interior_mapping").apply {
+            val interior0 = Material("interior_mapping_0").apply {
                 diffuse.set(1f,0f,0f)
                 materialType = Material.MaterialType.FOLIAGE
                 cullBackFaces = false
                 cullFrontFaces = true
                 maps[Material.MAP.ENVIRONMENT] =
                     StaticHandleImpl(cubeMap0, cubeMap0.description, UploadState.Uploaded, 0f)
+
+                programDescription = ProgramDescription(
+                    config.engineDir.resolve("shaders/color_only/color_out_fragment.glsl")
+                        .toCodeSource()
+                        .enhanced("glass_fragment", arrayOf(
+                            "//END" to """
+                                    vec3 boxProjected = boxProject(eyePosition, V, entity.min, entity.max);
+                                    mat4 rotationMatrix = rotationMatrix(vec3(0,1,0), 1.57 * (entityId % 10));
+                                    vec3 newV = (rotationMatrix * vec4(boxProjected, 0)).xyz;
+                                    out_color.rgba = vec4(texture(environmentMap, newV).rgb, 1);
+                                    """.trimIndent()
+                        )),
+                    config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+                )
             }
-            val interior1 = interior0.copy(maps = mutableMapOf(Material.MAP.ENVIRONMENT to
+            val interior1 = interior0.copy(name = "interior_mapping_1", maps = mutableMapOf(Material.MAP.ENVIRONMENT to
                     StaticHandleImpl(cubeMap1, cubeMap1.description, UploadState.Uploaded, 0f)
             ))
 
@@ -202,8 +157,9 @@ internal fun Engine.runInteriorMapping() {
                     scale = Vector3f(100f),
                     translation = translation
                 ).apply {
-                    add(MaterialComponent().apply { this.material = materials[index] })
-                    add(InvisibleComponent())
+                    add(MaterialComponent().apply {
+                        this.material = materials[index]
+                    })
                     add(InteriorMappingComponent())
                 }
             }
@@ -307,6 +263,58 @@ internal fun Engine.runInteriorMapping() {
                     material = Material("ground_plane").apply {
                         diffuse.set(0.2f)
                     }
+                })
+            }
+            val glassMaterial = Material("glass").apply {
+                val cubeMap = StaticHandleImpl(
+                    textureManager.getCubeMap(
+                        "assets/textures/skybox/skybox.png",
+                        config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")
+                    ), uploadState = UploadState.Uploaded, currentMipMapBias = 0f
+                ) // TODO: Verify if just setting this is okay
+
+                diffuse.set(1f)
+                materialType = Material.MaterialType.UNLIT
+                transparencyType = Material.TransparencyType.FULL
+                transparency = 0.6f
+                cullBackFaces = false
+                cullFrontFaces = false
+                roughness = 0f
+                metallic = 1f
+                writesDepth = false
+                maps[Material.MAP.ENVIRONMENT] = cubeMap
+                programDescription = ProgramDescription(
+                    config.engineDir.resolve("shaders/color_only/color_out_fragment.glsl")
+                        .toCodeSource()
+                        .enhanced(
+                            "glass_fragment", arrayOf(
+                                "//END" to """
+                                    out_color.rgba = vec4(texture(environmentMap, reflect(V, normal_world)).rgb, 1-material.transparency);
+                                    """.trimIndent()
+                            )
+                        ),
+                    config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+                )
+            }
+            addStaticModelEntity(
+                "Glass0", "assets/models/plane.obj",
+                scale = Vector3f(520f, 1f, 517f),
+                rotation = AxisAngle4f(1.57f, 0f, 0f, 1f),
+                rotation1 = AxisAngle4f(1.57f, 0f, 1f, 0f),
+                translation = Vector3f(477f, 460f, 49f)
+            ).apply {
+                add(MaterialComponent().apply {
+                    material = glassMaterial
+                })
+            }
+            addStaticModelEntity(
+                "Glass1", "assets/models/plane.obj",
+                scale = Vector3f(520f, 1f, 517f),
+                rotation = AxisAngle4f(1.57f, 0f, 0f, 1f),
+                translation = Vector3f(-48f, 460f, -467f)
+            ).apply {
+                add(MaterialComponent().apply {
+                    material = glassMaterial
                 })
             }
         }

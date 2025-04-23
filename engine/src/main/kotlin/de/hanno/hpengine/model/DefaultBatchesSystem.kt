@@ -127,7 +127,7 @@ class DefaultBatchesSystem(
                     batch.drawElementsIndirectCommand.baseVertex = allocation.vertexOffset
                     batch.animated = !model.isStatic
                     batch.material = meshMaterial
-                    batch.program = meshMaterial.programDescription?.let { modelSystem.programCache[it]!! }
+                    batch.program = meshMaterial.programDescription?.let { modelSystem.programCache[it] }
                     batch.entityIndex = entityIndexOf
                     //TODO: check if correct index, it got out of hand
                     batch.entityName = mesh.name // TODO: use entity name component

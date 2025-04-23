@@ -156,7 +156,7 @@ class ImGuiEditor(
         try {
             ImGui.newFrame()
 
-            background(layout.windowWidth, layout.windowHeight)
+//            background(layout.windowWidth, layout.windowHeight)
 
             if (renderPanels) {
                 menu(layout.windowWidth, layout.windowHeight)

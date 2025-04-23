@@ -91,7 +91,9 @@ class OutputSelection(
                     textureManager.texturesForDebugOutput.filterValues { it is Texture2D }
                         .map { TextureOutputSelection(it.key, it.value as Texture2D) } +
                     textureManager.textures.filterValues { it is Texture2D }
-                        .map { TextureOutputSelection(it.key, it.value as Texture2D) }
+                        .map { TextureOutputSelection(it.key, it.value as Texture2D) } +
+                    textureManager.fileBasedTextures.filterValues { it.texture is Texture2D }
+                        .map { TextureOutputSelection(it.key, it.value.texture as Texture2D) }
         }
 
     override fun processSystem() { }

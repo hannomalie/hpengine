@@ -108,16 +108,17 @@ class ModelSystem(
             when (descr) {
                 is AnimatedModelComponentDescription -> animatedModelLoader.load(descr.file, textureManager, dir)
                 is StaticModelComponentDescription -> staticModelLoader.load(descr.file, textureManager, dir)
-            }.apply {
-                meshes.forEach { mesh ->
-                    val meshMaterial = materialComponent?.material ?: mesh.material
-                    materialSystem.registerMaterial(meshMaterial)
-                    meshMaterial.programDescription?.let { programDescription ->
-                        programCache[programDescription] =
-                            programManager.getFirstPassProgram(
-                                programDescription,
-                                StaticDefaultUniforms(graphicsApi)
-                            ) as ProgramImpl<DefaultUniforms>
+            }
+        }.apply {
+            meshes.forEach { mesh ->
+                val meshMaterial = materialComponent?.material ?: mesh.material
+                materialSystem.registerMaterial(meshMaterial)
+                meshMaterial.programDescription?.let { programDescription ->
+                    programCache.computeIfAbsent(programDescription) {
+                        programManager.getFirstPassProgram(
+                            programDescription,
+                            StaticDefaultUniforms(graphicsApi)
+                        ) as ProgramImpl<DefaultUniforms>
                     }
                 }
             }

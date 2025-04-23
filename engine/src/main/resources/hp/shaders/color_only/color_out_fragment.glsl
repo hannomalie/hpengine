@@ -100,6 +100,6 @@ void main(void) {
 	if(color.a < 0.9) {
 		discard;
 	}
-	out_color.rgba = vec4(color.rgb * color.a, 1);
+	out_color.rgba = vec4(color.rgb, 1-material.transparency);
 	//END
 }

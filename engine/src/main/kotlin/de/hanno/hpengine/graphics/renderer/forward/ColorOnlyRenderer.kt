@@ -6,6 +6,7 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GraphicsApi
 import de.hanno.hpengine.graphics.PrimaryRenderer
 import de.hanno.hpengine.graphics.RenderSystem
+import de.hanno.hpengine.graphics.constants.CullMode
 import de.hanno.hpengine.graphics.constants.DepthFunc
 import de.hanno.hpengine.graphics.constants.PrimitiveType
 import de.hanno.hpengine.graphics.constants.RenderingMode
@@ -30,6 +31,7 @@ import de.hanno.hpengine.model.material.MaterialSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.skybox.SkyBoxStateHolder
+import de.hanno.hpengine.toCount
 import org.joml.Vector3f
 import org.koin.core.annotation.Single
 import org.lwjgl.BufferUtils
@@ -92,7 +94,7 @@ class ColorOnlyRenderer(
             fallbackTexture = textureManager.defaultTexture,
         ) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesStatic].filter {
-                !it.hasOwnProgram && it.isVisibleForCamera
+                it.isVisibleForCamera
             }
         }
     }
@@ -154,8 +156,6 @@ class ColorOnlyRenderer(
 
             renderState[staticDirectPipeline].draw(renderState)
             renderState[animatedDirectPipeline].draw(renderState)
-
-
 
             if(config.debug.drawBoundingVolumes) {
                 lineRenderer.render(
