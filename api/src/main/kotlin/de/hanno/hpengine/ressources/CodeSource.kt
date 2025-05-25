@@ -16,21 +16,20 @@ class FileBasedCodeSource(val file: File) : CodeSource {
     }
     override var source: String = getSourceStringFromFile()
         private set
-    var oldSource: String? = null
-        private set
 
     private val filename = file.nameWithoutExtension
 
     override val name: String = filename
 
-    var includedFiles: List<File> = emptyList()
+    val includedFiles: MutableList<File> = mutableListOf()
 
     override fun load() {
         source = getSourceStringFromFile()
-        includedFiles = source.extractIncludeFiles()
+        includedFiles.clear()
+        includedFiles.addAll(source.extractIncludeFiles())
     }
 
-    fun getSourceStringFromFile(): String = try {
+    private fun getSourceStringFromFile(): String = try {
         file.readText()
     } catch (e: IOException) {
         System.err.println("Cannot reload shader file, old one is kept ($filename)")
@@ -39,6 +38,12 @@ class FileBasedCodeSource(val file: File) : CodeSource {
 
     override fun equals(other: Any?): Boolean = other is FileBasedCodeSource && file.path == other.file.path
     override fun hashCode(): Int = file.path.hashCode()
+    fun registerFiles(files: List<File>) {
+        includedFiles.addAll(files)
+        val distinct = includedFiles.distinct()
+        includedFiles.clear()
+        includedFiles.addAll(distinct)
+    }
 
     companion object {
         fun File.toCodeSource() = FileBasedCodeSource(this)
@@ -48,18 +53,28 @@ class FileBasedCodeSource(val file: File) : CodeSource {
 
 class WrappedCodeSource(val underlying: FileBasedCodeSource,
                         override val name: String = underlying.name + System.currentTimeMillis().toString(),
-                        val replacements: Array<Pair<String, String>>): CodeSource {
+                        val replacements: Array<Pair<String, String>>,
+                        val fileBasedReplacements: Array<Pair<String, File>>): CodeSource {
 
+    init {
+        underlying.registerFiles(fileBasedReplacements.map { it.second })
+    }
     override val source: String
         get() {
             var result = underlying.source
             replacements.forEach { (oldValue, newValue) ->
                 result = result.replace(oldValue, newValue)
             }
+            fileBasedReplacements.forEach { (oldValue, newValue) ->
+                result = result.replace(oldValue, newValue.readText())
+            }
             return result
         }
 
-    override fun load() = underlying.load()
+    override fun load() {
+        underlying.load()
+        underlying.includedFiles.addAll(fileBasedReplacements.map { it.second })
+    }
     override fun equals(other: Any?): Boolean {
         return other is WrappedCodeSource && other.name == name && replacements.contentEquals(other.replacements)
     }
@@ -68,7 +83,9 @@ class WrappedCodeSource(val underlying: FileBasedCodeSource,
 }
 
 fun FileBasedCodeSource.enhanced(name: String,
-                                 replacements: Array<Pair<String, String>>) = WrappedCodeSource(this, name, replacements)
+                                 replacements: Array<Pair<String, String>> = emptyArray(),
+                                 fileBasedReplacements:Array<Pair<String, File>> = emptyArray(),
+) = WrappedCodeSource(this, name, replacements, fileBasedReplacements)
 
 
 fun CodeSource.hasChanged(reference: String): Boolean = reference != source

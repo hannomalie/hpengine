@@ -56,7 +56,9 @@ data class Material(
         HEIGHT("heightMap", 4),
         REFLECTION("reflectionMap", 5),
         ENVIRONMENT("environmentMap", 6),
-        ROUGHNESS("roughnessMap", 7);
+        ROUGHNESS("roughnessMap", 7),
+        ENVIRONMENT0("environmentMap0", 8),
+        ENVIRONMENT1("environmentMap1", 9);
 
         val uniformKey: String = "has" + shaderVariableName[0].uppercaseChar() + shaderVariableName.substring(1)
     }

@@ -37,11 +37,16 @@ inline fun <T> BaseEntitySystem.forFirstEntityIfPresent(block: (Int) -> T): T? {
 }
 
 inline fun <T> IntBag.forEach(block: (Int) -> T) {
+    map(block)
+}
+inline fun <T> IntBag.map(block: (Int) -> T): List<T> {
     val ids = data
     var i = 0
     val s = size()
-    while (s > i) {
-        block(ids[i])
-        i++
+    return buildList {
+        while (s > i) {
+            add(block(ids[i]))
+            i++
+        }
     }
 }

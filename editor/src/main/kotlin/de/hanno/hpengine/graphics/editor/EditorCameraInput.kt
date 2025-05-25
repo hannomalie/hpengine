@@ -73,7 +73,7 @@ class EditorCameraInputSystem(
                     turbo = 3f
                 }
 
-                val rotationAmount = 10.1f * turbo * deltaSeconds * rotationDelta * cameraSpeed
+                val rotationAmount = 100f * turbo * deltaSeconds * rotationDelta * cameraSpeed
                 if (input.isMousePressed(0)) {
                     val pitchAmount = Math.toRadians((input.dySmooth * rotationAmount % 360).toDouble())
                     pitchAccel = max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()

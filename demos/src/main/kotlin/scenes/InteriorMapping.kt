@@ -19,9 +19,7 @@ import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.PrimaryCameraStateHolder
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.graphics.texture.StaticHandleImpl
-import de.hanno.hpengine.graphics.texture.TextureManager
-import de.hanno.hpengine.graphics.texture.UploadState
+import de.hanno.hpengine.graphics.texture.*
 import de.hanno.hpengine.graphics.window.Window
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.model.*
@@ -82,7 +80,7 @@ internal fun Engine.runInteriorMapping() {
     val textureManager = systems.firstIsInstance<TextureManager>()
 
     world.loadScene {
-        addPrimaryCameraControls()
+//        addPrimaryCameraControls()
         config.gameDir.apply {
             val cubeMap0 = textureManager.getCubeMap(
                 "humus_interior_cubemap",
@@ -108,152 +106,102 @@ internal fun Engine.runInteriorMapping() {
                 ),
                 true
             )
-            val interior0 = Material("interior_mapping_0").apply {
-                diffuse.set(1f,0f,0f)
-                materialType = Material.MaterialType.FOLIAGE
-                cullBackFaces = false
-                cullFrontFaces = true
-                maps[Material.MAP.ENVIRONMENT] =
-                    StaticHandleImpl(cubeMap0, cubeMap0.description, UploadState.Uploaded, 0f)
 
-                programDescription = ProgramDescription(
-                    config.engineDir.resolve("shaders/color_only/color_out_fragment.glsl")
-                        .toCodeSource()
-                        .enhanced("glass_fragment", arrayOf(
-                            "//END" to """
-                                    vec3 boxProjected = boxProject(eyePosition, V, entity.min, entity.max);
-                                    mat4 rotationMatrix = rotationMatrix(vec3(0,1,0), 1.57 * (entityId % 10));
-                                    vec3 newV = (rotationMatrix * vec4(boxProjected, 0)).xyz;
-                                    out_color.rgba = vec4(texture(environmentMap, newV).rgb, 1);
-                                    """.trimIndent()
-                        )),
-                    config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-                )
-            }
-            val interior1 = interior0.copy(name = "interior_mapping_1", maps = mutableMapOf(Material.MAP.ENVIRONMENT to
-                    StaticHandleImpl(cubeMap1, cubeMap1.description, UploadState.Uploaded, 0f)
-            ))
-
-            val translations = (0 until 10).flatMap { x ->
-                (0 until 10).map { y ->
-                    Vector3f(x * 105f, y * 105f, 0f)
-                }
-            } + (0 until 9).flatMap { z ->
-                (0 until 10).map { y ->
-                    Vector3f(0f, y * 105f, -105 - (z * 105f))
-                }
-            }
-            val materials = (0..(translations.size/2)).map {
-                interior0
-            } + (0..(translations.size/2)).map {
-                interior1
-            }.shuffled()
-
-            // shuffle, because so that entity ids are not in order, because they determine
-            // rotation of interior maps
-            translations.shuffled().forEachIndexed { index, translation ->
-                addStaticModelEntity(
-                    "Interior", "assets/models/cube.obj",
-                    scale = Vector3f(100f),
-                    translation = translation
-                ).apply {
-                    add(MaterialComponent().apply {
-                        this.material = materials[index]
-                    })
-                    add(InteriorMappingComponent())
-                }
-            }
-
-            val firstWallMaterialComponent = MaterialComponent().apply {
-                material = Material("FirstWall").apply {
-                    diffuse.set(0.2f)
-                    materialType = Material.MaterialType.UNLIT
-                    cullBackFaces = false
-                    cullFrontFaces = false
-                    uvScale = Vector2f(0.2f)
-                    worldSpaceTexCoords = WorldSpaceTexCoords.XY
-                    val brick =
-                        textureManager.getStaticTextureHandle("/assets/textures/brick.png", true, config.gameDir, TextureFilterConfig(minFilter = MinFilter.LINEAR))
-                    graphicsApi.run {
-                        brick.uploadAsync()
-                    }
-                    maps[Material.MAP.DIFFUSE] = brick.handle
-                }
-            }
-            // second wall
-            val sideWardsPlanesCount = 11
-            repeat(sideWardsPlanesCount) {
-                val isFirst = it == 0
-                val isLast = it == sideWardsPlanesCount - 1
-                addStaticModelEntity(
-                    "Plane0_$it", "assets/models/plane.obj",
-                    rotation = AxisAngle4f(1.57f, 1f, 0f, 0f),
-                    scale = Vector3f(520f, 1f, if(isFirst) 5f else 20f),
-                    translation = Vector3f(475f, -60 + it * 105f, 50f)
-                ).apply {
-                    add(firstWallMaterialComponent)
-                }
-            }
-            val downWardsPlanesCount = 11
-            repeat(downWardsPlanesCount) {
-                val isFirst = it == 0
-                val isLast = it == downWardsPlanesCount - 1
-                val xOffset = when {
-                    isFirst -> -45
-                    isLast -> -60
-                    else -> -50
-                }
-                addStaticModelEntity(
-                    "Plane1_$it", "assets/models/plane.obj",
-                    rotation = AxisAngle4f(2*1.57f, 0f, 0f, 1f),
-                    rotation1 = AxisAngle4f(1.57f, 1f, 0f, 0f),
-                    scale = Vector3f(if(isFirst || isLast) 5f else 20f, 1f, 625f),
-                    translation = Vector3f(xOffset + it * 105f, 385f, 50f)
-                ).apply {
-                    add(firstWallMaterialComponent)
-                }
-            }
-
-            // second wall
-            val secondWallMaterialComponent = MaterialComponent().apply {
-                material = firstWallMaterialComponent.material.copy(
-                    name = "SecondWall",
-                    worldSpaceTexCoords = WorldSpaceTexCoords.ZY
-                )
-            }
-            repeat(sideWardsPlanesCount) {
-                val isFirst = it == 0
-                val isLast = it == sideWardsPlanesCount - 1
-                addStaticModelEntity(
-                    "Plane0_$it", "assets/models/plane.obj",
-                    rotation = AxisAngle4f(1.57f, 1f, 0f, 0f),
-                    rotation1 = AxisAngle4f(1.57f, 0f, 1f, 0f),
-                    scale = Vector3f(520f, 1f, if(isFirst) 5f else 20f),
-                    translation = Vector3f(-50f, -60 + it * 105f, -470f)
-                ).apply {
-                    add(secondWallMaterialComponent)
-                }
-            }
-            repeat(downWardsPlanesCount) {
-                val isFirst = it == 0
-                val isLast = it == downWardsPlanesCount - 1
-                val zOffset = when {
-                    isFirst -> -45
-                    isLast -> -60
-                    else -> -50
-                }
-                addStaticModelEntity(
-                    "Plane1_$it", "assets/models/plane.obj",
-                    rotation = AxisAngle4f(2*1.57f, 0f, 0f, 1f),
-                    rotation1 = AxisAngle4f(1.57f, 1f, 0f, 0f),
-                    rotation2 = AxisAngle4f(1.57f, 0f, 1f, 0f),
-                    scale = Vector3f(if(isFirst || isLast) 5f else 20f, 1f, 625f),
-                    translation = Vector3f(-50f, 385f, -zOffset - (it * 105f))
-                ).apply {
-                    add(secondWallMaterialComponent)
-                }
-            }
-
+//            val firstWallMaterialComponent = MaterialComponent().apply {
+//                material = Material("FirstWall").apply {
+//                    diffuse.set(0.2f)
+//                    materialType = Material.MaterialType.UNLIT
+//                    cullBackFaces = false
+//                    cullFrontFaces = false
+//                    uvScale = Vector2f(0.2f)
+//                    worldSpaceTexCoords = WorldSpaceTexCoords.XY
+//                    val brick =
+//                        textureManager.getStaticTextureHandle("/assets/textures/brick.png", true, config.gameDir, TextureFilterConfig(minFilter = MinFilter.LINEAR))
+//                    graphicsApi.run {
+//                        brick.uploadAsync()
+//                    }
+//                    maps[Material.MAP.DIFFUSE] = brick.handle
+//                }
+//            }
+//            // second wall
+//            val sideWardsPlanesCount = 11
+//            repeat(sideWardsPlanesCount) {
+//                val isFirst = it == 0
+//                val isLast = it == sideWardsPlanesCount - 1
+//                addStaticModelEntity(
+//                    "Plane0_$it", "assets/models/plane.obj",
+//                    rotation = AxisAngle4f(1.57f, 1f, 0f, 0f),
+//                    scale = Vector3f(520f, 1f, if(isFirst) 5f else 20f),
+//                    translation = Vector3f(475f, -60 + it * 105f, 50f)
+//                ).apply {
+//                    add(firstWallMaterialComponent)
+//                }
+//            }
+//            val downWardsPlanesCount = 11
+//            repeat(downWardsPlanesCount) {
+//                val isFirst = it == 0
+//                val isLast = it == downWardsPlanesCount - 1
+//                val xOffset = when {
+//                    isFirst -> -45
+//                    isLast -> -60
+//                    else -> -50
+//                }
+//                addStaticModelEntity(
+//                    "Plane1_$it", "assets/models/plane.obj",
+//                    rotation = AxisAngle4f(2*1.57f, 0f, 0f, 1f),
+//                    rotation1 = AxisAngle4f(1.57f, 1f, 0f, 0f),
+//                    scale = Vector3f(if(isFirst || isLast) 5f else 20f, 1f, 625f),
+//                    translation = Vector3f(xOffset + it * 105f, 385f, 50f)
+//                ).apply {
+//                    add(firstWallMaterialComponent)
+//                }
+//            }
+//
+//            // second wall
+//            val secondWallMaterialComponent = MaterialComponent().apply {
+//                material = firstWallMaterialComponent.material.copy(
+//                    name = "SecondWall",
+//                    worldSpaceTexCoords = WorldSpaceTexCoords.ZY
+//                )
+//            }
+//            repeat(sideWardsPlanesCount) {
+//                val isFirst = it == 0
+//                val isLast = it == sideWardsPlanesCount - 1
+//                addStaticModelEntity(
+//                    "Plane0_$it", "assets/models/plane.obj",
+//                    rotation = AxisAngle4f(1.57f, 1f, 0f, 0f),
+//                    rotation1 = AxisAngle4f(1.57f, 0f, 1f, 0f),
+//                    scale = Vector3f(520f, 1f, if(isFirst) 5f else 20f),
+//                    translation = Vector3f(-50f, -60 + it * 105f, -470f)
+//                ).apply {
+//                    add(secondWallMaterialComponent)
+//                }
+//            }
+//            repeat(downWardsPlanesCount) {
+//                val isFirst = it == 0
+//                val isLast = it == downWardsPlanesCount - 1
+//                val zOffset = when {
+//                    isFirst -> -45
+//                    isLast -> -60
+//                    else -> -50
+//                }
+//                addStaticModelEntity(
+//                    "Plane1_$it", "assets/models/plane.obj",
+//                    rotation = AxisAngle4f(2*1.57f, 0f, 0f, 1f),
+//                    rotation1 = AxisAngle4f(1.57f, 1f, 0f, 0f),
+//                    rotation2 = AxisAngle4f(1.57f, 0f, 1f, 0f),
+//                    scale = Vector3f(if(isFirst || isLast) 5f else 20f, 1f, 625f),
+//                    translation = Vector3f(-50f, 385f, -zOffset - (it * 105f))
+//                ).apply {
+//                    add(secondWallMaterialComponent)
+//                }
+//            }
+            val skyBoxTexture = StaticHandleImpl(
+                textureManager.getCubeMap(
+                    "assets/textures/skybox/skybox.png",
+                    config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")
+                ), uploadState = UploadState.Uploaded, currentMipMapBias = 0f
+            )
             addStaticModelEntity(
                 "Ground", "assets/models/plane.obj",
                 scale = Vector3f(1000f),
@@ -265,58 +213,108 @@ internal fun Engine.runInteriorMapping() {
                     }
                 })
             }
-            val glassMaterial = Material("glass").apply {
-                val cubeMap = StaticHandleImpl(
-                    textureManager.getCubeMap(
-                        "assets/textures/skybox/skybox.png",
-                        config.directories.engineDir.resolve("assets/textures/skybox/skybox.png")
-                    ), uploadState = UploadState.Uploaded, currentMipMapBias = 0f
-                ) // TODO: Verify if just setting this is okay
-
-                diffuse.set(1f)
-                materialType = Material.MaterialType.UNLIT
-                transparencyType = Material.TransparencyType.FULL
-                transparency = 0.6f
-                cullBackFaces = false
-                cullFrontFaces = false
-                roughness = 0f
-                metallic = 1f
-                writesDepth = false
-                maps[Material.MAP.ENVIRONMENT] = cubeMap
+            val bricks = textureManager.getStaticTextureHandle(
+                "assets/textures/brick.png",
+                true,
+                config.directories.gameDir,
+            ).apply {
+                graphicsApi.run {
+                    uploadAsync()
+                }
+            }
+            val interiorMaterial = Material("Interior0").apply {
+                diffuse.set(0.2f)
+                roughness = 0.5f
+                maps[Material.MAP.DIFFUSE] = textureManager.defaultTexture // bricks
+                maps[Material.MAP.NORMAL] = bricks
+                maps[Material.MAP.ENVIRONMENT] =
+                    StaticHandleImpl(cubeMap0, cubeMap0.description, UploadState.Uploaded, 0f)
+                maps[Material.MAP.ENVIRONMENT0] =
+                    StaticHandleImpl(cubeMap1, cubeMap1.description, UploadState.Uploaded, 0f)
+                maps[Material.MAP.ENVIRONMENT1] = skyBoxTexture
                 programDescription = ProgramDescription(
                     config.engineDir.resolve("shaders/color_only/color_out_fragment.glsl")
                         .toCodeSource()
                         .enhanced(
-                            "glass_fragment", arrayOf(
-                                "//END" to """
-                                    out_color.rgba = vec4(texture(environmentMap, reflect(V, normal_world)).rgb, 1-material.transparency);
-                                    """.trimIndent()
+                            "interior_plane_fragment",
+                            fileBasedReplacements = arrayOf(
+                                "//END" to config.gameDir.resolve("shaders/interior_mapping_include.glsl")
                             )
                         ),
                     config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
                 )
             }
             addStaticModelEntity(
-                "Glass0", "assets/models/plane.obj",
+                "InteriorPlane0", "assets/models/plane.obj",
                 scale = Vector3f(520f, 1f, 517f),
                 rotation = AxisAngle4f(1.57f, 0f, 0f, 1f),
                 rotation1 = AxisAngle4f(1.57f, 0f, 1f, 0f),
-                translation = Vector3f(477f, 460f, 49f)
+                translation = Vector3f(477f, 460f, 48f)
             ).apply {
                 add(MaterialComponent().apply {
-                    material = glassMaterial
+                    material = interiorMaterial
                 })
             }
             addStaticModelEntity(
-                "Glass1", "assets/models/plane.obj",
+                "InteriorPlane1", "assets/models/plane.obj",
                 scale = Vector3f(520f, 1f, 517f),
                 rotation = AxisAngle4f(1.57f, 0f, 0f, 1f),
-                translation = Vector3f(-48f, 460f, -467f)
+                translation = Vector3f(-40f, 460f, -466f)
             ).apply {
                 add(MaterialComponent().apply {
-                    material = glassMaterial
+                    material = interiorMaterial.copy(
+                        name = "Interior1",
+                        worldSpaceTexCoords = WorldSpaceTexCoords.ZY
+                    )
                 })
             }
+//            val glassMaterial = Material("glass").apply {
+//                 // TODO: Verify if just setting this is okay
+//
+//                diffuse.set(1f)
+//                materialType = Material.MaterialType.UNLIT
+//                transparencyType = Material.TransparencyType.FULL
+//                transparency = 0.6f
+//                cullBackFaces = false
+//                cullFrontFaces = false
+//                roughness = 0f
+//                metallic = 1f
+//                writesDepth = false
+//                maps[Material.MAP.ENVIRONMENT] = cubeMap
+//                programDescription = ProgramDescription(
+//                    config.engineDir.resolve("shaders/color_only/color_out_fragment.glsl")
+//                        .toCodeSource()
+//                        .enhanced(
+//                            "glass_fragment", arrayOf(
+//                                "//END" to """
+//                                    out_color.rgba = vec4(texture(environmentMap, reflect(V, normal_world)).rgb, 1-material.transparency);
+//                                    """.trimIndent()
+//                            )
+//                        ),
+//                    config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+//                )
+//            }
+//            addStaticModelEntity(
+//                "Glass0", "assets/models/plane.obj",
+//                scale = Vector3f(520f, 1f, 517f),
+//                rotation = AxisAngle4f(1.57f, 0f, 0f, 1f),
+//                rotation1 = AxisAngle4f(1.57f, 0f, 1f, 0f),
+//                translation = Vector3f(477f, 460f, 49f)
+//            ).apply {
+//                add(MaterialComponent().apply {
+//                    material = glassMaterial
+//                })
+//            }
+//            addStaticModelEntity(
+//                "Glass1", "assets/models/plane.obj",
+//                scale = Vector3f(520f, 1f, 517f),
+//                rotation = AxisAngle4f(1.57f, 0f, 0f, 1f),
+//                translation = Vector3f(-48f, 460f, -467f)
+//            ).apply {
+//                add(MaterialComponent().apply {
+//                    material = glassMaterial
+//                })
+//            }
         }
     }
     simulate()

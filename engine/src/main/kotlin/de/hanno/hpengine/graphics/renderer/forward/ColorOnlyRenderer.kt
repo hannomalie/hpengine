@@ -111,7 +111,7 @@ class ColorOnlyRenderer(
             fallbackTexture = textureManager.defaultTexture,
         ) {
             override fun RenderState.extractRenderBatches(camera: Camera) = this[defaultBatchesSystem.renderBatchesAnimated].filter {
-                !it.hasOwnProgram && it.isVisibleForCamera
+                it.isVisibleForCamera
             }
 
             override fun RenderState.selectGeometryBuffer() = this[entitiesStateHolder.entitiesState].geometryBufferAnimated
@@ -127,6 +127,7 @@ class ColorOnlyRenderer(
 
     override fun render(renderState: RenderState): Unit = graphicsApi.run {
         cullFace = true // TODO: Make possible per batch
+        cullMode = CullMode.FRONT
         depthMask = true
         depthTest = true
         depthFunc = DepthFunc.LEQUAL
@@ -144,6 +145,7 @@ class ColorOnlyRenderer(
                     renderState[primaryCameraStateHolder.camera],
                     config, materialSystem, entityBuffer
                 )
+                entityIndex = batch.entityBufferIndex
                 simpleColorProgramSkyBox.setTextureUniforms(graphicsApi, null, batch.material)
             }, block = {
                 renderState[entitiesStateHolder.entitiesState].geometryBufferStatic.draw(

@@ -861,3 +861,30 @@ mat4 rotationMatrix(vec3 axis, float angle)
                 oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
                 0.0,                                0.0,                                0.0,                                1.0);
 }
+uint getMaxIndex(vec3 vector) {
+    vec3 absVector = abs(vector);
+    float maxValue = max(max(absVector.x, absVector.y), absVector.z);
+    if(absVector.x == maxValue)
+        return 0;
+    if(absVector.y == maxValue)
+        return 1;
+    return 2;
+}
+
+// https://gist.github.com/DomNomNom/46bb1ce47f68d255fd5d
+vec2 intersectAABB(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) {
+    vec3 tMin = (boxMin - rayOrigin) / rayDir;
+    vec3 tMax = (boxMax - rayOrigin) / rayDir;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+    return vec2(tNear, tFar);
+}
+vec3 boxProjectFar(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
+    vec3 posonbox = position_world + texCoords3d * intersectAABB(position_world, texCoords3d, environmentMapMin, environmentMapMax).y;
+
+    vec3 environmentMapWorldPosition = environmentMapMin + (environmentMapMax - environmentMapMin)/2.0;
+
+    return normalize(posonbox - environmentMapWorldPosition.xyz);
+}

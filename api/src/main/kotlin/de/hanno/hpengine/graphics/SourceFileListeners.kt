@@ -3,6 +3,7 @@ package de.hanno.hpengine.graphics
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileMonitor
+import de.hanno.hpengine.ressources.WrappedCodeSource
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import java.io.File
 
@@ -26,8 +27,9 @@ class ProgramChangeListenerManager(
             .filterIsInstance<FileBasedCodeSource>()
             .flatMap { listOf(it.file) + it.includedFiles}
 
+        val replacementFiles = shaders.map { it.source }.filterIsInstance<WrappedCodeSource>().flatMap { it.fileBasedReplacements.map { it.second } }
         val listener = fileMonitor.registerFileChangeListener(
-            shaderFiles,
+            shaderFiles +  replacementFiles,
         ) { file ->
             println("""Reloading ${shaders.joinToString { it.name }}""")
             onReload(file)

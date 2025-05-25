@@ -16,6 +16,8 @@ uniform bool hasRoughnessMap = false;
 
 #endif
 layout(binding=6) uniform samplerCube environmentMap;
+layout(binding=8) uniform samplerCube environmentMap0;
+layout(binding=9) uniform samplerCube environmentMap1;
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
@@ -71,6 +73,10 @@ void main(void) {
 	sampler2D heightMap;
 	bool hasHeightMap = uint64_t(material.handleHeight) > 0;
 	if(hasHeightMap) { heightMap = sampler2D(material.handleHeight); };
+
+	sampler2D normalMap;
+	bool hasNormalMap = uint64_t(material.handleNormal) > 0;
+	if(hasNormalMap) { normalMap = sampler2D(material.handleNormal); };
 
 #endif
 

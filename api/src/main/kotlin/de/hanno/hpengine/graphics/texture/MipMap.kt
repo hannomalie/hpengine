@@ -47,6 +47,8 @@ fun precalculateMipMapFilesIfNecessary(file: File, dimension: TextureDimension2D
         logger.info("All mipmaps already precalculated for ${file.absolutePath}")
         files
     } else {
+        // TODO: There is an issue here, sometimes it failes, check for correct
+        // mipmap sizes
         actuallyCalculateMipMapFiles(mipMapSizes, bufferedImage, file, files)
     }
 }

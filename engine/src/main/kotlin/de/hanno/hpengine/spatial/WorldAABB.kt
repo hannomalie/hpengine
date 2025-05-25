@@ -4,6 +4,9 @@ import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
+import com.artemis.utils.IntBag
+import de.hanno.hpengine.artemis.forEach
+import de.hanno.hpengine.artemis.map
 import de.hanno.hpengine.component.TransformComponent
 import de.hanno.hpengine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.graphics.state.RenderState
@@ -31,6 +34,18 @@ class WorldAABB(
 
     val aabb = AABBData(Vector3f(-100f), Vector3f(100f)) // TODO: Find sensible default?
 
+    override fun inserted(entities: IntBag) {
+
+        entities.forEach { entityId ->
+            logger.info("Entity added: $entityId")
+            val newAABB = modelCacheComponentMapper[entityId].model.boundingVolume.apply {
+                recalculate(transformComponentComponentMapper[entityId].transform.transformation)
+            }
+            aabb.updateWith(newAABB)
+        }
+        aabb.update()
+        logger.info("Recalculated world aabb")
+    }
     override fun inserted(entityId: Int) {
         logger.info("Entity added: $entityId")
         val newAABB = modelCacheComponentMapper[entityId].model.boundingVolume.apply {

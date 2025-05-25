@@ -96,6 +96,7 @@ data class AABBData(val min: Vector3f = Vector3f(absoluteMaximum), val max: Vect
         block()
         update()
     }
+
     companion object {
         @JvmName("getSurroundingAABBData")
         fun List<AABBData>.getSurroundingAABB(): AABBData {
@@ -218,6 +219,9 @@ class AABB(localMin: Vector3f = Vector3f(absoluteMaximum), localMax: Vector3f = 
         }
 
         worldAABB.recaclulating {
+//            why not this?
+//            min.set(corners[0])
+//            max.set(corners[4])
             min.set(minResult)
             max.set(maxResult)
         }
